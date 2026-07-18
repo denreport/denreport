@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+
+      - run: corepack enable
+      - run: corepack prepare pnpm@11.13.0 --activate
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm --filter @denreport/web run build
+      - run: bash scripts/check-comment-refs.sh
+
+  reportlab-exec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - run: pip install reportlab==5.0.0 pillow==12.3.0 pypdf==6.14.2
+      - run: corepack enable
+      - run: corepack prepare pnpm@11.13.0 --activate
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: python scripts/verify-reportlab-target.py --keep packages/targets/tests/output
+      - run: REPORTLAB_PDF_DIR=tests/output pnpm --filter @denreport/targets exec vitest run tests/reportlab-pdf-equivalence.test.ts
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: equivalence-pdfs
+          path: packages/targets/tests/output/
+
+  container-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+      - run: docker build -t denreport-web:ci .
+      - run: docker image ls denreport-web:ci
+      - run: docker run -d --rm -p 8080:8080 --name denreport-web-ci denreport-web:ci
+      - name: wait for /healthz
+        run: |
+          for _ in $(seq 1 30); do
+            if curl -fsS http://localhost:8080/healthz; then exit 0; fi
+            sleep 1
+          done
+          echo "denreport-web-ci failed to become healthy" >&2
+          docker logs denreport-web-ci
+          exit 1
+      - run: curl -fsS http://localhost:8080/ | grep -q 'id="app"'
+      - if: always()
+        run: docker rm -f denreport-web-ci
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.12"
+      - run: pip install reportlab==5.0.0 pillow==12.3.0 pypdf==6.14.2
+      - run: corepack enable
+      - run: corepack prepare pnpm@11.13.0 --activate
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6.5.0
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+      - run: pnpm --filter @denreport/web exec playwright install --with-deps --only-shell chromium
+      - run: pnpm --filter @denreport/web run test:e2e
+      - run: python scripts/verify-exported-zip.py apps/web/test-results/uc1/report-reportlab.zip
+      - run: python scripts/verify-exported-zip.py apps/web/test-results/invoice-full/report-reportlab.zip
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: failure()
+        with:
+          name: playwright-artifacts
+          path: |
+            apps/web/playwright-report/
+            apps/web/test-results/

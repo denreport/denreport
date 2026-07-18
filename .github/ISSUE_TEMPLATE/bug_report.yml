@@ -1,0 +1,43 @@
+name: バグ報告
+description: 期待と異なる挙動・不具合の報告
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: 概要
+      description: 何が起きるかを1〜3文で
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: 再現手順
+      description: 番号付きで、最小の手順を書く
+      placeholder: |
+        1. デザイナーを開く
+        2. …
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 実際の挙動
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期待する挙動
+    validations:
+      required: true
+  - type: textarea
+    id: investigation
+    attributes:
+      label: 調査メモ（任意）
+      description: 原因候補・関連ファイル（パス:行）・確認済みの事実。推測には「推測:」と付ける
+  - type: input
+    id: environment
+    attributes:
+      label: 環境
+      placeholder: "例: Chrome 138 / commit abc1234"

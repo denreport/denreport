@@ -1,0 +1,23 @@
+export function pyString(value: string): string {
+  let out = "";
+  for (const ch of value) {
+    const code = ch.codePointAt(0) ?? 0;
+    if (ch === "\\") out += "\\\\";
+    else if (ch === '"') out += '\\"';
+    else if (code <= 0x1f) out += `\\x${code.toString(16).padStart(2, "0")}`;
+    else out += ch;
+  }
+  return `"${out}"`;
+}
+
+export function pyNumber(value: number): string {
+  return String(value);
+}
+
+/** #rrggbb を ReportLab の setStrokeColorRGB/setFillColorRGB 用に 0..1 の3値タプル文字列へ変換する */
+export function pyRgb(color: string): string {
+  const r = Number.parseInt(color.slice(1, 3), 16) / 255;
+  const g = Number.parseInt(color.slice(3, 5), 16) / 255;
+  const b = Number.parseInt(color.slice(5, 7), 16) / 255;
+  return `(${pyNumber(r)}, ${pyNumber(g)}, ${pyNumber(b)})`;
+}

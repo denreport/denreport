@@ -1,0 +1,103 @@
+export type CanvasMenuAction =
+  | "copy"
+  | "cut"
+  | "paste"
+  | "duplicate"
+  | "group"
+  | "ungroup"
+  | "delete";
+
+export interface CanvasMenuItem {
+  readonly action: CanvasMenuAction;
+  /** 表示名（例: コピー） */
+  readonly label: string;
+  /** ショートカット表示（例: Ctrl+C）。複製は null */
+  readonly shortcut: string | null;
+  readonly disabled: boolean;
+}
+
+export interface ContextTarget {
+  /** メニュー操作の対象になる選択（右クリックによる単独選択への追従を反映済み） */
+  readonly selection: readonly string[];
+  /** true = 要素上の右クリック、false = 背景 */
+  readonly onElement: boolean;
+}
+
+/** 右クリック対象 id（背景は null）と現在の選択から、メニューの対象を決める */
+export function resolveContextTarget(
+  selection: readonly string[],
+  targetId: string | null,
+): ContextTarget {
+  if (targetId === null) {
+    return { selection, onElement: false };
+  }
+  if (selection.includes(targetId)) {
+    return { selection, onElement: true };
+  }
+  return { selection: [targetId], onElement: true };
+}
+
+/** 7項目固定のメニューを構築する */
+export function buildCanvasMenuItems(input: {
+  readonly onElement: boolean;
+  /** clipboardFromSelection が非 null（= トップレベル要素を含む選択） */
+  readonly canCopy: boolean;
+  readonly hasSelection: boolean;
+  readonly hasClipboard: boolean;
+  readonly canGroup: boolean;
+  readonly canUngroup: boolean;
+}): readonly CanvasMenuItem[] {
+  const {
+    onElement,
+    canCopy,
+    hasSelection,
+    hasClipboard,
+    canGroup,
+    canUngroup,
+  } = input;
+  const copyEnabled = onElement && canCopy;
+  return [
+    {
+      action: "copy",
+      label: "コピー",
+      shortcut: "Ctrl+C",
+      disabled: !copyEnabled,
+    },
+    {
+      action: "cut",
+      label: "切り取り",
+      shortcut: "Ctrl+X",
+      disabled: !copyEnabled,
+    },
+    {
+      action: "paste",
+      label: "貼り付け",
+      shortcut: "Ctrl+V",
+      disabled: !hasClipboard,
+    },
+    {
+      action: "duplicate",
+      label: "複製",
+      shortcut: null,
+      disabled: !copyEnabled,
+    },
+    {
+      action: "group",
+      label: "グループ化",
+      shortcut: "Ctrl+G",
+      disabled: !(onElement && canGroup),
+    },
+    {
+      action: "ungroup",
+      label: "グループ解除",
+      shortcut: "Ctrl+Shift+G",
+      disabled: !(onElement && canUngroup),
+    },
+    {
+      action: "delete",
+      label: "削除",
+      shortcut: "Delete",
+      disabled: !(onElement && hasSelection),
+    },
+  ];
+}

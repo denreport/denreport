@@ -1,0 +1,24 @@
+{
+  "name": "@denreport/targets",
+  "version": "0.0.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@denreport/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@pdfme/common": "6.1.11",
+    "@pdfme/generator": "6.1.11",
+    "@pdfme/schemas": "6.1.11",
+    "@types/node": "^26.1.1",
+    "pdfjs-dist": "6.1.200"
+  }
+}

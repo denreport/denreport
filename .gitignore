@@ -1,0 +1,9 @@
+node_modules/
+.pnpm-store/
+dist/
+coverage/
+*.log
+packages/targets/tests/output/
+apps/web/test-results/
+apps/web/playwright-report/
+.DS_Store

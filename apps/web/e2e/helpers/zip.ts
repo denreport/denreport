@@ -1,0 +1,50 @@
+const EOCD_SIZE = 22;
+const EOCD_SIGNATURE = 0x06054b50;
+const CENTRAL_SIGNATURE = 0x02014b50;
+const CENTRAL_HEADER_SIZE = 46;
+const LOCAL_HEADER_SIZE = 30;
+
+export interface ZipEntryData {
+  readonly name: string;
+  readonly data: Buffer;
+}
+
+/** STORE のみの zip（コメントなし・単一ディスク）を central directory から読み戻す。
+    圧縮方式 0 以外のエントリがあれば throw する（前提の破れの早期検出） */
+export function readStoreZip(buffer: Buffer): readonly ZipEntryData[] {
+  const eocdOffset = buffer.length - EOCD_SIZE;
+  if (eocdOffset < 0 || buffer.readUInt32LE(eocdOffset) !== EOCD_SIGNATURE) {
+    throw new Error("EOCD レコードが見つかりません");
+  }
+  const entryCount = buffer.readUInt16LE(eocdOffset + 10);
+  let offset = buffer.readUInt32LE(eocdOffset + 16);
+
+  const entries: ZipEntryData[] = [];
+  for (let i = 0; i < entryCount; i++) {
+    if (buffer.readUInt32LE(offset) !== CENTRAL_SIGNATURE) {
+      throw new Error("central directory ヘッダが不正です");
+    }
+    const method = buffer.readUInt16LE(offset + 10);
+    const size = buffer.readUInt32LE(offset + 24);
+    const nameLength = buffer.readUInt16LE(offset + 28);
+    const extraLength = buffer.readUInt16LE(offset + 30);
+    const commentLength = buffer.readUInt16LE(offset + 32);
+    const localOffset = buffer.readUInt32LE(offset + 42);
+    const name = buffer
+      .subarray(
+        offset + CENTRAL_HEADER_SIZE,
+        offset + CENTRAL_HEADER_SIZE + nameLength,
+      )
+      .toString("utf8");
+    if (method !== 0) {
+      throw new Error(`STORE 以外の圧縮方式のエントリがあります: ${name}`);
+    }
+    const localNameLength = buffer.readUInt16LE(localOffset + 26);
+    const localExtraLength = buffer.readUInt16LE(localOffset + 28);
+    const dataStart =
+      localOffset + LOCAL_HEADER_SIZE + localNameLength + localExtraLength;
+    entries.push({ name, data: buffer.subarray(dataStart, dataStart + size) });
+    offset += CENTRAL_HEADER_SIZE + nameLength + extraLength + commentLength;
+  }
+  return entries;
+}

@@ -1,0 +1,16 @@
+[
+  {
+    "p1_title_0": "請求書",
+    "p1_logo_0": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+    "p1_issuerName_0": "株式会社サンプル",
+    "p1_issuerAddr_0": "東京都千代田区1-1-1",
+    "p1_items_5": "品目",
+    "p1_items_6": "金額(税抜)",
+    "p1_items_7": "商品A",
+    "p1_items_8": "10,000",
+    "p1_items_9": "商品B",
+    "p1_items_10": "20,000",
+    "p1_totalLabel_0": "合計(税込)",
+    "p1_pageNo_0": "1 / 1"
+  }
+]

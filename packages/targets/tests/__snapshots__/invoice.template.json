@@ -1,0 +1,272 @@
+{
+  "basePdf": {
+    "width": 210,
+    "height": 297,
+    "padding": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "schemas": [
+    [
+      {
+        "type": "text",
+        "name": "p1_title_0",
+        "position": {
+          "x": 0,
+          "y": 18
+        },
+        "width": 210,
+        "height": 12,
+        "fontSize": 22,
+        "fontName": "NotoSansJP",
+        "alignment": "center",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25
+      },
+      {
+        "type": "image",
+        "name": "p1_logo_0",
+        "position": {
+          "x": 15,
+          "y": 15
+        },
+        "width": 20,
+        "height": 20
+      },
+      {
+        "type": "text",
+        "name": "p1_issuerName_0",
+        "position": {
+          "x": 130,
+          "y": 41.25
+        },
+        "width": 60,
+        "height": 6,
+        "fontSize": 11,
+        "fontName": "NotoSansJP",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25
+      },
+      {
+        "type": "text",
+        "name": "p1_issuerAddr_0",
+        "position": {
+          "x": 130,
+          "y": 48.75
+        },
+        "width": 60,
+        "height": 10,
+        "fontSize": 9,
+        "fontName": "NotoSansJP",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25
+      },
+      {
+        "type": "line",
+        "name": "p1_customerUnderline_0",
+        "position": {
+          "x": 15,
+          "y": 49
+        },
+        "width": 90,
+        "height": 0.4,
+        "color": "#000000"
+      },
+      {
+        "type": "rectangle",
+        "name": "p1_items_0",
+        "position": {
+          "x": 15,
+          "y": 90
+        },
+        "width": 125,
+        "height": 36,
+        "borderWidth": 0.4,
+        "borderColor": "#000000",
+        "color": ""
+      },
+      {
+        "type": "line",
+        "name": "p1_items_1",
+        "position": {
+          "x": 15,
+          "y": 99
+        },
+        "width": 125,
+        "height": 0.25,
+        "color": "#000000"
+      },
+      {
+        "type": "line",
+        "name": "p1_items_2",
+        "position": {
+          "x": 15,
+          "y": 108
+        },
+        "width": 125,
+        "height": 0.25,
+        "color": "#000000"
+      },
+      {
+        "type": "line",
+        "name": "p1_items_3",
+        "position": {
+          "x": 15,
+          "y": 117
+        },
+        "width": 125,
+        "height": 0.25,
+        "color": "#000000"
+      },
+      {
+        "type": "line",
+        "name": "p1_items_4",
+        "position": {
+          "x": 105,
+          "y": 90
+        },
+        "width": 0.25,
+        "height": 36,
+        "color": "#000000"
+      },
+      {
+        "type": "text",
+        "name": "p1_items_5",
+        "position": {
+          "x": 16.5,
+          "y": 91.8
+        },
+        "width": 87,
+        "height": 7.2,
+        "fontSize": 10,
+        "fontName": "NotoSansJP",
+        "alignment": "center",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25
+      },
+      {
+        "type": "text",
+        "name": "p1_items_6",
+        "position": {
+          "x": 106.5,
+          "y": 91.8
+        },
+        "width": 32,
+        "height": 7.2,
+        "fontSize": 10,
+        "fontName": "NotoSansJP",
+        "alignment": "center",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25
+      },
+      {
+        "type": "text",
+        "name": "p1_items_7",
+        "position": {
+          "x": 16.5,
+          "y": 101
+        },
+        "width": 87,
+        "height": 7,
+        "fontSize": 10,
+        "fontName": "NotoSansJP",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25
+      },
+      {
+        "type": "text",
+        "name": "p1_items_8",
+        "position": {
+          "x": 106.5,
+          "y": 101
+        },
+        "width": 32,
+        "height": 7,
+        "fontSize": 10,
+        "fontName": "NotoSansJP",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25
+      },
+      {
+        "type": "text",
+        "name": "p1_items_9",
+        "position": {
+          "x": 16.5,
+          "y": 110
+        },
+        "width": 87,
+        "height": 7,
+        "fontSize": 10,
+        "fontName": "NotoSansJP",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25
+      },
+      {
+        "type": "text",
+        "name": "p1_items_10",
+        "position": {
+          "x": 106.5,
+          "y": 110
+        },
+        "width": 32,
+        "height": 7,
+        "fontSize": 10,
+        "fontName": "NotoSansJP",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25
+      },
+      {
+        "type": "text",
+        "name": "p1_totalLabel_0",
+        "position": {
+          "x": 110,
+          "y": 270
+        },
+        "width": 40,
+        "height": 8,
+        "fontSize": 12,
+        "fontName": "NotoSansJP",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25
+      },
+      {
+        "type": "rectangle",
+        "name": "p1_totalBox_0",
+        "position": {
+          "x": 108,
+          "y": 267
+        },
+        "width": 89,
+        "height": 12,
+        "borderWidth": 0.5,
+        "borderColor": "#000000",
+        "color": ""
+      },
+      {
+        "type": "text",
+        "name": "p1_pageNo_0",
+        "position": {
+          "x": 0,
+          "y": 285
+        },
+        "width": 210,
+        "height": 6,
+        "fontSize": 9,
+        "fontName": "NotoSansJP",
+        "alignment": "center",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25
+      }
+    ]
+  ]
+}

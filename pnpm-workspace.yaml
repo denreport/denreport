@@ -1,0 +1,15 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+
+# pnpm 既定のリリース経過時間ポリシーが公開直後の biome バイナリを弾くため、pnpm が自動追記した除外
+minimumReleaseAgeExclude:
+  - '@biomejs/biome@2.5.4'
+  - '@biomejs/cli-darwin-arm64@2.5.4'
+  - '@biomejs/cli-darwin-x64@2.5.4'
+  - '@biomejs/cli-linux-arm64-musl@2.5.4'
+  - '@biomejs/cli-linux-arm64@2.5.4'
+  - '@biomejs/cli-linux-x64-musl@2.5.4'
+  - '@biomejs/cli-linux-x64@2.5.4'
+  - '@biomejs/cli-win32-arm64@2.5.4'
+  - '@biomejs/cli-win32-x64@2.5.4'
