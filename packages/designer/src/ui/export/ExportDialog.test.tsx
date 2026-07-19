@@ -26,7 +26,7 @@ vi.mock("@denreport/core", async (importOriginal) => {
             element: {
               level: "unsupported",
               note: "image element unsupported (test)",
-              userMessage: "画像は書き出せません（テスト用）",
+              userMessage: () => "画像は書き出せません（テスト用）",
             },
           },
         },
