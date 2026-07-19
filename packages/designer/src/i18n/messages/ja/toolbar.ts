@@ -1,0 +1,41 @@
+export const toolbarJa = {
+  toolbar: {
+    brandName: "帳票デザイナー",
+    togglePanelLeft: "左パネルを開閉",
+    elementsPanel: "要素・レイヤー",
+    unsavedChanges: "未保存の変更あり",
+    undo: "元に戻す",
+    redo: "やり直す",
+    canvasMode: "キャンバスモード",
+    select: "選択",
+    selectTitle: "選択 (V)",
+    pan: "移動",
+    panTitle: "移動 (H)",
+    theme: "テーマ",
+    themeTitle: (dark: boolean): string =>
+      dark
+        ? "テーマを切り替え（現在: ダーク）"
+        : "テーマを切り替え（現在: ライト）",
+    locale: "言語",
+    localeTitle: "言語を切り替え（現在: 日本語）",
+    shortcuts: "ショートカット一覧",
+    open: "開く",
+    save: "保存",
+    manageStyles: "スタイル",
+    preview: "プレビュー",
+    exportTarget: "書き出しターゲット",
+    export: "書き出し",
+    togglePanelRight: "右パネルを開閉",
+    propertiesPanel: "プロパティ",
+    openIr: {
+      unsavedTitle: "未保存の変更",
+      unsavedBody: "読み込むと未保存の変更は失われます。続行しますか？",
+      cancel: "キャンセル",
+      continue: "続行",
+      failedTitle: "読み込めませんでした",
+      close: "閉じる",
+      readFailed: "ファイルを読み取れませんでした。",
+      unchangedNote: "文書は変更されていません。",
+    },
+  },
+};

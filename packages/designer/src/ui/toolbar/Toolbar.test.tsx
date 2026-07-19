@@ -3,6 +3,8 @@ import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DesignerChrome } from "../../api/designer";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { EditorStore } from "../../state/store";
 import { Toolbar } from "./Toolbar";
 
@@ -19,6 +21,8 @@ function makeChrome(overrides: Partial<DesignerChrome> = {}): DesignerChrome {
     toggleTheme: vi.fn(),
     requestSave: vi.fn(),
     importIr: vi.fn(() => ({ ok: true }) as const),
+    locale: "ja",
+    toggleLocale: vi.fn(),
     ...overrides,
   };
 }
@@ -302,5 +306,41 @@ describe("Toolbar", () => {
     );
     click(buttonByText("右パネルを開閉"));
     expect(onToggleProps).toHaveBeenCalledOnce();
+  });
+
+  it("言語ボタンは chrome.locale を表示し、クリックで toggleLocale が呼ばれる", async () => {
+    const chrome = makeChrome({ locale: "en" });
+    await renderToolbar(chrome);
+    const button = buttonByText("言語");
+    expect(button.textContent).toBe("EN");
+    click(button);
+    expect(chrome.toggleLocale).toHaveBeenCalledOnce();
+  });
+
+  it("en の MessagesContext では文言が英語で描画される", async () => {
+    root.render(
+      <MessagesContext.Provider value={en}>
+        <Toolbar
+          store={new EditorStore(BLANK)}
+          chrome={makeChrome()}
+          onPreview={() => {}}
+          onExport={() => {}}
+          onManageStyles={() => {}}
+          onShowShortcuts={() => {}}
+          sidebarOpen={true}
+          propsOpen={true}
+          onToggleSidebar={() => {}}
+          onToggleProps={() => {}}
+        />
+      </MessagesContext.Provider>,
+    );
+    await vi.waitFor(() => {
+      expect(container.querySelector(".apx-toolbar")).not.toBeNull();
+    });
+    expect(buttonByText("Save").disabled).toBe(false);
+    expect(buttonByText("Export").disabled).toBe(false);
+    expect(container.querySelector(".apx-brand-name")?.textContent).toBe(
+      "Report Designer",
+    );
   });
 });

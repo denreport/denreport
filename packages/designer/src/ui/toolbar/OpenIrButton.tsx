@@ -2,6 +2,7 @@ import type { IrError } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 import type { LoadIrResult } from "../../api/designer";
+import { useMessages } from "../../i18n/context";
 import { Dialog } from "../dialog/Dialog";
 
 type FlowState =
@@ -19,6 +20,7 @@ export function OpenIrButton(props: {
   const { dirty, importIr } = props;
   const [flow, setFlow] = useState<FlowState>(IDLE);
   const fileInput = useRef<HTMLInputElement>(null);
+  const m = useMessages();
 
   const pickFile = (): void => {
     setFlow(IDLE);
@@ -52,7 +54,7 @@ export function OpenIrButton(props: {
           }
         }}
       >
-        開く
+        {m.toolbar.open}
       </button>
       <input
         ref={fileInput}
@@ -70,7 +72,7 @@ export function OpenIrButton(props: {
       />
       {flow.kind === "confirm" && (
         <Dialog
-          title="未保存の変更"
+          title={m.toolbar.openIr.unsavedTitle}
           onClose={() => setFlow(IDLE)}
           footer={
             <>
@@ -79,24 +81,24 @@ export function OpenIrButton(props: {
                 className="apx-btn apx-btn-secondary"
                 onClick={() => setFlow(IDLE)}
               >
-                キャンセル
+                {m.toolbar.openIr.cancel}
               </button>
               <button
                 type="button"
                 className="apx-btn apx-btn-primary"
                 onClick={pickFile}
               >
-                続行
+                {m.toolbar.openIr.continue}
               </button>
             </>
           }
         >
-          <p>読み込むと未保存の変更は失われます。続行しますか？</p>
+          <p>{m.toolbar.openIr.unsavedBody}</p>
         </Dialog>
       )}
       {(flow.kind === "rejected" || flow.kind === "read-failed") && (
         <Dialog
-          title="読み込めませんでした"
+          title={m.toolbar.openIr.failedTitle}
           onClose={() => setFlow(IDLE)}
           footer={
             <button
@@ -104,12 +106,12 @@ export function OpenIrButton(props: {
               className="apx-btn apx-btn-secondary"
               onClick={() => setFlow(IDLE)}
             >
-              閉じる
+              {m.toolbar.openIr.close}
             </button>
           }
         >
           {flow.kind === "read-failed" ? (
-            <p>ファイルを読み取れませんでした。</p>
+            <p>{m.toolbar.openIr.readFailed}</p>
           ) : (
             <ul className="apx-dialog-errors">
               {flow.errors.map((error, i) => (
@@ -122,7 +124,7 @@ export function OpenIrButton(props: {
               ))}
             </ul>
           )}
-          <p className="apx-dialog-note">文書は変更されていません。</p>
+          <p className="apx-dialog-note">{m.toolbar.openIr.unchangedNote}</p>
         </Dialog>
       )}
     </>

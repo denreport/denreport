@@ -3,6 +3,8 @@ import { IR_VERSION, parseIr } from "@denreport/core";
 import { createElement } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
+import type { DesignerLocale, Locale } from "../i18n/locale";
+import { resolveLocale } from "../i18n/locale";
 import type { ElementGroup } from "../state/groups";
 import { embedGroups } from "../state/groups";
 import type { SampleScenarioSet } from "../state/sample-scenarios";
@@ -15,10 +17,11 @@ import { DesignerRoot } from "../ui/DesignerRoot";
 import { triggerDownload } from "./download";
 
 export type DesignerTheme = "light" | "dark" | "auto";
+export type { DesignerLocale };
 
 export const SAVE_FILE_NAME = "report-template.json";
 
-/** React ツリーから Designer の機能（テーマ・保存・読込）に触る唯一の経路 */
+/** React ツリーから Designer の機能（テーマ・言語・保存・読込）に触る唯一の経路 */
 export interface DesignerChrome {
   /** 現在の解決済みテーマ（"auto" は解決後の値になる）。トグルの表示状態に使う */
   readonly resolvedTheme: "light" | "dark";
@@ -28,6 +31,10 @@ export interface DesignerChrome {
   readonly requestSave: () => void;
   /** 「開く」の読込。契約は公開 loadIr と同一（成功時は履歴クリア・onChange 発火） */
   readonly importIr: (json: string) => LoadIrResult;
+  /** 現在の解決済みロケール（"auto" は解決後の値になる）。切替ボタンの表示に使う */
+  readonly locale: Locale;
+  /** 解決済みロケールの反転を明示ロケールとして設定する（"auto" 追従からは抜ける） */
+  readonly toggleLocale: () => void;
 }
 
 export interface DesignerOptions {
@@ -41,6 +48,8 @@ export interface DesignerOptions {
   readonly initialExportTarget?: CompatTargetId;
   /** 省略時 "auto"（prefers-color-scheme 追従） */
   readonly theme?: DesignerTheme;
+  /** 省略時 "auto"（navigator.languages から ja/en を判定） */
+  readonly locale?: DesignerLocale;
 }
 
 export type LoadIrResult =
@@ -74,6 +83,7 @@ export class Designer {
   private readonly saveRequestListeners = new Set<() => void>();
   private readonly sampleDataListeners = new Set<() => void>();
   private readonly exportTargetListeners = new Set<() => void>();
+  private readonly localeChangeListeners = new Set<() => void>();
   private readonly mediaQuery: MediaQueryList;
   private readonly onMediaChange: () => void;
   private lastDocument: IrDocument;
@@ -81,6 +91,7 @@ export class Designer {
   private lastSampleScenarios: SampleScenarioSet;
   private lastExportTarget: CompatTargetId;
   private theme: DesignerTheme;
+  private locale: DesignerLocale;
   private destroyed = false;
 
   /** container の内容を占有してデザイナーを描画する。寸法はホストが container で制御する */
@@ -132,16 +143,17 @@ export class Designer {
     container.append(this.rootEl);
 
     this.theme = options?.theme ?? "auto";
+    this.locale = options?.locale ?? "auto";
     this.mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     this.onMediaChange = () => {
       if (this.theme === "auto") {
-        this.applyResolvedTheme();
+        this.render();
       }
     };
     this.mediaQuery.addEventListener("change", this.onMediaChange);
 
     this.reactRoot = createRoot(this.rootEl);
-    this.applyResolvedTheme();
+    this.render();
   }
 
   /** IR JSON を読み込んで現在の文書を置き換える。失敗時は文書を変えず errors を返す。
@@ -230,7 +242,35 @@ export class Designer {
   setTheme(theme: DesignerTheme): void {
     this.assertAlive();
     this.theme = theme;
-    this.applyResolvedTheme();
+    this.render();
+  }
+
+  /** ロケールを切り替える。"auto" は navigator.languages に追従する */
+  setLocale(locale: DesignerLocale): void {
+    this.assertAlive();
+    const previousResolved = this.getLocale();
+    this.locale = locale;
+    this.render();
+    if (this.getLocale() !== previousResolved) {
+      for (const listener of [...this.localeChangeListeners]) {
+        listener();
+      }
+    }
+  }
+
+  /** 現在の解決済みロケール。ホスト側の永続化用 */
+  getLocale(): Locale {
+    this.assertAlive();
+    return resolveLocale(this.locale, navigator.languages);
+  }
+
+  /** ロケール変更（切替ボタン・setLocale）で呼ばれるリスナーを登録し、解除関数を返す */
+  onLocaleChange(listener: () => void): () => void {
+    this.assertAlive();
+    this.localeChangeListeners.add(listener);
+    return () => {
+      this.localeChangeListeners.delete(listener);
+    };
   }
 
   /** React ツリーを破棄し container を空に戻す。冪等。destroy 後の他メソッド呼び出しは throw */
@@ -247,6 +287,7 @@ export class Designer {
     this.saveRequestListeners.clear();
     this.sampleDataListeners.clear();
     this.exportTargetListeners.clear();
+    this.localeChangeListeners.clear();
   }
 
   private requestSave(): void {
@@ -263,26 +304,36 @@ export class Designer {
     );
   }
 
-  private applyResolvedTheme(): void {
-    const resolved =
+  private render(): void {
+    const resolvedTheme =
       this.theme === "auto"
         ? this.mediaQuery.matches
           ? "dark"
           : "light"
         : this.theme;
-    this.rootEl.dataset.theme = resolved;
+    const resolvedLocale = resolveLocale(this.locale, navigator.languages);
+    this.rootEl.dataset.theme = resolvedTheme;
+    this.rootEl.lang = resolvedLocale;
     const chrome: DesignerChrome = {
-      resolvedTheme: resolved,
+      resolvedTheme,
       toggleTheme: () => {
-        this.setTheme(resolved === "dark" ? "light" : "dark");
+        this.setTheme(resolvedTheme === "dark" ? "light" : "dark");
       },
       requestSave: () => {
         this.requestSave();
       },
       importIr: (json) => this.loadIr(json),
+      locale: resolvedLocale,
+      toggleLocale: () => {
+        this.setLocale(resolvedLocale === "ja" ? "en" : "ja");
+      },
     };
     this.reactRoot.render(
-      createElement(DesignerRoot, { store: this.store, chrome }),
+      createElement(DesignerRoot, {
+        store: this.store,
+        chrome,
+        locale: resolvedLocale,
+      }),
     );
   }
 

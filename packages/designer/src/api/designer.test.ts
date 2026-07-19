@@ -9,10 +9,16 @@ import {
   it,
   vi,
 } from "vitest";
+import type { Locale } from "../i18n/locale";
 import * as publicExports from "../index";
 import { addScenario, parseSampleDataStorage } from "../state/sample-scenarios";
 import type { EditorStore } from "../state/store";
-import type { DesignerOptions, DesignerTheme, LoadIrResult } from "./designer";
+import type {
+  DesignerLocale,
+  DesignerOptions,
+  DesignerTheme,
+  LoadIrResult,
+} from "./designer";
 import { Designer } from "./designer";
 
 const VALID_IR = JSON.stringify({
@@ -154,16 +160,14 @@ beforeAll(() => {
 let containers: HTMLElement[] = [];
 let designers: Designer[] = [];
 
+// jsdom の既定言語は en-US のため、locale 省略時のテストが英語表示に倒れないよう ja を既定にする
 function mount(options?: DesignerOptions): {
   container: HTMLElement;
   designer: Designer;
 } {
   const container = document.createElement("div");
   document.body.append(container);
-  const designer =
-    options === undefined
-      ? new Designer(container)
-      : new Designer(container, options);
+  const designer = new Designer(container, { locale: "ja", ...options });
   containers.push(container);
   designers.push(designer);
   return { container, designer };
@@ -257,6 +261,9 @@ describe("Designer のマウントと破棄", () => {
     expect(() => designer.onSampleDataChange(() => {})).toThrow();
     expect(() => designer.getExportTarget()).toThrow();
     expect(() => designer.onExportTargetChange(() => {})).toThrow();
+    expect(() => designer.setLocale("en")).toThrow();
+    expect(() => designer.getLocale()).toThrow();
+    expect(() => designer.onLocaleChange(() => {})).toThrow();
   });
 
   it("不正な initialIr はコンストラクタで throw する", () => {
@@ -691,6 +698,60 @@ describe("テーマトグル", () => {
   });
 });
 
+describe("言語切替", () => {
+  it('locale 省略時は "auto"（jsdom の navigator.languages は en-US のため en に解決される）', () => {
+    const container = document.createElement("div");
+    containers.push(container);
+    const designer = new Designer(container);
+    designers.push(designer);
+    expect(designer.getLocale()).toBe("en");
+  });
+
+  it("setLocale で表示言語と rootEl.lang が切り替わり、onLocaleChange が発火する", async () => {
+    const { container, designer } = mount();
+    const rootEl = container.querySelector(".apx-designer");
+    expect(rootEl?.getAttribute("lang")).toBe("ja");
+    expect(designer.getLocale()).toBe("ja");
+    await toolbarButton(container, "保存");
+
+    let fired = 0;
+    designer.onLocaleChange(() => {
+      fired += 1;
+    });
+
+    designer.setLocale("en");
+    expect(designer.getLocale()).toBe("en");
+    expect(rootEl?.getAttribute("lang")).toBe("en");
+    expect(fired).toBe(1);
+    await toolbarButton(container, "Save");
+
+    designer.setLocale("ja");
+    expect(fired).toBe(2);
+    await toolbarButton(container, "保存");
+  });
+
+  it("解決値が変わらない setLocale では onLocaleChange が発火しない", () => {
+    const { designer } = mount();
+    let fired = 0;
+    designer.onLocaleChange(() => {
+      fired += 1;
+    });
+    designer.setLocale("ja");
+    expect(fired).toBe(0);
+  });
+
+  it("解除関数でリスナーが外れる", () => {
+    const { designer } = mount();
+    let fired = 0;
+    const unsubscribe = designer.onLocaleChange(() => {
+      fired += 1;
+    });
+    unsubscribe();
+    designer.setLocale("en");
+    expect(fired).toBe(0);
+  });
+});
+
 describe("公開面の型（React 非漏洩）", () => {
   it("値のエクスポートは Designer クラスのみ", () => {
     expectTypeOf<keyof typeof publicExports>().toEqualTypeOf<"Designer">();
@@ -731,13 +792,22 @@ describe("公開面の型（React 非漏洩）", () => {
     expectTypeOf<Designer["setTheme"]>().toEqualTypeOf<
       (theme: DesignerTheme) => void
     >();
+    expectTypeOf<Designer["setLocale"]>().toEqualTypeOf<
+      (locale: DesignerLocale) => void
+    >();
+    expectTypeOf<Designer["getLocale"]>().toEqualTypeOf<() => Locale>();
+    expectTypeOf<Designer["onLocaleChange"]>().toEqualTypeOf<
+      (listener: () => void) => () => void
+    >();
     expectTypeOf<Designer["destroy"]>().toEqualTypeOf<() => void>();
     expectTypeOf<DesignerTheme>().toEqualTypeOf<"light" | "dark" | "auto">();
+    expectTypeOf<DesignerLocale>().toEqualTypeOf<"ja" | "en" | "auto">();
     expectTypeOf<DesignerOptions>().toEqualTypeOf<{
       readonly initialIr?: string;
       readonly initialSampleData?: string;
       readonly initialExportTarget?: CompatTargetId;
       readonly theme?: DesignerTheme;
+      readonly locale?: DesignerLocale;
     }>();
   });
 });
