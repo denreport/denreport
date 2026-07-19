@@ -3,7 +3,7 @@
  * `version` field (e.g. `"1.0"`); parseIr accepts any version sharing the
  * same major and a minor at or below this value.
  */
-export const IR_VERSION: "1.1" = "1.1";
+export const IR_VERSION: "1.0" = "1.0";
 
 /** Horizontal text alignment. */
 export type IrAlign = "left" | "center" | "right" | "justify";

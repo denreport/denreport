@@ -137,10 +137,10 @@ describe("parseIr", () => {
       expect(parse(doc).ok).toBe(true);
     });
 
-    it("accepts 1.1", () => {
+    it("rejects an unsupported minor (1.1)", () => {
       const doc = baseDoc();
       doc.version = "1.1";
-      expect(parse(doc).ok).toBe(true);
+      expectRule(parse(doc), "S03", "version");
     });
 
     it("rejects an unsupported minor (1.2)", () => {

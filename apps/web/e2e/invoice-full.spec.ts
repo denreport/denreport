@@ -703,7 +703,7 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
       readonly version: string;
       readonly elements: readonly StoredElement[];
     };
-    expect(ir.version).toBe("1.1");
+    expect(ir.version).toBe("1.0");
     expect(ir.elements).toHaveLength(26);
 
     const expectedPositions = [

@@ -8,7 +8,7 @@ IR（Intermediate Representation）は、帳票レイアウトを表す単一の
 
 ```json
 {
-  "version": "1.1",
+  "version": "1.0",
   "page": { "width": 210, "height": 297 },
   "font": { "name": "NotoSansJP" },
   "styles": [ ... ],
@@ -324,9 +324,6 @@ ReportLab 側のいずれも脚注固有の分岐を持たずに追随する。�
   既存文書の意味を変えない。
 - major の増分 = 非互換変更（必須属性の追加、意味の変更、削除）。v1 の実装は
   major 2 以上の文書を読まない。
-- `"1.1"`（現行の `IR_VERSION`）は `styles`（任意ルートキー）・要素の `style`（任意属性、
-  3.9節）・`barcode` 要素（3.11節）を後方互換な追加として導入した minor。
-  `"1.0"` の既存文書はそのまま妥当。
 
 ### 4.2 読み込み側の規則
 
@@ -569,7 +566,7 @@ S 群通過後、任意属性のデフォルト（3節の各表。`maxY = page.h
 
 ```ts
 // types.ts
-export const IR_VERSION: "1.1";
+export const IR_VERSION: "1.0";
 export type IrAlign = "left" | "center" | "right" | "justify";
 export type IrOrientation = "horizontal" | "vertical";
 export type IrPages = "first" | "rest" | "last" | "all";

@@ -210,7 +210,7 @@ test("UC-1: 請求書レイアウトを作りプレビューして ReportLab コ
       readonly columns?: readonly { readonly key: string }[];
     }[];
   };
-  expect(ir.version).toBe("1.1");
+  expect(ir.version).toBe("1.0");
   const texts = ir.elements.filter((el) => el.type === "text");
   expect(texts).toHaveLength(4);
   expect(texts.every((el) => "bind" in el === false)).toBe(true);
