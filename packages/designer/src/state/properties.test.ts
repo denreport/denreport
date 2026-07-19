@@ -7,7 +7,7 @@ import type {
   IrTableElement,
   IrTextElement,
 } from "@denreport/core";
-import { parseIr } from "@denreport/core";
+import { parseIr, validateIr } from "@denreport/core";
 import { describe, expect, it } from "vitest";
 import {
   addTableCellSpan,
@@ -474,6 +474,110 @@ describe("セル結合の操作", () => {
     const doc = moveTableColumn(withSpan, "tbl1", 0, 1);
     expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", rowSpan: 2 }]);
     expectValidIr(doc);
+  });
+
+  it("removeTableColumn は被覆列の削除で colSpan を切り詰める", () => {
+    const three = addTableColumn(BASE, "tbl1");
+    const withSpan = updateTableCellSpan(
+      addTableCellSpan(three, "tbl1"),
+      "tbl1",
+      0,
+      { rowSpan: 1, colSpan: 3 },
+    );
+    const doc = removeTableColumn(withSpan, "tbl1", 1);
+    expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", colSpan: 2 }]);
+    expect(validateIr(doc)).toEqual([]);
+  });
+
+  it("removeTableColumn で 1×1 になる結合は破棄する", () => {
+    const withSpan = updateTableCellSpan(
+      addTableCellSpan(BASE, "tbl1"),
+      "tbl1",
+      0,
+      { rowSpan: 1, colSpan: 2 },
+    );
+    const doc = removeTableColumn(withSpan, "tbl1", 1);
+    const table = findById(doc, "tbl1");
+    expect(
+      table !== undefined && "cellSpans" in table ? table.cellSpans : undefined,
+    ).toBe(undefined);
+    expect(validateIr(doc)).toEqual([]);
+  });
+
+  it("removeTableColumn の切り詰めで縦結合は維持される", () => {
+    const withSpan = updateTableCellSpan(
+      addTableCellSpan(BASE, "tbl1"),
+      "tbl1",
+      0,
+      { rowSpan: 2, colSpan: 2 },
+    );
+    const doc = removeTableColumn(withSpan, "tbl1", 1);
+    expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", rowSpan: 2 }]);
+    expect(validateIr(doc)).toEqual([]);
+  });
+
+  it("moveTableColumn で列範囲からはみ出す結合は切り詰め、1×1 なら破棄する", () => {
+    const withSpan = updateTableCellSpan(
+      addTableCellSpan(BASE, "tbl1"),
+      "tbl1",
+      0,
+      { rowSpan: 1, colSpan: 2 },
+    );
+    const doc = moveTableColumn(withSpan, "tbl1", 0, 1);
+    const table = findById(doc, "tbl1");
+    expect(
+      table !== undefined && "cellSpans" in table ? table.cellSpans : undefined,
+    ).toBe(undefined);
+    expect(validateIr(doc)).toEqual([]);
+  });
+
+  it("moveTableColumn の切り詰めで縦結合は維持される", () => {
+    const withSpan = updateTableCellSpan(
+      addTableCellSpan(BASE, "tbl1"),
+      "tbl1",
+      0,
+      { rowSpan: 2, colSpan: 2 },
+    );
+    const doc = moveTableColumn(withSpan, "tbl1", 0, 1);
+    expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", rowSpan: 2 }]);
+    expect(validateIr(doc)).toEqual([]);
+  });
+
+  it("moveTableColumn で mergeSameValue 列に掛かる結合は切り詰める", () => {
+    const three = addTableColumn(BASE, "tbl1");
+    const merged = updateTableColumn(three, "tbl1", 2, {
+      mergeSameValue: true,
+    });
+    const withSpan = updateTableCellSpan(
+      addTableCellSpan(merged, "tbl1"),
+      "tbl1",
+      0,
+      { rowSpan: 2, colSpan: 2 },
+    );
+    expect(validateIr(withSpan)).toEqual([]);
+    const doc = moveTableColumn(withSpan, "tbl1", 1, 1);
+    expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", rowSpan: 2 }]);
+    expect(validateIr(doc)).toEqual([]);
+  });
+
+  it("moveTableColumn で先行する結合に重なった結合は破棄する", () => {
+    const three = addTableColumn(BASE, "tbl1");
+    const first = updateTableCellSpan(
+      addTableCellSpan(three, "tbl1"),
+      "tbl1",
+      0,
+      { rowSpan: 1, colSpan: 2 },
+    );
+    const second = updateTableCellSpan(
+      addTableCellSpan(first, "tbl1"),
+      "tbl1",
+      1,
+      { key: "col2", rowSpan: 2 },
+    );
+    expect(validateIr(second)).toEqual([]);
+    const doc = moveTableColumn(second, "tbl1", 1, 1);
+    expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", colSpan: 2 }]);
+    expect(validateIr(doc)).toEqual([]);
   });
 });
 

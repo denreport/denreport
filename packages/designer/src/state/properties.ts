@@ -141,7 +141,73 @@ function withCellSpans(
   return { ...table, cellSpans: spans };
 }
 
-/** index の列を削除する。columns が1個のときは何もしない（削除列を起点に指す上書き・結合も併せて破棄） */
+/** colSpan を差し替える。1（デフォルト）なら属性を持たせず、同値なら同一参照を返す */
+function withColSpan(span: IrTableCellSpan, colSpan: number): IrTableCellSpan {
+  if (colSpan === (span.colSpan ?? 1)) {
+    return span;
+  }
+  const { colSpan: _colSpan, ...rest } = span;
+  return colSpan === 1 ? rest : { ...rest, colSpan };
+}
+
+interface SpanExtent {
+  readonly row: number | "header";
+  readonly rowSpan: number;
+  readonly col: number;
+  readonly colSpan: number;
+}
+
+function extentsOverlap(a: SpanExtent, b: SpanExtent): boolean {
+  const rowsOverlap =
+    a.row === "header" || b.row === "header"
+      ? a.row === b.row
+      : a.row < b.row + b.rowSpan && b.row < a.row + a.rowSpan;
+  return rowsOverlap && a.col < b.col + b.colSpan && b.col < a.col + a.colSpan;
+}
+
+/**
+ * 列並び変更後の cellSpans を検証（M20）が通る形に整える。列範囲からのはみ出しと
+ * mergeSameValue 列への到達は colSpan を切り詰め、1×1 になった結合と先行する結合に
+ * 重なった結合は破棄する。
+ */
+function normalizeCellSpans(
+  columns: readonly IrColumn[],
+  spans: readonly IrTableCellSpan[],
+): readonly IrTableCellSpan[] {
+  const indexByKey = new Map(columns.map((column, i) => [column.key, i]));
+  const result: IrTableCellSpan[] = [];
+  const extents: SpanExtent[] = [];
+  for (const span of spans) {
+    const col = indexByKey.get(span.key);
+    if (col === undefined) {
+      result.push(span);
+      continue;
+    }
+    let colSpan = Math.min(span.colSpan ?? 1, columns.length - col);
+    for (let c = col + 1; c < col + colSpan; c += 1) {
+      if (columns[c]?.mergeSameValue === true) {
+        colSpan = c - col;
+        break;
+      }
+    }
+    const rowSpan = span.rowSpan ?? 1;
+    const extent: SpanExtent = { row: span.row, rowSpan, col, colSpan };
+    if (
+      (rowSpan === 1 && colSpan === 1) ||
+      extents.some((other) => extentsOverlap(other, extent))
+    ) {
+      continue;
+    }
+    result.push(withColSpan(span, colSpan));
+    extents.push(extent);
+  }
+  return result;
+}
+
+/**
+ * index の列を削除する。columns が1個のときは何もしない。削除列を起点に指す上書き・
+ * 結合は破棄し、削除列を被覆していた結合は colSpan を1列ぶん狭める（1×1 になれば破棄）。
+ */
 export function removeTableColumn(
   document: IrDocument,
   tableId: string,
@@ -156,7 +222,27 @@ export function removeTableColumn(
     const overrides = (table.cellOverrides ?? []).filter(
       (o) => o.key !== removed.key,
     );
-    const spans = (table.cellSpans ?? []).filter((s) => s.key !== removed.key);
+    const indexByKey = new Map(
+      table.columns.map((column, i) => [column.key, i]),
+    );
+    const spans = (table.cellSpans ?? []).flatMap((span) => {
+      if (span.key === removed.key) {
+        return [];
+      }
+      const origin = indexByKey.get(span.key);
+      const colSpan = span.colSpan ?? 1;
+      if (
+        origin === undefined ||
+        index <= origin ||
+        index >= origin + colSpan
+      ) {
+        return [span];
+      }
+      if (colSpan === 2 && (span.rowSpan ?? 1) === 1) {
+        return [];
+      }
+      return [withColSpan(span, colSpan - 1)];
+    });
     return withCellSpans(
       withCellOverrides({ ...table, columns }, overrides),
       spans,
@@ -164,7 +250,11 @@ export function removeTableColumn(
   });
 }
 
-/** index の列を delta 方向の隣と入れ替える。端では何もしない */
+/**
+ * index の列を delta 方向の隣と入れ替える。端では何もしない。入れ替えで成立しなくなる
+ * 結合（列範囲からのはみ出し・mergeSameValue 列への到達・他の結合との重なり）は
+ * 切り詰め・破棄する。
+ */
 export function moveTableColumn(
   document: IrDocument,
   tableId: string,
@@ -181,7 +271,10 @@ export function moveTableColumn(
     const columns = [...table.columns];
     columns[index] = neighbor;
     columns[target] = moved;
-    return { ...table, columns };
+    const next = { ...table, columns };
+    return table.cellSpans === undefined
+      ? next
+      : withCellSpans(next, normalizeCellSpans(columns, table.cellSpans));
   });
 }
 
