@@ -87,6 +87,9 @@ describe("ShortcutsDialog", () => {
     const dialog = container.querySelector<HTMLElement>(".apx-dialog");
     expect(dialog?.getAttribute("aria-label")).toBe("Keyboard shortcuts");
     expect(dialog?.textContent).toContain("Duplicate");
+    expect(dialog?.textContent).toContain("Arrow keys");
+    expect(dialog?.textContent).toContain("Hold Space");
+    expect(dialog?.textContent).not.toMatch(/[぀-ヿ一-鿿]/);
     expect(buttonByText("Close")).not.toBeUndefined();
   });
 });
