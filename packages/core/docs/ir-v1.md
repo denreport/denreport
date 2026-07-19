@@ -172,6 +172,8 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 | `gridWidth` | number | 任意 | `0.25` | 内部罫線（行・列の区切り線）の太さ（mm）。0より大きい値 |
 | `frameStyle` | `"solid" \| "dotted" \| "dashed" \| "dashdot" \| "dashdotdot"` | 任意 | `"solid"` | 外枠の線種 |
 | `gridStyle` | `"solid" \| "dotted" \| "dashed" \| "dashdot" \| "dashdotdot"` | 任意 | `"solid"` | 内部罫線（行・列の区切り線）の線種 |
+| `cellOverrides` | CellOverride[] | 任意 | — | セル固定値上書き。`{ row, key, value }`（row は0以上の整数の通し行番号、key は `columns[].key`、value は表示する文字列）の配列。(row, key) は table 内で一意（M13）。出力行数 `max(n, minRows)` 以上の row を指す上書きは不活性 |
+| `cellSpans` | CellSpan[] | 任意 | — | 静的セル結合の宣言（下表と5.3節。検証は M20） |
 | `style` | string | 任意 | — | 名前付きスタイル（3.9節）への参照 |
 
 Column:
@@ -182,6 +184,16 @@ Column:
 | `label` | string | 必須 | — | ヘッダ表示文字列（任意の文字列。日本語可） |
 | `width` | number | 必須 | — | 列幅（mm） |
 | `align` | `"left" \| "center" \| "right" \| "justify"` | 任意 | `"left"` | 明細セルの揃え（ヘッダは常に center。5.3節） |
+| `mergeSameValue` | boolean | 任意 | `false` | データ駆動の縦結合。連続する同一値の明細行を1セルに結合する（5.3節） |
+
+CellSpan（`cellSpans` の要素）:
+
+| 属性 | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `row` | number \| `"header"` | 必須 | — | 起点の明細行番号（0始まりの通し行番号）または `"header"`（ヘッダ行の横結合。このとき rowSpan は 1） |
+| `key` | string | 必須 | — | 起点列の `columns[].key` |
+| `rowSpan` | number | 任意 | `1` | 縦に結合する行数（1以上の整数） |
+| `colSpan` | number | 任意 | `1` | 右方向に結合する列数（1以上の整数） |
 
 表の幅は Σ列幅から導出し、属性としては持たない。表の高さ・ページ数は行数に依存するため
 IR 単体では確定せず、データ結合時に決まる（5.3節）。明細が `maxY` を超える場合はエラーでは
@@ -489,6 +501,33 @@ table のチャンク p（1..P）は p ページ目に置く（表は常に1ペ�
 
 行の途中分割はしない（行は丸ごと次チャンクへ送る）。
 
+**セル結合** — 静的結合（`cellSpans`。3.5節）とデータ駆動結合（Column の
+`mergeSameValue`）は、上記の単一チャンク幾何に対する例外として適用する。
+
+- 結合範囲の決定:
+  - 静的: 各宣言 `{ row, key, rowSpan, colSpan }` は、通し行番号 `row` の列 `key` を
+    起点に `rowSpan` 行 × `colSpan` 列を1結合とする。`row: "header"` はヘッダ行の
+    横結合（`colSpan` のみ。各チャンクのヘッダ再表示に同様に適用する）。起点が
+    出力行数 `m` 以上の宣言は不活性、`rowSpan` が `m` からはみ出す分は切り詰める
+    （出力行数を超える `cellOverrides` と同じ規約）。
+  - データ駆動: `mergeSameValue: true` の各列で、`cellOverrides` 適用後のセル値が
+    連続して一致する長さ2以上の極大区間を1結合とする。対象は明細行のみ。
+    空文字列は結合しない（`minRows` の埋め草空行が誤結合しないため）。
+    自列より左にある `mergeSameValue` 列の区間境界では、自列の区間も切る
+    （左の列でグループが変わったら右の列の結合も切れる）。`cellSpans` の被覆範囲は
+    `mergeSameValue: true` の列に掛かってはならない（M20）。
+- ページ跨ぎ（内容複製）: 結合はチャンク境界で打ち切り、各チャンク内で独立の結合として
+  描く。継続チャンク側では、その先頭行が新たな起点となり、その行のデータの値を
+  再描画する。結合はページ割り（チャンクサイズ・ページ数）・行容量計算に一切影響しない。
+- 描画: 結合の起点セルにのみテキストを描く（幅 = 対象列幅の合計 − 2×`PADDING_X`、
+  高さ = `rowSpan × rowHeight − CELL_TEXT_OFFSET_Y`、縦位置は従来と同じ上端オフセット
+  基準、揃えは起点列の `align`・ヘッダは center）。被覆セル（起点以外）の値は描画しない
+  （データは変更しない）。結合範囲の内部にあたる水平・垂直罫線は、その区間を除いた
+  残り区間に分節して描く。結合と交差しない罫線は従来どおり全幅・全高の1本のまま出力する。
+  縞（`stripeColor`）は従来どおり行単位で描き、結合と独立とする。
+- 被覆セルを指す `cellOverrides` は不活性。起点セルへの上書きは従来どおり値として
+  描画され、データ駆動結合はその適用後の値で判定する。
+
 **(5) pageNumber の置換** — 割り当てられた各ページ p で text 相当
 （同じ x/y/w/h/fontSize/align/lineHeight、内容 = `format` 中の `{n}` を p、`{N}` を N で
 置換した文字列。その他の文字は字義どおり）。
@@ -560,6 +599,7 @@ S 群通過後、任意属性のデフォルト（3節の各表。`maxY = page.h
 | M15 | 要素（flex の子孫を含む）の `style` が `styles` 内に存在する `name` を指す |
 | M18 | 要素（flex の子孫を含む）の `name`（指定時）が64文字以内である |
 | M19 | 要素（flex の子孫を含む）の `rotate`（指定時）が有限の number で `−360 ≤ rotate ≤ 360` である |
+| M20 | `cellSpans` の `row` が0以上の整数または `"header"`、`key` が `columns[].key` のいずれか、`rowSpan`・`colSpan` が1以上の整数で少なくとも一方が2以上、結合範囲が列範囲に収まり、`"header"` 行では `rowSpan` が1であり、結合範囲同士が table 内で重ならず、`mergeSameValue` が true の列に掛からない |
 
 ### C 群（データ結合時。実装は書き出し器側）
 
@@ -634,6 +674,13 @@ export interface IrFont {
 export interface IrColumn {
   readonly key: string; readonly label: string;
   readonly width: number; readonly align: IrAlign;   // 正規化後はデフォルト適用済み
+  readonly mergeSameValue?: boolean;                 // 省略時 false（正規化でも埋めない）
+}
+export interface IrTableCellSpan {
+  readonly row: number | "header";
+  readonly key: string;
+  readonly rowSpan?: number;                         // 省略時 1（正規化でも埋めない）
+  readonly colSpan?: number;                         // 省略時 1（正規化でも埋めない）
 }
 export interface IrStyleAttrs {
   readonly fontSize?: number; readonly align?: IrAlign; readonly lineHeight?: number;
@@ -716,7 +763,7 @@ export interface IrDocument {
 }
 
 // errors.ts
-export type IrRuleId = "S01" | /* ... */ | "S15" | "M01" | /* ... */ | "M19" | "C01" | "C02" | "C03" | "C04" | "Q01"
+export type IrRuleId = "S01" | /* ... */ | "S15" | "M01" | /* ... */ | "M20" | "C01" | "C02" | "C03" | "C04" | "Q01"
   | "F01" | "F02" | "F03" | "F04" | "F05" | "F06";
 export interface IrError { readonly rule: IrRuleId; readonly path: string; readonly message: string }
 
@@ -751,6 +798,29 @@ export function validateIr(document: IrDocument): readonly IrError[];
 
 // invoice.ts — validateIr とは別関数。docType が無い文書には走らず常に空配列
 export function checkQualifiedInvoice(document: IrDocument): readonly IrError[];
+
+// table-merge.ts — 5.3節のセル結合ジオメトリの唯一の実装。純関数。
+// lowerIr とデザイナーのキャンバス描画が共用する
+export interface SkipRange { readonly start: number; readonly end: number }
+export interface TableMergeRect {
+  readonly q: number | "header";                    // チャンク内行番号（"header" はヘッダ行）
+  readonly col: number;
+  readonly rowSpan: number;                         // チャンク境界での打ち切り後の値
+  readonly colSpan: number;
+}
+export interface TableChunkMerges {
+  readonly rects: readonly TableMergeRect[];
+  readonly covered: ReadonlySet<string>;            // 起点以外の被覆セル（キーは "q:col"）
+  readonly horizontalSkips: ReadonlyMap<number, readonly SkipRange[]>;
+  readonly verticalSkips: ReadonlyMap<number, readonly SkipRange[]>;
+}
+export function computeChunkMerges(
+  table: IrTableElement, rows: readonly IrTableRow[],  // rows は cellOverrides 適用済み
+  rowOffset: number, chunkSize: number,
+): TableChunkMerges;
+export function subtractSkips(                        // 罫線の分節（skips を除いた残り区間）
+  start: number, end: number, skips: readonly SkipRange[] | undefined,
+): readonly SkipRange[];
 
 // text-layout.ts — 2.1節・2.2節の折り返し・行頭禁則・均等割付字間の唯一の実装。純関数。
 // 字幅の実測（フォントファイル読み取り）は呼び出し側（書き出し器）の責務

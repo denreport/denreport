@@ -46,6 +46,7 @@ export type IrRuleId =
   | "M17"
   | "M18"
   | "M19"
+  | "M20"
   | "C01"
   | "C02"
   | "C03"
@@ -110,6 +111,7 @@ export const IR_RULES: Readonly<Record<IrRuleId, string>> = {
   M17: "rect の cornerRadius が 0 以上 min(w, h) / 2 以下であり、0 より大きい場合は borderStyle が solid（省略含む）である",
   M18: "要素（flex の子孫を含む）の name（指定時）が64文字以下である",
   M19: "要素（flex の子孫を含む）の rotate（指定時）が有限の number で −360 以上 360 以下である",
+  M20: 'cellSpans の row が0以上の整数または "header"、key が columns[].key のいずれか、rowSpan・colSpan が1以上の整数で少なくとも一方が2以上、結合範囲が列範囲に収まり、"header" 行では rowSpan が1であり、結合範囲同士が table 内で重ならず、mergeSameValue が true の列に掛からない',
   C01: "text の text・barcode の value 内の {key} トークンのキーがデータに存在し、値が string である（キー欠落は警告、値が string でない場合はエラー）",
   C02: "table の bind キーがデータに存在し、値がオブジェクト配列で全行が全 columns[].key に string 値を持つ（キー欠落は警告、値・形が不正な場合はエラー）",
   C03: "2ページ以上に展開される表は文書内で同時に1つまでである",

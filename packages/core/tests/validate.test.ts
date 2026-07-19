@@ -1157,6 +1157,141 @@ describe("validateIr", () => {
     });
   });
 
+  describe("M20", () => {
+    function withTableMerge(
+      overrides: Partial<Extract<IrElement, { type: "table" }>>,
+    ): IrDocument {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.type === "table"
+          ? {
+              ...el,
+              columns: [
+                { key: "a", label: "A", width: 20, align: "left" as const },
+                { key: "b", label: "B", width: 20, align: "left" as const },
+                { key: "c", label: "C", width: 20, align: "left" as const },
+              ],
+              ...overrides,
+            }
+          : el,
+      );
+      return withElements(doc, elements);
+    }
+
+    it("accepts a document without cellSpans", () => {
+      expectNoRule(validateIr(baseDocument()), "M20");
+    });
+
+    it("accepts valid header/body spans alongside mergeSameValue on other columns", () => {
+      const doc = withTableMerge({
+        columns: [
+          {
+            key: "a",
+            label: "A",
+            width: 20,
+            align: "left",
+            mergeSameValue: true,
+          },
+          { key: "b", label: "B", width: 20, align: "left" },
+          { key: "c", label: "C", width: 20, align: "left" },
+        ],
+        cellSpans: [
+          { row: "header", key: "b", colSpan: 2 },
+          { row: 0, key: "b", rowSpan: 2, colSpan: 2 },
+        ],
+      });
+      expectNoRule(validateIr(doc), "M20");
+    });
+
+    it.each([-1, 1.5])("rejects row = %d", (row) => {
+      const doc = withTableMerge({
+        cellSpans: [{ row, key: "a", rowSpan: 2 }],
+      });
+      expectRule(validateIr(doc), "M20", "cellSpans[0].row");
+    });
+
+    it("rejects a key that is not a column key", () => {
+      const doc = withTableMerge({
+        cellSpans: [{ row: 0, key: "zzz", rowSpan: 2 }],
+      });
+      expectRule(validateIr(doc), "M20", "cellSpans[0].key");
+    });
+
+    it("rejects non-positive or non-integer rowSpan/colSpan", () => {
+      const doc = withTableMerge({
+        cellSpans: [{ row: 0, key: "a", rowSpan: 0, colSpan: 1.5 }],
+      });
+      const errors = validateIr(doc);
+      expectRule(errors, "M20", "cellSpans[0].rowSpan");
+      expectRule(errors, "M20", "cellSpans[0].colSpan");
+    });
+
+    it("rejects a 1×1 span", () => {
+      const doc = withTableMerge({ cellSpans: [{ row: 0, key: "a" }] });
+      expectRule(validateIr(doc), "M20", "cellSpans[0]");
+    });
+
+    it('rejects rowSpan > 1 on the "header" row', () => {
+      const doc = withTableMerge({
+        cellSpans: [{ row: "header", key: "a", rowSpan: 2, colSpan: 2 }],
+      });
+      expectRule(validateIr(doc), "M20", "cellSpans[0].rowSpan");
+    });
+
+    it("rejects a colSpan extending past the last column", () => {
+      const doc = withTableMerge({
+        cellSpans: [{ row: 0, key: "b", colSpan: 3 }],
+      });
+      expectRule(validateIr(doc), "M20", "cellSpans[0].colSpan");
+    });
+
+    it("rejects overlapping span ranges (body×body, header×header)", () => {
+      const body = withTableMerge({
+        cellSpans: [
+          { row: 0, key: "a", rowSpan: 3 },
+          { row: 2, key: "a", rowSpan: 2 },
+        ],
+      });
+      expectRule(validateIr(body), "M20", "cellSpans[1]");
+
+      const header = withTableMerge({
+        cellSpans: [
+          { row: "header", key: "a", colSpan: 2 },
+          { row: "header", key: "b", colSpan: 2 },
+        ],
+      });
+      expectRule(validateIr(header), "M20", "cellSpans[1]");
+    });
+
+    it("accepts a header span and a body span on the same columns (no row overlap)", () => {
+      const doc = withTableMerge({
+        cellSpans: [
+          { row: "header", key: "a", colSpan: 2 },
+          { row: 0, key: "a", colSpan: 2 },
+        ],
+      });
+      expectNoRule(validateIr(doc), "M20");
+    });
+
+    it("rejects a span covering a mergeSameValue column", () => {
+      const doc = withTableMerge({
+        columns: [
+          { key: "a", label: "A", width: 20, align: "left" },
+          {
+            key: "b",
+            label: "B",
+            width: 20,
+            align: "left",
+            mergeSameValue: true,
+          },
+          { key: "c", label: "C", width: 20, align: "left" },
+        ],
+        cellSpans: [{ row: 0, key: "a", colSpan: 2 }],
+      });
+      expectRule(validateIr(doc), "M20", "cellSpans[0]");
+    });
+  });
+
   describe("F02-F06 (footnotes)", () => {
     function withFootnotes(
       doc: IrDocument,

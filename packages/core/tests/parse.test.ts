@@ -4,6 +4,7 @@ import { parseIr } from "../src/ir/parse";
 import { validateIr } from "../src/ir/validate";
 import invoiceFixture from "./fixtures/invoice.json";
 import invoiceMultipageFixture from "./fixtures/invoice-multipage.json";
+import tableMergeFixture from "./fixtures/table-merge.json";
 
 // biome-ignore lint/suspicious/noExplicitAny: 不正フィクスチャは仕様外の値も組み立てる必要がある
 type Raw = any;
@@ -436,6 +437,65 @@ describe("parseIr", () => {
       expectRule(parse(doc), "S08b", "elements[0].cellOverrides[0].row");
     });
 
+    it("S08b: rejects cellSpans that is not an array and a non-object entry", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+          cellSpans: "nope",
+        },
+      ];
+      expectRule(parse(doc), "S08b", "elements[0].cellSpans");
+
+      doc.elements[0].cellSpans = [42];
+      expectRule(parse(doc), "S08b", "elements[0].cellSpans[0]");
+    });
+
+    it('S08b: rejects a cellSpans row that is neither a number nor "header"', () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+          cellSpans: [{ row: "footer", key: "a", colSpan: 2 }],
+        },
+      ];
+      expectRule(parse(doc), "S08b", "elements[0].cellSpans[0].row");
+    });
+
+    it("S08b: rejects non-number rowSpan/colSpan and a non-boolean mergeSameValue", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10, mergeSameValue: "yes" }],
+          cellSpans: [{ row: 0, key: "a", rowSpan: "2", colSpan: true }],
+        },
+      ];
+      expectRule(parse(doc), "S08b", "elements[0].cellSpans[0].rowSpan");
+      expectRule(parse(doc), "S08b", "elements[0].cellSpans[0].colSpan");
+      expectRule(parse(doc), "S08b", "elements[0].columns[0].mergeSameValue");
+    });
+
     it("S08i: rejects image missing src", () => {
       const doc = baseDoc();
       doc.elements = [{ type: "image", id: "img1", x: 0, y: 0, w: 10, h: 10 }];
@@ -604,6 +664,24 @@ describe("parseIr", () => {
         },
       ];
       expectRule(parse(doc), "S09", "elements[0].cellOverrides[0].note");
+    });
+
+    it("rejects an unknown cellSpans entry attribute", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+          cellSpans: [{ row: 0, key: "a", rowSpan: 2, value: "extra" }],
+        },
+      ];
+      expectRule(parse(doc), "S09", "elements[0].cellSpans[0].value");
     });
 
     it("rejects text.bind with a migration message", () => {
@@ -1604,6 +1682,53 @@ describe("parseIr", () => {
       });
     });
 
+    it("preserves cellSpans and mergeSameValue without filling span defaults", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [
+            { key: "a", label: "A", width: 10, mergeSameValue: true },
+            { key: "b", label: "B", width: 10 },
+          ],
+          cellSpans: [
+            { row: "header", key: "b", colSpan: 1 },
+            { row: 2, key: "b", rowSpan: 3 },
+          ],
+        },
+      ];
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const el = result.document.elements[0];
+      expect(el).toMatchObject({
+        columns: [{ key: "a", mergeSameValue: true }, { key: "b" }],
+        cellSpans: [
+          { row: "header", key: "b", colSpan: 1 },
+          { row: 2, key: "b", rowSpan: 3 },
+        ],
+      });
+      if (el?.type !== "table") return;
+      expect(el.columns[1]).not.toHaveProperty("mergeSameValue");
+      expect(el.cellSpans?.[0]).not.toHaveProperty("rowSpan");
+      expect(el.cellSpans?.[1]).not.toHaveProperty("colSpan");
+      expect(el).not.toHaveProperty("cellOverrides");
+    });
+
+    it("does not add a cellSpans attribute when omitted", () => {
+      const result = parse(baseDoc());
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const el = result.document.elements.find((e) => e.type === "table");
+      expect(el).not.toHaveProperty("cellSpans");
+    });
+
     it("does not add a styles attribute when omitted", () => {
       const result = parse(baseDoc());
       expect(result.ok).toBe(true);
@@ -1918,6 +2043,7 @@ describe("parseIr", () => {
     it.each([
       ["invoice.json", invoiceFixture],
       ["invoice-multipage.json", invoiceMultipageFixture],
+      ["table-merge.json", tableMergeFixture],
     ] as const)("parses and validates %s with no errors", (_name, fixture) => {
       const result = parseIr(JSON.stringify(fixture));
       expect(result.ok).toBe(true);

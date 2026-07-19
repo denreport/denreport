@@ -74,12 +74,18 @@ export interface IrFont {
   readonly boldItalic?: string;
 }
 
-/** A table column: its data key, header label, width (mm), and text alignment. */
+/**
+ * A table column: its data key, header label, width (mm), and text alignment.
+ * When `mergeSameValue` is true, runs of detail rows with the same
+ * (override-applied) non-empty cell value merge into one vertical cell,
+ * cut at group boundaries of any `mergeSameValue` column to its left.
+ */
 export interface IrColumn {
   readonly key: string;
   readonly label: string;
   readonly width: number;
   readonly align: IrAlign;
+  readonly mergeSameValue?: boolean;
 }
 
 interface IrElementCommon {
@@ -154,6 +160,19 @@ export interface IrTableCellOverride {
   readonly value: string;
 }
 
+/**
+ * A static cell merge: starting at (`row`, `key`), `rowSpan` rows × `colSpan`
+ * columns (each defaulting to 1) are drawn as a single cell. `row: "header"`
+ * merges header cells horizontally (then `rowSpan` must be 1). Rule M20
+ * constrains ranges; merges are cut at page-chunk boundaries.
+ */
+export interface IrTableCellSpan {
+  readonly row: number | "header";
+  readonly key: string;
+  readonly rowSpan?: number;
+  readonly colSpan?: number;
+}
+
 /** A data-bound table that can expand across multiple pages (see rule M09 for pagination geometry constraints). */
 export interface IrTableElement extends IrElementCommon {
   readonly type: "table";
@@ -172,6 +191,7 @@ export interface IrTableElement extends IrElementCommon {
   readonly frameStyle?: IrStrokeStyle;
   readonly gridStyle?: IrStrokeStyle;
   readonly cellOverrides?: readonly IrTableCellOverride[];
+  readonly cellSpans?: readonly IrTableCellSpan[];
   readonly stripeColor?: string;
   readonly style?: string;
 }

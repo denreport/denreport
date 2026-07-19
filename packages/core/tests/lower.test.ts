@@ -899,6 +899,239 @@ describe("lowerIr — cellOverrides", () => {
   });
 });
 
+describe("lowerIr — cell merges", () => {
+  const MERGE_COLUMNS: readonly IrColumn[] = [
+    {
+      key: "name",
+      label: "品目",
+      width: 90,
+      align: "left",
+      mergeSameValue: true,
+    },
+    { key: "amount", label: "金額", width: 35, align: "right" },
+  ];
+
+  function textsOf(page: readonly LoweredElement[], content: string) {
+    return page.filter((el) => el.type === "text" && el.content === content);
+  }
+
+  function linesOf(page: readonly LoweredElement[]) {
+    return page.filter(
+      (el): el is Extract<LoweredElement, { type: "line" }> =>
+        el.type === "line",
+    );
+  }
+
+  it("produces a deeply equal result to a plain table when cellSpans is empty and mergeSameValue is false (regression)", () => {
+    const withAttributes = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        columns: COLUMNS.map((col) => ({ ...col, mergeSameValue: false })),
+        cellSpans: [],
+      }),
+    );
+    const without = docOf(
+      table({ maxY: 100, headerHeight: 10, rowHeight: 10 }),
+    );
+    const data: IrData = { items: rowsOf(3) };
+    const resultWith = lowerIr(withAttributes, data);
+    const resultWithout = lowerIr(without, data);
+    expect(resultWith.ok).toBe(true);
+    if (!resultWith.ok || !resultWithout.ok)
+      throw new Error("expected success");
+    expect(resultWith.document).toEqual(resultWithout.document);
+  });
+
+  it("merges consecutive equal values: one origin text, taller box, and a split horizontal line", () => {
+    const doc = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        columns: MERGE_COLUMNS,
+      }),
+    );
+    const result = lowerIr(doc, {
+      items: [
+        { name: "A", amount: "1" },
+        { name: "A", amount: "2" },
+        { name: "B", amount: "3" },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const page = result.document.pages[0] ?? [];
+    const origins = textsOf(page, "A");
+    expect(origins).toHaveLength(1);
+    expect(origins[0]).toMatchObject({
+      y: 10 + 2.0,
+      h: 2 * 10 - 2.0,
+      w: 90 - 2 * 1.5,
+    });
+    expect(textsOf(page, "1")).toHaveLength(1);
+    expect(textsOf(page, "2")).toHaveLength(1);
+
+    const horizontal = linesOf(page).filter(
+      (l) => l.orientation === "horizontal",
+    );
+    // 結合内部の行境界 y=20 は amount 列のぶんだけ残る
+    const atMergedBoundary = horizontal.filter((l) => l.y === 20);
+    expect(atMergedBoundary).toEqual([
+      expect.objectContaining({ x: 15 + 90, length: 35 }),
+    ]);
+    const atHeaderLine = horizontal.filter((l) => l.y === 10);
+    expect(atHeaderLine).toEqual([
+      expect.objectContaining({ x: 15, length: 125 }),
+    ]);
+  });
+
+  it("merges header cells with a static colSpan and shortens the vertical line to the body", () => {
+    const doc = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        cellSpans: [{ row: "header", key: "name", colSpan: 2 }],
+      }),
+    );
+    const result = lowerIr(doc, { items: rowsOf(2) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const page = result.document.pages[0] ?? [];
+    expect(textsOf(page, "金額")).toHaveLength(0);
+    expect(textsOf(page, "品目")).toEqual([
+      expect.objectContaining({ w: 125 - 2 * 1.5 }),
+    ]);
+    const vertical = linesOf(page).filter((l) => l.orientation === "vertical");
+    expect(vertical).toEqual([
+      expect.objectContaining({ x: 15 + 90, y: 10, length: 2 * 10 }),
+    ]);
+  });
+
+  it("merges body cells horizontally with a static colSpan (covered cell draws no text)", () => {
+    const doc = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        cellSpans: [{ row: 0, key: "name", colSpan: 2 }],
+      }),
+    );
+    const result = lowerIr(doc, { items: rowsOf(2) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const page = result.document.pages[0] ?? [];
+    expect(textsOf(page, "item0")).toEqual([
+      expect.objectContaining({ w: 125 - 2 * 1.5 }),
+    ]);
+    expect(textsOf(page, "0")).toHaveLength(0);
+    expect(textsOf(page, "1")).toHaveLength(1);
+    const vertical = linesOf(page).filter((l) => l.orientation === "vertical");
+    // 行0 の内側だけ切れて、ヘッダ帯と行1 が残る
+    expect(vertical).toEqual([
+      expect.objectContaining({ x: 105, y: 0, length: 10 }),
+      expect.objectContaining({ x: 105, y: 20, length: 10 }),
+    ]);
+  });
+
+  it("re-draws the merged value on the continuation page (content duplication across the page break)", () => {
+    // kFirst=9, kCont(continuationY=40)=5。11行の同一値は 9+2 に割れ、両ページに起点ができる
+    const doc = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        continuationY: 40,
+        columns: MERGE_COLUMNS,
+      }),
+    );
+    const items = Array.from({ length: 11 }, (_, i) => ({
+      name: "同一値",
+      amount: `${i}`,
+    }));
+    const result = lowerIr(doc, { items });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.document.pageCount).toBe(2);
+    const page1 = result.document.pages[0] ?? [];
+    const page2 = result.document.pages[1] ?? [];
+    expect(textsOf(page1, "同一値")).toEqual([
+      expect.objectContaining({ h: 9 * 10 - 2.0 }),
+    ]);
+    expect(textsOf(page2, "同一値")).toEqual([
+      expect.objectContaining({ y: 40 + 10 + 2.0, h: 2 * 10 - 2.0 }),
+    ]);
+  });
+
+  it("keeps pageCount and stripe rects unchanged by merges", () => {
+    const data: IrData = {
+      items: Array.from({ length: 11 }, () => ({ name: "X", amount: "1" })),
+    };
+    const merged = lowerIr(
+      docOf(
+        table({
+          maxY: 100,
+          headerHeight: 10,
+          rowHeight: 10,
+          continuationY: 40,
+          columns: MERGE_COLUMNS,
+          stripeColor: "#eeeeee",
+        }),
+      ),
+      data,
+    );
+    const plain = lowerIr(
+      docOf(
+        table({
+          maxY: 100,
+          headerHeight: 10,
+          rowHeight: 10,
+          continuationY: 40,
+          stripeColor: "#eeeeee",
+        }),
+      ),
+      data,
+    );
+    expect(merged.ok && plain.ok).toBe(true);
+    if (!merged.ok || !plain.ok) throw new Error("expected success");
+    expect(merged.document.pageCount).toBe(plain.document.pageCount);
+    const stripesOf = (pages: readonly (readonly LoweredElement[])[]) =>
+      pages.map((page) =>
+        page.filter((el) => el.type === "rect" && el.fillColor === "#eeeeee"),
+      );
+    expect(stripesOf(merged.document.pages)).toEqual(
+      stripesOf(plain.document.pages),
+    );
+  });
+
+  it("keeps an out-of-range static span inactive and clips an overflowing rowSpan", () => {
+    const doc = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        cellSpans: [
+          { row: 5, key: "name", rowSpan: 2 },
+          { row: 1, key: "name", rowSpan: 9 },
+        ],
+      }),
+    );
+    const plain = docOf(table({ maxY: 100, headerHeight: 10, rowHeight: 10 }));
+    const data: IrData = { items: rowsOf(2) };
+    const result = lowerIr(doc, data);
+    const plainResult = lowerIr(plain, data);
+    expect(result.ok && plainResult.ok).toBe(true);
+    if (!result.ok || !plainResult.ok) throw new Error("expected success");
+    expect(result.document.pageCount).toBe(plainResult.document.pageCount);
+    // 行1 起点の結合は出力2行に切り詰められ、行5 起点は不活性
+    const page = result.document.pages[0] ?? [];
+    const item1 = textsOf(page, "item1");
+    expect(item1).toEqual([expect.objectContaining({ h: 10 - 2.0 })]);
+  });
+});
+
 describe("lowerIr — pageNumber", () => {
   it("replaces {n} and {N} and keeps other characters literal", () => {
     const doc = docOf(

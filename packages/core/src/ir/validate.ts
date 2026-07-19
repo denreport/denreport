@@ -81,6 +81,7 @@ export function validateIr(document: IrDocument): readonly IrError[] {
     ...checkM17(walked),
     ...checkM18(walked),
     ...checkM19(walked),
+    ...checkM20(document),
     ...checkF02(document),
     ...checkF03(document),
     ...checkF04(document, walked),
@@ -931,6 +932,142 @@ function checkM19(walked: readonly WalkedElement[]): IrError[] {
       );
     }
   }
+  return errors;
+}
+
+interface SpanExtent {
+  readonly index: number;
+  readonly row: number | "header";
+  readonly rowSpan: number;
+  readonly col: number;
+  readonly colSpan: number;
+}
+
+function extentsOverlap(a: SpanExtent, b: SpanExtent): boolean {
+  const rowsOverlap =
+    a.row === "header" || b.row === "header"
+      ? a.row === b.row
+      : a.row < b.row + b.rowSpan && b.row < a.row + a.rowSpan;
+  const colsOverlap = a.col < b.col + b.colSpan && b.col < a.col + a.colSpan;
+  return rowsOverlap && colsOverlap;
+}
+
+function checkM20(document: IrDocument): IrError[] {
+  const errors: IrError[] = [];
+  document.elements.forEach((el, i) => {
+    if (el.type !== "table" || el.cellSpans === undefined) return;
+    const path = `elements[${i}]`;
+    const indexByKey = new Map(el.columns.map((col, j) => [col.key, j]));
+    const extents: SpanExtent[] = [];
+    el.cellSpans.forEach((span, j) => {
+      const entryPath = `${path}.cellSpans[${j}]`;
+      let ok = true;
+      if (
+        span.row !== "header" &&
+        (!Number.isInteger(span.row) || span.row < 0)
+      ) {
+        errors.push(
+          err(
+            "M20",
+            `${entryPath}.row`,
+            'row は0以上の整数または "header" である必要があります',
+          ),
+        );
+        ok = false;
+      }
+      const col = indexByKey.get(span.key);
+      if (col === undefined) {
+        errors.push(
+          err(
+            "M20",
+            `${entryPath}.key`,
+            `key "${span.key}" が table の columns にありません`,
+          ),
+        );
+        ok = false;
+      }
+      const rowSpan = span.rowSpan ?? 1;
+      const colSpan = span.colSpan ?? 1;
+      for (const [field, value] of [
+        ["rowSpan", rowSpan],
+        ["colSpan", colSpan],
+      ] as const) {
+        if (!Number.isInteger(value) || value < 1) {
+          errors.push(
+            err(
+              "M20",
+              `${entryPath}.${field}`,
+              `${field} は1以上の整数である必要があります`,
+            ),
+          );
+          ok = false;
+        }
+      }
+      if (ok && rowSpan === 1 && colSpan === 1) {
+        errors.push(
+          err(
+            "M20",
+            entryPath,
+            "rowSpan・colSpan の少なくとも一方は2以上である必要があります",
+          ),
+        );
+        ok = false;
+      }
+      if (span.row === "header" && rowSpan !== 1) {
+        errors.push(
+          err(
+            "M20",
+            `${entryPath}.rowSpan`,
+            '"header" 行では rowSpan は1である必要があります',
+          ),
+        );
+        ok = false;
+      }
+      if (ok && col !== undefined && col + colSpan > el.columns.length) {
+        errors.push(
+          err("M20", `${entryPath}.colSpan`, "結合範囲が列範囲を超えています"),
+        );
+        ok = false;
+      }
+      if (ok && col !== undefined) {
+        for (let c = col; c < col + colSpan; c++) {
+          if (el.columns[c]?.mergeSameValue === true) {
+            errors.push(
+              err(
+                "M20",
+                entryPath,
+                `結合範囲が mergeSameValue の列 "${el.columns[c]?.key}" に掛かっています`,
+              ),
+            );
+            ok = false;
+            break;
+          }
+        }
+      }
+      if (ok && col !== undefined) {
+        extents.push({ index: j, row: span.row, rowSpan, col, colSpan });
+      }
+    });
+    for (let a = 0; a < extents.length; a++) {
+      for (let b = a + 1; b < extents.length; b++) {
+        const first = extents[a];
+        const second = extents[b];
+        if (
+          first !== undefined &&
+          second !== undefined &&
+          extentsOverlap(first, second)
+        ) {
+          errors.push(
+            err(
+              "M20",
+              `${path}.cellSpans[${second.index}]`,
+              `結合範囲が cellSpans[${first.index}] と重なっています`,
+            ),
+          );
+        }
+      }
+    }
+  });
   return errors;
 }
 

@@ -624,6 +624,14 @@ function checkS08Table(
     checkRequiredType(errors, col, "label", colPath, "S08b", "string");
     checkRequiredType(errors, col, "width", colPath, "S08b", "number");
     checkOptionalType(errors, col, "align", colPath, "S08b", "string");
+    checkOptionalType(
+      errors,
+      col,
+      "mergeSameValue",
+      colPath,
+      "S08b",
+      "boolean",
+    );
   });
 
   if ("cellOverrides" in value) {
@@ -652,6 +660,59 @@ function checkS08Table(
         checkRequiredType(errors, entry, "row", entryPath, "S08b", "number");
         checkRequiredType(errors, entry, "key", entryPath, "S08b", "string");
         checkRequiredType(errors, entry, "value", entryPath, "S08b", "string");
+      });
+    }
+  }
+
+  if ("cellSpans" in value) {
+    const cellSpans = value.cellSpans;
+    if (!Array.isArray(cellSpans)) {
+      errors.push(
+        err(
+          "S08b",
+          `${path}.cellSpans`,
+          "cellSpans は配列である必要があります",
+        ),
+      );
+    } else {
+      cellSpans.forEach((entry, j) => {
+        const entryPath = `${path}.cellSpans[${j}]`;
+        if (!isPlainObject(entry)) {
+          errors.push(
+            err(
+              "S08b",
+              entryPath,
+              "cellSpans の要素はオブジェクトである必要があります",
+            ),
+          );
+          return;
+        }
+        if (!isNumber(entry.row) && entry.row !== "header") {
+          errors.push(
+            err(
+              "S08b",
+              `${entryPath}.row`,
+              'row は number または "header" である必要があります',
+            ),
+          );
+        }
+        checkRequiredType(errors, entry, "key", entryPath, "S08b", "string");
+        checkOptionalType(
+          errors,
+          entry,
+          "rowSpan",
+          entryPath,
+          "S08b",
+          "number",
+        );
+        checkOptionalType(
+          errors,
+          entry,
+          "colSpan",
+          entryPath,
+          "S08b",
+          "number",
+        );
       });
     }
   }
@@ -809,6 +870,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "frameStyle",
     "gridStyle",
     "cellOverrides",
+    "cellSpans",
     "stripeColor",
     "style",
   ],
@@ -859,8 +921,15 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "rotate",
   ],
 };
-const COLUMN_ALLOWED_KEYS = ["key", "label", "width", "align"];
+const COLUMN_ALLOWED_KEYS = [
+  "key",
+  "label",
+  "width",
+  "align",
+  "mergeSameValue",
+];
 const CELL_OVERRIDE_ALLOWED_KEYS = ["row", "key", "value"];
+const CELL_SPAN_ALLOWED_KEYS = ["row", "key", "rowSpan", "colSpan"];
 
 function computeAllowedKeys(
   value: Record<string, unknown>,
@@ -928,6 +997,22 @@ function checkUnknownAttributes(
             err(
               "S09",
               `${path}.cellOverrides[${j}].${key}`,
+              `未知の属性 "${key}" です`,
+            ),
+          );
+        }
+      }
+    });
+  }
+  if (type === "table" && Array.isArray(value.cellSpans)) {
+    value.cellSpans.forEach((entry, j) => {
+      if (!isPlainObject(entry)) return;
+      for (const key of Object.keys(entry)) {
+        if (!CELL_SPAN_ALLOWED_KEYS.includes(key)) {
+          errors.push(
+            err(
+              "S09",
+              `${path}.cellSpans[${j}].${key}`,
               `未知の属性 "${key}" です`,
             ),
           );
@@ -1207,6 +1292,9 @@ function normalizeElement(
           label: col.label as string,
           width: col.width as number,
           align: (col.align as IrAlign | undefined) ?? "left",
+          ...("mergeSameValue" in col
+            ? { mergeSameValue: col.mergeSameValue as boolean }
+            : {}),
         }),
       );
       const cellOverrides =
@@ -1215,6 +1303,15 @@ function normalizeElement(
               row: o.row as number,
               key: o.key as string,
               value: o.value as string,
+            }))
+          : undefined;
+      const cellSpans =
+        "cellSpans" in value
+          ? (value.cellSpans as Record<string, unknown>[]).map((s) => ({
+              row: s.row as number | "header",
+              key: s.key as string,
+              ...("rowSpan" in s ? { rowSpan: s.rowSpan as number } : {}),
+              ...("colSpan" in s ? { colSpan: s.colSpan as number } : {}),
             }))
           : undefined;
       return {
@@ -1244,6 +1341,7 @@ function normalizeElement(
           ? { gridStyle: value.gridStyle as IrStrokeStyle }
           : {}),
         ...(cellOverrides !== undefined ? { cellOverrides } : {}),
+        ...(cellSpans !== undefined ? { cellSpans } : {}),
         ...("stripeColor" in value
           ? { stripeColor: value.stripeColor as string }
           : {}),

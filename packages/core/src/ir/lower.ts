@@ -19,6 +19,8 @@ import {
   resolveRectStyle,
   resolveTextStyle,
 } from "./style";
+import type { TableMergeRect } from "./table-merge";
+import { computeChunkMerges, subtractSkips } from "./table-merge";
 import type {
   IrAlign,
   IrBarcodeSymbology,
@@ -291,6 +293,13 @@ function lowerTableChunk(
   const xOf = (i: number): number =>
     table.x +
     table.columns.slice(0, i).reduce((total, col) => total + col.width, 0);
+  const merges = computeChunkMerges(table, rows, rowOffset, chunkSize);
+  const rectByOrigin = new Map<string, TableMergeRect>(
+    merges.rects.map((rect) => [`${rect.q}:${rect.col}`, rect]),
+  );
+  // 垂直罫線の区間端 → y 座標（-1 はヘッダ帯の上端 = 表の上端）
+  const rowEdgeY = (edge: number): number =>
+    edge < 0 ? y0 : y0 + table.headerHeight + edge * table.rowHeight;
 
   const out: LoweredElement[] = [];
   const stripeColor = table.stripeColor;
@@ -329,40 +338,56 @@ function lowerTableChunk(
     rotate: 0,
   });
   for (let q = 0; q < chunkSize; q++) {
-    out.push({
-      type: "line",
-      sourceId: table.id,
-      orientation: "horizontal",
-      x: table.x,
-      y: y0 + table.headerHeight + q * table.rowHeight,
-      length: width,
-      thickness: table.gridWidth ?? TABLE_GRID_WIDTH,
-      color: TABLE_LINE_COLOR,
-      strokeStyle: table.gridStyle ?? TABLE_LINE_STYLE,
-      rotate: 0,
-    });
+    for (const segment of subtractSkips(
+      0,
+      table.columns.length,
+      merges.horizontalSkips.get(q),
+    )) {
+      out.push({
+        type: "line",
+        sourceId: table.id,
+        orientation: "horizontal",
+        x: xOf(segment.start),
+        y: y0 + table.headerHeight + q * table.rowHeight,
+        length: xOf(segment.end) - xOf(segment.start),
+        thickness: table.gridWidth ?? TABLE_GRID_WIDTH,
+        color: TABLE_LINE_COLOR,
+        strokeStyle: table.gridStyle ?? TABLE_LINE_STYLE,
+        rotate: 0,
+      });
+    }
   }
   for (let i = 1; i < table.columns.length; i++) {
-    out.push({
-      type: "line",
-      sourceId: table.id,
-      orientation: "vertical",
-      x: xOf(i),
-      y: y0,
-      length: height,
-      thickness: table.gridWidth ?? TABLE_GRID_WIDTH,
-      color: TABLE_LINE_COLOR,
-      strokeStyle: table.gridStyle ?? TABLE_LINE_STYLE,
-      rotate: 0,
-    });
+    for (const segment of subtractSkips(
+      -1,
+      chunkSize,
+      merges.verticalSkips.get(i),
+    )) {
+      out.push({
+        type: "line",
+        sourceId: table.id,
+        orientation: "vertical",
+        x: xOf(i),
+        y: rowEdgeY(segment.start),
+        length: rowEdgeY(segment.end) - rowEdgeY(segment.start),
+        thickness: table.gridWidth ?? TABLE_GRID_WIDTH,
+        color: TABLE_LINE_COLOR,
+        strokeStyle: table.gridStyle ?? TABLE_LINE_STYLE,
+        rotate: 0,
+      });
+    }
   }
   table.columns.forEach((column, i) => {
+    if (merges.covered.has(`header:${i}`)) return;
+    const rect = rectByOrigin.get(`header:${i}`);
+    const spanWidth =
+      rect === undefined ? column.width : xOf(i + rect.colSpan) - xOf(i);
     out.push({
       type: "text",
       sourceId: table.id,
       x: xOf(i) + TABLE_CELL_PADDING_X,
       y: y0 + TABLE_HEADER_TEXT_OFFSET_Y,
-      w: column.width - 2 * TABLE_CELL_PADDING_X,
+      w: spanWidth - 2 * TABLE_CELL_PADDING_X,
       h: table.headerHeight - TABLE_HEADER_TEXT_OFFSET_Y,
       content: column.label,
       fontSize: table.fontSize,
@@ -380,6 +405,12 @@ function lowerTableChunk(
     const row = rows[t];
     if (row === undefined) continue;
     table.columns.forEach((column, i) => {
+      if (merges.covered.has(`${q}:${i}`)) return;
+      const rect = rectByOrigin.get(`${q}:${i}`);
+      const spanWidth =
+        rect === undefined ? column.width : xOf(i + rect.colSpan) - xOf(i);
+      const spanHeight =
+        rect === undefined ? table.rowHeight : rect.rowSpan * table.rowHeight;
       out.push({
         type: "text",
         sourceId: table.id,
@@ -389,8 +420,8 @@ function lowerTableChunk(
           table.headerHeight +
           q * table.rowHeight +
           TABLE_CELL_TEXT_OFFSET_Y,
-        w: column.width - 2 * TABLE_CELL_PADDING_X,
-        h: table.rowHeight - TABLE_CELL_TEXT_OFFSET_Y,
+        w: spanWidth - 2 * TABLE_CELL_PADDING_X,
+        h: spanHeight - TABLE_CELL_TEXT_OFFSET_Y,
         content: row[column.key] ?? "",
         fontSize: table.fontSize,
         align: column.align,
