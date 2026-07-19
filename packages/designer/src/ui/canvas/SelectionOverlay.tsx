@@ -6,6 +6,7 @@ import type { MmBox, PlacedElementView } from "../../state/geometry";
 import { visibleInContext } from "../../state/geometry";
 import type { EditorState } from "../../state/types";
 import type { HandleId, InteractionState } from "./interaction";
+import { isRotatable } from "./interaction";
 
 function boxVars(box: MmBox): CSSProperties {
   return {
@@ -179,6 +180,10 @@ export function SelectionOverlay(props: {
       : [];
 
   let dragGhosts: readonly { readonly key: string; readonly box: MmBox }[] = [];
+  let rotatingGhost: {
+    readonly box: MmBox;
+    readonly rotate: number;
+  } | null = null;
   let tip: { readonly box: MmBox; readonly text: string } | null = null;
   if (interaction.kind === "moving") {
     dragGhosts = interaction.ids.flatMap((id) => {
@@ -220,6 +225,12 @@ export function SelectionOverlay(props: {
       box: interaction.box,
       text: `x ${fmt(interaction.box.x)}  y ${fmt(interaction.box.y)}`,
     };
+  } else if (interaction.kind === "rotating") {
+    const box = byId.get(interaction.id)?.box;
+    if (box !== undefined) {
+      rotatingGhost = { box, rotate: interaction.rotate };
+      tip = { box, text: `${fmt(interaction.rotate)}°` };
+    }
   } else if (
     interaction.kind === "reordering" &&
     interaction.targetFlexId === null
@@ -334,6 +345,34 @@ export function SelectionOverlay(props: {
             style={{ "--hx": handle.x, "--hy": handle.y } as CSSProperties}
           />
         ))}
+
+      {single !== undefined &&
+        visibleInContext(single.pages, context) &&
+        isRotatable(single.element.type) && (
+          <span
+            className="apx-h apx-h--rotate"
+            data-apx-handle="rotate"
+            data-apx-id={single.id}
+            style={
+              {
+                "--hx": single.box.x + single.box.w / 2,
+                "--hy": single.box.y,
+              } as CSSProperties
+            }
+          />
+        )}
+
+      {rotatingGhost !== null && (
+        <div
+          className="apx-drag-ghost apx-drag-ghost--rotated"
+          style={
+            {
+              ...boxVars(rotatingGhost.box),
+              "--rot": `${rotatingGhost.rotate}deg`,
+            } as CSSProperties
+          }
+        />
+      )}
 
       {dragGhosts.map((ghost) => (
         <div

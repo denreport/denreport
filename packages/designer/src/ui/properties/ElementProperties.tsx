@@ -3,6 +3,7 @@ import { applicableStyleAttrs } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId } from "react";
 import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
+import { rotateElement } from "../../state/elements";
 import type { MmBox, PlacedElementView } from "../../state/geometry";
 import { replaceElement } from "../../state/properties";
 import type { EditorStore } from "../../state/store";
@@ -10,7 +11,7 @@ import { applyStyle, clearStyle } from "../../state/styles";
 import { BarcodeProperties } from "./BarcodeProperties";
 import { EllipseProperties } from "./EllipseProperties";
 import { FlexProperties } from "./FlexProperties";
-import { SegmentField, TextField } from "./fields";
+import { NumberField, SegmentField, TextField } from "./fields";
 import { ImageProperties } from "./ImageProperties";
 import { LineProperties } from "./LineProperties";
 import { PageNumberProperties } from "./PageNumberProperties";
@@ -138,6 +139,23 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
             value={el.pages}
             options={PAGES_OPTIONS}
             onCommit={(pages) => commitReplace(store, el.id, { ...el, pages })}
+          />
+        </section>
+      )}
+      {el.type !== "table" && el.type !== "flex" && (
+        <section className="apx-sect">
+          <NumberField
+            label="回転"
+            value={el.rotate ?? 0}
+            unit="°"
+            precision={0.1}
+            onCommit={(value) => {
+              const document = store.getState().document;
+              const updated = rotateElement(document, el.id, value);
+              if (updated !== document) {
+                store.commit(updated);
+              }
+            }}
           />
         </section>
       )}

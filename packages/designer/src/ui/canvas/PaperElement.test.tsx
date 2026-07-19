@@ -257,3 +257,49 @@ describe("PaperElement — text / pageNumber の文字色", () => {
     expect(el().style.getPropertyValue("--tc")).toBe("#112233");
   });
 });
+
+describe("PaperElement — rotate の CSS 変数", () => {
+  it("rotate 指定なしでは --rot を出さない", () => {
+    renderEl({
+      type: "rect",
+      id: "r1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      borderWidth: 0.3,
+    });
+    expect(el().style.getPropertyValue("--rot")).toBe("");
+  });
+
+  it("rotate が deg 付きで --rot に写る", () => {
+    renderEl({
+      type: "rect",
+      id: "r1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      borderWidth: 0.3,
+      rotate: -30.5,
+    });
+    expect(el().style.getPropertyValue("--rot")).toBe("-30.5deg");
+  });
+
+  it("line の rotate も --rot に写る", () => {
+    renderEl({
+      type: "line",
+      id: "l1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      orientation: "horizontal",
+      length: 40,
+      thickness: 0.3,
+      rotate: 45,
+    });
+    expect(el().style.getPropertyValue("--rot")).toBe("45deg");
+  });
+});

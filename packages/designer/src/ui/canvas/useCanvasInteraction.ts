@@ -130,7 +130,7 @@ export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
         const at = toMm(ev);
         if (at !== null) {
           setCursorMm(at);
-          dispatch({ kind: "pointerMove", at });
+          dispatch({ kind: "pointerMove", at, shiftKey: ev.shiftKey });
         }
       };
       const onUp = (ev: PointerEvent): void => {
@@ -197,7 +197,7 @@ export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
       }
       setCursorMm(at);
       if (interactionRef.current.kind !== "idle") {
-        dispatch({ kind: "pointerMove", at });
+        dispatch({ kind: "pointerMove", at, shiftKey: e.shiftKey });
       }
     },
     [dispatch, toMm],

@@ -21,6 +21,7 @@ import {
   reorderFlexChild,
   resizeElement,
   resizeFlexChild,
+  rotateElement,
   setTableContinuationY,
   toFlexChild,
   toTopLevelElement,
@@ -43,7 +44,13 @@ export type HandleId =
   | "sw"
   | "w"
   | "line-start"
-  | "line-end";
+  | "line-end"
+  | "rotate";
+
+/** rotate 属性を持てる（回転ハンドル・回転欄を出せる）要素型か */
+export function isRotatable(type: IrElementType): boolean {
+  return type !== "table" && type !== "flex";
+}
 
 export interface MmPoint {
   readonly x: number;
@@ -74,6 +81,15 @@ export type InteractionState =
       readonly start: MmPoint;
       readonly box: MmBox;
       readonly guides: readonly SnapGuide[];
+    }
+  | {
+      readonly kind: "rotating";
+      readonly id: string;
+      readonly center: MmPoint;
+      readonly baseRotate: number;
+      readonly startPointerAngle: number;
+      /** 現在角（Shift 15° スナップ・0.1° 丸め適用後） */
+      readonly rotate: number;
     }
   | {
       readonly kind: "marquee";
@@ -110,7 +126,11 @@ export type InteractionEvent =
       readonly handle: HandleId | null;
       readonly shiftKey: boolean;
     }
-  | { readonly kind: "pointerMove"; readonly at: MmPoint }
+  | {
+      readonly kind: "pointerMove";
+      readonly at: MmPoint;
+      readonly shiftKey: boolean;
+    }
   | { readonly kind: "pointerUp"; readonly at: MmPoint }
   | {
       readonly kind: "paletteDown";
@@ -400,6 +420,34 @@ function resizingUpdate(
     guides = snap.guides;
   }
   return { kind: "resizing", id, handle, start, box, guides };
+}
+
+// ---- rotating ----
+
+function pointerAngleDeg(center: MmPoint, at: MmPoint): number {
+  return (Math.atan2(at.y - center.y, at.x - center.x) * 180) / Math.PI;
+}
+
+// M19（±360）に常に収まるよう (-180, 180] へ正規化する
+function normalizeAngleDeg(deg: number): number {
+  let a = deg % 360;
+  if (a > 180) a -= 360;
+  if (a <= -180) a += 360;
+  return a;
+}
+
+function rotatingUpdate(
+  state: Omit<Extract<InteractionState, { kind: "rotating" }>, "rotate">,
+  at: MmPoint,
+  shiftKey: boolean,
+): InteractionState {
+  const pointer = pointerAngleDeg(state.center, at);
+  let rotate = state.baseRotate + (pointer - state.startPointerAngle);
+  if (shiftKey) {
+    rotate = Math.round(rotate / 15) * 15;
+  }
+  rotate = Math.round(normalizeAngleDeg(rotate) * 10) / 10;
+  return { ...state, kind: "rotating", rotate };
 }
 
 // ---- marquee ----
@@ -808,6 +856,7 @@ function onPointerDown(
 function pressingMove(
   state: Extract<InteractionState, { kind: "pressing" }>,
   at: MmPoint,
+  shiftKey: boolean,
   ctx: InteractionContext,
 ): InteractionState {
   if (distance(at, state.start) < thresholdMm(ctx)) {
@@ -816,6 +865,27 @@ function pressingMove(
   const view = findView(ctx, state.targetId);
   if (view === undefined) {
     return IDLE;
+  }
+  if (state.handle === "rotate") {
+    const el = view.element;
+    if (el.type === "table" || el.type === "flex") {
+      return IDLE;
+    }
+    const center: MmPoint = {
+      x: view.box.x + view.box.w / 2,
+      y: view.box.y + view.box.h / 2,
+    };
+    return rotatingUpdate(
+      {
+        kind: "rotating",
+        id: view.id,
+        center,
+        baseRotate: el.rotate ?? 0,
+        startPointerAngle: pointerAngleDeg(center, state.start),
+      },
+      at,
+      shiftKey,
+    );
   }
   if (state.handle !== null) {
     return resizingUpdate(state.targetId, state.handle, at, state.start, ctx);
@@ -869,7 +939,10 @@ export function reduceInteraction(
         case "idle":
           return { state, effect: null };
         case "pressing":
-          return { state: pressingMove(state, event.at, ctx), effect: null };
+          return {
+            state: pressingMove(state, event.at, event.shiftKey, ctx),
+            effect: null,
+          };
         case "moving":
           return {
             state: movingUpdate(state.ids, state.start, event.at, ctx),
@@ -884,6 +957,11 @@ export function reduceInteraction(
               state.start,
               ctx,
             ),
+            effect: null,
+          };
+        case "rotating":
+          return {
+            state: rotatingUpdate(state, event.at, event.shiftKey),
             effect: null,
           };
         case "marquee": {
@@ -958,6 +1036,21 @@ export function reduceInteraction(
             effect: {
               document: commitMove(ctx, state.ids, state.offset),
               selection: state.ids,
+            },
+          };
+        }
+        case "rotating": {
+          if (state.rotate === state.baseRotate) {
+            return { state: IDLE, effect: null };
+          }
+          return {
+            state: IDLE,
+            effect: {
+              document: rotateElement(
+                ctx.state.document,
+                state.id,
+                state.rotate,
+              ),
             },
           };
         }

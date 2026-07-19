@@ -66,6 +66,7 @@ function draggingIds(interaction: InteractionState): ReadonlySet<string> {
     case "moving":
       return new Set(interaction.ids);
     case "resizing":
+    case "rotating":
       return new Set([interaction.id]);
     case "reordering":
       return new Set([interaction.childId]);

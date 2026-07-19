@@ -84,6 +84,9 @@ export function PaperElement(props: {
     "--w": view.box.w,
     "--h": view.box.h,
   };
+  if (el.type !== "table" && el.type !== "flex" && el.rotate !== undefined) {
+    vars["--rot"] = `${el.rotate}deg`;
+  }
   let lineHeight: number | undefined;
   switch (el.type) {
     case "text":

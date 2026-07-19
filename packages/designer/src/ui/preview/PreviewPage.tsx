@@ -28,6 +28,18 @@ function dasharrayOf(strokeStyle: IrStrokeStyle): string | undefined {
   return STROKE_DASH_MM[strokeStyle].join(" ");
 }
 
+// SVG の rotate(θ cx cy) は y 下向き座標系で時計回り = IR の rotate と同じ向き
+function rotationTransform(el: LoweredElement): string | undefined {
+  if (el.rotate === 0) return undefined;
+  const center =
+    el.type === "line"
+      ? el.orientation === "horizontal"
+        ? { x: el.x + el.length / 2, y: el.y }
+        : { x: el.x, y: el.y + el.length / 2 }
+      : { x: el.x + el.w / 2, y: el.y + el.h / 2 };
+  return `rotate(${el.rotate} ${center.x} ${center.y})`;
+}
+
 function anchorX(el: LoweredTextElement): number {
   switch (el.align) {
     case "left":
@@ -244,7 +256,7 @@ export function PreviewPage(props: {
     >
       {elements.map((el, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: 展開結果は毎回全再導出され、配列位置が唯一の識別子
-        <g key={index}>
+        <g key={index} transform={rotationTransform(el)}>
           {renderElement(el, ascentPerEm, charWidthEm, font?.family)}
         </g>
       ))}

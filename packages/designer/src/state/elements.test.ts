@@ -16,6 +16,7 @@ import {
   reorderFlexChild,
   resizeElement,
   resizeFlexChild,
+  rotateElement,
   setTableContinuationY,
   toFlexChild,
   toTopLevelElement,
@@ -160,6 +161,62 @@ describe("resizeElement", () => {
     const next = resizeElement(doc, table.id, { x: 20, y: 95, w: 999, h: 999 });
     expect(next.elements[0]).toMatchObject({ x: 20, y: 95 });
     expect(next.elements[0]).not.toHaveProperty("w");
+  });
+});
+
+describe("rotateElement", () => {
+  function docWithText(): IrDocument {
+    return { ...blankDocument(), elements: [textElement("t1")] };
+  }
+
+  it("0.1° 単位に丸めて設定する", () => {
+    const next = rotateElement(docWithText(), "t1", 45.04);
+    expect(next.elements[0]).toMatchObject({ rotate: 45 });
+    const next2 = rotateElement(docWithText(), "t1", -30.55);
+    expect(next2.elements[0]).toMatchObject({ rotate: -30.5 });
+  });
+
+  it("丸め後 0 なら属性を除去する", () => {
+    const rotated = rotateElement(docWithText(), "t1", 45);
+    const cleared = rotateElement(rotated, "t1", 0.04);
+    expect(cleared.elements[0]).not.toHaveProperty("rotate");
+  });
+
+  it("rotate なしの要素へ 0 を設定しても文書をそのまま返す", () => {
+    const doc = docWithText();
+    expect(rotateElement(doc, "t1", 0)).toBe(doc);
+  });
+
+  it("同値の設定では文書をそのまま返す", () => {
+    const rotated = rotateElement(docWithText(), "t1", 45);
+    expect(rotateElement(rotated, "t1", 45)).toBe(rotated);
+  });
+
+  it("table / flex・未知 id では文書をそのまま返す", () => {
+    const doc: IrDocument = {
+      ...blankDocument(),
+      elements: [
+        createDefaultElement(blankDocument(), "table", 0, 0),
+        flexElement("f", ["c1"]),
+      ],
+    };
+    expect(rotateElement(doc, doc.elements[0]?.id ?? "", 45)).toBe(doc);
+    expect(rotateElement(doc, "f", 45)).toBe(doc);
+    expect(rotateElement(doc, "missing", 45)).toBe(doc);
+  });
+
+  it("flex 子にも作用する", () => {
+    const doc: IrDocument = {
+      ...blankDocument(),
+      elements: [flexElement("f", ["c1"])],
+    };
+    const next = rotateElement(doc, "c1", 90);
+    const flex = next.elements[0];
+    if (flex?.type === "flex") {
+      expect(flex.children[0]).toMatchObject({ rotate: 90 });
+    } else {
+      expect.unreachable();
+    }
   });
 });
 

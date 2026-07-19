@@ -84,6 +84,29 @@ export function resizeElement(
   };
 }
 
+/** rotate を 0.1° 単位に丸めて設定する。0（丸め後）なら属性を除去する。
+    table / flex・未知 id では文書をそのまま返す。flex 子にも作用する */
+export function rotateElement(
+  document: IrDocument,
+  id: string,
+  rotate: number,
+): IrDocument {
+  const rounded = Math.round(rotate * 10) / 10;
+  return updateElementById(document, id, (el) => {
+    if (el.type === "table" || el.type === "flex") {
+      return el;
+    }
+    if (rounded === 0) {
+      if (el.rotate === undefined) {
+        return el;
+      }
+      const { rotate: _rotate, ...rest } = el;
+      return rest;
+    }
+    return el.rotate === rounded ? el : { ...el, rotate: rounded };
+  });
+}
+
 /** rest / last 文脈での table 縦ドラッグ用 */
 export function setTableContinuationY(
   document: IrDocument,

@@ -20,7 +20,7 @@ export interface NumberFieldProps {
   /** null: 複数選択で値が混在（空欄 + placeholder「混在」表示） */
   readonly value: number | null;
   /** 単位サフィックスの表示のみ（換算はしない） */
-  readonly unit?: "mm" | "pt" | undefined;
+  readonly unit?: "mm" | "pt" | "°" | undefined;
   /** 量子化の刻み: mm / pt = 0.1、lineHeight = 0.01、整数 = 1 */
   readonly precision: number;
   /** 量子化済みの値のみ渡る。非数値・空文字では呼ばれない。同値抑止は value が混在でないときのみ */

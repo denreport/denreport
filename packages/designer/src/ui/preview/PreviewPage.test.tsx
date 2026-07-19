@@ -41,6 +41,7 @@ function textEl(
     align: "left",
     lineHeight: 1.25,
     color: "#000000",
+    rotate: 0,
     ...overrides,
   };
 }
@@ -169,6 +170,7 @@ describe("PreviewPage", () => {
         thickness: 0.3,
         color: "#000000",
         strokeStyle: "solid",
+        rotate: 0,
       },
       {
         type: "line",
@@ -180,6 +182,7 @@ describe("PreviewPage", () => {
         thickness: 0.5,
         color: "#000000",
         strokeStyle: "solid",
+        rotate: 0,
       },
     ]);
     const lines = [...container.querySelectorAll("line")];
@@ -212,6 +215,7 @@ describe("PreviewPage", () => {
         fillColor: null,
         borderStyle: "solid",
         cornerRadius: 0,
+        rotate: 0,
       },
     ]);
     const rect = container.querySelector("rect");
@@ -238,6 +242,7 @@ describe("PreviewPage", () => {
         fillColor: "#eeeeee",
         borderStyle: "solid",
         cornerRadius: 3,
+        rotate: 0,
       },
     ]);
     const rect = container.querySelector("rect");
@@ -258,6 +263,7 @@ describe("PreviewPage", () => {
         thickness: 0.3,
         color: "#000000",
         strokeStyle: "dashed",
+        rotate: 0,
       },
     ]);
     const line = container.querySelector("line");
@@ -276,6 +282,7 @@ describe("PreviewPage", () => {
         borderWidth: 0.4,
         borderColor: "#123456",
         fillColor: "#abcdef",
+        rotate: 0,
       },
     ]);
     const ellipse = container.querySelector("ellipse");
@@ -291,7 +298,16 @@ describe("PreviewPage", () => {
   it("image は領域いっぱいに引き伸ばして写る", () => {
     const src = "data:image/png;base64,iVBORw0KGgo=";
     render([
-      { type: "image", sourceId: "i1", x: 170, y: 10, w: 30, h: 12, src },
+      {
+        type: "image",
+        sourceId: "i1",
+        x: 170,
+        y: 10,
+        w: 30,
+        h: 12,
+        src,
+        rotate: 0,
+      },
     ]);
     const image = container.querySelector("image");
     expect(image).not.toBeNull();
@@ -309,6 +325,37 @@ describe("PreviewPage", () => {
     expect(Number.isFinite(attrOf(text as Element, "y"))).toBe(true);
   });
 
+  it("rotate 0 では <g> に transform を付けない", () => {
+    render([textEl()]);
+    const g = container.querySelector("svg > g");
+    expect((g as Element).getAttribute("transform")).toBeNull();
+  });
+
+  it("rotate が外接箱中心周りの rotate(θ cx cy) として <g> に写る", () => {
+    render([textEl({ x: 10, y: 50, w: 100, h: 20, rotate: 45 })]);
+    const g = container.querySelector("svg > g");
+    expect((g as Element).getAttribute("transform")).toBe("rotate(45 60 60)");
+  });
+
+  it("line の rotate は線分中点周りになる", () => {
+    render([
+      {
+        type: "line",
+        sourceId: "l1",
+        x: 10,
+        y: 20,
+        orientation: "horizontal",
+        length: 50,
+        thickness: 0.3,
+        color: "#000000",
+        strokeStyle: "solid",
+        rotate: 90,
+      },
+    ]);
+    const g = container.querySelector("svg > g");
+    expect((g as Element).getAttribute("transform")).toBe("rotate(90 35 20)");
+  });
+
   it("barcode（qrcode）は枠・ファインダーパターン・解決済み content の文字列を描画する", () => {
     render([
       {
@@ -320,6 +367,7 @@ describe("PreviewPage", () => {
         h: 30,
         symbology: "qrcode",
         content: "ABC-123",
+        rotate: 0,
       },
     ]);
     const rects = [...container.querySelectorAll("rect")];
@@ -339,6 +387,7 @@ describe("PreviewPage", () => {
         h: 30,
         symbology: "code128",
         content: "ABC-123",
+        rotate: 0,
       },
     ]);
     const rects = [...container.querySelectorAll("rect")];

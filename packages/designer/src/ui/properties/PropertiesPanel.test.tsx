@@ -497,6 +497,75 @@ describe("名前フィールド", () => {
   });
 });
 
+describe("回転フィールド", () => {
+  it("table / flex 以外で回転欄を表示し、table / flex では表示しない", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["r1"]);
+    expect(inputByLabel("回転")).toBeDefined();
+
+    select(store, ["tbl1"]);
+    expect(
+      [...container.querySelectorAll("label")].some(
+        (l) => l.textContent === "回転",
+      ),
+    ).toBe(false);
+
+    select(store, ["f1"]);
+    expect(
+      [...container.querySelectorAll("label")].some(
+        (l) => l.textContent === "回転",
+      ),
+    ).toBe(false);
+  });
+
+  it("入力が 0.1° 丸めで commit に到達し、undo で戻る", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["r1"]);
+
+    const input = inputByLabel("回転");
+    expect(input.value).toBe("0.0");
+    setValue(input, "45.04");
+    blur(input);
+    expect(elementById(store, "r1")).toMatchObject({ rotate: 45 });
+
+    act(() => {
+      store.undo();
+    });
+    expect(elementById(store, "r1")).not.toHaveProperty("rotate");
+  });
+
+  it("0 への変更は rotate 属性を除去する", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["r1"]);
+
+    const input = inputByLabel("回転");
+    setValue(input, "90");
+    blur(input);
+    expect(elementById(store, "r1")).toMatchObject({ rotate: 90 });
+
+    setValue(input, "0");
+    blur(input);
+    expect(elementById(store, "r1")).not.toHaveProperty("rotate");
+  });
+
+  it("flex 子でも回転欄を表示・編集できる", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["c1"]);
+
+    const input = inputByLabel("回転");
+    setValue(input, "-15");
+    blur(input);
+    const flex = elementById(store, "f1");
+    expect(flex.type === "flex" ? flex.children[0] : null).toMatchObject({
+      rotate: -15,
+    });
+  });
+});
+
 describe("スタイルセクション", () => {
   it("スタイル対象の型（text）でのみ select を表示し、対象外（image）では表示しない", () => {
     const store = makeStoreWithStyle();

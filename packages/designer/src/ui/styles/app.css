@@ -729,6 +729,7 @@
   top: calc(var(--y) * var(--mm));
   width: calc(var(--w) * var(--mm));
   height: calc(var(--h) * var(--mm));
+  transform: rotate(var(--rot, 0deg));
 }
 
 .apx-el:hover {
@@ -1080,6 +1081,10 @@
   opacity: 0.85;
 }
 
+.apx-drag-ghost--rotated {
+  transform: rotate(var(--rot, 0deg));
+}
+
 .apx-flex-target {
   outline: 2px solid var(--paper-selection);
 }
@@ -1099,6 +1104,13 @@
   border: 1.5px solid var(--paper-selection);
   z-index: 3;
   pointer-events: auto;
+}
+
+/* 選択枠上辺中央の少し上に浮かせた円形の回転ハンドル */
+.apx-h--rotate {
+  border-radius: 50%;
+  top: calc(var(--hy) * var(--mm) - 20px);
+  cursor: grab;
 }
 
 .apx-h[data-apx-handle="nw"],
