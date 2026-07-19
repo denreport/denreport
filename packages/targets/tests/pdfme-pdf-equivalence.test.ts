@@ -60,7 +60,7 @@ describe("extractPdf — pt→mm・左上原点への正規化", () => {
     const document = parseInline({
       version: "1.0",
       page: { width: 210, height: 297 },
-      font: { name: "NotoSansJP" },
+      font: { regular: "NotoSansJP" },
       elements: [
         {
           type: "text",
@@ -75,7 +75,7 @@ describe("extractPdf — pt→mm・左上原点への正規化", () => {
       ],
     });
     const pdf = await extractPdf(
-      await generatePdfmePdf(document, {}, fontData),
+      await generatePdfmePdf(document, {}, { regular: fontData }),
     );
 
     expect(pdf.pageCount).toBe(1);
@@ -98,7 +98,7 @@ describe("extractPdf — pt→mm・左上原点への正規化", () => {
     const document = parseInline({
       version: "1.0",
       page: { width: 210, height: 297 },
-      font: { name: "NotoSansJP" },
+      font: { regular: "NotoSansJP" },
       elements: [
         {
           type: "ellipse",
@@ -114,7 +114,7 @@ describe("extractPdf — pt→mm・左上原点への正規化", () => {
       ],
     });
     const pdf = await extractPdf(
-      await generatePdfmePdf(document, {}, fontData),
+      await generatePdfmePdf(document, {}, { regular: fontData }),
     );
     expect(pdf.pageCount).toBe(1);
   });
@@ -125,7 +125,7 @@ describe("buildReferenceExpectation — 参照意味論からの期待行導出"
     const document = parseInline({
       version: "1.0",
       page: { width: 210, height: 297 },
-      font: { name: "NotoSansJP" },
+      font: { regular: "NotoSansJP" },
       elements: [
         {
           type: "text",
@@ -314,7 +314,9 @@ describe("pdfme 実 PDF — 回転の向きと中心", () => {
       "rotation.json",
       "rotation-data.json",
     );
-    const pdfBytes = await generatePdfmePdf(document, data, fontData);
+    const pdfBytes = await generatePdfmePdf(document, data, {
+      regular: fontData,
+    });
     mkdirSync(outputDir, { recursive: true });
     writeFileSync(`${outputDir}/pdfme-rotation.pdf`, pdfBytes);
     const pdf = await extractPdf(pdfBytes);
@@ -351,7 +353,9 @@ describe("pdfme 実 PDF — 参照適合", () => {
     },
   ])("$name", async ({ name, irFile, dataFile }) => {
     const { document, data } = loadFixture(irFile, dataFile);
-    const pdfBytes = await generatePdfmePdf(document, data, fontData);
+    const pdfBytes = await generatePdfmePdf(document, data, {
+      regular: fontData,
+    });
     mkdirSync(outputDir, { recursive: true });
     writeFileSync(`${outputDir}/pdfme-${name}.pdf`, pdfBytes);
 

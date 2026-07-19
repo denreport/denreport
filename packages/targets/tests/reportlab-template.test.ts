@@ -5,9 +5,13 @@ import { lowerIr, parseIr } from "@denreport/core";
 import { describe, expect, it } from "vitest";
 import { exportReportlab } from "../src/reportlab/export";
 import { exportReportlabTemplate } from "../src/reportlab/export-template";
-import { syntheticCff, syntheticTtf } from "./helpers/sfnt";
+import {
+  buildUniformWidthTtf,
+  syntheticCff,
+  syntheticTtf,
+} from "./helpers/sfnt";
 
-const FONT = syntheticTtf();
+const FONT = { regular: syntheticTtf() };
 
 const coreFixturesDir = fileURLToPath(
   new URL("../../core/tests/fixtures", import.meta.url),
@@ -22,7 +26,7 @@ function docOf(...elements: IrDocument["elements"]): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -97,10 +101,10 @@ describe("exportReportlabTemplate — static document", () => {
     if (!dataResult.ok || !templateResult.ok)
       throw new Error("expected success");
     expect(templateResult.code).toContain(
-      '_text(c, font, 5, 5, 50, 10, 10, "left", 1.2, (0, 0, 0), 0, ["静的"])',
+      '_text(c, "NotoSansJP", 5, 5, 50, 10, 10, "left", 1.2, (0, 0, 0), 0, False, ["静的"])',
     );
     expect(dataResult.code).toContain(
-      '_text(c, font, 5, 5, 50, 10, 10, "left", 1.2, (0, 0, 0), 0, ["静的"])',
+      '_text(c, "NotoSansJP", 5, 5, 50, 10, 10, "left", 1.2, (0, 0, 0), 0, False, ["静的"])',
     );
     expect(templateResult.code).toContain(
       "_rect(c, 0, 20, 10, 10, 0.3, (0, 0, 0), None, None, 0, 0)",
@@ -200,7 +204,7 @@ describe("exportReportlabTemplate — bound document", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, _wrap(font, 12, 100, _interpolate(data, "{title}")))',
+      '_text(c, "NotoSansJP", 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, False, _wrap("NotoSansJP", 12, 100, _interpolate(data, "{title}")))',
     );
   });
 
@@ -247,7 +251,7 @@ describe("exportReportlabTemplate — bound document", () => {
     expect(result.code).toContain("if page >= 2:");
     // "all" (title のトークン) は無条件 — ガードなしで直接呼ばれる
     expect(result.code).toContain(
-      '    _text(c, font, 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, _wrap(font, 12, 100, _interpolate(data, "{title}")))',
+      '    _text(c, "NotoSansJP", 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, False, _wrap("NotoSansJP", 12, 100, _interpolate(data, "{title}")))',
     );
   });
 });
@@ -473,7 +477,7 @@ describe("exportReportlabTemplate — static text with {key} tokens", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, _wrap(font, 12, 100, _interpolate(data, "合計: {total} 円")))',
+      '_text(c, "NotoSansJP", 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, False, _wrap("NotoSansJP", 12, 100, _interpolate(data, "合計: {total} 円")))',
     );
     expect(result.code).not.toContain('["合計: {total} 円"]');
   });
@@ -556,7 +560,7 @@ describe("exportReportlabTemplate — _wrap inclusion", () => {
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain("def _wrap(font, size, w, text):");
     expect(result.code).toContain(
-      '_text(c, font, 0, 285, 210, 6, 9, "center", 1.25, (0, 0, 0), 0, _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))',
+      '_text(c, "NotoSansJP", 0, 285, 210, 6, 9, "center", 1.25, (0, 0, 0), 0, False, _wrap("NotoSansJP", 9, 210, _page_label("{n} / {N}", page, page_count)))',
     );
   });
 
@@ -609,13 +613,13 @@ describe("exportReportlabTemplate — _wrap inclusion", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 50, 10, 10, "left", 1.25, (1, 0, 0), 0, ["赤字"])',
+      '_text(c, "NotoSansJP", 0, 0, 50, 10, 10, "left", 1.25, (1, 0, 0), 0, False, ["赤字"])',
     );
     expect(result.code).toContain(
-      '_text(c, font, 0, 10, 50, 10, 10, "left", 1.25, (0, 1, 0), 0, _wrap(font, 10, 50, _interpolate(data, "{note}")))',
+      '_text(c, "NotoSansJP", 0, 10, 50, 10, 10, "left", 1.25, (0, 1, 0), 0, False, _wrap("NotoSansJP", 10, 50, _interpolate(data, "{note}")))',
     );
     expect(result.code).toContain(
-      '_text(c, font, 0, 285, 210, 6, 9, "center", 1.25, (0, 0, 1), 0, _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))',
+      '_text(c, "NotoSansJP", 0, 285, 210, 6, 9, "center", 1.25, (0, 0, 1), 0, False, _wrap("NotoSansJP", 9, 210, _page_label("{n} / {N}", page, page_count)))',
     );
   });
 
@@ -755,10 +759,10 @@ describe("exportReportlabTemplate — rotate", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 10, 50, 10, 10, "left", 1.25, (0, 0, 0), 45, _wrap(font, 10, 50, _interpolate(data, "{note}")))',
+      '_text(c, "NotoSansJP", 0, 10, 50, 10, 10, "left", 1.25, (0, 0, 0), 45, False, _wrap("NotoSansJP", 10, 50, _interpolate(data, "{note}")))',
     );
     expect(result.code).toContain(
-      '_text(c, font, 0, 285, 210, 6, 9, "center", 1.25, (0, 0, 0), -90, _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))',
+      '_text(c, "NotoSansJP", 0, 285, 210, 6, 9, "center", 1.25, (0, 0, 0), -90, False, _wrap("NotoSansJP", 9, 210, _page_label("{n} / {N}", page, page_count)))',
     );
     expect(result.code).toContain(
       '_barcode(c, "QR", _interpolate(data, "{code}"), 0, 0, 30, 30, 30)',
@@ -768,7 +772,9 @@ describe("exportReportlabTemplate — rotate", () => {
 
 describe("exportReportlabTemplate — font gate", () => {
   it("rejects a CFF font with errors always empty", () => {
-    const result = exportReportlabTemplate(docOf(), syntheticCff());
+    const result = exportReportlabTemplate(docOf(), {
+      regular: syntheticCff(),
+    });
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected failure");
     expect(result.errors).toEqual([]);
@@ -863,7 +869,7 @@ describe("exportReportlabTemplate — footnotes", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, ["税抜*1価格"])',
+      '_text(c, "NotoSansJP", 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, False, ["税抜*1価格"])',
     );
     expect(result.code).toContain("*1 本体価格は税抜表示です");
     expect(result.code).not.toContain("{#");
@@ -902,7 +908,109 @@ describe("exportReportlabTemplate — footnotes", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toMatch(
-      /if page == page_count:\n {8}_text\(c, font, 15, [-\d.]+, 180, [-\d.]+, 8, "left", 1\.25, \(0, 0, 0\), 0, \["\*1 本文"\]\)/,
+      /if page == page_count:\n {8}_text\(c, "NotoSansJP", 15, [-\d.]+, 180, [-\d.]+, 8, "left", 1\.25, \(0, 0, 0\), 0, False, \["\*1 本文"\]\)/,
     );
+  });
+});
+
+describe("exportReportlabTemplate — font slots and underline", () => {
+  const BOLD_FONT_SET = {
+    regular: buildUniformWidthTtf(1, 1),
+    bold: buildUniformWidthTtf(2, 1, 900),
+  };
+
+  function styledDoc(
+    overrides: Partial<
+      Extract<IrDocument["elements"][number], { type: "text" }>
+    >,
+  ): IrDocument {
+    return {
+      version: "1.0",
+      page: { width: 210, height: 297 },
+      font: { regular: "Base", bold: "BaseBold" },
+      elements: [
+        {
+          type: "text",
+          id: "t1",
+          x: 10,
+          y: 20,
+          pages: "first",
+          w: 100,
+          h: 20,
+          text: "見出し",
+          fontSize: 12,
+          align: "left",
+          lineHeight: 1.25,
+          ...overrides,
+        } as IrDocument["elements"][number],
+      ],
+    };
+  }
+
+  it("registers every declared slot in the FONTS constant", () => {
+    const result = exportReportlabTemplate(styledDoc({}), BOLD_FONT_SET);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain('"Base": ("Base.ttf", 800)');
+    expect(result.code).toContain('"BaseBold": ("BaseBold.ttf", 900)');
+    expect(result.fontFiles.map((file) => file.filename)).toEqual([
+      "Base.ttf",
+      "BaseBold.ttf",
+    ]);
+  });
+
+  it("emits the resolved slot's name into static and token text alike", () => {
+    const result = exportReportlabTemplate(
+      styledDoc({ fontWeight: "bold", text: "合計: {total}", underline: true }),
+      BOLD_FONT_SET,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      '_text(c, "BaseBold", 10, 20, 100, 20, 12, "left", 1.25, (0, 0, 0), 0, True, _wrap("BaseBold", 12, 100, _interpolate(data, "合計: {total}")))',
+    );
+  });
+
+  it("keeps table cells and pageNumber on the regular slot", () => {
+    const doc: IrDocument = {
+      version: "1.0",
+      page: { width: 210, height: 297 },
+      font: { regular: "Base", bold: "BaseBold" },
+      elements: [
+        {
+          type: "table",
+          id: "items",
+          x: 15,
+          y: 40,
+          bind: "items",
+          columns: [{ key: "name", label: "品目", width: 90, align: "left" }],
+          rowHeight: 9,
+          headerHeight: 9,
+          fontSize: 10,
+          maxY: 240,
+          continuationY: 30,
+          minRows: 0,
+        },
+        {
+          type: "pageNumber",
+          id: "pageNo",
+          x: 0,
+          y: 285,
+          pages: "all",
+          w: 210,
+          h: 6,
+          format: "{n} / {N}",
+          fontSize: 9,
+          align: "center",
+          lineHeight: 1.25,
+        },
+      ],
+    };
+    const result = exportReportlabTemplate(doc, BOLD_FONT_SET);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).not.toContain('"BaseBold",');
+    expect(result.code).toContain('_wrap("Base", 10,');
+    expect(result.code).toContain('_wrap("Base", 9,');
   });
 });

@@ -3,6 +3,8 @@ import type {
   IrBarcodeElement,
   IrDocument,
   IrEllipseElement,
+  IrFont,
+  IrFontSlot,
   IrImageElement,
   IrLineElement,
   IrPageNumberElement,
@@ -18,6 +20,7 @@ import {
   PAGE_COUNT_MAX,
   resolveEllipseStyle,
   resolveFlex,
+  resolveFontSlot,
   resolveFootnotes,
   resolveLineStyle,
   resolveRectStyle,
@@ -29,22 +32,22 @@ import {
   TABLE_HEADER_TEXT_OFFSET_Y,
   textTemplateKeys,
 } from "@denreport/core";
-import { detectFontFormat } from "../fonts/format";
-import { readAscentPerEm } from "../fonts/metrics";
-import type { FontIssue } from "../fonts/validate";
-import { validateFont } from "../fonts/validate";
-import { readCharWidths } from "../fonts/widths";
-import { pyNumber, pyRgb, pyString } from "./python";
+import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
+import { effectiveFontOf, resolveFontSetData } from "../fonts/set";
+import { pyBool, pyNumber, pyRgb, pyString } from "./python";
+import type { ReportlabFontEntry } from "./snippets";
 import {
   BARCODE_FN,
+  buildFontsConstant,
   buildImports,
   ELLIPSE_FN,
+  fontEntriesFor,
   IMAGE_FN,
   LINE_FN,
   MAIN_BLOCK,
   pyDash,
   RECT_FN,
-  REGISTER_FONT_FN,
+  REGISTER_FONTS_FN,
   REPORTLAB_BARCODE_NAMES,
   statementFor,
   TEXT_FN,
@@ -156,7 +159,7 @@ function buildHeader(hasImage: boolean): string {
     "",
     requirement,
     "",
-    "フォント: 書き出し時に併せて出力されるフォントファイル（FONT_FILE）を",
+    "フォント: 書き出し時に併せて出力されるフォントファイル（FONTS の各ファイル）を",
     "このファイルと同じディレクトリに置くこと。見つからない場合はエラー終了する。",
     "",
     "使い方: python <このファイル> [出力.pdf]（省略時 output.pdf。データなしで実行され、",
@@ -167,11 +170,12 @@ function buildHeader(hasImage: boolean): string {
   ].join("\n");
 }
 
-function buildConstants(document: IrDocument, ascentPerEm: number): string {
+function buildConstants(
+  document: IrDocument,
+  entries: readonly ReportlabFontEntry[],
+): string {
   return [
-    `FONT_NAME = ${pyString(document.font.name)}`,
-    `FONT_FILE = ${pyString(`${document.font.name}.ttf`)}`,
-    `FONT_ASCENT_EM = ${pyNumber(ascentPerEm)}`,
+    buildFontsConstant(entries),
     `PAGE_WIDTH = ${pyNumber(document.page.width)} * mm`,
     `PAGE_HEIGHT = ${pyNumber(document.page.height)} * mm`,
     `PAGE_COUNT_MAX = ${pyNumber(PAGE_COUNT_MAX)}`,
@@ -197,6 +201,7 @@ function xOf(table: IrTableElement, index: number): number {
 
 function buildTableFunction(
   table: IrTableElement,
+  regularName: string,
   wrapText: (
     content: string,
     widthMm: number,
@@ -206,8 +211,9 @@ function buildTableFunction(
   const hasOverrides = (table.cellOverrides?.length ?? 0) > 0;
   const width = table.columns.reduce((total, col) => total + col.width, 0);
   const height = `${pyNumber(table.headerHeight)} + chunk_size * ${pyNumber(table.rowHeight)}`;
+  const fontName = pyString(regularName);
   const lines: string[] = [
-    `def _table_${table.id}(c, font, rows, chunk_index, row_offset, chunk_size):`,
+    `def _table_${table.id}(c, rows, chunk_index, row_offset, chunk_size):`,
     `    y0 = ${pyNumber(table.y)} if chunk_index == 0 else ${pyNumber(table.continuationY)}`,
   ];
   if (table.stripeColor !== undefined) {
@@ -238,7 +244,7 @@ function buildTableFunction(
       .map(pyString)
       .join(", ");
     lines.push(
-      `    _text(c, font, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(TABLE_HEADER_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.headerHeight - TABLE_HEADER_TEXT_OFFSET_Y)}, ${pyNumber(table.fontSize)}, "center", 1.25, ${TABLE_BLACK_RGB}, 0, [${headerLines}])`,
+      `    _text(c, ${fontName}, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(TABLE_HEADER_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.headerHeight - TABLE_HEADER_TEXT_OFFSET_Y)}, ${pyNumber(table.fontSize)}, "center", 1.25, ${TABLE_BLACK_RGB}, 0, False, [${headerLines}])`,
     );
   });
   lines.push(
@@ -253,7 +259,7 @@ function buildTableFunction(
       : `rows[t][${pyString(column.key)}]`;
     const cellWidth = column.width - 2 * TABLE_CELL_PADDING_X;
     lines.push(
-      `        _text(c, font, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)} + ${pyNumber(TABLE_CELL_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.rowHeight - TABLE_CELL_TEXT_OFFSET_Y)}, ${pyNumber(table.fontSize)}, ${pyString(column.align)}, 1.25, ${TABLE_BLACK_RGB}, 0, _wrap(font, ${pyNumber(table.fontSize)}, ${pyNumber(cellWidth)}, ${cellAccess}))`,
+      `        _text(c, ${fontName}, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)} + ${pyNumber(TABLE_CELL_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.rowHeight - TABLE_CELL_TEXT_OFFSET_Y)}, ${pyNumber(table.fontSize)}, ${pyString(column.align)}, 1.25, ${TABLE_BLACK_RGB}, 0, False, _wrap(${fontName}, ${pyNumber(table.fontSize)}, ${pyNumber(cellWidth)}, ${cellAccess}))`,
     );
   });
   return lines.join("\n");
@@ -282,9 +288,10 @@ function guardedStatement(pages: IrPages, statement: string): string[] {
 function staticTextStatement(
   element: IrTextElement,
   layoutLines: (el: LoweredTextElement) => readonly string[],
+  font: IrFont,
 ): string {
   const text = element.text;
-  const color = resolveTextStyle(element).color;
+  const style = resolveTextStyle(element);
   if (textTemplateKeys(text).length === 0) {
     return statementFor(
       {
@@ -298,23 +305,35 @@ function staticTextStatement(
         fontSize: element.fontSize,
         align: element.align,
         lineHeight: element.lineHeight,
-        color,
+        color: style.color,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
+        underline: style.underline,
         rotate: element.rotate ?? 0,
       },
       layoutLines,
+      font,
     );
   }
-  return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${pyRgb(color)}, ${pyNumber(element.rotate ?? 0)}, _wrap(font, ${pyNumber(element.fontSize)}, ${pyNumber(element.w)}, _interpolate(data, ${pyString(text)})))`;
+  const fontName = pyString(
+    font[resolveFontSlot(font, style.fontWeight, style.fontStyle)] as string,
+  );
+  return `_text(c, ${fontName}, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${pyRgb(style.color)}, ${pyNumber(element.rotate ?? 0)}, ${pyBool(style.underline)}, _wrap(${fontName}, ${pyNumber(element.fontSize)}, ${pyNumber(element.w)}, _interpolate(data, ${pyString(text)})))`;
 }
 
-function pageNumberStatement(element: IrPageNumberElement): string {
+function pageNumberStatement(
+  element: IrPageNumberElement,
+  regularName: string,
+): string {
   const color = pyRgb(resolveTextStyle(element).color);
-  return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${color}, ${pyNumber(element.rotate ?? 0)}, _wrap(font, ${pyNumber(element.fontSize)}, ${pyNumber(element.w)}, _page_label(${pyString(element.format)}, page, page_count)))`;
+  const fontName = pyString(regularName);
+  return `_text(c, ${fontName}, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${color}, ${pyNumber(element.rotate ?? 0)}, False, _wrap(${fontName}, ${pyNumber(element.fontSize)}, ${pyNumber(element.w)}, _page_label(${pyString(element.format)}, page, page_count)))`;
 }
 
 function barcodeStatement(
   element: IrBarcodeElement,
   layoutLines: (el: LoweredTextElement) => readonly string[],
+  font: IrFont,
 ): string {
   const value = element.value;
   if (textTemplateKeys(value).length === 0) {
@@ -331,6 +350,7 @@ function barcodeStatement(
         rotate: element.rotate ?? 0,
       },
       layoutLines,
+      font,
     );
   }
   const name = pyString(REPORTLAB_BARCODE_NAMES[element.symbology]);
@@ -340,6 +360,7 @@ function barcodeStatement(
 function staticElementStatement(
   element: IrLineElement | IrRectElement | IrEllipseElement | IrImageElement,
   layoutLines: (el: LoweredTextElement) => readonly string[],
+  font: IrFont,
 ): string {
   switch (element.type) {
     case "line": {
@@ -358,6 +379,7 @@ function staticElementStatement(
           rotate: element.rotate ?? 0,
         },
         layoutLines,
+        font,
       );
     }
     case "rect": {
@@ -378,6 +400,7 @@ function staticElementStatement(
           rotate: element.rotate ?? 0,
         },
         layoutLines,
+        font,
       );
     }
     case "ellipse": {
@@ -396,6 +419,7 @@ function staticElementStatement(
           rotate: element.rotate ?? 0,
         },
         layoutLines,
+        font,
       );
     }
     case "image":
@@ -411,6 +435,7 @@ function staticElementStatement(
           rotate: element.rotate ?? 0,
         },
         layoutLines,
+        font,
       );
   }
 }
@@ -419,7 +444,7 @@ function tableDrawBlock(table: IrTableElement): string[] {
   return [
     `    rows, chunks = tables[${pyString(table.id)}]`,
     "    if page <= len(chunks):",
-    `        _table_${table.id}(c, font, rows, page - 1, sum(chunks[:page - 1]), chunks[page - 1])`,
+    `        _table_${table.id}(c, rows, page - 1, sum(chunks[:page - 1]), chunks[page - 1])`,
   ];
 }
 
@@ -427,6 +452,7 @@ function buildDrawPage(
   placed: readonly IrPlacedElement[],
   hasTables: boolean,
   layoutLines: (el: LoweredTextElement) => readonly string[],
+  font: IrFont,
 ): string {
   const body: string[] = [];
   for (const element of placed) {
@@ -436,14 +462,17 @@ function buildDrawPage(
         break;
       case "pageNumber":
         body.push(
-          ...guardedStatement(element.pages, pageNumberStatement(element)),
+          ...guardedStatement(
+            element.pages,
+            pageNumberStatement(element, font.regular),
+          ),
         );
         break;
       case "text":
         body.push(
           ...guardedStatement(
             element.pages,
-            staticTextStatement(element, layoutLines),
+            staticTextStatement(element, layoutLines, font),
           ),
         );
         break;
@@ -454,7 +483,7 @@ function buildDrawPage(
         body.push(
           ...guardedStatement(
             element.pages,
-            staticElementStatement(element, layoutLines),
+            staticElementStatement(element, layoutLines, font),
           ),
         );
         break;
@@ -462,15 +491,15 @@ function buildDrawPage(
         body.push(
           ...guardedStatement(
             element.pages,
-            barcodeStatement(element, layoutLines),
+            barcodeStatement(element, layoutLines, font),
           ),
         );
         break;
     }
   }
   const params = hasTables
-    ? "c, font, data, page, page_count, tables"
-    : "c, font, data, page, page_count";
+    ? "c, data, page, page_count, tables"
+    : "c, data, page, page_count";
   return `def _draw_page(${params}):\n${body.length === 0 ? "    pass" : body.join("\n")}`;
 }
 
@@ -478,7 +507,7 @@ function buildBuildFunction(tables: readonly IrTableElement[]): string {
   const lines = [
     "def build(output_path, data=None):",
     "    data = {} if data is None else data",
-    "    font = _register_font()",
+    "    _register_fonts()",
   ];
   if (tables.length > 0) {
     for (const table of tables) {
@@ -546,7 +575,7 @@ function buildBuildFunction(tables: readonly IrTableElement[]): string {
   lines.push(
     "    c = Canvas(output_path, pagesize=(PAGE_WIDTH, PAGE_HEIGHT))",
     "    for page in range(1, page_count + 1):",
-    `        _draw_page(c, font, data, page, page_count${drawArgs})`,
+    `        _draw_page(c, data, page, page_count${drawArgs})`,
     "        c.showPage()",
     "    c.save()",
   );
@@ -555,8 +584,9 @@ function buildBuildFunction(tables: readonly IrTableElement[]): string {
 
 function buildTemplateSource(
   document: IrDocument,
-  ascentPerEm: number,
-  charWidthEm: CharWidthEm,
+  font: IrFont,
+  slots: ReadonlyMap<IrFontSlot, ResolvedSlotFont>,
+  entries: readonly ReportlabFontEntry[],
 ): string {
   const resolved = resolveFootnotes(document);
   const placed = resolveFlex(resolved);
@@ -590,7 +620,7 @@ function buildTemplateSource(
   const needsWrapFn = hasTokenText || hasTables || hasPageNumber;
 
   const helperFns = [
-    REGISTER_FONT_FN,
+    REGISTER_FONTS_FN,
     ...(needsText ? [TEXT_FN] : []),
     ...(needsLine ? [LINE_FN] : []),
     ...(needsRect ? [RECT_FN] : []),
@@ -605,8 +635,13 @@ function buildTemplateSource(
     ...(hasPageNumber ? [PAGE_LABEL_FN] : []),
   ];
 
+  const charWidthOf = (slot: IrFontSlot): CharWidthEm =>
+    // effectiveFontOf により解決先スロットのデータ存在は保証される
+    (slots.get(slot) as ResolvedSlotFont).charWidthEm;
+
   // align は行分割そのものには影響しない（justify の字間は生成 Python が実行時に計算する）ため固定値を渡す
-  const wrapText = (
+  const wrapWith = (
+    charWidthEm: CharWidthEm,
     content: string,
     widthMm: number,
     fontSize: number,
@@ -615,16 +650,27 @@ function buildTemplateSource(
       { content, widthMm, fontSize, align: "left" },
       charWidthEm,
     ).map((line) => line.text);
+  const wrapText = (
+    content: string,
+    widthMm: number,
+    fontSize: number,
+  ): readonly string[] =>
+    wrapWith(charWidthOf("regular"), content, widthMm, fontSize);
   const layoutLines = (el: LoweredTextElement): readonly string[] =>
-    wrapText(el.content, el.w, el.fontSize);
+    wrapWith(
+      charWidthOf(resolveFontSlot(font, el.fontWeight, el.fontStyle)),
+      el.content,
+      el.w,
+      el.fontSize,
+    );
 
   const sections = [
     buildHeader(hasImage),
     buildImports(hasImage, hasTokenText, hasBarcode),
-    buildConstants(resolved, ascentPerEm),
+    buildConstants(resolved, entries),
     helperFns.join("\n\n"),
-    ...tables.map((table) => buildTableFunction(table, wrapText)),
-    buildDrawPage(placed, hasTables, layoutLines),
+    ...tables.map((table) => buildTableFunction(table, font.regular, wrapText)),
+    buildDrawPage(placed, hasTables, layoutLines, font),
     buildBuildFunction(tables),
     MAIN_BLOCK,
   ];
@@ -637,40 +683,27 @@ function buildTemplateSource(
  * `data`): text/table bindings are resolved inside the generated script's
  * `build(output_path, data)` function at Python run time, so one script can
  * render many different data sets. Data-related failures therefore cannot
- * occur here (`errors` is always empty on failure); `fontData` must still be
- * a valid TTF, otherwise export fails with fontIssues explaining why.
+ * occur here (`errors` is always empty on failure); every slot in `fonts`
+ * must still be a valid TTF with readable metrics, otherwise export fails
+ * with fontIssues explaining why.
  */
 export function exportReportlabTemplate(
   document: IrDocument,
-  fontData: Uint8Array,
+  fonts: FontSetData,
 ): ExportReportlabResult {
-  const fontIssues: FontIssue[] = [...validateFont(fontData)];
-  const ascentPerEm = readAscentPerEm(fontData);
-  const charWidthEm = readCharWidths(fontData);
-  if (fontIssues.length === 0 && ascentPerEm === null) {
-    fontIssues.push({
-      format: detectFontFormat(fontData),
-      message:
-        "フォントの計量（head / hhea テーブル）を読み取れないため、テキストのベースライン位置を確定できません。別の TTF フォントを使用してください。",
-    });
+  const fontSet = resolveFontSetData(fonts);
+  if (!fontSet.ok) {
+    return { ok: false, errors: [], fontIssues: fontSet.issues };
   }
-  if (fontIssues.length === 0 && charWidthEm === null) {
-    fontIssues.push({
-      format: detectFontFormat(fontData),
-      message:
-        "フォントの字幅（cmap / hmtx テーブル）を読み取れないため、テキストの折り返し・均等割付を計算できません。別の TTF フォントを使用してください。",
-    });
-  }
-  if (fontIssues.length > 0 || ascentPerEm === null || charWidthEm === null) {
-    return { ok: false, errors: [], fontIssues };
-  }
+  const font = effectiveFontOf(document.font, fonts);
+  const entries = fontEntriesFor(font, fonts, fontSet.slots);
   return {
     ok: true,
-    code: buildTemplateSource(document, ascentPerEm, charWidthEm),
-    fontFile: {
-      filename: `${document.font.name}.ttf`,
-      data: fontData,
-    },
+    code: buildTemplateSource(document, font, fontSet.slots, entries),
+    fontFiles: entries.map((entry) => ({
+      filename: entry.filename,
+      data: entry.data,
+    })),
     warnings: [],
   };
 }

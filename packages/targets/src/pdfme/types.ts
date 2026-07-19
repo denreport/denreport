@@ -36,6 +36,8 @@ export interface PdfmeTextSchema extends PdfmeSchemaBase {
   readonly lineHeight: number;
   /** justify（均等割付）の行のみ設定する。単位は fontSize と同じ pt */
   readonly characterSpacing?: number;
+  /** 下線。位置・太さは pdfme の描画に従う（IR は規定しない）。false のときは省略する */
+  readonly underline?: boolean;
 }
 
 /** A pdfme line schema. */

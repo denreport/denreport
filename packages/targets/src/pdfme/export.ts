@@ -2,14 +2,20 @@ import type {
   IrData,
   IrDocument,
   IrError,
+  IrFontSlot,
   LaidOutLine,
   LoweredElement,
   LoweredTextElement,
 } from "@denreport/core";
-import { layoutTextLines, lowerIr, PT_TO_MM } from "@denreport/core";
-import { detectFontFormat } from "../fonts/format";
+import {
+  layoutTextLines,
+  lowerIr,
+  PT_TO_MM,
+  resolveFontSlot,
+} from "@denreport/core";
+import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
+import { effectiveFontOf, resolveFontSetData } from "../fonts/set";
 import type { FontIssue } from "../fonts/validate";
-import { readCharWidths } from "../fonts/widths";
 import { expandStrokes, rotatePointCw } from "./dash";
 import type {
   PdfmeBarcodeSchema,
@@ -47,6 +53,11 @@ function rotateAttr(rotate: number): { readonly rotate?: number } {
   return rotate === 0 ? {} : { rotate };
 }
 
+/** underline も false のときはキーを出さない（既存スキーマ形の安定のため） */
+function underlineAttr(underline: boolean): { readonly underline?: boolean } {
+  return underline ? { underline } : {};
+}
+
 function toStaticAlignment(
   align: LoweredTextElement["align"],
 ): "left" | "center" | "right" {
@@ -71,6 +82,7 @@ function textSchema(
     alignment: toStaticAlignment(element.align),
     verticalAlignment: "top",
     lineHeight: element.lineHeight,
+    ...underlineAttr(element.underline),
     ...rotateAttr(element.rotate),
   };
 }
@@ -108,6 +120,7 @@ function justifyLineSchema(
     verticalAlignment: "top",
     lineHeight: element.lineHeight,
     characterSpacing: line.charSpacePt,
+    ...underlineAttr(element.underline),
     ...rotateAttr(element.rotate),
   };
 }
@@ -196,35 +209,35 @@ function toSchema(
   }
 }
 
-const FONT_WIDTH_ISSUE_MESSAGE =
-  "フォントの字幅（cmap / hmtx テーブル）を読み取れないため、テキストの折り返し・均等割付を計算できません。別の TTF フォントを使用してください。";
-
 /**
  * Lowers `document` with `data` and converts the result into a pdfme
- * template plus its single input record, using `fontData` to measure text
- * for wrapping and justification. `fontData` must be a valid TTF (see
- * validateFont) with readable cmap/hmtx tables; otherwise export fails with a
- * fontIssues entry explaining why.
+ * template plus its single input record, using `fonts` to measure text for
+ * wrapping and justification — each element measures with the font of its
+ * resolved slot. Every slot in `fonts` must be a valid TTF (see validateFont)
+ * with readable metrics; otherwise export fails with fontIssues explaining
+ * why.
  */
 export function exportPdfme(
   document: IrDocument,
   data: IrData,
-  fontData: Uint8Array,
+  fonts: FontSetData,
 ): ExportPdfmeResult {
-  const charWidthEm = readCharWidths(fontData);
+  const fontSet = resolveFontSetData(fonts);
   const result = lowerIr(document, data);
-  if (charWidthEm === null || !result.ok) {
-    const fontIssues: FontIssue[] =
-      charWidthEm === null
-        ? [
-            {
-              format: detectFontFormat(fontData),
-              message: FONT_WIDTH_ISSUE_MESSAGE,
-            },
-          ]
-        : [];
-    return { ok: false, errors: result.ok ? [] : result.errors, fontIssues };
+  if (!fontSet.ok || !result.ok) {
+    return {
+      ok: false,
+      errors: result.ok ? [] : result.errors,
+      fontIssues: fontSet.ok ? [] : fontSet.issues,
+    };
   }
+
+  const font = effectiveFontOf(document.font, fonts);
+  const slotFor = (element: LoweredTextElement): IrFontSlot =>
+    resolveFontSlot(font, element.fontWeight, element.fontStyle);
+  const slotFontFor = (slot: IrFontSlot): ResolvedSlotFont =>
+    // effectiveFontOf により解決先スロットのデータ存在は保証される
+    fontSet.slots.get(slot) as ResolvedSlotFont;
 
   const lowered = result.document;
   const inputs: Record<string, string> = {};
@@ -242,6 +255,8 @@ export function exportPdfme(
         if (input) inputs[input[0]] = input[1];
         return [schema];
       }
+      const slot = slotFor(element);
+      const fontName = font[slot] as string;
       const lines = layoutTextLines(
         {
           content: element.content,
@@ -249,23 +264,17 @@ export function exportPdfme(
           fontSize: element.fontSize,
           align: element.align,
         },
-        charWidthEm,
+        slotFontFor(slot).charWidthEm,
       );
       if (lines.every((line) => line.charSpacePt === 0)) {
         const name = nextName(element.sourceId);
         inputs[name] = lines.map((line) => line.text).join("\n");
-        return [textSchema(name, element, lowered.font.name)];
+        return [textSchema(name, element, fontName)];
       }
       return lines.map((line, lineIndex) => {
         const name = nextName(element.sourceId);
         inputs[name] = line.text;
-        return justifyLineSchema(
-          name,
-          element,
-          lowered.font.name,
-          line,
-          lineIndex,
-        );
+        return justifyLineSchema(name, element, fontName, line, lineIndex);
       });
     });
   });

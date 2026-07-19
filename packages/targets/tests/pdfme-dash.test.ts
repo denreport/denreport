@@ -70,6 +70,9 @@ const textEl: LoweredTextElement = {
   align: "left",
   lineHeight: 1.25,
   color: "#000000",
+  fontWeight: "normal",
+  fontStyle: "normal",
+  underline: false,
   rotate: 0,
 };
 

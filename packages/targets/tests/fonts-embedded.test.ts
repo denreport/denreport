@@ -1,6 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  EMBEDDED_BOLD_FONT_NAME,
+  EMBEDDED_BOLD_FONT_URL,
   EMBEDDED_FONT_LICENSE_URL,
   EMBEDDED_FONT_NAME,
   EMBEDDED_FONT_URL,
@@ -102,5 +104,42 @@ describe("embedded font asset", () => {
     const license = readFileSync(EMBEDDED_FONT_LICENSE_URL, "utf-8");
     expect(license.length).toBeGreaterThan(0);
     expect(license).toContain("SIL OPEN FONT LICENSE Version 1.1");
+  });
+});
+
+describe("embedded bold font asset", () => {
+  const font = new Uint8Array(readFileSync(EMBEDDED_BOLD_FONT_URL));
+  const directory = tableDirectory(font);
+
+  it("exposes the recommended logical name", () => {
+    expect(EMBEDDED_BOLD_FONT_NAME).toBe("NotoSansJPBold");
+  });
+
+  it("is detected as a glyf-outline TTF", () => {
+    expect(detectFontFormat(font)).toBe("ttf");
+  });
+
+  it("contains glyf and no CFF/CFF2/fvar/gvar tables (static instance)", () => {
+    const tags = [...directory.keys()];
+    expect(tags).toContain("glyf");
+    for (const forbidden of ["CFF ", "CFF2", "fvar", "gvar"]) {
+      expect(tags).not.toContain(forbidden);
+    }
+  });
+
+  it("declares usWeightClass 700 (Bold)", () => {
+    const os2 = directory.get("OS/2");
+    expect(os2).toBeDefined();
+    if (!os2) throw new Error("expected OS/2 table");
+    const view = new DataView(font.buffer, font.byteOffset, font.byteLength);
+    expect(view.getUint16(os2.offset + 4)).toBe(700);
+  });
+
+  it("carries Bold naming", () => {
+    const nameTable = directory.get("name");
+    expect(nameTable).toBeDefined();
+    if (!nameTable) throw new Error("expected name table");
+    const names = nameStrings(font, nameTable);
+    expect(names.get(6)).toBe("NotoSansJP-Bold");
   });
 });

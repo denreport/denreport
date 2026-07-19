@@ -41,10 +41,13 @@ describe("exportReportlab — golden fixture snapshots", () => {
     const data = readJson<IrData>(fixturesDir, dataFile);
     const fontData = new Uint8Array(readFileSync(EMBEDDED_FONT_URL));
 
-    const result = exportReportlab(parsed.document, data, fontData);
+    const result = exportReportlab(parsed.document, data, {
+      regular: fontData,
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
-    expect(result.fontFile.data).toBe(fontData);
+    expect(result.fontFiles).toHaveLength(1);
+    expect(result.fontFiles[0]?.data).toBe(fontData);
 
     await expect(result.code).toMatchFileSnapshot(`./__snapshots__/${name}.py`);
   });

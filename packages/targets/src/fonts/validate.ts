@@ -1,3 +1,4 @@
+import type { IrFontSlot } from "@denreport/core";
 import type { FontFormat } from "./format";
 import { detectFontFormat } from "./format";
 
@@ -8,6 +9,8 @@ import { detectFontFormat } from "./format";
 export interface FontIssue {
   readonly format: FontFormat;
   readonly message: string;
+  /** The font-set slot the issue occurred in. Set by resolveFontSetData. */
+  readonly slot?: IrFontSlot;
 }
 
 const REJECTION_MESSAGES: Readonly<Record<Exclude<FontFormat, "ttf">, string>> =

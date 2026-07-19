@@ -20,8 +20,8 @@ import {
   syntheticTtf,
 } from "./helpers/sfnt";
 
-const FONT = syntheticTtf();
-const UNIT_WIDTH_FONT = buildUniformWidthTtf(1, 1);
+const FONT = { regular: syntheticTtf() };
+const UNIT_WIDTH_FONT = { regular: buildUniformWidthTtf(1, 1) };
 
 function widthMmFor(widthPt: number): number {
   return widthPt * PT_TO_MM;
@@ -31,7 +31,7 @@ function docOf(...elements: IrDocument["elements"]): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -734,7 +734,7 @@ describe("exportPdfme — font width gate", () => {
     const fontWithoutWidths = buildSfnt(0x00010000, [
       { tag: "head", data: buildHeadTable(1000) },
     ]);
-    const result = exportPdfme(docOf(), {}, fontWithoutWidths);
+    const result = exportPdfme(docOf(), {}, { regular: fontWithoutWidths });
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected failure");
     expect(result.errors).toEqual([]);
@@ -803,7 +803,140 @@ describe("exportPdfme — barcode PDF generation", () => {
       value: "{code}",
     });
     const fontData = new Uint8Array(readFileSync(EMBEDDED_FONT_URL));
-    const pdfBytes = await generatePdfmePdf(doc, { code: "ABC-123" }, fontData);
+    const pdfBytes = await generatePdfmePdf(
+      doc,
+      { code: "ABC-123" },
+      {
+        regular: fontData,
+      },
+    );
     expect(pdfBytes.byteLength).toBeGreaterThan(0);
+  });
+});
+
+describe("exportPdfme — font slots and underline", () => {
+  const BOLD_FONT_SET = {
+    regular: buildUniformWidthTtf(1, 1),
+    bold: buildUniformWidthTtf(2, 1),
+  };
+
+  function styledText(
+    overrides: Partial<
+      Extract<IrDocument["elements"][number], { type: "text" }>
+    >,
+  ): IrDocument {
+    return {
+      version: "1.0",
+      page: { width: 210, height: 297 },
+      font: { regular: "Base", bold: "BaseBold" },
+      elements: [
+        {
+          type: "text",
+          id: "t1",
+          x: 10,
+          y: 20,
+          pages: "first",
+          w: widthMmFor(6.5),
+          h: 20,
+          text: "abcdef",
+          fontSize: 1,
+          align: "left",
+          lineHeight: 1.25,
+          ...overrides,
+        } as IrDocument["elements"][number],
+      ],
+    };
+  }
+
+  it("outputs the bold slot's logical name as fontName for a bold element", () => {
+    const result = exportPdfme(
+      styledText({ fontWeight: "bold" }),
+      {},
+      BOLD_FONT_SET,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const schema = result.template.schemas[0]?.[0] as PdfmeTextSchema;
+    expect(schema.fontName).toBe("BaseBold");
+  });
+
+  it("falls back to the regular name when the requested slot is undeclared", () => {
+    const doc: IrDocument = {
+      ...styledText({ fontWeight: "bold" }),
+      font: { regular: "Base" },
+    };
+    const result = exportPdfme(doc, {}, { regular: BOLD_FONT_SET.regular });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const schema = result.template.schemas[0]?.[0] as PdfmeTextSchema;
+    expect(schema.fontName).toBe("Base");
+  });
+
+  it("wraps a bold element with the bold slot's widths, not the regular's", () => {
+    // 幅 6pt の箱: regular（1em/字）なら 6 字で 1 行、bold（2em/字）なら 3 字で折り返す
+    const result = exportPdfme(
+      styledText({ fontWeight: "bold" }),
+      {},
+      BOLD_FONT_SET,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const schema = result.template.schemas[0]?.[0] as PdfmeTextSchema;
+    expect(result.inputs[0][schema.name]).toBe("abc\ndef");
+
+    const regularResult = exportPdfme(styledText({}), {}, BOLD_FONT_SET);
+    expect(regularResult.ok).toBe(true);
+    if (!regularResult.ok) throw new Error("expected success");
+    const regularSchema = regularResult.template
+      .schemas[0]?.[0] as PdfmeTextSchema;
+    expect(regularResult.inputs[0][regularSchema.name]).toBe("abcdef");
+  });
+
+  it("outputs underline: true and omits the key when false", () => {
+    const result = exportPdfme(
+      styledText({ underline: true }),
+      {},
+      BOLD_FONT_SET,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const underlined = result.template.schemas[0]?.[0] as PdfmeTextSchema;
+    expect(underlined.underline).toBe(true);
+
+    const plain = exportPdfme(styledText({}), {}, BOLD_FONT_SET);
+    expect(plain.ok).toBe(true);
+    if (!plain.ok) throw new Error("expected success");
+    expect("underline" in (plain.template.schemas[0]?.[0] ?? {})).toBe(false);
+  });
+
+  it("keeps underline on every per-line schema of a stretched justify text", () => {
+    const doc = styledText({
+      align: "justify",
+      underline: true,
+      w: widthMmFor(3.5),
+    });
+    const result = exportPdfme(doc, {}, BOLD_FONT_SET);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const schemas = result.template.schemas[0] as PdfmeTextSchema[];
+    expect(schemas).toHaveLength(2);
+    for (const schema of schemas) {
+      expect(schema.underline).toBe(true);
+    }
+  });
+
+  it("tags fontIssues with the broken slot", () => {
+    const fontWithoutWidths = buildSfnt(0x00010000, [
+      { tag: "head", data: buildHeadTable(1000) },
+    ]);
+    const result = exportPdfme(
+      styledText({}),
+      {},
+      { regular: BOLD_FONT_SET.regular, bold: fontWithoutWidths },
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.fontIssues).toHaveLength(1);
+    expect(result.fontIssues[0]?.slot).toBe("bold");
   });
 });

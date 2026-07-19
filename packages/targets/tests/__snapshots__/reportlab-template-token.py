@@ -2,7 +2,7 @@
 
 実行要件: Python 3, reportlab
 
-フォント: 書き出し時に併せて出力されるフォントファイル（FONT_FILE）を
+フォント: 書き出し時に併せて出力されるフォントファイル（FONTS の各ファイル）を
 このファイルと同じディレクトリに置くこと。見つからない場合はエラー終了する。
 
 使い方: python <このファイル> [出力.pdf]（省略時 output.pdf。データなしで実行され、
@@ -20,21 +20,22 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen.canvas import Canvas
 
-FONT_NAME = "NotoSansJP"
-FONT_FILE = "NotoSansJP.ttf"
-FONT_ASCENT_EM = 1.16
+FONTS = {
+    "NotoSansJP": ("NotoSansJP.ttf", 1.16),
+}
 PAGE_WIDTH = 210 * mm
 PAGE_HEIGHT = 297 * mm
 PAGE_COUNT_MAX = 1000
 
-def _register_font():
-    font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), FONT_FILE)
-    if not os.path.exists(font_path):
-        sys.exit(f"フォントファイルが見つかりません: {font_path}（このファイルと同じディレクトリに置くこと）")
-    pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
-    return FONT_NAME
+def _register_fonts():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    for name, (file, _) in FONTS.items():
+        font_path = os.path.join(base_dir, file)
+        if not os.path.exists(font_path):
+            sys.exit(f"フォントファイルが見つかりません: {font_path}（このファイルと同じディレクトリに置くこと）")
+        pdfmetrics.registerFont(TTFont(name, font_path))
 
-def _text(c, font, x, y, w, h, size, align, line_height, color, rot, lines):
+def _text(c, font, x, y, w, h, size, align, line_height, color, rot, underline, lines):
     c.saveState()
     if rot:
         cx, cy = (x + w / 2) * mm, PAGE_HEIGHT - (y + h / 2) * mm
@@ -43,23 +44,33 @@ def _text(c, font, x, y, w, h, size, align, line_height, color, rot, lines):
         c.translate(-cx, -cy)
     c.setFont(font, size)
     c.setFillColorRGB(*color)
+    ascent = FONTS[font][1]
     for i, line in enumerate(lines):
-        baseline = PAGE_HEIGHT - y * mm - (FONT_ASCENT_EM + (line_height - 1) / 2 + i * line_height) * size
+        baseline = PAGE_HEIGHT - y * mm - (ascent + (line_height - 1) / 2 + i * line_height) * size
+        width = pdfmetrics.stringWidth(line, font, size)
         if align == "justify":
             n = len(line)
-            width = pdfmetrics.stringWidth(line, font, size)
             t = c.beginText(x * mm, baseline)
             t.setFont(font, size)
-            if n >= 2 and width < w * mm:
+            stretched = n >= 2 and width < w * mm
+            if stretched:
                 t.setCharSpace((w * mm - width) / (n - 1))
             t.textOut(line)
             c.drawText(t)
+            line_x, line_w = x * mm, (w * mm if stretched else width)
         elif align == "left":
             c.drawString(x * mm, baseline, line)
+            line_x, line_w = x * mm, width
         elif align == "center":
             c.drawCentredString((x + w / 2) * mm, baseline, line)
+            line_x, line_w = (x + w / 2) * mm - width / 2, width
         else:
             c.drawRightString((x + w) * mm, baseline, line)
+            line_x, line_w = (x + w) * mm - width, width
+        if underline and line_w > 0:
+            c.setStrokeColorRGB(*color)
+            c.setLineWidth(0.05 * size)
+            c.line(line_x, baseline - 0.1 * size, line_x + line_w, baseline - 0.1 * size)
     c.restoreState()
 
 def _bind_str(data, key):
@@ -93,19 +104,19 @@ def _wrap(font, size, w, text):
         lines.append(line)
     return lines
 
-def _draw_page(c, font, data, page, page_count):
+def _draw_page(c, data, page, page_count):
     if page == 1:
-        _text(c, font, 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, _wrap(font, 12, 100, _interpolate(data, "{customerName}")))
+        _text(c, "NotoSansJP", 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, False, _wrap("NotoSansJP", 12, 100, _interpolate(data, "{customerName}")))
     if page == 1:
-        _text(c, font, 0, 10, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, _wrap(font, 12, 100, _interpolate(data, "合計: {total} 円")))
+        _text(c, "NotoSansJP", 0, 10, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, False, _wrap("NotoSansJP", 12, 100, _interpolate(data, "合計: {total} 円")))
 
 def build(output_path, data=None):
     data = {} if data is None else data
-    font = _register_font()
+    _register_fonts()
     page_count = 1
     c = Canvas(output_path, pagesize=(PAGE_WIDTH, PAGE_HEIGHT))
     for page in range(1, page_count + 1):
-        _draw_page(c, font, data, page, page_count)
+        _draw_page(c, data, page, page_count)
         c.showPage()
     c.save()
 

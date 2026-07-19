@@ -60,7 +60,9 @@ describe.skipIf(reportlabPdfDir === undefined || reportlabPdfDir === "")(
       );
       expect(checkAgainstReference(reportlabPdf, expectation)).toEqual([]);
 
-      const pdfmeBytes = await generatePdfmePdf(document, data, fontData);
+      const pdfmeBytes = await generatePdfmePdf(document, data, {
+        regular: fontData,
+      });
       mkdirSync(outputDir, { recursive: true });
       writeFileSync(`${outputDir}/pdfme-${name}.pdf`, pdfmeBytes);
       const pdfmePdf = await extractPdf(pdfmeBytes);
@@ -112,7 +114,9 @@ describe.skipIf(reportlabPdfDir === undefined || reportlabPdfDir === "")(
       const reportlabPdf = await extractPdf(
         new Uint8Array(readFileSync(resolve(pdfDir, "reportlab-rotation.pdf"))),
       );
-      const pdfmeBytes = await generatePdfmePdf(document, data, fontData);
+      const pdfmeBytes = await generatePdfmePdf(document, data, {
+        regular: fontData,
+      });
       mkdirSync(outputDir, { recursive: true });
       writeFileSync(`${outputDir}/pdfme-rotation.pdf`, pdfmeBytes);
       const pdfmePdf = await extractPdf(pdfmeBytes);

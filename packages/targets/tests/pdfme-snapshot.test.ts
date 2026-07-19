@@ -41,7 +41,7 @@ describe("exportPdfme — golden fixture snapshots", () => {
     if (!parsed.ok) throw new Error("expected valid IR fixture");
     const data = readJson<IrData>(fixturesDir, dataFile);
 
-    const result = exportPdfme(parsed.document, data, fontData);
+    const result = exportPdfme(parsed.document, data, { regular: fontData });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
 

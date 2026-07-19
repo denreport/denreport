@@ -9,32 +9,28 @@ import {
   rectangle,
   text,
 } from "@pdfme/schemas";
-import { validateFont } from "../../src/fonts/validate";
+import type { FontSetData } from "../../src/fonts/set";
 import { exportPdfme } from "../../src/pdfme/export";
-import { buildPdfmeFont } from "../../src/pdfme/font";
+import { buildPdfmeFontMap } from "../../src/pdfme/font";
 
 export async function generatePdfmePdf(
   document: IrDocument,
   data: IrData,
-  fontData: Uint8Array,
+  fonts: FontSetData,
 ): Promise<Uint8Array> {
-  const fontIssues = validateFont(fontData);
-  if (fontIssues.length > 0) {
-    throw new Error(
-      `invalid font: ${fontIssues.map((issue) => issue.message).join(", ")}`,
-    );
-  }
-  const result = exportPdfme(document, data, fontData);
+  const result = exportPdfme(document, data, fonts);
   if (!result.ok) {
-    throw new Error(
-      `exportPdfme failed: ${result.errors.map((e) => `${e.rule} ${e.message}`).join(", ")}`,
-    );
+    const detail = [
+      ...result.errors.map((e) => `${e.rule} ${e.message}`),
+      ...result.fontIssues.map((issue) => issue.message),
+    ].join(", ");
+    throw new Error(`exportPdfme failed: ${detail}`);
   }
   return generate({
     template: result.template as unknown as Template,
     inputs: [{ ...result.inputs[0] }],
     options: {
-      font: buildPdfmeFont(document.font.name, fontData) as unknown as Font,
+      font: buildPdfmeFontMap(document.font, fonts) as unknown as Font,
     },
     plugins: { text, line, rectangle, ellipse, image, ...barcodes },
   });

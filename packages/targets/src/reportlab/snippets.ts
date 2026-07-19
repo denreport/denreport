@@ -1,11 +1,15 @@
 import type {
   IrBarcodeSymbology,
+  IrFont,
+  IrFontSlot,
   IrStrokeStyle,
   LoweredElement,
   LoweredTextElement,
 } from "@denreport/core";
-import { STROKE_DASH_MM } from "@denreport/core";
-import { pyNumber, pyRgb, pyString } from "./python";
+import { resolveFontSlot, STROKE_DASH_MM } from "@denreport/core";
+import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
+import { FONT_SLOTS } from "../fonts/set";
+import { pyBool, pyNumber, pyRgb, pyString } from "./python";
 
 // createBarcodeDrawing の規格名（reportlab.graphics.barcode.getCodeNames() の表記）
 export const REPORTLAB_BARCODE_NAMES: Readonly<
@@ -17,19 +21,70 @@ export const REPORTLAB_BARCODE_NAMES: Readonly<
   ean13: "EAN13",
 };
 
-export const REGISTER_FONT_FN = [
-  "def _register_font():",
-  "    font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), FONT_FILE)",
-  "    if not os.path.exists(font_path):",
-  '        sys.exit(f"フォントファイルが見つかりません: {font_path}（このファイルと同じディレクトリに置くこと）")',
-  "    pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))",
-  "    return FONT_NAME",
+/** One registered font of the generated script: its logical name, bundled file name, ascent, and data. */
+export interface ReportlabFontEntry {
+  readonly name: string;
+  readonly filename: string;
+  readonly ascentPerEm: number;
+  readonly data: Uint8Array;
+}
+
+/**
+ * Collects the font entries the generated script registers: one per slot
+ * declared in `font` with data present, deduplicated by logical name.
+ */
+export function fontEntriesFor(
+  font: IrFont,
+  fonts: FontSetData,
+  slots: ReadonlyMap<IrFontSlot, ResolvedSlotFont>,
+): readonly ReportlabFontEntry[] {
+  const entries: ReportlabFontEntry[] = [];
+  const seen = new Set<string>();
+  for (const slot of FONT_SLOTS) {
+    const name = font[slot];
+    const data = fonts[slot];
+    const resolved = slots.get(slot);
+    if (name === undefined || data === undefined || resolved === undefined)
+      continue;
+    if (seen.has(name)) continue;
+    seen.add(name);
+    entries.push({
+      name,
+      filename: `${name}.ttf`,
+      ascentPerEm: resolved.ascentPerEm,
+      data,
+    });
+  }
+  return entries;
+}
+
+/** Renders the FONTS constant (logical name → bundled file name and ascent) of the generated script. */
+export function buildFontsConstant(
+  entries: readonly ReportlabFontEntry[],
+): string {
+  const body = entries
+    .map(
+      (entry) =>
+        `    ${pyString(entry.name)}: (${pyString(entry.filename)}, ${pyNumber(entry.ascentPerEm)}),`,
+    )
+    .join("\n");
+  return `FONTS = {\n${body}\n}`;
+}
+
+export const REGISTER_FONTS_FN = [
+  "def _register_fonts():",
+  "    base_dir = os.path.dirname(os.path.abspath(__file__))",
+  "    for name, (file, _) in FONTS.items():",
+  "        font_path = os.path.join(base_dir, file)",
+  "        if not os.path.exists(font_path):",
+  '            sys.exit(f"フォントファイルが見つかりません: {font_path}（このファイルと同じディレクトリに置くこと）")',
+  "        pdfmetrics.registerFont(TTFont(name, font_path))",
 ].join("\n");
 
 // IR の rotate は y 下向き座標系での時計回り正。PDF 座標系は y 上向きのため、
 // 各描画関数は c.rotate に符号を反転した -rot を渡して見た目の回転方向を一致させる
 export const TEXT_FN = [
-  "def _text(c, font, x, y, w, h, size, align, line_height, color, rot, lines):",
+  "def _text(c, font, x, y, w, h, size, align, line_height, color, rot, underline, lines):",
   "    c.saveState()",
   "    if rot:",
   "        cx, cy = (x + w / 2) * mm, PAGE_HEIGHT - (y + h / 2) * mm",
@@ -38,23 +93,33 @@ export const TEXT_FN = [
   "        c.translate(-cx, -cy)",
   "    c.setFont(font, size)",
   "    c.setFillColorRGB(*color)",
+  "    ascent = FONTS[font][1]",
   "    for i, line in enumerate(lines):",
-  "        baseline = PAGE_HEIGHT - y * mm - (FONT_ASCENT_EM + (line_height - 1) / 2 + i * line_height) * size",
+  "        baseline = PAGE_HEIGHT - y * mm - (ascent + (line_height - 1) / 2 + i * line_height) * size",
+  "        width = pdfmetrics.stringWidth(line, font, size)",
   '        if align == "justify":',
   "            n = len(line)",
-  "            width = pdfmetrics.stringWidth(line, font, size)",
   "            t = c.beginText(x * mm, baseline)",
   "            t.setFont(font, size)",
-  "            if n >= 2 and width < w * mm:",
+  "            stretched = n >= 2 and width < w * mm",
+  "            if stretched:",
   "                t.setCharSpace((w * mm - width) / (n - 1))",
   "            t.textOut(line)",
   "            c.drawText(t)",
+  "            line_x, line_w = x * mm, (w * mm if stretched else width)",
   '        elif align == "left":',
   "            c.drawString(x * mm, baseline, line)",
+  "            line_x, line_w = x * mm, width",
   '        elif align == "center":',
   "            c.drawCentredString((x + w / 2) * mm, baseline, line)",
+  "            line_x, line_w = (x + w / 2) * mm - width / 2, width",
   "        else:",
   "            c.drawRightString((x + w) * mm, baseline, line)",
+  "            line_x, line_w = (x + w) * mm - width, width",
+  "        if underline and line_w > 0:",
+  "            c.setStrokeColorRGB(*color)",
+  "            c.setLineWidth(0.05 * size)",
+  "            c.line(line_x, baseline - 0.1 * size, line_x + line_w, baseline - 0.1 * size)",
   "    c.restoreState()",
 ].join("\n");
 
@@ -186,14 +251,22 @@ function pyOptionalRgb(color: string | null): string {
   return color === null ? "None" : pyRgb(color);
 }
 
+/** Logical font name for a lowered text element: its (weight, style) resolved against `font`. */
+export function fontNameFor(font: IrFont, element: LoweredTextElement): string {
+  return font[
+    resolveFontSlot(font, element.fontWeight, element.fontStyle)
+  ] as string;
+}
+
 export function statementFor(
   element: LoweredElement,
   layoutLines: (el: LoweredTextElement) => readonly string[],
+  font: IrFont,
 ): string {
   switch (element.type) {
     case "text": {
       const lines = layoutLines(element).map(pyString).join(", ");
-      return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${pyRgb(element.color)}, ${pyNumber(element.rotate)}, [${lines}])`;
+      return `_text(c, ${pyString(fontNameFor(font, element))}, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${pyRgb(element.color)}, ${pyNumber(element.rotate)}, ${pyBool(element.underline)}, [${lines}])`;
     }
     case "line": {
       const [x2, y2] =
