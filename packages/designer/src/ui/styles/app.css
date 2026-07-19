@@ -1118,7 +1118,11 @@
 .apx-h--rotate {
   border-radius: 50%;
   transform: rotate(var(--rot, 0deg)) translateY(-16px);
-  cursor: grab;
+  /* CSS に回転専用カーソルは無いため、黒フチ白フィルの円弧矢印を SVG data URI で自作（両テーマで視認可） */
+  cursor:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M14.54,6.56 A6,6 0 1,1 9.46,6.56' fill='none' stroke='black' stroke-width='3.2' stroke-linecap='round'/%3E%3Cpath d='M14.54,6.56 A6,6 0 1,1 9.46,6.56' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round'/%3E%3Cpolygon points='9.46,1.06 10.76,5.06 8.16,5.06' fill='white' stroke='black' stroke-width='1.1' stroke-linejoin='round' transform='rotate(65 9.46 6.56)'/%3E%3C/svg%3E")
+    12 12,
+    alias;
 }
 
 .apx-h[data-apx-handle="nw"],

@@ -73,3 +73,26 @@ describe("app.css の primary ボタンは CTA 専用トークンで視覚的重
     );
   });
 });
+
+// リサイズハンドルは方向性カーソル（nwse-resize 等）を持つのに対し、
+// 回転ハンドルだけ手のひら（grab）だと回転操作であることが伝わらない
+describe("app.css の回転ハンドルは回転専用カーソルを持つ", () => {
+  it(".apx-h--rotate は grab を使わず SVG data URI のカスタムカーソルを持つ", () => {
+    const body = ruleBody(".apx-h--rotate");
+    expect(body).not.toMatch(/cursor:\s*grab/);
+    expect(body).toMatch(
+      /cursor:\s*url\("data:image\/svg\+xml,[^"]+"\)\s*12 12,\s*alias;/,
+    );
+  });
+
+  it("カーソル画像は 24x24 のホットスポット中心・フォールバック alias を持つ", () => {
+    const body = ruleBody(".apx-h--rotate");
+    const match = body.match(/cursor:\s*url\("(data:image\/svg\+xml,[^"]+)"\)/);
+    const dataUri = match?.[1];
+    if (!dataUri) throw new Error("カーソルの data URI が見つからない");
+    const svg = decodeURIComponent(dataUri);
+    expect(svg).toMatch(/width='24'\s+height='24'/);
+    expect(svg).toContain("stroke='black'");
+    expect(svg).toContain("stroke='white'");
+  });
+});
