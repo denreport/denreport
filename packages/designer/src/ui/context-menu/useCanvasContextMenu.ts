@@ -14,6 +14,7 @@ import {
 } from "../../state/commands";
 import { expandIdsToGroups } from "../../state/groups";
 import type { EditorStore } from "../../state/store";
+import type { CellSelectionApi } from "../canvas/useCellSelection";
 import type { CanvasMenuAction, CanvasMenuItem } from "./menu-items";
 import { buildCanvasMenuItems, resolveContextTarget } from "./menu-items";
 
@@ -30,6 +31,7 @@ export function useCanvasContextMenu(
   interactionActive: boolean,
   /** 閉じた後のフォーカス戻し先（紙面）を呼び出し元が渡す */
   restoreFocus: () => void,
+  cell: CellSelectionApi,
 ): {
   readonly menu: ContextMenuState | null;
   readonly onContextMenu: (e: ReactMouseEvent<HTMLDivElement>) => void;
@@ -61,6 +63,10 @@ export function useCanvasContextMenu(
         clipboardFromSelection(state.document, selection, state.groups) !==
         null;
       const selectedState = { ...state, selection };
+      const cellCtx =
+        cell.selection !== null && targetId === cell.selection.tableId
+          ? { canMerge: cell.canMerge, canUnmerge: cell.canUnmerge }
+          : null;
       const items = buildCanvasMenuItems({
         onElement: target.onElement,
         canCopy,
@@ -68,15 +74,22 @@ export function useCanvasContextMenu(
         hasClipboard: store.getClipboard() !== null,
         canGroup: canGroupSelection(selectedState),
         canUngroup: canUngroupSelection(selectedState),
+        cell: cellCtx,
       });
       setMenu({ x: e.clientX, y: e.clientY, items });
     },
-    [store, interactionActive],
+    [store, interactionActive, cell],
   );
 
   const onAction = useCallback(
     (action: CanvasMenuAction): void => {
       switch (action) {
+        case "mergeCells":
+          cell.merge();
+          break;
+        case "unmergeCells":
+          cell.unmerge();
+          break;
         case "copy":
           copySelection(store);
           break;
@@ -102,7 +115,7 @@ export function useCanvasContextMenu(
       setMenu(null);
       restoreFocus();
     },
-    [store, restoreFocus],
+    [store, restoreFocus, cell],
   );
 
   const onClose = useCallback((): void => {

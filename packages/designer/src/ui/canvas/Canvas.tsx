@@ -42,6 +42,7 @@ import { PaperElement } from "./PaperElement";
 import { Ruler } from "./Ruler";
 import { SelectionOverlay } from "./SelectionOverlay";
 import type { CanvasInteraction } from "./useCanvasInteraction";
+import { useCellSelection } from "./useCellSelection";
 import type { GuideDragApi } from "./useGuideDrag";
 import { useGuideDrag } from "./useGuideDrag";
 import { usePanning } from "./usePanning";
@@ -198,6 +199,7 @@ export function Canvas(props: {
     () => layoutDocument(doc, view.pageContext),
     [doc, view.pageContext],
   );
+  const cellSel = useCellSelection(store, layout);
   const cellSources = useMemo(
     () => tableCellSources(doc, activeJson),
     [doc, activeJson],
@@ -244,6 +246,7 @@ export function Canvas(props: {
     store,
     interaction.interaction.kind !== "idle",
     restoreFocus,
+    cellSel,
   );
 
   // 初期ズームはページ全体フィット。マウント時1回だけで、ウィンドウリサイズには追従しない
@@ -423,8 +426,30 @@ export function Canvas(props: {
           tabIndex={0}
           {...interaction.paperProps}
           onPointerDown={
-            pan.panMode ? undefined : interaction.paperProps.onPointerDown
+            pan.panMode
+              ? undefined
+              : (e) => {
+                  if (
+                    interaction.interaction.kind === "idle" &&
+                    cellSel.onPointerDown(e)
+                  ) {
+                    return;
+                  }
+                  interaction.paperProps.onPointerDown(e);
+                }
           }
+          onPointerMove={(e) => {
+            cellSel.onPointerMove(e);
+            interaction.paperProps.onPointerMove(e);
+          }}
+          onPointerUp={(e) => {
+            cellSel.onPointerUp();
+            interaction.paperProps.onPointerUp(e);
+          }}
+          onPointerCancel={(e) => {
+            cellSel.onPointerCancel();
+            interaction.paperProps.onPointerCancel(e);
+          }}
           onDoubleClick={pan.panMode ? undefined : onPaperDoubleClick}
           onContextMenu={
             pan.panMode ? (e) => e.preventDefault() : menu.onContextMenu
@@ -443,6 +468,19 @@ export function Canvas(props: {
               }
             />
           ))}
+          {cellSel.selectionBox !== null && (
+            <div
+              className="apx-cell-sel"
+              style={
+                {
+                  "--x": cellSel.selectionBox.x,
+                  "--y": cellSel.selectionBox.y,
+                  "--w": cellSel.selectionBox.w,
+                  "--h": cellSel.selectionBox.h,
+                } as CSSProperties
+              }
+            />
+          )}
           {doc.elements.length === 0 &&
             interaction.interaction.kind !== "placing" && (
               <div className="apx-paper-empty-hint">

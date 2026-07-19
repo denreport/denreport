@@ -1,5 +1,6 @@
 import type {
   IrDocument,
+  IrTableCellSpan,
   IrTableElement,
   TableChunkMerges,
 } from "@denreport/core";
@@ -104,4 +105,119 @@ export function cellView(
     return { text: overrideValue, overridden: true };
   }
   return { text: source.rows[row]?.[key] ?? "", overridden: false };
+}
+
+/** キャンバスのセル矩形選択（両端 inclusive）。header=true のとき rowStart/rowEnd は 0 固定で無視 */
+export interface TableCellRect {
+  readonly header: boolean;
+  readonly rowStart: number;
+  readonly rowEnd: number;
+  readonly colStart: number;
+  readonly colEnd: number;
+}
+
+export interface SpanExtent {
+  readonly row: number | "header";
+  readonly rowSpan: number;
+  readonly col: number;
+  readonly colSpan: number;
+}
+
+export function spanExtentsOverlap(a: SpanExtent, b: SpanExtent): boolean {
+  const rowsOverlap =
+    a.row === "header" || b.row === "header"
+      ? a.row === b.row
+      : a.row < b.row + b.rowSpan && b.row < a.row + a.rowSpan;
+  return rowsOverlap && a.col < b.col + b.colSpan && b.col < a.col + a.colSpan;
+}
+
+function spanExtentOf(
+  table: IrTableElement,
+  span: IrTableCellSpan,
+): SpanExtent | null {
+  const col = table.columns.findIndex((column) => column.key === span.key);
+  if (col === -1) {
+    return null;
+  }
+  return {
+    row: span.row,
+    rowSpan: span.rowSpan ?? 1,
+    col,
+    colSpan: span.colSpan ?? 1,
+  };
+}
+
+function rectExtent(rect: TableCellRect): SpanExtent {
+  return {
+    row: rect.header ? "header" : rect.rowStart,
+    rowSpan: rect.header ? 1 : rect.rowEnd - rect.rowStart + 1,
+    col: rect.colStart,
+    colSpan: rect.colEnd - rect.colStart + 1,
+  };
+}
+
+/** M20 の先回り判定。true のときのみメニュー「セルを結合」を有効にする */
+export function canMergeCellRect(
+  table: IrTableElement,
+  rect: TableCellRect,
+): boolean {
+  const cols = rect.colEnd - rect.colStart + 1;
+  const rows = rect.header ? 1 : rect.rowEnd - rect.rowStart + 1;
+  if (cols * rows < 2) {
+    return false;
+  }
+  if (rect.colStart < 0 || rect.colEnd >= table.columns.length) {
+    return false;
+  }
+  if (!rect.header && rect.rowStart < 0) {
+    return false;
+  }
+  for (let c = rect.colStart; c <= rect.colEnd; c += 1) {
+    if (table.columns[c]?.mergeSameValue === true) {
+      return false;
+    }
+  }
+  const extent = rectExtent(rect);
+  for (const span of table.cellSpans ?? []) {
+    const existing = spanExtentOf(table, span);
+    if (existing !== null && spanExtentsOverlap(existing, extent)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** 矩形を IrTableCellSpan に変換。起点列が引けなければ null */
+export function cellSpanForRect(
+  table: IrTableElement,
+  rect: TableCellRect,
+): IrTableCellSpan | null {
+  const key = table.columns[rect.colStart]?.key;
+  if (key === undefined) {
+    return null;
+  }
+  const cols = rect.colEnd - rect.colStart + 1;
+  const rows = rect.header ? 1 : rect.rowEnd - rect.rowStart + 1;
+  return {
+    row: rect.header ? "header" : rect.rowStart,
+    key,
+    ...(!rect.header && rows > 1 ? { rowSpan: rows } : {}),
+    ...(cols > 1 ? { colSpan: cols } : {}),
+  };
+}
+
+/** 矩形と交差する既存結合の index 一覧（解除対象） */
+export function spanIndicesIntersecting(
+  table: IrTableElement,
+  rect: TableCellRect,
+): readonly number[] {
+  const extent = rectExtent(rect);
+  const indices: number[] = [];
+  (table.cellSpans ?? []).forEach((span, i) => {
+    const existing = spanExtentOf(table, span);
+    if (existing !== null && spanExtentsOverlap(existing, extent)) {
+      indices.push(i);
+    }
+  });
+  return indices;
 }

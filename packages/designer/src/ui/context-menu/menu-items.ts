@@ -1,4 +1,6 @@
 export type CanvasMenuAction =
+  | "mergeCells"
+  | "unmergeCells"
   | "copy"
   | "cut"
   | "paste"
@@ -37,7 +39,12 @@ export function resolveContextTarget(
   return { selection: [targetId], onElement: true };
 }
 
-/** 7項目固定のメニューを構築する */
+export interface CellMenuContext {
+  readonly canMerge: boolean;
+  readonly canUnmerge: boolean;
+}
+
+/** 要素操作7項目に、セル文脈があれば先頭へセル結合の2項目を加えて構築する */
 export function buildCanvasMenuItems(input: {
   readonly onElement: boolean;
   /** clipboardFromSelection が非 null（= トップレベル要素を含む選択） */
@@ -46,6 +53,7 @@ export function buildCanvasMenuItems(input: {
   readonly hasClipboard: boolean;
   readonly canGroup: boolean;
   readonly canUngroup: boolean;
+  readonly cell?: CellMenuContext | null;
 }): readonly CanvasMenuItem[] {
   const {
     onElement,
@@ -54,9 +62,28 @@ export function buildCanvasMenuItems(input: {
     hasClipboard,
     canGroup,
     canUngroup,
+    cell,
   } = input;
   const copyEnabled = onElement && canCopy;
+  const cellItems: CanvasMenuItem[] =
+    cell === undefined || cell === null
+      ? []
+      : [
+          {
+            action: "mergeCells",
+            label: "セルを結合",
+            shortcut: null,
+            disabled: !cell.canMerge,
+          },
+          {
+            action: "unmergeCells",
+            label: "結合を解除",
+            shortcut: null,
+            disabled: !cell.canUnmerge,
+          },
+        ];
   return [
+    ...cellItems,
     {
       action: "copy",
       label: "コピー",

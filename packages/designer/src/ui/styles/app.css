@@ -1100,6 +1100,17 @@
   background: var(--paper-selection-fill);
 }
 
+.apx-cell-sel {
+  position: absolute;
+  left: calc(var(--x) * var(--mm));
+  top: calc(var(--y) * var(--mm));
+  width: calc(var(--w) * var(--mm));
+  height: calc(var(--h) * var(--mm));
+  background: var(--paper-selection-fill);
+  box-shadow: inset 0 0 0 1px var(--paper-selection);
+  pointer-events: none;
+}
+
 .apx-h {
   position: absolute;
   width: 7px;

@@ -1,6 +1,31 @@
 import { readFileSync } from "node:fs";
+import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 import { dragFromPalette } from "./helpers/designer-actions";
+
+// 既定表（col1・col2 各40mm、header 8mm、row 8mm）のセル中心 px。スナップ位置の揺れに
+// 依存しないよう表・キャンバスの実測 boundingBox から算出する
+async function cellCenter(
+  page: Page,
+  row: "header" | number,
+  col: number,
+): Promise<{ readonly x: number; readonly y: number }> {
+  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  const tableBox = await table.boundingBox();
+  const paper = page.getByRole("application", { name: "キャンバス" });
+  const paperBox = await paper.boundingBox();
+  if (tableBox === null || paperBox === null) {
+    throw new Error("表またはキャンバスが表示されていません");
+  }
+  const pxPerMm = paperBox.width / 210;
+  return {
+    x: tableBox.x + (col * 40 + 20) * pxPerMm,
+    y:
+      row === "header"
+        ? tableBox.y + 4 * pxPerMm
+        : tableBox.y + (8 + row * 8 + 4) * pxPerMm,
+  };
+}
 
 async function setSampleData(
   page: import("@playwright/test").Page,
@@ -105,4 +130,103 @@ test("静的な結合をプロパティで作成し、プレビューと書き�
   ) as { readonly template?: unknown; readonly inputs?: unknown };
   expect(artifact.template).toBeDefined();
   expect(artifact.inputs).toBeDefined();
+});
+
+test("セルをドラッグ選択して右クリックで結合し、解除できる", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await dragFromPalette(page, /^表/, { x: 130, y: 150 });
+  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  await expect(table).toBeVisible();
+  const beforeDrag = await table.boundingBox();
+
+  const start = await cellCenter(page, 0, 0);
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  const end = await cellCenter(page, 1, 0);
+  await page.mouse.move(end.x, end.y, { steps: 4 });
+  await page.mouse.up();
+
+  await expect(page.locator(".apx-cell-sel")).toBeVisible();
+  const afterDrag = await table.boundingBox();
+  expect(afterDrag).toEqual(beforeDrag);
+
+  await page.mouse.click(end.x, end.y, { button: "right" });
+  const menu = page.getByRole("menu");
+  const mergeItem = menu.getByRole("menuitem", { name: "セルを結合" });
+  await expect(mergeItem).toHaveAttribute("aria-disabled", "false");
+  await mergeItem.click();
+
+  await expect(
+    page.locator('[data-apx-id="table1"] [data-apx-row="1"][data-apx-col="0"]'),
+  ).toHaveCount(0);
+  const props = page.getByRole("complementary", { name: "プロパティ" });
+  await expect(props.getByLabel("結合1 の行数")).toHaveValue("2");
+
+  const origin = await cellCenter(page, 0, 0);
+  await page.mouse.click(origin.x, origin.y);
+  await page.mouse.click(origin.x, origin.y, { button: "right" });
+  await page
+    .getByRole("menu")
+    .getByRole("menuitem", { name: "結合を解除" })
+    .click();
+
+  await expect(
+    page.locator('[data-apx-id="table1"] [data-apx-row="1"][data-apx-col="0"]'),
+  ).toBeVisible();
+  await expect(props.getByLabel("結合1 の行数")).toHaveCount(0);
+});
+
+test("ヘッダ行は横ドラッグで結合できる", async ({ page }) => {
+  await page.goto("/");
+  await dragFromPalette(page, /^表/, { x: 130, y: 150 });
+  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  await expect(table).toBeVisible();
+
+  const start = await cellCenter(page, "header", 0);
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  const end = await cellCenter(page, "header", 1);
+  await page.mouse.move(end.x, end.y, { steps: 4 });
+  await page.mouse.up();
+  await expect(page.locator(".apx-cell-sel")).toBeVisible();
+
+  await page.mouse.click(end.x, end.y, { button: "right" });
+  await page
+    .getByRole("menu")
+    .getByRole("menuitem", { name: "セルを結合" })
+    .click();
+
+  await expect(
+    page.locator('[data-apx-id="table1"] .apx-tbl-th[data-apx-col="1"]'),
+  ).toHaveCount(0);
+
+  const preview = page.getByRole("dialog", { name: "プレビュー" });
+  await page.getByRole("button", { name: "プレビュー" }).click();
+  await expect(preview).toBeVisible();
+  await expect(preview.locator(".apx-preview-error")).toHaveCount(0);
+});
+
+test("mergeSameValue 列を含む範囲では結合が無効", async ({ page }) => {
+  await page.goto("/");
+  await dragFromPalette(page, /^表/, { x: 130, y: 150 });
+  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  await expect(table).toBeVisible();
+
+  const props = page.getByRole("complementary", { name: "プロパティ" });
+  await props.getByLabel("列1 の同一値の連続行を結合").check();
+
+  const start = await cellCenter(page, 0, 0);
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  const end = await cellCenter(page, 1, 0);
+  await page.mouse.move(end.x, end.y, { steps: 4 });
+  await page.mouse.up();
+  await expect(page.locator(".apx-cell-sel")).toBeVisible();
+
+  await page.mouse.click(end.x, end.y, { button: "right" });
+  await expect(
+    page.getByRole("menu").getByRole("menuitem", { name: "セルを結合" }),
+  ).toHaveAttribute("aria-disabled", "true");
 });

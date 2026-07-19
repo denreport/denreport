@@ -12,8 +12,10 @@ import { describe, expect, it } from "vitest";
 import {
   addTableCellSpan,
   addTableColumn,
+  appendTableCellSpan,
   moveTableColumn,
   removeTableCellSpan,
+  removeTableCellSpansAt,
   removeTableColumn,
   replaceElement,
   setDocType,
@@ -450,6 +452,47 @@ describe("セル結合の操作", () => {
     ).toBe(undefined);
     expect(removeTableCellSpan(BASE, "tbl1", 0)).toBe(BASE);
     expectValidIr(none);
+  });
+
+  it("appendTableCellSpan は cellSpans 未定義の表に追加する", () => {
+    const span = { row: "header" as const, key: "col1", colSpan: 2 };
+    const doc = appendTableCellSpan(BASE, "tbl1", span);
+    expect(spansOf(doc)).toEqual([span]);
+    expectValidIr(doc);
+  });
+
+  it("appendTableCellSpan は既存の cellSpans に追記する", () => {
+    const base = addTableCellSpan(BASE, "tbl1");
+    const span = { row: "header" as const, key: "col3", colSpan: 2 };
+    const doc = appendTableCellSpan(base, "tbl1", span);
+    expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", rowSpan: 2 }, span]);
+    expectValidIr(doc);
+  });
+
+  it("removeTableCellSpansAt は複数 index をまとめて削除する", () => {
+    const one = addTableCellSpan(BASE, "tbl1");
+    const two = addTableCellSpan(one, "tbl1");
+    const three = addTableCellSpan(two, "tbl1");
+    const doc = removeTableCellSpansAt(three, "tbl1", [0, 2]);
+    expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", rowSpan: 2 }]);
+    expectValidIr(doc);
+  });
+
+  it("removeTableCellSpansAt は 0件になれば cellSpans 属性ごと除去する", () => {
+    const one = addTableCellSpan(BASE, "tbl1");
+    const two = addTableCellSpan(one, "tbl1");
+    const doc = removeTableCellSpansAt(two, "tbl1", [0, 1]);
+    const table = findById(doc, "tbl1");
+    expect(
+      table !== undefined && "cellSpans" in table ? table.cellSpans : undefined,
+    ).toBe(undefined);
+    expectValidIr(doc);
+  });
+
+  it("removeTableCellSpansAt は該当なしなら同一参照を返す", () => {
+    const one = addTableCellSpan(BASE, "tbl1");
+    expect(removeTableCellSpansAt(one, "tbl1", [9])).toBe(one);
+    expect(removeTableCellSpansAt(BASE, "tbl1", [0])).toBe(BASE);
   });
 
   it("removeTableColumn は削除した列を起点に指す結合も破棄する", () => {

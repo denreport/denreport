@@ -80,6 +80,59 @@ describe("buildCanvasMenuItems", () => {
     expect(byAction.get("delete")?.disabled).toBe(true);
   });
 
+  it("cell 省略時はセル項目を含まない従来7項目のまま", () => {
+    const items = buildCanvasMenuItems({
+      onElement: true,
+      canCopy: true,
+      hasSelection: true,
+      hasClipboard: true,
+      canGroup: true,
+      canUngroup: true,
+    });
+    expect(items).toHaveLength(7);
+    expect(items.some((item) => item.action === "mergeCells")).toBe(false);
+    expect(items.some((item) => item.action === "unmergeCells")).toBe(false);
+  });
+
+  it("cell が非 null なら先頭にセル結合2項目を足す", () => {
+    const items = buildCanvasMenuItems({
+      onElement: true,
+      canCopy: true,
+      hasSelection: true,
+      hasClipboard: true,
+      canGroup: true,
+      canUngroup: true,
+      cell: { canMerge: true, canUnmerge: false },
+    });
+    expect(items.map((item) => item.action)).toEqual<CanvasMenuAction[]>([
+      "mergeCells",
+      "unmergeCells",
+      "copy",
+      "cut",
+      "paste",
+      "duplicate",
+      "group",
+      "ungroup",
+      "delete",
+    ]);
+    const byAction = new Map(items.map((item) => [item.action, item]));
+    expect(byAction.get("mergeCells")?.disabled).toBe(false);
+    expect(byAction.get("unmergeCells")?.disabled).toBe(true);
+  });
+
+  it("cell が null ならセル項目を含まない", () => {
+    const items = buildCanvasMenuItems({
+      onElement: true,
+      canCopy: true,
+      hasSelection: true,
+      hasClipboard: true,
+      canGroup: true,
+      canUngroup: true,
+      cell: null,
+    });
+    expect(items).toHaveLength(7);
+  });
+
   it("クリップボードが空なら貼り付けが無効", () => {
     const items = buildCanvasMenuItems({
       onElement: true,

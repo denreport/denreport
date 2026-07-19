@@ -1,6 +1,14 @@
 import type { IrDocument, IrTableElement } from "@denreport/core";
 import { describe, expect, it } from "vitest";
-import { cellView, sketchMerges, tableCellSources } from "./table-cells";
+import {
+  canMergeCellRect,
+  cellSpanForRect,
+  cellView,
+  sketchMerges,
+  spanIndicesIntersecting,
+  type TableCellRect,
+  tableCellSources,
+} from "./table-cells";
 
 function table(overrides: Partial<IrTableElement> = {}): IrTableElement {
   return {
@@ -214,5 +222,175 @@ describe("sketchMerges", () => {
     if (el?.type !== "table") throw new Error("expected a table");
     const merges = sketchMerges(el, { rows: [], overrides: new Map() }, 4);
     expect(merges.rects).toEqual([]);
+  });
+});
+
+function rect(patch: Partial<TableCellRect> = {}): TableCellRect {
+  return {
+    header: false,
+    rowStart: 0,
+    rowEnd: 0,
+    colStart: 0,
+    colEnd: 0,
+    ...patch,
+  };
+}
+
+describe("canMergeCellRect", () => {
+  it("1×1 は拒否する", () => {
+    expect(canMergeCellRect(table(), rect())).toBe(false);
+  });
+
+  it("列範囲が表の列数を超える範囲は拒否する", () => {
+    expect(canMergeCellRect(table(), rect({ colStart: 0, colEnd: 2 }))).toBe(
+      false,
+    );
+  });
+
+  it("mergeSameValue 列を含む範囲は拒否する（起点列を含む）", () => {
+    const mergeAtOrigin = table({
+      columns: [
+        {
+          key: "name",
+          label: "品目",
+          width: 40,
+          align: "left",
+          mergeSameValue: true,
+        },
+        { key: "amount", label: "金額", width: 30, align: "right" },
+      ],
+    });
+    expect(
+      canMergeCellRect(mergeAtOrigin, rect({ colStart: 0, colEnd: 1 })),
+    ).toBe(false);
+
+    const mergeAtEnd = table({
+      columns: [
+        { key: "name", label: "品目", width: 40, align: "left" },
+        {
+          key: "amount",
+          label: "金額",
+          width: 30,
+          align: "right",
+          mergeSameValue: true,
+        },
+      ],
+    });
+    expect(canMergeCellRect(mergeAtEnd, rect({ colStart: 0, colEnd: 1 }))).toBe(
+      false,
+    );
+  });
+
+  it("既存の明細結合と重なる範囲は拒否する", () => {
+    const t = table({ cellSpans: [{ row: 0, key: "name", rowSpan: 2 }] });
+    expect(
+      canMergeCellRect(
+        t,
+        rect({ rowStart: 0, rowEnd: 1, colStart: 0, colEnd: 1 }),
+      ),
+    ).toBe(false);
+  });
+
+  it("既存のヘッダ結合と重なる範囲は拒否する", () => {
+    const t = table({
+      cellSpans: [{ row: "header", key: "name", colSpan: 2 }],
+    });
+    expect(
+      canMergeCellRect(t, rect({ header: true, colStart: 0, colEnd: 1 })),
+    ).toBe(false);
+  });
+
+  it("ヘッダの結合は明細の範囲とは重ならない", () => {
+    const t = table({
+      cellSpans: [{ row: "header", key: "name", colSpan: 2 }],
+    });
+    expect(
+      canMergeCellRect(
+        t,
+        rect({ rowStart: 0, rowEnd: 1, colStart: 0, colEnd: 1 }),
+      ),
+    ).toBe(true);
+  });
+
+  it("ヘッダ横2列の結合は許可する", () => {
+    expect(
+      canMergeCellRect(table(), rect({ header: true, colStart: 0, colEnd: 1 })),
+    ).toBe(true);
+  });
+
+  it("正常な縦2行・横2列の結合は許可する", () => {
+    expect(
+      canMergeCellRect(
+        table(),
+        rect({ rowStart: 0, rowEnd: 1, colStart: 0, colEnd: 0 }),
+      ),
+    ).toBe(true);
+    expect(
+      canMergeCellRect(
+        table(),
+        rect({ rowStart: 0, rowEnd: 0, colStart: 0, colEnd: 1 }),
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("cellSpanForRect", () => {
+  it("縦のみの結合は rowSpan のみを持つ", () => {
+    const span = cellSpanForRect(
+      table(),
+      rect({ rowStart: 0, rowEnd: 1, colStart: 0, colEnd: 0 }),
+    );
+    expect(span).toEqual({ row: 0, key: "name", rowSpan: 2 });
+  });
+
+  it("横のみの結合は colSpan のみを持つ", () => {
+    const span = cellSpanForRect(
+      table(),
+      rect({ rowStart: 0, rowEnd: 0, colStart: 0, colEnd: 1 }),
+    );
+    expect(span).toEqual({ row: 0, key: "name", colSpan: 2 });
+  });
+
+  it('header 矩形は row: "header" に変換し rowSpan を持たない', () => {
+    const span = cellSpanForRect(
+      table(),
+      rect({ header: true, colStart: 0, colEnd: 1 }),
+    );
+    expect(span).toEqual({ row: "header", key: "name", colSpan: 2 });
+  });
+
+  it("colStart の列 key を起点にする", () => {
+    const span = cellSpanForRect(
+      table(),
+      rect({ rowStart: 0, rowEnd: 1, colStart: 1, colEnd: 1 }),
+    );
+    expect(span).toEqual({ row: 0, key: "amount", rowSpan: 2 });
+  });
+
+  it("colStart の列が存在しなければ null を返す", () => {
+    const span = cellSpanForRect(table(), rect({ colStart: 5, colEnd: 5 }));
+    expect(span).toBeNull();
+  });
+});
+
+describe("spanIndicesIntersecting", () => {
+  it("交差する結合の index を列挙する", () => {
+    const t = table({ cellSpans: [{ row: 0, key: "name", rowSpan: 2 }] });
+    expect(
+      spanIndicesIntersecting(
+        t,
+        rect({ rowStart: 0, rowEnd: 0, colStart: 0, colEnd: 0 }),
+      ),
+    ).toEqual([0]);
+  });
+
+  it("交差しない結合は含まない", () => {
+    const t = table({ cellSpans: [{ row: 0, key: "name", rowSpan: 2 }] });
+    expect(
+      spanIndicesIntersecting(
+        t,
+        rect({ rowStart: 5, rowEnd: 5, colStart: 1, colEnd: 1 }),
+      ),
+    ).toEqual([]);
   });
 });

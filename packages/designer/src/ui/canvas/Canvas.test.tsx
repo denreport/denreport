@@ -353,3 +353,108 @@ describe("Canvas 表のデータ行セル編集", () => {
     expect(store.getState().dirty).toBe(false);
   });
 });
+
+describe("Canvas セル範囲選択", () => {
+  const MM = 3.78; // MM_TO_PX（zoom 1）
+
+  function firePointer(
+    target: Element,
+    type: string,
+    xMm: number,
+    yMm: number,
+    shiftKey = false,
+  ): void {
+    act(() => {
+      target.dispatchEvent(
+        new PointerEvent(type, {
+          bubbles: true,
+          clientX: xMm * MM,
+          clientY: yMm * MM,
+          button: 0,
+          pointerId: 1,
+          shiftKey,
+        }),
+      );
+    });
+  }
+
+  beforeEach(() => {
+    // jsdom は setPointerCapture を実装しないため、onPointerDown の呼び出しをスタブで無害化する
+    HTMLElement.prototype.setPointerCapture ??= () => {};
+    HTMLElement.prototype.hasPointerCapture ??= () => false;
+  });
+
+  it("表選択済みでのドラッグでセル範囲を選択し、表は動かずハイライトが残る", () => {
+    const store = makeTableStore("{}");
+    store.setSelection(["tbl1"]);
+    act(() => {
+      root.render(<Host store={store} />);
+    });
+    const paper = container.querySelector(".apx-paper");
+    const tableEl = container.querySelector('[data-apx-id="tbl1"]');
+    if (paper === null || tableEl === null) {
+      throw new Error("paper または表が見つからない");
+    }
+    const beforeDocument = store.getState().document;
+
+    // tbl1: box x10 y10 w50 h24（headerHeight8 + minRows2 * rowHeight8）
+    // pointerdown は data-apx-id を e.target から解決するため表要素上で発火する
+    firePointer(tableEl, "pointerdown", 35, 22); // row0
+    firePointer(paper, "pointermove", 35, 30); // row1
+    expect(container.querySelector(".apx-cell-sel")).not.toBeNull();
+    firePointer(paper, "pointerup", 35, 30);
+
+    const box = container.querySelector(".apx-cell-sel") as HTMLElement;
+    expect(box).not.toBeNull();
+    expect(box.style.getPropertyValue("--y")).toBe("18");
+    expect(box.style.getPropertyValue("--h")).toBe("16");
+    expect(store.getState().document).toBe(beforeDocument);
+    expect(store.getState().selection).toEqual(["tbl1"]);
+  });
+
+  it("Shift+pointerdown で既存の選択矩形を拡張する", () => {
+    const store = makeTableStore("{}");
+    store.setSelection(["tbl1"]);
+    act(() => {
+      root.render(<Host store={store} />);
+    });
+    const paper = container.querySelector(".apx-paper");
+    const tableEl = container.querySelector('[data-apx-id="tbl1"]');
+    if (paper === null || tableEl === null) {
+      throw new Error("paper または表が見つからない");
+    }
+
+    firePointer(tableEl, "pointerdown", 35, 22); // row0
+    firePointer(paper, "pointerup", 35, 22);
+    const initial = container.querySelector(".apx-cell-sel") as HTMLElement;
+    expect(initial.style.getPropertyValue("--h")).toBe("8");
+
+    firePointer(tableEl, "pointerdown", 35, 30, true); // shift + row1
+    firePointer(paper, "pointerup", 35, 30);
+    const extended = container.querySelector(".apx-cell-sel") as HTMLElement;
+    expect(extended.style.getPropertyValue("--y")).toBe("18");
+    expect(extended.style.getPropertyValue("--h")).toBe("16");
+  });
+
+  it("表の選択が外れるとハイライトが消える", () => {
+    const store = makeTableStore("{}");
+    store.setSelection(["tbl1"]);
+    act(() => {
+      root.render(<Host store={store} />);
+    });
+    const paper = container.querySelector(".apx-paper");
+    const tableEl = container.querySelector('[data-apx-id="tbl1"]');
+    if (paper === null || tableEl === null) {
+      throw new Error("paper または表が見つからない");
+    }
+
+    firePointer(tableEl, "pointerdown", 35, 22);
+    firePointer(paper, "pointerup", 35, 22);
+    expect(container.querySelector(".apx-cell-sel")).not.toBeNull();
+
+    act(() => {
+      store.setSelection([]);
+    });
+    expect(container.querySelector(".apx-cell-sel")).toBeNull();
+  });
+});

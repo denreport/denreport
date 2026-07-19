@@ -11,6 +11,8 @@ import type {
   IrTableElement,
 } from "@denreport/core";
 import { roundMm } from "./geometry";
+import type { SpanExtent } from "./table-cells";
+import { spanExtentsOverlap } from "./table-cells";
 import { updateElementById as updateById } from "./tree";
 
 /**
@@ -150,21 +152,6 @@ function withColSpan(span: IrTableCellSpan, colSpan: number): IrTableCellSpan {
   return colSpan === 1 ? rest : { ...rest, colSpan };
 }
 
-interface SpanExtent {
-  readonly row: number | "header";
-  readonly rowSpan: number;
-  readonly col: number;
-  readonly colSpan: number;
-}
-
-function extentsOverlap(a: SpanExtent, b: SpanExtent): boolean {
-  const rowsOverlap =
-    a.row === "header" || b.row === "header"
-      ? a.row === b.row
-      : a.row < b.row + b.rowSpan && b.row < a.row + a.rowSpan;
-  return rowsOverlap && a.col < b.col + b.colSpan && b.col < a.col + a.colSpan;
-}
-
 /**
  * 列並び変更後の cellSpans を検証（M20）が通る形に整える。列範囲からのはみ出しと
  * mergeSameValue 列への到達は colSpan を切り詰め、1×1 になった結合と先行する結合に
@@ -194,7 +181,7 @@ function normalizeCellSpans(
     const extent: SpanExtent = { row: span.row, rowSpan, col, colSpan };
     if (
       (rowSpan === 1 && colSpan === 1) ||
-      extents.some((other) => extentsOverlap(other, extent))
+      extents.some((other) => spanExtentsOverlap(other, extent))
     ) {
       continue;
     }
@@ -342,6 +329,18 @@ export function addTableCellSpan(
   });
 }
 
+/** span を末尾に追加する。妥当性は呼び出し側が先回りで検査する契約 */
+export function appendTableCellSpan(
+  document: IrDocument,
+  tableId: string,
+  span: IrTableCellSpan,
+): IrDocument {
+  return updateTable(document, tableId, (table) => ({
+    ...table,
+    cellSpans: [...(table.cellSpans ?? []), span],
+  }));
+}
+
 /**
  * index の結合に patch を適用する。rowSpan / colSpan は 1（デフォルト）なら属性を
  * 持たせず、"header" 行では rowSpan を除去する。変化が無ければ同一参照を返す。
@@ -394,6 +393,25 @@ export function removeTableCellSpan(
     return withCellSpans(
       table,
       spans.filter((_, i) => i !== index),
+    );
+  });
+}
+
+/** indices の結合をまとめて削除する。0件になれば cellSpans 属性ごと除去し、対象なしなら同一参照を返す */
+export function removeTableCellSpansAt(
+  document: IrDocument,
+  tableId: string,
+  indices: readonly number[],
+): IrDocument {
+  return updateTable(document, tableId, (table) => {
+    const set = new Set(indices);
+    const spans = table.cellSpans ?? [];
+    if (!spans.some((_, i) => set.has(i))) {
+      return table;
+    }
+    return withCellSpans(
+      table,
+      spans.filter((_, i) => !set.has(i)),
     );
   });
 }
