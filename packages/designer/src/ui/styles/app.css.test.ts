@@ -34,7 +34,21 @@ describe("app.css の低ズーム時の枠線最低太さクランプ", () => {
       ".apx-el-ellipse",
       /border-width:\s*max\(1px, calc\(var\(--bw, 0\.3\) \* var\(--mm\)\)\)/,
     ],
+    [
+      ".apx-el-table",
+      /border:\s*max\(1px, calc\(0\.4 \* var\(--mm\)\)\) solid var\(--paper-text\)/,
+    ],
   ])("%s は max(1px, ...) で下限クランプされる", (selector, pattern) => {
     expect(ruleBody(selector)).toMatch(pattern);
   });
+});
+
+// borderWidth 0（枠なし）は正当な状態であり、下限クランプで枠を生やしてはならない
+describe("app.css の枠線幅 0（枠なし）はクランプしない", () => {
+  it.each([".apx-el-rect.is-borderless", ".apx-el-ellipse.is-borderless"])(
+    "%s は border-width: 0 を明示する",
+    (selector) => {
+      expect(ruleBody(selector)).toMatch(/border-width:\s*0;/);
+    },
+  );
 });

@@ -104,6 +104,34 @@ describe("PaperElement — rect の CSS 変数", () => {
     });
     expect(el().style.getPropertyValue("--ls")).toBe("dashed");
   });
+
+  it("borderWidth 0（枠なし）では is-borderless クラスを付ける", () => {
+    renderEl({
+      type: "rect",
+      id: "r1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      borderWidth: 0,
+    });
+    expect(el().classList.contains("is-borderless")).toBe(true);
+  });
+
+  it("borderWidth 0 でなければ is-borderless クラスを付けない", () => {
+    renderEl({
+      type: "rect",
+      id: "r1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      borderWidth: 0.3,
+    });
+    expect(el().classList.contains("is-borderless")).toBe(false);
+  });
 });
 
 describe("PaperElement — ellipse", () => {
@@ -124,6 +152,20 @@ describe("PaperElement — ellipse", () => {
     expect(el().style.getPropertyValue("--bw")).toBe("0.4");
     expect(el().style.getPropertyValue("--bc")).toBe("#123456");
     expect(el().style.getPropertyValue("--fc")).toBe("#abcdef");
+  });
+
+  it("borderWidth 0（枠なし）では is-borderless クラスを付ける", () => {
+    renderEl({
+      type: "ellipse",
+      id: "e1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 30,
+      h: 20,
+      borderWidth: 0,
+    });
+    expect(el().classList.contains("is-borderless")).toBe(true);
   });
 });
 

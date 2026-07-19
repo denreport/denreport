@@ -67,6 +67,10 @@ export function PaperElement(props: {
   if (el.type === "image" && el.src === IMAGE_PLACEHOLDER_SRC) {
     classes.push("is-placeholder");
   }
+  // 枠線幅 0 は「枠なし」の正当な状態であり、下限クランプの対象から外す
+  if ((el.type === "rect" || el.type === "ellipse") && el.borderWidth === 0) {
+    classes.push("is-borderless");
+  }
   if (ghost) {
     classes.push("is-otherpage");
   }

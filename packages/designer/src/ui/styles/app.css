@@ -776,12 +776,20 @@
   border-radius: calc(var(--rr, 0) * var(--mm));
 }
 
+.apx-el-rect.is-borderless {
+  border-width: 0;
+}
+
 .apx-el-ellipse {
   border-width: max(1px, calc(var(--bw, 0.3) * var(--mm)));
   border-style: solid;
   border-color: var(--bc, var(--paper-text));
   background-color: var(--fc, transparent);
   border-radius: 50%;
+}
+
+.apx-el-ellipse.is-borderless {
+  border-width: 0;
 }
 
 .apx-el-image .apx-el-img {
@@ -810,7 +818,7 @@
 }
 
 .apx-el-table {
-  border: calc(0.4 * var(--mm)) solid var(--paper-text);
+  border: max(1px, calc(0.4 * var(--mm))) solid var(--paper-text);
 }
 
 .apx-el-barcode {
