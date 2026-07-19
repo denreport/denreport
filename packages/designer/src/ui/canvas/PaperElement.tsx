@@ -1,5 +1,6 @@
 import type { IrElement, IrFlexChild, IrStrokeStyle } from "@denreport/core";
 import type { CSSProperties, ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { IMAGE_PLACEHOLDER_SRC } from "../../state/constants";
 import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
 import type { PlacedElementView } from "../../state/geometry";
@@ -31,6 +32,7 @@ function cssLineStyle(
 function elementContent(
   el: IrElement | IrFlexChild,
   metrics: FontMetricsSet | null,
+  imagePlaceholderLabel: string,
 ): ReactNode {
   switch (el.type) {
     case "text":
@@ -64,7 +66,9 @@ function elementContent(
       );
     case "image":
       if (el.src === IMAGE_PLACEHOLDER_SRC) {
-        return <span className="apx-image-placeholder">画像未設定</span>;
+        return (
+          <span className="apx-image-placeholder">{imagePlaceholderLabel}</span>
+        );
       }
       return (
         <img className="apx-el-img" src={el.src} alt="" draggable={false} />
@@ -84,6 +88,7 @@ export function PaperElement(props: {
   readonly metrics?: FontMetricsSet | null | undefined;
 }): ReactNode {
   const { view } = props;
+  const m = useMessages();
   const el = view.element;
   const ghost = !visibleInContext(view.pages, props.context);
 
@@ -188,7 +193,7 @@ export function PaperElement(props: {
           charWidths={props.metrics?.regular ?? null}
         />
       ) : (
-        elementContent(el, props.metrics ?? null)
+        elementContent(el, props.metrics ?? null, m.canvas.imagePlaceholder)
       )}
     </div>
   );

@@ -1,3 +1,5 @@
+import type { Messages } from "../../i18n/messages";
+
 export type CanvasMenuAction =
   | "mergeCells"
   | "unmergeCells"
@@ -45,16 +47,19 @@ export interface CellMenuContext {
 }
 
 /** 要素操作7項目に、セル文脈があれば先頭へセル結合の2項目を加えて構築する */
-export function buildCanvasMenuItems(input: {
-  readonly onElement: boolean;
-  /** clipboardFromSelection が非 null（= トップレベル要素を含む選択） */
-  readonly canCopy: boolean;
-  readonly hasSelection: boolean;
-  readonly hasClipboard: boolean;
-  readonly canGroup: boolean;
-  readonly canUngroup: boolean;
-  readonly cell?: CellMenuContext | null;
-}): readonly CanvasMenuItem[] {
+export function buildCanvasMenuItems(
+  m: Messages["contextMenu"],
+  input: {
+    readonly onElement: boolean;
+    /** clipboardFromSelection が非 null（= トップレベル要素を含む選択） */
+    readonly canCopy: boolean;
+    readonly hasSelection: boolean;
+    readonly hasClipboard: boolean;
+    readonly canGroup: boolean;
+    readonly canUngroup: boolean;
+    readonly cell?: CellMenuContext | null;
+  },
+): readonly CanvasMenuItem[] {
   const {
     onElement,
     canCopy,
@@ -71,13 +76,13 @@ export function buildCanvasMenuItems(input: {
       : [
           {
             action: "mergeCells",
-            label: "セルを結合",
+            label: m.mergeCells,
             shortcut: null,
             disabled: !cell.canMerge,
           },
           {
             action: "unmergeCells",
-            label: "結合を解除",
+            label: m.unmergeCells,
             shortcut: null,
             disabled: !cell.canUnmerge,
           },
@@ -86,43 +91,43 @@ export function buildCanvasMenuItems(input: {
     ...cellItems,
     {
       action: "copy",
-      label: "コピー",
+      label: m.copy,
       shortcut: "Ctrl+C",
       disabled: !copyEnabled,
     },
     {
       action: "cut",
-      label: "切り取り",
+      label: m.cut,
       shortcut: "Ctrl+X",
       disabled: !copyEnabled,
     },
     {
       action: "paste",
-      label: "貼り付け",
+      label: m.paste,
       shortcut: "Ctrl+V",
       disabled: !hasClipboard,
     },
     {
       action: "duplicate",
-      label: "複製",
+      label: m.duplicate,
       shortcut: null,
       disabled: !copyEnabled,
     },
     {
       action: "group",
-      label: "グループ化",
+      label: m.group,
       shortcut: "Ctrl+G",
       disabled: !(onElement && canGroup),
     },
     {
       action: "ungroup",
-      label: "グループ解除",
+      label: m.ungroup,
       shortcut: "Ctrl+Shift+G",
       disabled: !(onElement && canUngroup),
     },
     {
       action: "delete",
-      label: "削除",
+      label: m.delete,
       shortcut: "Delete",
       disabled: !(onElement && hasSelection),
     },

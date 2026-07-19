@@ -1,5 +1,6 @@
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useState } from "react";
+import { useMessages } from "../../i18n/context";
 import { clipboardFromSelection } from "../../state/clipboard";
 import {
   canGroupSelection,
@@ -39,6 +40,7 @@ export function useCanvasContextMenu(
   readonly onClose: () => void;
 } {
   const [menu, setMenu] = useState<ContextMenuState | null>(null);
+  const m = useMessages();
 
   const onContextMenu = useCallback(
     (e: ReactMouseEvent<HTMLDivElement>): void => {
@@ -67,7 +69,7 @@ export function useCanvasContextMenu(
         cell.selection !== null && targetId === cell.selection.tableId
           ? { canMerge: cell.canMerge, canUnmerge: cell.canUnmerge }
           : null;
-      const items = buildCanvasMenuItems({
+      const items = buildCanvasMenuItems(m.contextMenu, {
         onElement: target.onElement,
         canCopy,
         hasSelection: selection.length > 0,
@@ -78,7 +80,7 @@ export function useCanvasContextMenu(
       });
       setMenu({ x: e.clientX, y: e.clientY, items });
     },
-    [store, interactionActive, cell],
+    [store, interactionActive, cell, m],
   );
 
   const onAction = useCallback(

@@ -1,6 +1,7 @@
 import type { CharWidthEm, IrTableElement } from "@denreport/core";
 import { layoutTextLines, subtractSkips } from "@denreport/core";
 import type { CSSProperties, ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import type { MmBox } from "../../state/geometry";
 import type { TableCellSource } from "../../state/table-cells";
 import { cellView, sketchMerges } from "../../state/table-cells";
@@ -19,6 +20,7 @@ export function TableSketch(props: {
   readonly charWidths?: CharWidthEm | null | undefined;
 }): ReactNode {
   const table = props.element;
+  const m = useMessages();
   const rows = Math.max(
     0,
     Math.round((props.box.h - table.headerHeight) / table.rowHeight),
@@ -230,7 +232,7 @@ export function TableSketch(props: {
           className={`apx-tbl-td apx-align-${cell.align}${cell.overridden ? " is-override" : ""}`}
           data-apx-row={cell.row}
           data-apx-col={cell.col}
-          title={cell.overridden ? "固定値" : undefined}
+          title={cell.overridden ? m.canvas.overriddenCellTitle : undefined}
           style={
             {
               "--cx": cell.x,

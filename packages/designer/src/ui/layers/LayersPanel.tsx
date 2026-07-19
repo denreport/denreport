@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMessages } from "../../i18n/context";
 import { deleteElements } from "../../state/elements";
 import { visibleInContext } from "../../state/geometry";
 import type { LayerNode } from "../../state/layers";
@@ -41,6 +42,7 @@ export function LayersPanel(props: {
 }): ReactNode {
   const { store, onReveal } = props;
   const state = useEditorState(store);
+  const m = useMessages();
   const tree = useMemo(() => buildLayerTree(state.document), [state.document]);
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -124,11 +126,11 @@ export function LayersPanel(props: {
   }, [state.selection, collapsed]);
 
   return (
-    <nav className="apx-layers" aria-label="レイヤー">
-      <div className="apx-panel-caption">レイヤー</div>
+    <nav className="apx-layers" aria-label={m.layers.ariaLabel}>
+      <div className="apx-panel-caption">{m.layers.caption}</div>
       <div className="apx-layers-body" ref={bodyRef}>
         {tree.length === 0 ? (
-          <div className="apx-layers-empty">要素がありません</div>
+          <div className="apx-layers-empty">{m.layers.empty}</div>
         ) : (
           <ul className="apx-layer-list">
             {tree.map((node) => (

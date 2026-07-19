@@ -6,6 +6,7 @@ import type {
   PointerEvent as ReactPointerEvent,
 } from "react";
 import { useCallback, useRef, useState } from "react";
+import { useMessages } from "../../i18n/context";
 import type { EditorStore } from "../../state/store";
 import type { CanvasInteraction } from "../canvas/useCanvasInteraction";
 import { LayersPanel } from "../layers/LayersPanel";
@@ -29,6 +30,7 @@ export function Sidebar(props: {
   readonly onReveal: (id: string) => void;
 }): ReactNode {
   const { store, beginPlacement, onQuickAdd, onReveal } = props;
+  const m = useMessages();
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const [paletteHeight, setPaletteHeight] = useState<number | null>(null);
@@ -107,7 +109,7 @@ export function Sidebar(props: {
       <div
         role="separator"
         aria-orientation="horizontal"
-        aria-label="パレットとレイヤーの高さ"
+        aria-label={m.sidebar.splitterAriaLabel}
         aria-valuenow={paletteHeight ?? undefined}
         tabIndex={0}
         className="apx-sidebar-splitter"
