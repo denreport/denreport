@@ -25,7 +25,8 @@ vi.mock("@denreport/core", async (importOriginal) => {
           image: {
             element: {
               level: "unsupported",
-              note: "画像は書き出せません（テスト用）",
+              note: "image element unsupported (test)",
+              userMessage: "画像は書き出せません（テスト用）",
             },
           },
         },
@@ -228,16 +229,22 @@ async function selectReportlab(): Promise<void> {
 }
 
 describe("警告一覧", () => {
-  it("非対応・近似を含む文書で警告カードが level 色・note・件数バッジつきで表示される", async () => {
+  it("非対応・近似を含む文書で警告カードが level 色・重大度ラベル・平易文・件数バッジつきで表示される", async () => {
     await mount(docOf(staticText("t1"), imageEl("img1")));
 
     const cards = [...container.querySelectorAll(".apx-warn-card")];
     expect(cards.length).toBeGreaterThanOrEqual(2);
     // unsupported グループが先頭
     expect(cards[0]?.classList.contains("is-unsupported")).toBe(true);
+    expect(cards[0]?.querySelector(".apx-warn-level")?.textContent).toBe(
+      "非対応",
+    );
     expect(cards[0]?.textContent).toContain("画像は書き出せません（テスト用）");
     expect(cards[0]?.querySelector(".apx-chip")?.textContent).toBe("img1");
     expect(cards[1]?.classList.contains("is-approximated")).toBe(true);
+    expect(cards[1]?.querySelector(".apx-warn-level")?.textContent).toBe(
+      "近似",
+    );
     // ヘッダの件数バッジは延べ判定件数
     expect(container.querySelector(".apx-badge-warn")?.textContent).toBe("2");
   });

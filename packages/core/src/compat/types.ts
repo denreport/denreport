@@ -4,13 +4,22 @@ import type { IrElement, IrElementType } from "../ir/types";
 export type CompatLevel = "supported" | "approximated" | "unsupported";
 
 /**
- * Compatibility level for a single element or attribute. A `note` explaining
- * the gap is required for every level except "supported".
+ * Compatibility level for a single element or attribute. For every level
+ * except "supported", both a `note` (developer-facing, technical) and a
+ * `userMessage` (plain-language, shown in the UI) are required.
  */
 export type CompatEntry =
   | { readonly level: "supported" }
-  | { readonly level: "approximated"; readonly note: string }
-  | { readonly level: "unsupported"; readonly note: string };
+  | {
+      readonly level: "approximated";
+      readonly note: string;
+      readonly userMessage: string;
+    }
+  | {
+      readonly level: "unsupported";
+      readonly note: string;
+      readonly userMessage: string;
+    };
 
 type CompatAttributeOf<K extends IrElementType> = Exclude<
   keyof Extract<IrElement, { readonly type: K }>,

@@ -19,6 +19,7 @@ export interface CompatFinding {
   readonly path: string;
   readonly attribute?: string;
   readonly note: string;
+  readonly userMessage: string;
 }
 
 type CompatInstance = IrElement | IrFlexChild;
@@ -99,5 +100,6 @@ function report(
     path,
     ...(attribute !== undefined ? { attribute } : {}),
     note: entry.note,
+    userMessage: entry.userMessage,
   });
 }

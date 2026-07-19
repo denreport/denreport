@@ -121,16 +121,36 @@ const matrix: TargetCompatMatrix = {
   displayName: "pdfme",
   elements: {
     text: {
-      element: { level: "approximated", note: "text-approx" },
+      element: {
+        level: "approximated",
+        note: "text-approx",
+        userMessage: "text-approx-message",
+      },
       attributes: {
-        lineHeight: { level: "approximated", note: "text-lineHeight-approx" },
-        pages: { level: "approximated", note: "text-pages-approx" },
+        lineHeight: {
+          level: "approximated",
+          note: "text-lineHeight-approx",
+          userMessage: "text-lineHeight-approx-message",
+        },
+        pages: {
+          level: "approximated",
+          note: "text-pages-approx",
+          userMessage: "text-pages-approx-message",
+        },
       },
     },
     line: {
-      element: { level: "unsupported", note: "line-unsupported" },
+      element: {
+        level: "unsupported",
+        note: "line-unsupported",
+        userMessage: "line-unsupported-message",
+      },
       attributes: {
-        thickness: { level: "approximated", note: "should-not-fire" },
+        thickness: {
+          level: "approximated",
+          note: "should-not-fire",
+          userMessage: "should-not-fire-message",
+        },
       },
     },
     rect: { element: { level: "supported" } },
@@ -141,6 +161,7 @@ const matrix: TargetCompatMatrix = {
         cellOverrides: {
           level: "approximated",
           note: "table-cellOverrides-approx",
+          userMessage: "table-cellOverrides-approx-message",
         },
       },
     },
@@ -148,7 +169,11 @@ const matrix: TargetCompatMatrix = {
     flex: {
       element: { level: "supported" },
       attributes: {
-        w: { level: "approximated", note: "flex-w-approx" },
+        w: {
+          level: "approximated",
+          note: "flex-w-approx",
+          userMessage: "flex-w-approx-message",
+        },
       },
     },
     pageNumber: { element: { level: "supported" } },
@@ -176,7 +201,13 @@ const matrixWithUnsupportedFlex: TargetCompatMatrix = {
   ...matrix,
   elements: {
     ...matrix.elements,
-    flex: { element: { level: "unsupported", note: "flex-unsupported" } },
+    flex: {
+      element: {
+        level: "unsupported",
+        note: "flex-unsupported",
+        userMessage: "flex-unsupported-message",
+      },
+    },
   },
 };
 
@@ -200,6 +231,7 @@ describe("checkCompat", () => {
         elementType: "text",
         path: "elements[0]",
         note: "text-approx",
+        userMessage: "text-approx-message",
       },
       {
         target: "pdfme",
@@ -209,6 +241,7 @@ describe("checkCompat", () => {
         path: "elements[0].lineHeight",
         attribute: "lineHeight",
         note: "text-lineHeight-approx",
+        userMessage: "text-lineHeight-approx-message",
       },
       {
         target: "pdfme",
@@ -218,6 +251,7 @@ describe("checkCompat", () => {
         path: "elements[0].pages",
         attribute: "pages",
         note: "text-pages-approx",
+        userMessage: "text-pages-approx-message",
       },
     ]);
   });
@@ -233,6 +267,7 @@ describe("checkCompat", () => {
         elementType: "line",
         path: "elements[0]",
         note: "line-unsupported",
+        userMessage: "line-unsupported-message",
       },
     ]);
   });
@@ -248,6 +283,7 @@ describe("checkCompat", () => {
         elementType: "flex",
         path: "elements[0]",
         note: "flex-unsupported",
+        userMessage: "flex-unsupported-message",
       },
     ]);
   });

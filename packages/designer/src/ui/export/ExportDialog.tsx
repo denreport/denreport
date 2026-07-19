@@ -44,6 +44,13 @@ const TARGET_DESCRIPTIONS: Readonly<Record<CompatTargetId, string>> = {
 
 const TARGET_IDS: readonly CompatTargetId[] = ["pdfme", "reportlab"];
 
+const COMPAT_LEVEL_LABELS: Readonly<
+  Record<CompatWarningGroup["level"], string>
+> = {
+  approximated: "近似",
+  unsupported: "非対応",
+};
+
 function WarningGroupCard(props: {
   readonly group: CompatWarningGroup;
   readonly onJump: (id: string) => void;
@@ -55,7 +62,10 @@ function WarningGroupCard(props: {
         <b className="apx-warn-mark" aria-hidden="true">
           !
         </b>
-        <span>{group.note}</span>
+        <span className="apx-warn-level">
+          {COMPAT_LEVEL_LABELS[group.level]}
+        </span>
+        <span>{group.userMessage}</span>
         <span className="apx-warn-count">{group.findingCount} 箇所</span>
       </p>
       <div className="apx-warn-chips">
@@ -273,7 +283,7 @@ export function ExportDialog(props: {
         ) : (
           groups.map((group) => (
             <WarningGroupCard
-              key={`${group.level}:${group.note}`}
+              key={`${group.level}:${group.userMessage}`}
               group={group}
               onJump={jumpTo}
             />

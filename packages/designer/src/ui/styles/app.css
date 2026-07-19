@@ -1926,6 +1926,17 @@
   color: var(--color-danger);
 }
 
+.apx-warn-level {
+  flex: none;
+  font-weight: 600;
+  font-size: var(--text-xs);
+  color: var(--color-warning);
+}
+
+.apx-warn-card.is-unsupported .apx-warn-level {
+  color: var(--color-danger);
+}
+
 .apx-warn-count {
   flex: none;
   margin-left: auto;
