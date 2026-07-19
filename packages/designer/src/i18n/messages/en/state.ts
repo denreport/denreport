@@ -37,6 +37,7 @@ export const stateEn = {
     text: "Text",
     column1: "Column 1",
     column2: "Column 2",
+    imagePlaceholder: "No image set",
     scenarioName: (n: number): string => `Scenario ${n}`,
     copyOf: (name: string): string => `${name} copy`,
   },

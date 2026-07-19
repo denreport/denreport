@@ -37,6 +37,7 @@ export const stateJa = {
     text: "テキスト",
     column1: "列1",
     column2: "列2",
+    imagePlaceholder: "画像未設定",
     scenarioName: (n: number): string => `シナリオ ${n}`,
     copyOf: (name: string): string => `${name} のコピー`,
   },

@@ -69,7 +69,11 @@ export function LayerRow(props: {
             {icon}
           </span>
           <span className="apx-layer-label">
-            {layerLabel(node.element, m.elementTypes)}
+            {layerLabel(
+              node.element,
+              m.elementTypes,
+              m.defaults.imagePlaceholder,
+            )}
           </span>
         </button>
         <button

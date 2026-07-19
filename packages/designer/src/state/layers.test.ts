@@ -1,5 +1,6 @@
 import type { IrDocument, IrElement } from "@denreport/core";
 import { describe, expect, it } from "vitest";
+import { en } from "../i18n/messages/en";
 import { ja } from "../i18n/messages/ja";
 import { IMAGE_PLACEHOLDER_SRC } from "./constants";
 import { layoutDocument } from "./geometry";
@@ -144,7 +145,7 @@ describe("layerLabel", () => {
   };
 
   function label(element: Parameters<typeof layerLabel>[0]): string {
-    return layerLabel(element, ja.elementTypes);
+    return layerLabel(element, ja.elementTypes, ja.defaults.imagePlaceholder);
   }
 
   it("トークンを含む text も先頭12文字を超えると … で切り詰める", () => {
@@ -231,5 +232,25 @@ describe("layerLabel", () => {
 
   it("name が空文字なら自動ラベルへフォールバックする", () => {
     expect(label({ ...base, text: "見出し", name: "" })).toBe("見出し");
+  });
+
+  it("en メッセージでは image ラベルも英語になる", () => {
+    const image = {
+      type: "image" as const,
+      id: "img1",
+      w: 30,
+      h: 30,
+      src: IMAGE_PLACEHOLDER_SRC,
+    };
+    expect(
+      layerLabel(image, en.elementTypes, en.defaults.imagePlaceholder),
+    ).toBe("No image set");
+    expect(
+      layerLabel(
+        { ...image, src: "data:image/png;base64,xxx" },
+        en.elementTypes,
+        en.defaults.imagePlaceholder,
+      ),
+    ).toBe("Image");
   });
 });

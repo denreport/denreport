@@ -44,6 +44,7 @@ const TEXT_LABEL_MAX = 12;
 export function layerLabel(
   element: IrElement | IrFlexChild,
   elementTypes: Record<IrElementType, string>,
+  imagePlaceholder: string,
 ): string {
   if (element.name !== undefined && element.name !== "") {
     return element.name;
@@ -61,7 +62,9 @@ export function layerLabel(
     case "pageNumber":
       return element.format;
     case "image":
-      return element.src === IMAGE_PLACEHOLDER_SRC ? "画像未設定" : "画像";
+      return element.src === IMAGE_PLACEHOLDER_SRC
+        ? imagePlaceholder
+        : elementTypes.image;
     default:
       return elementTypes[element.type];
   }
