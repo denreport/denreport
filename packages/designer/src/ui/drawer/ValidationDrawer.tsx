@@ -100,6 +100,8 @@ export function ValidationDrawer(props: {
           <span className="apx-badge apx-badge-err">{errors.length}</span>
         ) : warnings.length > 0 ? (
           <span className="apx-badge apx-badge-warn">{warnings.length}</span>
+        ) : compatFindingTotal > 0 ? (
+          <span className="apx-badge apx-badge-warn">{compatFindingTotal}</span>
         ) : (
           <span className="apx-badge apx-badge-ok">✓ 問題なし</span>
         )}

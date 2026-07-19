@@ -53,9 +53,7 @@ export function ExportDialog(props: {
 }): ReactNode {
   const { store, onClose, onReveal } = props;
   const state = useEditorState(store);
-  const [target, setTarget] = useState<CompatTargetId>(
-    state.selectedExportTarget,
-  );
+  const target = state.selectedExportTarget;
   const [run, setRun] = useState<RunState>(RUN_IDLE);
   const [fullEmbedFont, setFullEmbedFont] = useState(false);
 
@@ -201,7 +199,6 @@ export function ExportDialog(props: {
             aria-pressed={target === id}
             className={`apx-tcard${target === id ? " is-selected" : ""}`}
             onClick={() => {
-              setTarget(id);
               store.setSelectedExportTarget(id);
               setRun(RUN_IDLE);
             }}

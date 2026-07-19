@@ -95,7 +95,9 @@ function openDrawer(): void {
 
 describe("折畳バー", () => {
   it("エラーなしでは ✓ 問題なし を表示する", () => {
-    const store = new EditorStore(makeDocument([text("t1")]));
+    // text 要素は縦方向はみ出しの挙動注記が常に approximated になるため、
+    // 互換性判定もゼロにするには要素なしの文書を使う
+    const store = new EditorStore(makeDocument([]));
     render(<ValidationDrawer store={store} onReveal={() => {}} />);
     expect(container.querySelector(".apx-badge-ok")?.textContent).toContain(
       "問題なし",
@@ -126,6 +128,15 @@ describe("折畳バー", () => {
     expect([...rows].every((row) => row.textContent?.includes("Q01"))).toBe(
       true,
     );
+  });
+
+  it("検証エラー・警告がなくても互換性判定があれば問題なしにせず件数を出す", () => {
+    const store = new EditorStore(makeDocument([imageEl("img1")]));
+    store.setSelectedExportTarget("reportlab");
+    render(<ValidationDrawer store={store} onReveal={() => {}} />);
+    expect(container.querySelector(".apx-badge-ok")).toBeNull();
+    expect(container.querySelector(".apx-badge-warn")?.textContent).toBe("1");
+    expect(container.querySelector(".apx-drawer-body")).toBeNull();
   });
 
   it("エラーと警告が混在するとき、エラーバッジの件数に警告は混ざらず両方の一覧が並ぶ", () => {

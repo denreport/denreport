@@ -1,10 +1,13 @@
 import type { CompatFinding } from "@denreport/core";
+import { COMPAT_MATRICES } from "@denreport/core";
 import { describe, expect, it } from "vitest";
 import { EXPORT_TARGET_IDS, groupCompatFindings } from "./export-warnings";
 
 describe("EXPORT_TARGET_IDS", () => {
-  it("pdfme・reportlab の2件をこの順で並べる", () => {
-    expect(EXPORT_TARGET_IDS).toEqual(["pdfme", "reportlab"]);
+  it("COMPAT_MATRICES の全キーを過不足なく含む", () => {
+    expect([...EXPORT_TARGET_IDS].sort()).toEqual(
+      Object.keys(COMPAT_MATRICES).sort(),
+    );
   });
 });
 
