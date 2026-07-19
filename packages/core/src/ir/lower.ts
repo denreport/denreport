@@ -446,8 +446,7 @@ function lowerTableChunk(
  * expanding to multiple pages), or C04 (total pages over PAGE_COUNT_MAX).
  * Assumes `document` is the output of parseIr and already passed validateIr;
  * the S/M rule groups are not re-checked. `options.locale` controls the
- * language of C03/C04 error messages (default "ja"); C01/C02 messages come
- * from analyzeData and are always Japanese.
+ * language of every error message, including C01/C02 (default "ja").
  */
 export function lowerIr(
   document: IrDocument,
@@ -456,7 +455,7 @@ export function lowerIr(
 ): LowerIrResult {
   const m = getMessages(options?.locale).lower;
   const resolved = resolveFootnotes(document);
-  const problems = analyzeData(resolved, data);
+  const problems = analyzeData(resolved, data, options);
   const dataErrors = problems
     .filter((p) => p.severity === "error")
     .map(toIrError);

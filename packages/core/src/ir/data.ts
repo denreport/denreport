@@ -1,3 +1,8 @@
+import {
+  getMessages,
+  type MessageLocale,
+  type Messages,
+} from "../i18n/messages";
 import type { IrError } from "./errors";
 import { textTemplateKeys } from "./interpolate";
 import type {
@@ -6,6 +11,8 @@ import type {
   IrFlexChild,
   IrTableElement,
 } from "./types";
+
+type DataMessages = Messages["data"];
 
 /**
  * Data bound to a document by key. Text and barcode `{key}` tokens look up
@@ -74,31 +81,19 @@ function walkTextKeys(document: IrDocument): WalkedTextKey[] {
   return out;
 }
 
-function analyzeC01(document: IrDocument, data: IrData): DataProblem[] {
+function analyzeC01(
+  document: IrDocument,
+  data: IrData,
+  m: DataMessages,
+): DataProblem[] {
   const out: DataProblem[] = [];
   for (const { path, key } of walkTextKeys(document)) {
     const value = data[key];
     if (value === undefined) {
-      out.push(
-        problem(
-          "C01",
-          "warning",
-          path,
-          key,
-          "text",
-          `データにキー "${key}" がありません`,
-        ),
-      );
+      out.push(problem("C01", "warning", path, key, "text", m.keyMissing(key)));
     } else if (typeof value !== "string") {
       out.push(
-        problem(
-          "C01",
-          "error",
-          path,
-          key,
-          "text",
-          `キー "${key}" の値が string ではありません`,
-        ),
+        problem("C01", "error", path, key, "text", m.valueNotString(key)),
       );
     }
   }
@@ -133,7 +128,11 @@ function applyCellOverrides(
 }
 
 // C02 検証（violations）と行データ取得（readTableRows）が同じ判定基準を共有するための実装
-function parseTableRows(table: IrTableElement, data: IrData): ParsedTableRows {
+function parseTableRows(
+  table: IrTableElement,
+  data: IrData,
+  m: DataMessages,
+): ParsedTableRows {
   const raw = data[table.bind];
   if (raw === undefined) {
     return { rows: [], missing: true, violations: [] };
@@ -142,7 +141,7 @@ function parseTableRows(table: IrTableElement, data: IrData): ParsedTableRows {
     return {
       rows: [],
       missing: false,
-      violations: [`キー "${table.bind}" の値が配列ではありません`],
+      violations: [m.bindNotArray(table.bind)],
     };
   }
   const violations: string[] = [];
@@ -153,7 +152,7 @@ function parseTableRows(table: IrTableElement, data: IrData): ParsedTableRows {
       rawRow === null ||
       Array.isArray(rawRow)
     ) {
-      violations.push(`${t}行目がオブジェクトではありません`);
+      violations.push(m.rowNotObject(t));
       return;
     }
     const row: Record<string, string> = {};
@@ -161,9 +160,7 @@ function parseTableRows(table: IrTableElement, data: IrData): ParsedTableRows {
     for (const column of table.columns) {
       const value = (rawRow as Record<string, unknown>)[column.key];
       if (typeof value !== "string") {
-        violations.push(
-          `${t}行目のキー "${column.key}" の値が string ではありません`,
-        );
+        violations.push(m.rowValueNotString(t, column.key));
         rowOk = false;
       } else {
         row[column.key] = value;
@@ -180,20 +177,25 @@ function parseTableRows(table: IrTableElement, data: IrData): ParsedTableRows {
 
 // 型・形が不正な場合のみ undefined を返す。呼び出し側はその表をページ計算から除外する。
 // table.bind キーの欠落は警告扱いのため空配列（= minRows 分の空行）を返す
+// violations の中身は捨てて件数しか使わないため locale は問わない
 export function readTableRows(
   table: IrTableElement,
   data: IrData,
 ): readonly IrTableRow[] | undefined {
-  const parsed = parseTableRows(table, data);
+  const parsed = parseTableRows(table, data, getMessages().data);
   return parsed.violations.length === 0 ? parsed.rows : undefined;
 }
 
-function analyzeC02(document: IrDocument, data: IrData): DataProblem[] {
+function analyzeC02(
+  document: IrDocument,
+  data: IrData,
+  m: DataMessages,
+): DataProblem[] {
   const out: DataProblem[] = [];
   document.elements.forEach((element, i) => {
     if (element.type !== "table") return;
     const path = `elements[${i}].bind`;
-    const parsed = parseTableRows(element, data);
+    const parsed = parseTableRows(element, data, m);
     if (parsed.missing) {
       out.push(
         problem(
@@ -202,7 +204,7 @@ function analyzeC02(document: IrDocument, data: IrData): DataProblem[] {
           path,
           element.bind,
           "table",
-          `データにキー "${element.bind}" がありません`,
+          m.keyMissing(element.bind),
         ),
       );
       return;
@@ -218,12 +220,15 @@ function analyzeC02(document: IrDocument, data: IrData): DataProblem[] {
  * Checks rules C01 and C02 against `data` and returns every problem found.
  * C01 (text/barcode token) problems always precede C02 (table binding)
  * problems, matching the order in which missing-key defaults are applied.
+ * `options.locale` controls the messages' language (default "ja").
  */
 export function analyzeData(
   document: IrDocument,
   data: IrData,
+  options?: { readonly locale?: MessageLocale },
 ): readonly DataProblem[] {
-  return [...analyzeC01(document, data), ...analyzeC02(document, data)];
+  const m = getMessages(options?.locale).data;
+  return [...analyzeC01(document, data, m), ...analyzeC02(document, data, m)];
 }
 
 function toIrError(p: DataProblem): IrError {
@@ -234,12 +239,14 @@ function toIrError(p: DataProblem): IrError {
  * Maps every analyzeData problem to an IrError (`rule`, `path`, `message`),
  * discarding the `severity` and `kind` detail. For callers that only need
  * IR-style errors and don't need to distinguish warnings from errors.
+ * `options.locale` controls the messages' language (default "ja").
  */
 export function validateData(
   document: IrDocument,
   data: IrData,
+  options?: { readonly locale?: MessageLocale },
 ): readonly IrError[] {
-  return analyzeData(document, data).map(toIrError);
+  return analyzeData(document, data, options).map(toIrError);
 }
 
 /**

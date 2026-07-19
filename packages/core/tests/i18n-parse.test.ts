@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { analyzeData, validateData } from "../src/ir/data";
 import { ruleDescription } from "../src/ir/errors";
 import { checkQualifiedInvoice } from "../src/ir/invoice";
 import { lowerIr } from "../src/ir/lower";
@@ -90,6 +91,72 @@ describe("lowerIr locale", () => {
     expect(result.errors[0]?.message).toBe(
       "More than one table expands across 2 or more pages",
     );
+  });
+
+  function docWithBoundText(): IrDocument {
+    return baseDoc({
+      elements: [
+        {
+          type: "text",
+          id: "t1",
+          x: 0,
+          y: 0,
+          pages: "first",
+          w: 50,
+          h: 10,
+          text: "{name}",
+          fontSize: 10,
+          align: "left",
+          lineHeight: 1.25,
+        },
+      ],
+    });
+  }
+
+  it("returns en messages for a C01 data error, not mixed with ja", () => {
+    const result = lowerIr(docWithBoundText(), { name: 42 }, { locale: "en" });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.errors[0]?.message).toBe(
+      'The value for key "name" is not a string',
+    );
+  });
+});
+
+describe("analyzeData / validateData locale", () => {
+  function docWithBoundText(): IrDocument {
+    return baseDoc({
+      elements: [
+        {
+          type: "text",
+          id: "t1",
+          x: 0,
+          y: 0,
+          pages: "first",
+          w: 50,
+          h: 10,
+          text: "{name}",
+          fontSize: 10,
+          align: "left",
+          lineHeight: 1.25,
+        },
+      ],
+    });
+  }
+
+  it("defaults to ja when options are omitted", () => {
+    const problems = analyzeData(docWithBoundText(), {});
+    expect(problems[0]?.message).toBe('データにキー "name" がありません');
+  });
+
+  it("returns en messages for locale: en", () => {
+    const problems = analyzeData(docWithBoundText(), {}, { locale: "en" });
+    expect(problems[0]?.message).toBe('Data has no key "name"');
+  });
+
+  it("validateData carries the same locale through to IrError", () => {
+    const errors = validateData(docWithBoundText(), {}, { locale: "en" });
+    expect(errors[0]?.message).toBe('Data has no key "name"');
   });
 });
 

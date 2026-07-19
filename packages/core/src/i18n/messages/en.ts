@@ -121,6 +121,14 @@ export const en: Messages = {
     footnotesExceedPageTop:
       "The footnote block extends past the page's top edge",
   },
+  data: {
+    keyMissing: (key) => `Data has no key "${key}"`,
+    valueNotString: (key) => `The value for key "${key}" is not a string`,
+    bindNotArray: (key) => `The value for key "${key}" is not an array`,
+    rowNotObject: (row) => `Row ${row} is not an object`,
+    rowValueNotString: (row, key) =>
+      `The value for key "${key}" in row ${row} is not a string`,
+  },
   lower: {
     multiplePagingTables: "More than one table expands across 2 or more pages",
     pageCountExceeded: (pageCount, max) =>

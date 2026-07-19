@@ -131,6 +131,15 @@ export const ja = {
     footnotesExceedPageRight: "注記ブロックが用紙の右端を超えています",
     footnotesExceedPageTop: "注記ブロックが用紙の上端を超えています",
   },
+  data: {
+    keyMissing: (key: string) => `データにキー "${key}" がありません`,
+    valueNotString: (key: string) =>
+      `キー "${key}" の値が string ではありません`,
+    bindNotArray: (key: string) => `キー "${key}" の値が配列ではありません`,
+    rowNotObject: (row: number) => `${row}行目がオブジェクトではありません`,
+    rowValueNotString: (row: number, key: string) =>
+      `${row}行目のキー "${key}" の値が string ではありません`,
+  },
   lower: {
     multiplePagingTables: "2ページ以上に展開される表が複数あります",
     pageCountExceeded: (pageCount: number, max: number) =>
