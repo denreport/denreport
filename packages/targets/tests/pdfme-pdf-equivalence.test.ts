@@ -310,7 +310,10 @@ function findItem(
 
 describe("pdfme 実 PDF — 回転の向きと中心", () => {
   it("rotation: 回転テキストの原点が要素中心周りの時計回り写像に一致する", async () => {
-    const { document, data } = loadFixture("rotation.json", "rotation-data.json");
+    const { document, data } = loadFixture(
+      "rotation.json",
+      "rotation-data.json",
+    );
     const pdfBytes = await generatePdfmePdf(document, data, fontData);
     mkdirSync(outputDir, { recursive: true });
     writeFileSync(`${outputDir}/pdfme-rotation.pdf`, pdfBytes);
