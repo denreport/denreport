@@ -4,6 +4,7 @@ import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { MmBox } from "../../state/geometry";
+import type { TableCellSource } from "../../state/table-cells";
 import { TableSketch } from "./TableSketch";
 
 (
@@ -44,11 +45,15 @@ function table(overrides: Partial<IrTableElement> = {}): IrTableElement {
   };
 }
 
-function renderSketch(element: IrTableElement, box: MmBox): void {
+function renderSketch(
+  element: IrTableElement,
+  box: MmBox,
+  cells?: TableCellSource,
+): void {
   act(() => {
     root.render(
       <div>
-        <TableSketch element={element} box={box} />
+        <TableSketch element={element} box={box} cells={cells} />
       </div>,
     );
   });
@@ -101,5 +106,116 @@ describe("TableSketch — stripeColor", () => {
       h: 10,
     });
     expect(container.querySelectorAll(".apx-tbl-stripe")).toHaveLength(0);
+  });
+});
+
+describe("TableSketch — セル結合", () => {
+  const TWO_COLUMNS: IrTableElement["columns"] = [
+    { key: "a", label: "A", width: 40, align: "left" },
+    { key: "b", label: "B", width: 30, align: "right" },
+  ];
+
+  function sourceOf(
+    rows: readonly Readonly<Record<string, string>>[],
+  ): TableCellSource {
+    return { rows, overrides: new Map() };
+  }
+
+  it("mergeSameValue の連続同一値で被覆セルを描画せず、起点セルだけが残る", () => {
+    const el = table({
+      columns: [
+        {
+          key: "a",
+          label: "A",
+          width: 40,
+          align: "left",
+          mergeSameValue: true,
+        },
+        { key: "b", label: "B", width: 30, align: "right" },
+      ],
+    });
+    renderSketch(
+      el,
+      { x: 0, y: 0, w: 70, h: 10 + 2 * 10 },
+      sourceOf([
+        { a: "同じ", b: "1" },
+        { a: "同じ", b: "2" },
+      ]),
+    );
+    const colA = [
+      ...container.querySelectorAll('.apx-tbl-td[data-apx-col="0"]'),
+    ];
+    expect(colA).toHaveLength(1);
+    expect(colA[0]?.getAttribute("data-apx-row")).toBe("0");
+    expect(
+      container.querySelectorAll('.apx-tbl-td[data-apx-col="1"]'),
+    ).toHaveLength(2);
+    // 結合内部の水平罫線は b 列側の区間だけ残る
+    const innerLine = [...container.querySelectorAll(".apx-tbl-hline")].find(
+      (line) => (line as HTMLElement).style.getPropertyValue("--ly") === "20",
+    ) as HTMLElement | undefined;
+    expect(innerLine?.style.left).toBe("calc(40 * var(--mm))");
+    expect(innerLine?.style.width).toBe("calc(30 * var(--mm))");
+  });
+
+  it("ヘッダの colSpan で被覆ヘッダを描画せず、起点ヘッダが結合幅になる", () => {
+    const el = table({
+      columns: TWO_COLUMNS,
+      cellSpans: [{ row: "header", key: "a", colSpan: 2 }],
+    });
+    renderSketch(el, { x: 0, y: 0, w: 70, h: 10 + 2 * 10 });
+    const ths = [...container.querySelectorAll(".apx-tbl-th")];
+    expect(ths).toHaveLength(1);
+    expect((ths[0] as HTMLElement).style.getPropertyValue("--cw")).toBe("67");
+    // ヘッダ帯の垂直罫線は明細側だけ残る
+    const vline = container.querySelector(".apx-tbl-vline") as HTMLElement;
+    expect(vline.style.top).toBe("calc(10 * var(--mm))");
+    expect(vline.style.height).toBe("calc(20 * var(--mm))");
+  });
+
+  it("静的 colSpan の起点セルは結合幅で描画される", () => {
+    const el = table({
+      columns: TWO_COLUMNS,
+      cellSpans: [{ row: 0, key: "a", colSpan: 2 }],
+    });
+    renderSketch(
+      el,
+      { x: 0, y: 0, w: 70, h: 10 + 2 * 10 },
+      sourceOf([
+        { a: "結合", b: "隠れる" },
+        { a: "通常", b: "見える" },
+      ]),
+    );
+    const origin = container.querySelector(
+      '.apx-tbl-td[data-apx-row="0"][data-apx-col="0"]',
+    ) as HTMLElement;
+    expect(origin.style.getPropertyValue("--cw")).toBe("67");
+    expect(
+      container.querySelector(
+        '.apx-tbl-td[data-apx-row="0"][data-apx-col="1"]',
+      ),
+    ).toBeNull();
+    expect(
+      container.querySelector(
+        '.apx-tbl-td[data-apx-row="1"][data-apx-col="1"]',
+      ),
+    ).not.toBeNull();
+  });
+
+  it("被覆セルを指す上書きは表示されない（不活性）", () => {
+    const el = table({
+      columns: TWO_COLUMNS,
+      cellSpans: [{ row: 0, key: "a", colSpan: 2 }],
+      cellOverrides: [{ row: 0, key: "b", value: "無効な上書き" }],
+    });
+    renderSketch(
+      el,
+      { x: 0, y: 0, w: 70, h: 10 + 2 * 10 },
+      {
+        rows: [{ a: "結合", b: "1" }],
+        overrides: new Map([[0, new Map([["b", "無効な上書き"]])]]),
+      },
+    );
+    expect(container.textContent).not.toContain("無効な上書き");
   });
 });

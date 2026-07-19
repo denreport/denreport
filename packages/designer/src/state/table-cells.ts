@@ -1,4 +1,9 @@
-import type { IrDocument, IrTableElement } from "@denreport/core";
+import type {
+  IrDocument,
+  IrTableElement,
+  TableChunkMerges,
+} from "@denreport/core";
+import { computeChunkMerges } from "@denreport/core";
 import { parseSampleJson } from "./sample-data";
 
 /** 1 表分のセル値の素材。rows は bind 由来の寛容読取行（string 値のみ採用、他は無視）、
@@ -67,6 +72,25 @@ export function tableCellSources(
     });
   }
   return sources;
+}
+
+/** キャンバス表示（先頭チャンク相当）用の結合ジオメトリ。データ駆動結合は
+    上書き適用後の表示値（cellView と同じ解決）で判定する */
+export function sketchMerges(
+  table: IrTableElement,
+  source: TableCellSource,
+  rowCount: number,
+): TableChunkMerges {
+  const rows: Record<string, string>[] = [];
+  for (let t = 0; t < rowCount; t++) {
+    const row: Record<string, string> = { ...(source.rows[t] ?? {}) };
+    const overrides = source.overrides.get(t);
+    if (overrides !== undefined) {
+      for (const [key, value] of overrides) row[key] = value;
+    }
+    rows.push(row);
+  }
+  return computeChunkMerges(table, rows, 0, rowCount);
 }
 
 /** セルの表示値。overridden は固定値が効いているか（上書き目印の判定に使う） */

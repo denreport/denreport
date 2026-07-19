@@ -1,6 +1,6 @@
 import type { IrDocument, IrTableElement } from "@denreport/core";
 import { describe, expect, it } from "vitest";
-import { cellView, tableCellSources } from "./table-cells";
+import { cellView, sketchMerges, tableCellSources } from "./table-cells";
 
 function table(overrides: Partial<IrTableElement> = {}): IrTableElement {
   return {
@@ -114,5 +114,105 @@ describe("tableCellSources / cellView", () => {
       text: "",
       overridden: false,
     });
+  });
+});
+
+describe("sketchMerges", () => {
+  function sourceOf(doc: IrDocument, sampleJson: string) {
+    const source = tableCellSources(doc, sampleJson).get("tbl1");
+    if (source === undefined) throw new Error("expected a source");
+    return source;
+  }
+
+  it("bind 行の同一値連続を結合し、表示行数で打ち切る", () => {
+    const doc = docOf(
+      table({
+        columns: [
+          {
+            key: "name",
+            label: "品目",
+            width: 40,
+            align: "left",
+            mergeSameValue: true,
+          },
+          { key: "amount", label: "金額", width: 30, align: "right" },
+        ],
+      }),
+    );
+    const el = doc.elements[0];
+    if (el?.type !== "table") throw new Error("expected a table");
+    const sampleJson = JSON.stringify({
+      items: [
+        { name: "同じ", amount: "10" },
+        { name: "同じ", amount: "20" },
+        { name: "同じ", amount: "30" },
+      ],
+    });
+    const merges = sketchMerges(el, sourceOf(doc, sampleJson), 2);
+    expect(merges.rects).toEqual([{ q: 0, col: 0, rowSpan: 2, colSpan: 1 }]);
+    expect([...merges.covered]).toEqual(["1:0"]);
+  });
+
+  it("上書き適用後の値で結合を判定する（上書きで区間が切れる）", () => {
+    const doc = docOf(
+      table({
+        columns: [
+          {
+            key: "name",
+            label: "品目",
+            width: 40,
+            align: "left",
+            mergeSameValue: true,
+          },
+          { key: "amount", label: "金額", width: 30, align: "right" },
+        ],
+        cellOverrides: [{ row: 1, key: "name", value: "別の値" }],
+      }),
+    );
+    const el = doc.elements[0];
+    if (el?.type !== "table") throw new Error("expected a table");
+    const sampleJson = JSON.stringify({
+      items: [
+        { name: "同じ", amount: "10" },
+        { name: "同じ", amount: "20" },
+        { name: "同じ", amount: "30" },
+      ],
+    });
+    const merges = sketchMerges(el, sourceOf(doc, sampleJson), 3);
+    expect(merges.rects).toEqual([]);
+  });
+
+  it("cells が空でも静的 cellSpans は結合される", () => {
+    const doc = docOf(
+      table({ cellSpans: [{ row: "header", key: "name", colSpan: 2 }] }),
+    );
+    const el = doc.elements[0];
+    if (el?.type !== "table") throw new Error("expected a table");
+    const merges = sketchMerges(el, { rows: [], overrides: new Map() }, 3);
+    expect(merges.rects).toEqual([
+      { q: "header", col: 0, rowSpan: 1, colSpan: 2 },
+    ]);
+    expect([...merges.covered]).toEqual(["header:1"]);
+  });
+
+  it("minRows の空行（空文字列）は誤結合しない", () => {
+    const doc = docOf(
+      table({
+        columns: [
+          {
+            key: "name",
+            label: "品目",
+            width: 40,
+            align: "left",
+            mergeSameValue: true,
+          },
+          { key: "amount", label: "金額", width: 30, align: "right" },
+        ],
+      }),
+    );
+    const el = doc.elements[0];
+    if (el?.type !== "table") throw new Error("expected a table");
+    const merges = sketchMerges(el, { rows: [], overrides: new Map() }, 4);
+    expect(merges.rects).toEqual([]);
   });
 });

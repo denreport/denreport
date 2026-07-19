@@ -187,6 +187,23 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
                 </select>
               </span>
             </div>
+            <div className="apx-col-row">
+              <label className="apx-check">
+                <input
+                  type="checkbox"
+                  aria-label={`列${i + 1} の同一値の連続行を結合`}
+                  checked={col.mergeSameValue === true}
+                  onChange={(e) =>
+                    commitDoc((doc) =>
+                      updateTableColumn(doc, el.id, i, {
+                        mergeSameValue: e.currentTarget.checked,
+                      }),
+                    )
+                  }
+                />
+                同一値の連続行を結合
+              </label>
+            </div>
             {keyError !== undefined && (
               <div className="apx-col-err">{keyError}</div>
             )}

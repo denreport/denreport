@@ -7,6 +7,7 @@ import type {
   IrFontSlot,
   IrPage,
   IrTableCellOverride,
+  IrTableCellSpan,
   IrTableElement,
 } from "@denreport/core";
 import { roundMm } from "./geometry";
@@ -128,7 +129,19 @@ function withCellOverrides(
   return { ...table, cellOverrides: overrides };
 }
 
-/** index の列を削除する。columns が1個のときは何もしない（削除列を指す上書きも併せて破棄） */
+/** spans が空なら cellSpans 属性ごと除去し、そうでなければ差し替える */
+function withCellSpans(
+  table: IrTableElement,
+  spans: readonly IrTableCellSpan[],
+): IrTableElement {
+  if (spans.length === 0) {
+    const { cellSpans: _cellSpans, ...rest } = table;
+    return rest as IrTableElement;
+  }
+  return { ...table, cellSpans: spans };
+}
+
+/** index の列を削除する。columns が1個のときは何もしない（削除列を起点に指す上書き・結合も併せて破棄） */
 export function removeTableColumn(
   document: IrDocument,
   tableId: string,
@@ -143,7 +156,11 @@ export function removeTableColumn(
     const overrides = (table.cellOverrides ?? []).filter(
       (o) => o.key !== removed.key,
     );
-    return withCellOverrides({ ...table, columns }, overrides);
+    const spans = (table.cellSpans ?? []).filter((s) => s.key !== removed.key);
+    return withCellSpans(
+      withCellOverrides({ ...table, columns }, overrides),
+      spans,
+    );
   });
 }
 
@@ -179,12 +196,20 @@ export function updateTableColumn(
     if (current === undefined) {
       return table;
     }
-    const next: IrColumn = { ...current, ...patch };
+    const merged = { ...current, ...patch };
+    const next: IrColumn = {
+      key: merged.key,
+      label: merged.label,
+      width: merged.width,
+      align: merged.align,
+      ...(merged.mergeSameValue === true ? { mergeSameValue: true } : {}),
+    };
     if (
       next.key === current.key &&
       next.label === current.label &&
       next.width === current.width &&
-      next.align === current.align
+      next.align === current.align &&
+      (next.mergeSameValue === true) === (current.mergeSameValue === true)
     ) {
       return table;
     }
@@ -196,7 +221,87 @@ export function updateTableColumn(
         : (table.cellOverrides ?? []).map((o) =>
             o.key === current.key ? { ...o, key: next.key } : o,
           );
-    return withCellOverrides({ ...table, columns }, overrides);
+    const spans =
+      next.key === current.key
+        ? (table.cellSpans ?? [])
+        : (table.cellSpans ?? []).map((s) =>
+            s.key === current.key ? { ...s, key: next.key } : s,
+          );
+    return withCellSpans(
+      withCellOverrides({ ...table, columns }, overrides),
+      spans,
+    );
+  });
+}
+
+/** 末尾に結合を追加する。既定は先頭列の行0を起点とした縦2行の結合 */
+export function addTableCellSpan(
+  document: IrDocument,
+  tableId: string,
+): IrDocument {
+  return updateTable(document, tableId, (table) => {
+    const key = table.columns[0]?.key;
+    if (key === undefined) {
+      return table;
+    }
+    const span: IrTableCellSpan = { row: 0, key, rowSpan: 2 };
+    return { ...table, cellSpans: [...(table.cellSpans ?? []), span] };
+  });
+}
+
+/**
+ * index の結合に patch を適用する。rowSpan / colSpan は 1（デフォルト）なら属性を
+ * 持たせず、"header" 行では rowSpan を除去する。変化が無ければ同一参照を返す。
+ */
+export function updateTableCellSpan(
+  document: IrDocument,
+  tableId: string,
+  index: number,
+  patch: Partial<IrTableCellSpan>,
+): IrDocument {
+  return updateTable(document, tableId, (table) => {
+    const current = table.cellSpans?.[index];
+    if (current === undefined) {
+      return table;
+    }
+    const merged = { ...current, ...patch };
+    const rowSpan = merged.rowSpan ?? 1;
+    const colSpan = merged.colSpan ?? 1;
+    const next: IrTableCellSpan = {
+      row: merged.row,
+      key: merged.key,
+      ...(merged.row !== "header" && rowSpan !== 1 ? { rowSpan } : {}),
+      ...(colSpan !== 1 ? { colSpan } : {}),
+    };
+    if (
+      next.row === current.row &&
+      next.key === current.key &&
+      (next.rowSpan ?? 1) === (current.rowSpan ?? 1) &&
+      (next.colSpan ?? 1) === (current.colSpan ?? 1)
+    ) {
+      return table;
+    }
+    const spans = [...(table.cellSpans ?? [])];
+    spans[index] = next;
+    return { ...table, cellSpans: spans };
+  });
+}
+
+/** index の結合を削除する。0件になれば cellSpans 属性ごと除去する */
+export function removeTableCellSpan(
+  document: IrDocument,
+  tableId: string,
+  index: number,
+): IrDocument {
+  return updateTable(document, tableId, (table) => {
+    const spans = table.cellSpans ?? [];
+    if (spans[index] === undefined) {
+      return table;
+    }
+    return withCellSpans(
+      table,
+      spans.filter((_, i) => i !== index),
+    );
   });
 }
 

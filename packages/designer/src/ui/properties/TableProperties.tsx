@@ -6,6 +6,7 @@ import { STRIPE_DEFAULT_COLOR } from "../../state/constants";
 import { errorMessageFor } from "../../state/error-index";
 import { activeSampleJson } from "../../state/sample-scenarios";
 import { useEditorState } from "../useEditorState";
+import { CellSpansEditor } from "./CellSpansEditor";
 import { ColumnsEditor } from "./ColumnsEditor";
 import type { ElementFormProps } from "./ElementProperties";
 import { commitReplace, withOptionalAttr } from "./ElementProperties";
@@ -222,6 +223,7 @@ export function TableProperties(props: ElementFormProps): ReactNode {
             <input
               id={stripeCheckId}
               type="checkbox"
+              aria-label="1行おきに背景色を付ける"
               checked={el.stripeColor !== undefined}
               onChange={(e) =>
                 commitReplace(
@@ -256,6 +258,7 @@ export function TableProperties(props: ElementFormProps): ReactNode {
         )}
       </section>
       <ColumnsEditor {...props} />
+      <CellSpansEditor {...props} />
     </>
   );
 }

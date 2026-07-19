@@ -10,8 +10,10 @@ import type {
 import { parseIr } from "@denreport/core";
 import { describe, expect, it } from "vitest";
 import {
+  addTableCellSpan,
   addTableColumn,
   moveTableColumn,
+  removeTableCellSpan,
   removeTableColumn,
   replaceElement,
   setDocType,
@@ -23,6 +25,7 @@ import {
   setPage,
   setTableCellOverride,
   updateElements,
+  updateTableCellSpan,
   updateTableColumn,
 } from "./properties";
 
@@ -371,6 +374,105 @@ describe("列操作", () => {
     expect(table?.type === "table" ? table.cellOverrides : undefined).toEqual([
       { row: 0, key: "qty", value: "固定値" },
     ]);
+    expectValidIr(doc);
+  });
+
+  it("updateTableColumn は mergeSameValue を設定し、false で属性ごと除去する", () => {
+    const on = updateTableColumn(BASE, "tbl1", 0, { mergeSameValue: true });
+    expect(columnsOf(on)[0]).toEqual({
+      key: "col1",
+      label: "列1",
+      width: 40,
+      align: "left",
+      mergeSameValue: true,
+    });
+    const off = updateTableColumn(on, "tbl1", 0, { mergeSameValue: false });
+    expect(columnsOf(off)[0]).not.toHaveProperty("mergeSameValue");
+    expect(updateTableColumn(BASE, "tbl1", 0, { mergeSameValue: false })).toBe(
+      BASE,
+    );
+    expectValidIr(on);
+  });
+});
+
+describe("セル結合の操作", () => {
+  function spansOf(document: IrDocument): IrTableElement["cellSpans"] {
+    const el = findById(document, "tbl1");
+    if (el?.type !== "table") {
+      throw new Error("table がない");
+    }
+    return el.cellSpans;
+  }
+
+  it("addTableCellSpan は先頭列・行0・縦2行の結合を末尾に追加する", () => {
+    const doc = addTableCellSpan(BASE, "tbl1");
+    expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", rowSpan: 2 }]);
+    expectValidIr(doc);
+  });
+
+  it("updateTableCellSpan は patch を適用し、rowSpan/colSpan の 1 は属性を持たせない", () => {
+    const base = addTableCellSpan(BASE, "tbl1");
+    const doc = updateTableCellSpan(base, "tbl1", 0, {
+      key: "col3",
+      rowSpan: 1,
+      colSpan: 2,
+    });
+    expect(spansOf(doc)).toEqual([{ row: 0, key: "col3", colSpan: 2 }]);
+    expect(spansOf(doc)?.[0]).not.toHaveProperty("rowSpan");
+    expectValidIr(doc);
+  });
+
+  it("updateTableCellSpan は header 行への切替で rowSpan を除去する", () => {
+    const base = addTableCellSpan(BASE, "tbl1");
+    const doc = updateTableCellSpan(base, "tbl1", 0, {
+      row: "header",
+      colSpan: 2,
+    });
+    expect(spansOf(doc)).toEqual([{ row: "header", key: "col1", colSpan: 2 }]);
+    expectValidIr(doc);
+  });
+
+  it("updateTableCellSpan は無変化・不在 index で同一参照を返す", () => {
+    const base = addTableCellSpan(BASE, "tbl1");
+    expect(updateTableCellSpan(base, "tbl1", 0, { rowSpan: 2 })).toBe(base);
+    expect(updateTableCellSpan(base, "tbl1", 9, { rowSpan: 3 })).toBe(base);
+  });
+
+  it("removeTableCellSpan は指定 index を消し、0件になれば属性ごと除去する", () => {
+    const one = addTableCellSpan(BASE, "tbl1");
+    const two = addTableCellSpan(one, "tbl1");
+    const doc = removeTableCellSpan(two, "tbl1", 1);
+    expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", rowSpan: 2 }]);
+    const none = removeTableCellSpan(doc, "tbl1", 0);
+    const table = findById(none, "tbl1");
+    expect(
+      table !== undefined && "cellSpans" in table ? table.cellSpans : undefined,
+    ).toBe(undefined);
+    expect(removeTableCellSpan(BASE, "tbl1", 0)).toBe(BASE);
+    expectValidIr(none);
+  });
+
+  it("removeTableColumn は削除した列を起点に指す結合も破棄する", () => {
+    const withSpan = addTableCellSpan(BASE, "tbl1");
+    const doc = removeTableColumn(withSpan, "tbl1", 0);
+    const table = findById(doc, "tbl1");
+    expect(
+      table !== undefined && "cellSpans" in table ? table.cellSpans : undefined,
+    ).toBe(undefined);
+    expectValidIr(doc);
+  });
+
+  it("updateTableColumn の key 変更に結合の key が追随する", () => {
+    const withSpan = addTableCellSpan(BASE, "tbl1");
+    const doc = updateTableColumn(withSpan, "tbl1", 0, { key: "renamed" });
+    expect(spansOf(doc)).toEqual([{ row: 0, key: "renamed", rowSpan: 2 }]);
+    expectValidIr(doc);
+  });
+
+  it("moveTableColumn では結合は key 起点のまま列と一緒に動く", () => {
+    const withSpan = addTableCellSpan(BASE, "tbl1");
+    const doc = moveTableColumn(withSpan, "tbl1", 0, 1);
+    expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", rowSpan: 2 }]);
     expectValidIr(doc);
   });
 });
