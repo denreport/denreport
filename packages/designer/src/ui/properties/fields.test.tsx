@@ -269,6 +269,35 @@ describe("TextAreaField", () => {
     blur(textarea);
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("a\nb");
   });
+
+  it("error があるとフィールドがエラー表示になる", () => {
+    render(
+      <TextAreaField
+        label="テキスト"
+        value="a"
+        error="参照先の注記が定義されていません"
+        onCommit={() => {}}
+      />,
+    );
+    expect(container.querySelector(".apx-field.is-error")).not.toBeNull();
+    expect(container.querySelector(".apx-ferr")?.textContent).toBe(
+      "参照先の注記が定義されていません",
+    );
+  });
+
+  it("hint があると案内文を表示する", () => {
+    render(
+      <TextAreaField
+        label="テキスト"
+        value="a"
+        hint="{#id} で脚注を参照"
+        onCommit={() => {}}
+      />,
+    );
+    expect(container.querySelector(".apx-fhint")?.textContent).toBe(
+      "{#id} で脚注を参照",
+    );
+  });
 });
 
 describe("SegmentField", () => {

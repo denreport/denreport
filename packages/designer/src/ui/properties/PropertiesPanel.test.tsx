@@ -514,6 +514,44 @@ describe("代表的な編集経路", () => {
     expect(elementById(store, "t1")).toMatchObject({ text: "見出し" });
   });
 
+  it("テキスト編集欄に {#id} 構文の案内文を表示する", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["t1"]);
+    expect(container.querySelector(".apx-fhint")?.textContent).toContain(
+      "{#id}",
+    );
+  });
+
+  it("未定義の脚注 id を参照する（F03）とテキスト編集欄にエラーを表示する", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["t1"]);
+
+    const textInput = inputByLabel("テキスト");
+    setValue(textInput, "見出し{#missing}");
+    blur(textInput);
+
+    expect(container.querySelector(".apx-field.is-error")).not.toBeNull();
+    expect(container.querySelector(".apx-ferr")?.textContent).toContain(
+      "missing",
+    );
+  });
+
+  it("flex 内の text に脚注マークを書く（F04）とテキスト編集欄にエラーを表示する", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["c1"]);
+
+    const textInput = inputByLabel("テキスト");
+    setValue(textInput, "子{#note1}");
+    blur(textInput);
+
+    expect(container.querySelector(".apx-ferr")?.textContent).toBe(
+      "脚注マークは flex 内の text には書けません",
+    );
+  });
+
   it("列追加 → width 変更で Σ列幅の表示が更新される", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);

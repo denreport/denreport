@@ -21,6 +21,11 @@ const PAGES_OPTIONS: readonly {
   { value: "all", label: "全" },
 ];
 
+/** 権限拒否・非対応ブラウザでも操作を継続できるよう、失敗は無視する */
+function copyToClipboard(text: string): void {
+  navigator.clipboard?.writeText(text)?.catch(() => {});
+}
+
 export function FootnotesSection(props: {
   readonly store: EditorStore;
   readonly document: IrDocument;
@@ -114,6 +119,11 @@ export function FootnotesSection(props: {
           commitDoc((doc) => setFootnotes(doc, { ...footnotes, pages }))
         }
       />
+      <p className="apx-sect-note">
+        テキスト要素の本文に {"{#id}"}
+        と書くと、対応する id
+        の注記をここに表示します。番号はマークの出現順に自動採番されます。
+      </p>
       <div className="apx-sect-h">
         注記<span className="apx-mono">{footnotes.notes.length}</span>
       </div>
@@ -142,6 +152,22 @@ export function FootnotesSection(props: {
                 commitDoc((doc) => updateFootnoteNote(doc, i, { id }))
               }
             />
+            <div className="apx-copy-row">
+              <button
+                type="button"
+                className="apx-copy-btn"
+                onClick={() => copyToClipboard(note.id)}
+              >
+                id をコピー
+              </button>
+              <button
+                type="button"
+                className="apx-copy-btn"
+                onClick={() => copyToClipboard(`{#${note.id}}`)}
+              >
+                {"{#id} をコピー"}
+              </button>
+            </div>
             <TextAreaField
               label="本文"
               value={note.text}

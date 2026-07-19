@@ -127,8 +127,10 @@ export function TextAreaField(props: {
   readonly label: string;
   readonly value: string;
   readonly onCommit: (value: string) => void;
+  readonly error?: string | undefined;
+  readonly hint?: string | undefined;
 }): ReactNode {
-  const { label, value, onCommit } = props;
+  const { label, value, onCommit, error, hint } = props;
   const handlers = useDraftValue(value, (raw) => {
     if (raw !== value) {
       onCommit(raw);
@@ -138,7 +140,9 @@ export function TextAreaField(props: {
   return (
     <div className="apx-frow">
       <label htmlFor={id}>{label}</label>
-      <span className="apx-field apx-field-multi">
+      <span
+        className={`apx-field apx-field-multi${error !== undefined ? " is-error" : ""}`}
+      >
         <textarea
           id={id}
           rows={3}
@@ -148,6 +152,8 @@ export function TextAreaField(props: {
           onKeyDown={handlers.onKeyDown}
         />
       </span>
+      {error !== undefined && <span className="apx-ferr">{error}</span>}
+      {hint !== undefined && <span className="apx-fhint">{hint}</span>}
     </div>
   );
 }

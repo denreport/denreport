@@ -20,6 +20,8 @@ export function TextProperties(props: ElementFormProps): ReactNode {
         <TextAreaField
           label="テキスト"
           value={el.text}
+          hint="{#id} で脚注を参照（文書設定の脚注セクションで定義。番号は出現順）"
+          error={errorMessageFor(errors, "text")}
           onCommit={(text) => commitReplace(store, el.id, { ...el, text })}
         />
       </section>
