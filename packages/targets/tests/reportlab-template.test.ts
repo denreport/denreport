@@ -97,16 +97,16 @@ describe("exportReportlabTemplate — static document", () => {
     if (!dataResult.ok || !templateResult.ok)
       throw new Error("expected success");
     expect(templateResult.code).toContain(
-      '_text(c, font, 5, 5, 50, 10, "left", 1.2, (0, 0, 0), ["静的"])',
+      '_text(c, font, 5, 5, 50, 10, 10, "left", 1.2, (0, 0, 0), 0, ["静的"])',
     );
     expect(dataResult.code).toContain(
-      '_text(c, font, 5, 5, 50, 10, "left", 1.2, (0, 0, 0), ["静的"])',
+      '_text(c, font, 5, 5, 50, 10, 10, "left", 1.2, (0, 0, 0), 0, ["静的"])',
     );
     expect(templateResult.code).toContain(
-      "_rect(c, 0, 20, 10, 10, 0.3, (0, 0, 0), None, None, 0)",
+      "_rect(c, 0, 20, 10, 10, 0.3, (0, 0, 0), None, None, 0, 0)",
     );
     expect(dataResult.code).toContain(
-      "_rect(c, 0, 20, 10, 10, 0.3, (0, 0, 0), None, None, 0)",
+      "_rect(c, 0, 20, 10, 10, 0.3, (0, 0, 0), None, None, 0, 0)",
     );
   });
 });
@@ -200,7 +200,7 @@ describe("exportReportlabTemplate — bound document", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 100, 12, "left", 1.2, (0, 0, 0), _wrap(font, 12, 100, _interpolate(data, "{title}")))',
+      '_text(c, font, 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, _wrap(font, 12, 100, _interpolate(data, "{title}")))',
     );
   });
 
@@ -247,7 +247,7 @@ describe("exportReportlabTemplate — bound document", () => {
     expect(result.code).toContain("if page >= 2:");
     // "all" (title のトークン) は無条件 — ガードなしで直接呼ばれる
     expect(result.code).toContain(
-      '    _text(c, font, 0, 0, 100, 12, "left", 1.2, (0, 0, 0), _wrap(font, 12, 100, _interpolate(data, "{title}")))',
+      '    _text(c, font, 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, _wrap(font, 12, 100, _interpolate(data, "{title}")))',
     );
   });
 });
@@ -342,7 +342,7 @@ describe("exportReportlabTemplate — table stripeColor", () => {
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain("        if (row_offset + q) % 2 == 1:");
     expect(result.code).toContain(
-      "_rect(c, 15, y0 + 10 + q * 10, 90, 10, 0, (0, 0, 0), (0.9411764705882353, 0.9411764705882353, 0.9411764705882353), None, 0)",
+      "_rect(c, 15, y0 + 10 + q * 10, 90, 10, 0, (0, 0, 0), (0.9411764705882353, 0.9411764705882353, 0.9411764705882353), None, 0, 0)",
     );
   });
 
@@ -396,10 +396,10 @@ describe("exportReportlabTemplate — table frame/grid attributes", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      "_rect(c, 15, y0, 90, 10 + chunk_size * 10, 0.4, (0, 0, 0), None, None, 0)",
+      "_rect(c, 15, y0, 90, 10 + chunk_size * 10, 0.4, (0, 0, 0), None, None, 0, 0)",
     );
     expect(result.code).toContain(
-      "_line(c, 15, y0 + 10 + q * 10, 105, y0 + 10 + q * 10, 0.25, (0, 0, 0), None)",
+      "_line(c, 15, y0 + 10 + q * 10, 105, y0 + 10 + q * 10, 0.25, (0, 0, 0), None, 0)",
     );
   });
 
@@ -416,10 +416,10 @@ describe("exportReportlabTemplate — table frame/grid attributes", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      "_rect(c, 15, y0, 90, 10 + chunk_size * 10, 1, (0, 0, 0), None, [2 * mm, 1 * mm], 0)",
+      "_rect(c, 15, y0, 90, 10 + chunk_size * 10, 1, (0, 0, 0), None, [2 * mm, 1 * mm], 0, 0)",
     );
     expect(result.code).toContain(
-      "_line(c, 15, y0 + 10 + q * 10, 105, y0 + 10 + q * 10, 0.6, (0, 0, 0), [0.4 * mm, 0.8 * mm])",
+      "_line(c, 15, y0 + 10 + q * 10, 105, y0 + 10 + q * 10, 0.6, (0, 0, 0), [0.4 * mm, 0.8 * mm], 0)",
     );
   });
 });
@@ -441,7 +441,7 @@ describe("exportReportlabTemplate — ellipse", () => {
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain("def _ellipse(c, x, y, w, h,");
     expect(result.code).toContain(
-      "_ellipse(c, 0, 0, 30, 20, 0.3, (0, 0, 0), None)",
+      "_ellipse(c, 0, 0, 30, 20, 0.3, (0, 0, 0), None, 0)",
     );
   });
 
@@ -473,7 +473,7 @@ describe("exportReportlabTemplate — static text with {key} tokens", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 100, 12, "left", 1.2, (0, 0, 0), _wrap(font, 12, 100, _interpolate(data, "合計: {total} 円")))',
+      '_text(c, font, 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, _wrap(font, 12, 100, _interpolate(data, "合計: {total} 円")))',
     );
     expect(result.code).not.toContain('["合計: {total} 円"]');
   });
@@ -556,7 +556,7 @@ describe("exportReportlabTemplate — _wrap inclusion", () => {
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain("def _wrap(font, size, w, text):");
     expect(result.code).toContain(
-      '_text(c, font, 0, 285, 210, 9, "center", 1.25, (0, 0, 0), _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))',
+      '_text(c, font, 0, 285, 210, 6, 9, "center", 1.25, (0, 0, 0), 0, _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))',
     );
   });
 
@@ -609,13 +609,13 @@ describe("exportReportlabTemplate — _wrap inclusion", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 50, 10, "left", 1.25, (1, 0, 0), ["赤字"])',
+      '_text(c, font, 0, 0, 50, 10, 10, "left", 1.25, (1, 0, 0), 0, ["赤字"])',
     );
     expect(result.code).toContain(
-      '_text(c, font, 0, 10, 50, 10, "left", 1.25, (0, 1, 0), _wrap(font, 10, 50, _interpolate(data, "{note}")))',
+      '_text(c, font, 0, 10, 50, 10, 10, "left", 1.25, (0, 1, 0), 0, _wrap(font, 10, 50, _interpolate(data, "{note}")))',
     );
     expect(result.code).toContain(
-      '_text(c, font, 0, 285, 210, 9, "center", 1.25, (0, 0, 1), _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))',
+      '_text(c, font, 0, 285, 210, 6, 9, "center", 1.25, (0, 0, 1), 0, _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))',
     );
   });
 
@@ -658,7 +658,7 @@ describe("exportReportlabTemplate — barcode", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_barcode(c, "EAN13", "4912345678904", 0, 0, 30, 30)',
+      '_barcode(c, "EAN13", "4912345678904", 0, 0, 30, 30, 0)',
     );
     expect(result.code).not.toContain("_interpolate(data,");
   });
@@ -679,7 +679,7 @@ describe("exportReportlabTemplate — barcode", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_barcode(c, "QR", _interpolate(data, "{code}"), 0, 0, 30, 30)',
+      '_barcode(c, "QR", _interpolate(data, "{code}"), 0, 0, 30, 30, 0)',
     );
     expect(result.code).toContain("def _bind_str(data, key):");
     expect(result.code).toContain("import re");
@@ -704,6 +704,65 @@ describe("exportReportlabTemplate — barcode", () => {
     if (!result.ok) throw new Error("expected success");
     expect(result.code).not.toContain("createBarcodeDrawing");
     expect(result.code).not.toContain("def _barcode(");
+  });
+});
+
+describe("exportReportlabTemplate — rotate", () => {
+  it("passes rotate through the interpolated text, pageNumber and barcode paths", () => {
+    const doc = docOf(
+      {
+        type: "text",
+        id: "token",
+        x: 0,
+        y: 10,
+        pages: "all",
+        w: 50,
+        h: 10,
+        text: "{note}",
+        fontSize: 10,
+        align: "left",
+        lineHeight: 1.25,
+        rotate: 45,
+      },
+      {
+        type: "pageNumber",
+        id: "p1",
+        x: 0,
+        y: 285,
+        pages: "all",
+        w: 210,
+        h: 6,
+        format: "{n} / {N}",
+        fontSize: 9,
+        align: "center",
+        lineHeight: 1.25,
+        rotate: -90,
+      },
+      {
+        type: "barcode",
+        id: "bc1",
+        x: 0,
+        y: 0,
+        pages: "all",
+        w: 30,
+        h: 30,
+        symbology: "qrcode",
+        value: "{code}",
+        rotate: 30,
+      },
+    );
+    const result = exportReportlabTemplate(doc, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      '_text(c, font, 0, 10, 50, 10, 10, "left", 1.25, (0, 0, 0), 45, _wrap(font, 10, 50, _interpolate(data, "{note}")))',
+    );
+    expect(result.code).toContain(
+      '_text(c, font, 0, 285, 210, 6, 9, "center", 1.25, (0, 0, 0), -90, _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))',
+    );
+    expect(result.code).toContain(
+      '_barcode(c, "QR", _interpolate(data, "{code}"), 0, 0, 30, 30, 30)',
+    );
   });
 });
 
@@ -804,7 +863,7 @@ describe("exportReportlabTemplate — footnotes", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 100, 12, "left", 1.2, (0, 0, 0), ["税抜*1価格"])',
+      '_text(c, font, 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, ["税抜*1価格"])',
     );
     expect(result.code).toContain("*1 本体価格は税抜表示です");
     expect(result.code).not.toContain("{#");
@@ -843,7 +902,7 @@ describe("exportReportlabTemplate — footnotes", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toMatch(
-      /if page == page_count:\n {8}_text\(c, font, 15, [-\d.]+, 180, 8, "left", 1\.25, \(0, 0, 0\), \["\*1 本文"\]\)/,
+      /if page == page_count:\n {8}_text\(c, font, 15, [-\d.]+, 180, [-\d.]+, 8, "left", 1\.25, \(0, 0, 0\), 0, \["\*1 本文"\]\)/,
     );
   });
 });

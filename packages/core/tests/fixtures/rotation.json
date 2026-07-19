@@ -1,0 +1,90 @@
+{
+  "version": "1.0",
+  "page": { "width": 210, "height": 297 },
+  "font": { "name": "NotoSansJP" },
+  "elements": [
+    {
+      "type": "text",
+      "id": "flat",
+      "x": 20,
+      "y": 20,
+      "w": 60,
+      "h": 10,
+      "text": "水平",
+      "fontSize": 12
+    },
+    {
+      "type": "text",
+      "id": "quarter",
+      "x": 20,
+      "y": 100,
+      "w": 60,
+      "h": 10,
+      "text": "R",
+      "fontSize": 12,
+      "rotate": 90
+    },
+    {
+      "type": "text",
+      "id": "half",
+      "x": 100,
+      "y": 100,
+      "w": 60,
+      "h": 10,
+      "text": "U",
+      "fontSize": 12,
+      "rotate": 180
+    },
+    {
+      "type": "line",
+      "id": "diag",
+      "x": 40,
+      "y": 150,
+      "orientation": "horizontal",
+      "length": 60,
+      "thickness": 0.5,
+      "rotate": 45
+    },
+    {
+      "type": "rect",
+      "id": "box",
+      "x": 120,
+      "y": 140,
+      "w": 40,
+      "h": 20,
+      "borderWidth": 0.5,
+      "rotate": 30
+    },
+    {
+      "type": "ellipse",
+      "id": "oval",
+      "x": 30,
+      "y": 200,
+      "w": 40,
+      "h": 20,
+      "borderWidth": 0.5,
+      "rotate": 60
+    },
+    {
+      "type": "image",
+      "id": "mark",
+      "x": 120,
+      "y": 200,
+      "w": 20,
+      "h": 20,
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "rotate": 90
+    },
+    {
+      "type": "barcode",
+      "id": "qr",
+      "x": 90,
+      "y": 240,
+      "w": 30,
+      "h": 30,
+      "symbology": "qrcode",
+      "value": "ROTATE",
+      "rotate": 45
+    }
+  ]
+}

@@ -10,7 +10,7 @@ import { layoutTextLines, lowerIr, PT_TO_MM } from "@denreport/core";
 import { detectFontFormat } from "../fonts/format";
 import type { FontIssue } from "../fonts/validate";
 import { readCharWidths } from "../fonts/widths";
-import { expandStrokes } from "./dash";
+import { expandStrokes, rotatePointCw } from "./dash";
 import type {
   PdfmeBarcodeSchema,
   PdfmeEllipseSchema,
@@ -42,6 +42,11 @@ export type ExportPdfmeResult =
       readonly fontIssues: readonly FontIssue[];
     };
 
+/** rotate は 0 のときスキーマにキーを出さない（既存スキーマ形の安定のため） */
+function rotateAttr(rotate: number): { readonly rotate?: number } {
+  return rotate === 0 ? {} : { rotate };
+}
+
 function toStaticAlignment(
   align: LoweredTextElement["align"],
 ): "left" | "center" | "right" {
@@ -66,6 +71,7 @@ function textSchema(
     alignment: toStaticAlignment(element.align),
     verticalAlignment: "top",
     lineHeight: element.lineHeight,
+    ...rotateAttr(element.rotate),
   };
 }
 
@@ -78,13 +84,22 @@ function justifyLineSchema(
   lineIndex: number,
 ): PdfmeSchema {
   const lineHeightMm = element.lineHeight * element.fontSize * PT_TO_MM;
+  // characterSpacing は末尾グリフの後ろにも字間を足すため、width を字間分広げないと
+  // pdfme が内部再計測でこの行を再折り返ししてしまう
+  const width = element.w + line.charSpacePt * PT_TO_MM;
+  const unrotated = { x: element.x, y: element.y + lineIndex * lineHeightMm };
+  // pdfme の回転はスキーマ中心周りのため、行スキーマの中心を要素中心周りに
+  // 回転写像した位置へ置けば、要素全体を1回で回すのと等価になる
+  const center = rotatePointCw(
+    { x: unrotated.x + width / 2, y: unrotated.y + lineHeightMm / 2 },
+    { x: element.x + element.w / 2, y: element.y + element.h / 2 },
+    element.rotate,
+  );
   return {
     type: "text",
     name,
-    position: { x: element.x, y: element.y + lineIndex * lineHeightMm },
-    // characterSpacing は末尾グリフの後ろにも字間を足すため、width を字間分広げないと
-    // pdfme が内部再計測でこの行を再折り返ししてしまう
-    width: element.w + line.charSpacePt * PT_TO_MM,
+    position: { x: center.x - width / 2, y: center.y - lineHeightMm / 2 },
+    width,
     height: lineHeightMm,
     fontSize: element.fontSize,
     fontName,
@@ -93,6 +108,7 @@ function justifyLineSchema(
     verticalAlignment: "top",
     lineHeight: element.lineHeight,
     characterSpacing: line.charSpacePt,
+    ...rotateAttr(element.rotate),
   };
 }
 
@@ -119,6 +135,7 @@ function toSchema(
             ? element.thickness
             : element.length,
         color: element.color,
+        ...rotateAttr(element.rotate),
       };
       return { schema };
     }
@@ -133,6 +150,7 @@ function toSchema(
         borderColor: element.borderColor,
         color: element.fillColor ?? "",
         ...(element.cornerRadius > 0 ? { radius: element.cornerRadius } : {}),
+        ...rotateAttr(element.rotate),
       };
       return { schema };
     }
@@ -146,6 +164,7 @@ function toSchema(
         borderWidth: element.borderWidth,
         borderColor: element.borderColor,
         color: element.fillColor ?? "",
+        ...rotateAttr(element.rotate),
       };
       return { schema };
     }
@@ -156,6 +175,7 @@ function toSchema(
         position,
         width: element.w,
         height: element.h,
+        ...rotateAttr(element.rotate),
       };
       return { schema, input: [name, element.src] };
     }
@@ -169,6 +189,7 @@ function toSchema(
         backgroundColor: "#ffffff",
         barColor: "#000000",
         ...(element.symbology === "ean13" ? { includetext: true } : {}),
+        ...rotateAttr(element.rotate),
       };
       return { schema, input: [name, element.content] };
     }

@@ -367,6 +367,99 @@ describe("exportPdfme — mapping rules", () => {
   });
 });
 
+describe("exportPdfme — rotate", () => {
+  it("maps a non-zero rotate onto the schema and omits the key at 0", () => {
+    const doc = docOf(
+      {
+        type: "text",
+        id: "t1",
+        x: 10,
+        y: 20,
+        pages: "first",
+        w: 100,
+        h: 12,
+        text: "回転",
+        fontSize: 12,
+        align: "left",
+        lineHeight: 1.25,
+        rotate: 45,
+      },
+      {
+        type: "rect",
+        id: "r1",
+        x: 0,
+        y: 0,
+        pages: "first",
+        w: 40,
+        h: 20,
+        borderWidth: 0.3,
+        rotate: -30.5,
+      },
+      {
+        type: "rect",
+        id: "r2",
+        x: 0,
+        y: 40,
+        pages: "first",
+        w: 40,
+        h: 20,
+        borderWidth: 0.3,
+      },
+    );
+    const result = exportPdfme(doc, {}, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const [text, rotated, unrotated] = result.template.schemas[0] ?? [];
+    expect(text).toMatchObject({ type: "text", rotate: 45 });
+    expect(rotated).toMatchObject({ type: "rectangle", rotate: -30.5 });
+    expect(unrotated).toBeDefined();
+    expect("rotate" in (unrotated as PdfmeRectangleSchema)).toBe(false);
+  });
+
+  it("places rotated justify line schemas' centers on the rotation image of their unrotated centers", () => {
+    const w = widthMmFor(3.5);
+    const doc = docOf({
+      type: "text",
+      id: "t1",
+      x: 10,
+      y: 20,
+      pages: "first",
+      w,
+      h: 20,
+      text: "abcdef",
+      fontSize: 1,
+      align: "justify",
+      lineHeight: 1.25,
+      rotate: 90,
+    });
+    const result = exportPdfme(doc, {}, UNIT_WIDTH_FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const schemas = result.template.schemas[0] as PdfmeTextSchema[];
+    expect(schemas).toHaveLength(2);
+
+    const lineHeightMm = 1.25 * 1 * PT_TO_MM;
+    const expectedSpace = (3.5 - 3) / (3 - 1);
+    const expectedWidth = w + expectedSpace * PT_TO_MM;
+    const center = { x: 10 + w / 2, y: 20 + 10 };
+    schemas.forEach((schema, i) => {
+      const unrotated = {
+        x: 10 + expectedWidth / 2,
+        y: 20 + i * lineHeightMm + lineHeightMm / 2,
+      };
+      // 90° 時計回り（y 下向き座標系）: (dx, dy) → (−dy, dx)
+      const mapped = {
+        x: center.x - (unrotated.y - center.y),
+        y: center.y + (unrotated.x - center.x),
+      };
+      expect(schema.rotate).toBe(90);
+      expect(schema.width).toBeCloseTo(expectedWidth, 10);
+      expect(schema.position.x).toBeCloseTo(mapped.x - expectedWidth / 2, 10);
+      expect(schema.position.y).toBeCloseTo(mapped.y - lineHeightMm / 2, 10);
+    });
+  });
+});
+
 describe("exportPdfme — inputs consistency", () => {
   it("makes the text/image schema name set equal the inputs key set", () => {
     const doc = docOf(

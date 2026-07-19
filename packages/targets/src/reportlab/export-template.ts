@@ -214,7 +214,7 @@ function buildTableFunction(
     lines.push(
       "    for q in range(chunk_size):",
       "        if (row_offset + q) % 2 == 1:",
-      `            _rect(c, ${pyNumber(table.x)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)}, ${pyNumber(width)}, ${pyNumber(table.rowHeight)}, 0, ${TABLE_BLACK_RGB}, ${pyRgb(table.stripeColor)}, None, 0)`,
+      `            _rect(c, ${pyNumber(table.x)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)}, ${pyNumber(width)}, ${pyNumber(table.rowHeight)}, 0, ${TABLE_BLACK_RGB}, ${pyRgb(table.stripeColor)}, None, 0, 0)`,
     );
   }
   const frameWidth = pyNumber(table.frameWidth ?? TABLE_FRAME_WIDTH);
@@ -222,14 +222,14 @@ function buildTableFunction(
   const gridWidth = pyNumber(table.gridWidth ?? TABLE_GRID_WIDTH);
   const gridDash = pyDash(table.gridStyle ?? "solid");
   lines.push(
-    `    _rect(c, ${pyNumber(table.x)}, y0, ${pyNumber(width)}, ${height}, ${frameWidth}, ${TABLE_BLACK_RGB}, None, ${frameDash}, 0)`,
+    `    _rect(c, ${pyNumber(table.x)}, y0, ${pyNumber(width)}, ${height}, ${frameWidth}, ${TABLE_BLACK_RGB}, None, ${frameDash}, 0, 0)`,
     "    for q in range(chunk_size):",
-    `        _line(c, ${pyNumber(table.x)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)}, ${pyNumber(table.x + width)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)}, ${gridWidth}, ${TABLE_BLACK_RGB}, ${gridDash})`,
+    `        _line(c, ${pyNumber(table.x)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)}, ${pyNumber(table.x + width)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)}, ${gridWidth}, ${TABLE_BLACK_RGB}, ${gridDash}, 0)`,
   );
   for (let i = 1; i < table.columns.length; i++) {
     const x = pyNumber(xOf(table, i));
     lines.push(
-      `    _line(c, ${x}, y0, ${x}, y0 + ${height}, ${gridWidth}, ${TABLE_BLACK_RGB}, ${gridDash})`,
+      `    _line(c, ${x}, y0, ${x}, y0 + ${height}, ${gridWidth}, ${TABLE_BLACK_RGB}, ${gridDash}, 0)`,
     );
   }
   table.columns.forEach((column, i) => {
@@ -238,7 +238,7 @@ function buildTableFunction(
       .map(pyString)
       .join(", ");
     lines.push(
-      `    _text(c, font, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(TABLE_HEADER_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.fontSize)}, "center", 1.25, ${TABLE_BLACK_RGB}, [${headerLines}])`,
+      `    _text(c, font, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(TABLE_HEADER_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.headerHeight - TABLE_HEADER_TEXT_OFFSET_Y)}, ${pyNumber(table.fontSize)}, "center", 1.25, ${TABLE_BLACK_RGB}, 0, [${headerLines}])`,
     );
   });
   lines.push(
@@ -253,7 +253,7 @@ function buildTableFunction(
       : `rows[t][${pyString(column.key)}]`;
     const cellWidth = column.width - 2 * TABLE_CELL_PADDING_X;
     lines.push(
-      `        _text(c, font, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)} + ${pyNumber(TABLE_CELL_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.fontSize)}, ${pyString(column.align)}, 1.25, ${TABLE_BLACK_RGB}, _wrap(font, ${pyNumber(table.fontSize)}, ${pyNumber(cellWidth)}, ${cellAccess}))`,
+      `        _text(c, font, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)} + ${pyNumber(TABLE_CELL_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.rowHeight - TABLE_CELL_TEXT_OFFSET_Y)}, ${pyNumber(table.fontSize)}, ${pyString(column.align)}, 1.25, ${TABLE_BLACK_RGB}, 0, _wrap(font, ${pyNumber(table.fontSize)}, ${pyNumber(cellWidth)}, ${cellAccess}))`,
     );
   });
   return lines.join("\n");
@@ -299,16 +299,17 @@ function staticTextStatement(
         align: element.align,
         lineHeight: element.lineHeight,
         color,
+        rotate: element.rotate ?? 0,
       },
       layoutLines,
     );
   }
-  return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${pyRgb(color)}, _wrap(font, ${pyNumber(element.fontSize)}, ${pyNumber(element.w)}, _interpolate(data, ${pyString(text)})))`;
+  return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${pyRgb(color)}, ${pyNumber(element.rotate ?? 0)}, _wrap(font, ${pyNumber(element.fontSize)}, ${pyNumber(element.w)}, _interpolate(data, ${pyString(text)})))`;
 }
 
 function pageNumberStatement(element: IrPageNumberElement): string {
   const color = pyRgb(resolveTextStyle(element).color);
-  return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${color}, _wrap(font, ${pyNumber(element.fontSize)}, ${pyNumber(element.w)}, _page_label(${pyString(element.format)}, page, page_count)))`;
+  return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${color}, ${pyNumber(element.rotate ?? 0)}, _wrap(font, ${pyNumber(element.fontSize)}, ${pyNumber(element.w)}, _page_label(${pyString(element.format)}, page, page_count)))`;
 }
 
 function barcodeStatement(
@@ -327,12 +328,13 @@ function barcodeStatement(
         h: element.h,
         symbology: element.symbology,
         content: value,
+        rotate: element.rotate ?? 0,
       },
       layoutLines,
     );
   }
   const name = pyString(REPORTLAB_BARCODE_NAMES[element.symbology]);
-  return `_barcode(c, ${name}, _interpolate(data, ${pyString(value)}), ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)})`;
+  return `_barcode(c, ${name}, _interpolate(data, ${pyString(value)}), ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.rotate ?? 0)})`;
 }
 
 function staticElementStatement(
@@ -353,6 +355,7 @@ function staticElementStatement(
           thickness: element.thickness,
           color: style.color,
           strokeStyle: style.strokeStyle,
+          rotate: element.rotate ?? 0,
         },
         layoutLines,
       );
@@ -372,6 +375,7 @@ function staticElementStatement(
           fillColor: style.fillColor,
           borderStyle: style.borderStyle,
           cornerRadius: style.cornerRadius,
+          rotate: element.rotate ?? 0,
         },
         layoutLines,
       );
@@ -389,6 +393,7 @@ function staticElementStatement(
           borderWidth: element.borderWidth,
           borderColor: style.borderColor,
           fillColor: style.fillColor,
+          rotate: element.rotate ?? 0,
         },
         layoutLines,
       );
@@ -403,6 +408,7 @@ function staticElementStatement(
           w: element.w,
           h: element.h,
           src: element.src,
+          rotate: element.rotate ?? 0,
         },
         layoutLines,
       );

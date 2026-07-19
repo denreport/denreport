@@ -18,6 +18,8 @@ interface PdfmeSchemaBase {
   readonly position: PdfmePosition;
   readonly width: number;
   readonly height: number;
+  /** Clockwise rotation, in degrees, about the schema's center. Omitted when 0. */
+  readonly rotate?: number;
 }
 
 /**

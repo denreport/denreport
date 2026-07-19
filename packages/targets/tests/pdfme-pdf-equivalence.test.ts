@@ -278,6 +278,62 @@ describe("checkAgainstReference / checkCrossTarget — 照合器の境界", () =
   });
 });
 
+// IR の rotate（時計回り・外接箱中心）で回転したテキストの、規範ベースライン原点の写像先
+function rotatedBaselineOrigin(
+  el: { x: number; y: number; w: number; h: number },
+  fontSize: number,
+  lineHeight: number,
+  deg: number,
+): { x: number; y: number } {
+  const origin = {
+    x: el.x,
+    y: normativeBaselineY(el.y, fontSize, lineHeight, 0),
+  };
+  const center = { x: el.x + el.w / 2, y: el.y + el.h / 2 };
+  const rad = (deg * Math.PI) / 180;
+  const dx = origin.x - center.x;
+  const dy = origin.y - center.y;
+  return {
+    x: center.x + dx * Math.cos(rad) - dy * Math.sin(rad),
+    y: center.y + dx * Math.sin(rad) + dy * Math.cos(rad),
+  };
+}
+
+function findItem(
+  pdf: ExtractedPdf,
+  text: string,
+): { x: number; baselineY: number } {
+  const item = pdf.pages[0]?.textItems.find((i) => i.str.trim() === text);
+  if (item === undefined) throw new Error(`text item "${text}" not found`);
+  return item;
+}
+
+describe("pdfme 実 PDF — 回転の向きと中心", () => {
+  it("rotation: 回転テキストの原点が要素中心周りの時計回り写像に一致する", async () => {
+    const { document, data } = loadFixture("rotation.json", "rotation-data.json");
+    const pdfBytes = await generatePdfmePdf(document, data, fontData);
+    mkdirSync(outputDir, { recursive: true });
+    writeFileSync(`${outputDir}/pdfme-rotation.pdf`, pdfBytes);
+    const pdf = await extractPdf(pdfBytes);
+
+    // 非回転の基準要素で抽出系そのものの健全性を確認する
+    const flat = findItem(pdf, "水平");
+    expect(flat.x).toBeCloseTo(20, 0);
+    expect(flat.baselineY).toBeCloseTo(normativeBaselineY(20, 12, 1.25, 0), 0);
+
+    const cases = [
+      { text: "R", el: { x: 20, y: 100, w: 60, h: 10 }, deg: 90 },
+      { text: "U", el: { x: 100, y: 100, w: 60, h: 10 }, deg: 180 },
+    ];
+    for (const { text, el, deg } of cases) {
+      const expected = rotatedBaselineOrigin(el, 12, 1.25, deg);
+      const item = findItem(pdf, text);
+      expect(Math.abs(item.x - expected.x)).toBeLessThan(1);
+      expect(Math.abs(item.baselineY - expected.y)).toBeLessThan(1);
+    }
+  });
+});
+
 describe("pdfme 実 PDF — 参照適合", () => {
   it.each([
     {

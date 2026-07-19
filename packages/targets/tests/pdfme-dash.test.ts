@@ -20,6 +20,7 @@ function lineOf(
     thickness: 0.3,
     color: "#000000",
     strokeStyle: "solid",
+    rotate: 0,
     ...overrides,
   };
 }
@@ -39,6 +40,7 @@ function rectOf(
     fillColor: null,
     borderStyle: "solid",
     cornerRadius: 0,
+    rotate: 0,
     ...overrides,
   };
 }
@@ -53,6 +55,7 @@ const ellipseEl: LoweredEllipseElement = {
   borderWidth: 0.3,
   borderColor: "#000000",
   fillColor: null,
+  rotate: 0,
 };
 
 const textEl: LoweredTextElement = {
@@ -67,6 +70,7 @@ const textEl: LoweredTextElement = {
   align: "left",
   lineHeight: 1.25,
   color: "#000000",
+  rotate: 0,
 };
 
 describe("expandStrokes — pass-through", () => {
@@ -125,6 +129,46 @@ describe("expandStrokes — line dash expansion", () => {
       x: 0,
       length: 0.3,
       strokeStyle: "solid",
+    });
+  });
+});
+
+describe("expandStrokes — rotated dash expansion", () => {
+  it("maps rotated dashed line segments' midpoints around the line midpoint", () => {
+    // pattern dashed = [2, 1], length 7 → 非回転の on 区間: [0,2] [3,5] [6,7]、線分中点 (3.5, 0)
+    const el = lineOf({
+      orientation: "horizontal",
+      length: 7,
+      strokeStyle: "dashed",
+      rotate: 90,
+    });
+    const segments = expandStrokes([el]) as LoweredLineElement[];
+    // 90° 時計回りで中点 (cx, 0) → (3.5, cx − 3.5) へ写り、x は length/2 だけ戻す
+    expect(segments.map((s) => [s.x, s.y, s.length, s.rotate])).toEqual([
+      [2.5, -2.5, 2, 90],
+      [2.5, 0.5, 2, 90],
+      [3, 3, 1, 90],
+    ]);
+  });
+
+  it("maps rotated dashed rect edges around the rect center and keeps the fill in place", () => {
+    const el = rectOf({
+      w: 10,
+      h: 6,
+      fillColor: "#eeeeee",
+      borderStyle: "dashed",
+      rotate: 180,
+    });
+    const [fill, ...edges] = expandStrokes([el]);
+    expect(fill).toMatchObject({ type: "rect", x: 0, y: 0, rotate: 180 });
+    const lines = edges as LoweredLineElement[];
+    expect(lines.every((l) => l.rotate === 180)).toBe(true);
+    // 180° 回転は中心 (5, 3) の点対称: 上辺の最初の on 区間 [0,2]（中点 (1, 0)）→ 中点 (9, 6)
+    expect(lines[0]).toMatchObject({
+      orientation: "horizontal",
+      x: 8,
+      y: 6,
+      length: 2,
     });
   });
 });

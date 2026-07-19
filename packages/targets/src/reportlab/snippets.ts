@@ -26,8 +26,16 @@ export const REGISTER_FONT_FN = [
   "    return FONT_NAME",
 ].join("\n");
 
+// IR の rotate は y 下向き座標系での時計回り正。PDF 座標系は y 上向きのため、
+// 各描画関数は c.rotate に符号を反転した -rot を渡して見た目の回転方向を一致させる
 export const TEXT_FN = [
-  "def _text(c, font, x, y, w, size, align, line_height, color, lines):",
+  "def _text(c, font, x, y, w, h, size, align, line_height, color, rot, lines):",
+  "    c.saveState()",
+  "    if rot:",
+  "        cx, cy = (x + w / 2) * mm, PAGE_HEIGHT - (y + h / 2) * mm",
+  "        c.translate(cx, cy)",
+  "        c.rotate(-rot)",
+  "        c.translate(-cx, -cy)",
   "    c.setFont(font, size)",
   "    c.setFillColorRGB(*color)",
   "    for i, line in enumerate(lines):",
@@ -47,11 +55,17 @@ export const TEXT_FN = [
   "            c.drawCentredString((x + w / 2) * mm, baseline, line)",
   "        else:",
   "            c.drawRightString((x + w) * mm, baseline, line)",
+  "    c.restoreState()",
 ].join("\n");
 
 export const LINE_FN = [
-  "def _line(c, x1, y1, x2, y2, thickness, color, dash):",
+  "def _line(c, x1, y1, x2, y2, thickness, color, dash, rot):",
   "    c.saveState()",
+  "    if rot:",
+  "        cx, cy = (x1 + x2) / 2 * mm, PAGE_HEIGHT - (y1 + y2) / 2 * mm",
+  "        c.translate(cx, cy)",
+  "        c.rotate(-rot)",
+  "        c.translate(-cx, -cy)",
   "    c.setLineWidth(thickness * mm)",
   "    c.setStrokeColorRGB(*color)",
   "    if dash is not None:",
@@ -61,8 +75,13 @@ export const LINE_FN = [
 ].join("\n");
 
 export const RECT_FN = [
-  "def _rect(c, x, y, w, h, border_width, border_color, fill_color, dash, radius):",
+  "def _rect(c, x, y, w, h, border_width, border_color, fill_color, dash, radius, rot):",
   "    c.saveState()",
+  "    if rot:",
+  "        cx, cy = (x + w / 2) * mm, PAGE_HEIGHT - (y + h / 2) * mm",
+  "        c.translate(cx, cy)",
+  "        c.rotate(-rot)",
+  "        c.translate(-cx, -cy)",
   "    c.setLineWidth(border_width * mm)",
   "    c.setStrokeColorRGB(*border_color)",
   "    if fill_color is not None:",
@@ -79,8 +98,13 @@ export const RECT_FN = [
 ].join("\n");
 
 export const ELLIPSE_FN = [
-  "def _ellipse(c, x, y, w, h, border_width, border_color, fill_color):",
+  "def _ellipse(c, x, y, w, h, border_width, border_color, fill_color, rot):",
   "    c.saveState()",
+  "    if rot:",
+  "        cx, cy = (x + w / 2) * mm, PAGE_HEIGHT - (y + h / 2) * mm",
+  "        c.translate(cx, cy)",
+  "        c.rotate(-rot)",
+  "        c.translate(-cx, -cy)",
   "    c.setLineWidth(border_width * mm)",
   "    c.setStrokeColorRGB(*border_color)",
   "    if fill_color is not None:",
@@ -92,15 +116,29 @@ export const ELLIPSE_FN = [
 ].join("\n");
 
 export const IMAGE_FN = [
-  "def _image(c, x, y, w, h, data):",
+  "def _image(c, x, y, w, h, data, rot):",
+  "    c.saveState()",
+  "    if rot:",
+  "        cx, cy = (x + w / 2) * mm, PAGE_HEIGHT - (y + h / 2) * mm",
+  "        c.translate(cx, cy)",
+  "        c.rotate(-rot)",
+  "        c.translate(-cx, -cy)",
   "    image = ImageReader(BytesIO(base64.b64decode(data)))",
   "    c.drawImage(image, x * mm, PAGE_HEIGHT - (y + h) * mm, w * mm, h * mm)",
+  "    c.restoreState()",
 ].join("\n");
 
 export const BARCODE_FN = [
-  "def _barcode(c, name, value, x, y, w, h):",
+  "def _barcode(c, name, value, x, y, w, h, rot):",
+  "    c.saveState()",
+  "    if rot:",
+  "        cx, cy = (x + w / 2) * mm, PAGE_HEIGHT - (y + h / 2) * mm",
+  "        c.translate(cx, cy)",
+  "        c.rotate(-rot)",
+  "        c.translate(-cx, -cy)",
   "    d = createBarcodeDrawing(name, value=value, width=w * mm, height=h * mm)",
   "    d.drawOn(c, x * mm, PAGE_HEIGHT - (y + h) * mm)",
+  "    c.restoreState()",
 ].join("\n");
 
 export const MAIN_BLOCK = [
@@ -155,22 +193,22 @@ export function statementFor(
   switch (element.type) {
     case "text": {
       const lines = layoutLines(element).map(pyString).join(", ");
-      return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${pyRgb(element.color)}, [${lines}])`;
+      return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${pyRgb(element.color)}, ${pyNumber(element.rotate)}, [${lines}])`;
     }
     case "line": {
       const [x2, y2] =
         element.orientation === "horizontal"
           ? [element.x + element.length, element.y]
           : [element.x, element.y + element.length];
-      return `_line(c, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(x2)}, ${pyNumber(y2)}, ${pyNumber(element.thickness)}, ${pyRgb(element.color)}, ${pyDash(element.strokeStyle)})`;
+      return `_line(c, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(x2)}, ${pyNumber(y2)}, ${pyNumber(element.thickness)}, ${pyRgb(element.color)}, ${pyDash(element.strokeStyle)}, ${pyNumber(element.rotate)})`;
     }
     case "rect":
-      return `_rect(c, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.borderWidth)}, ${pyRgb(element.borderColor)}, ${pyOptionalRgb(element.fillColor)}, ${pyDash(element.borderStyle)}, ${pyNumber(element.cornerRadius)})`;
+      return `_rect(c, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.borderWidth)}, ${pyRgb(element.borderColor)}, ${pyOptionalRgb(element.fillColor)}, ${pyDash(element.borderStyle)}, ${pyNumber(element.cornerRadius)}, ${pyNumber(element.rotate)})`;
     case "ellipse":
-      return `_ellipse(c, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.borderWidth)}, ${pyRgb(element.borderColor)}, ${pyOptionalRgb(element.fillColor)})`;
+      return `_ellipse(c, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.borderWidth)}, ${pyRgb(element.borderColor)}, ${pyOptionalRgb(element.fillColor)}, ${pyNumber(element.rotate)})`;
     case "image":
-      return `_image(c, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyString(base64Payload(element.src))})`;
+      return `_image(c, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyString(base64Payload(element.src))}, ${pyNumber(element.rotate)})`;
     case "barcode":
-      return `_barcode(c, ${pyString(REPORTLAB_BARCODE_NAMES[element.symbology])}, ${pyString(element.content)}, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)})`;
+      return `_barcode(c, ${pyString(REPORTLAB_BARCODE_NAMES[element.symbology])}, ${pyString(element.content)}, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.h)}, ${pyNumber(element.rotate)})`;
   }
 }

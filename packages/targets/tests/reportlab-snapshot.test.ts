@@ -27,6 +27,11 @@ describe("exportReportlab — golden fixture snapshots", () => {
       irFile: "invoice-multipage.json",
       dataFile: "invoice-multipage-data.json",
     },
+    {
+      name: "reportlab-rotation",
+      irFile: "rotation.json",
+      dataFile: "rotation-data.json",
+    },
   ])("$name", async ({ name, irFile, dataFile }) => {
     const parsed = parseIr(
       readFileSync(`${coreFixturesDir}/${irFile}`, "utf-8"),

@@ -82,7 +82,7 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 10, 20, 100, 22, "center", 1.5, (0, 0, 0), ["請求書"])',
+      '_text(c, font, 10, 20, 100, 12, 22, "center", 1.5, (0, 0, 0), 0, ["請求書"])',
     );
   });
 
@@ -105,7 +105,7 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 50, 10, "left", 1.25, (1, 0, 0), ["赤字"])',
+      '_text(c, font, 0, 0, 50, 10, 10, "left", 1.25, (1, 0, 0), 0, ["赤字"])',
     );
   });
 
@@ -180,10 +180,10 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      "_line(c, 0, 0, 90, 0, 0.4, (0, 0, 0), None)",
+      "_line(c, 0, 0, 90, 0, 0.4, (0, 0, 0), None, 0)",
     );
     expect(result.code).toContain(
-      "_line(c, 5, 5, 5, 45, 0.5, (0, 0, 0), None)",
+      "_line(c, 5, 5, 5, 45, 0.5, (0, 0, 0), None, 0)",
     );
   });
 
@@ -202,7 +202,7 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      "_rect(c, 0, 0, 89, 12, 0.5, (0, 0, 0), None, None, 0)",
+      "_rect(c, 0, 0, 89, 12, 0.5, (0, 0, 0), None, None, 0, 0)",
     );
   });
 
@@ -225,7 +225,7 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      "_rect(c, 0, 0, 40, 20, 0.5, (0, 0.2, 1), (0.9333333333333333, 0.9333333333333333, 0.9333333333333333), [2 * mm, 1 * mm], 3)",
+      "_rect(c, 0, 0, 40, 20, 0.5, (0, 0.2, 1), (0.9333333333333333, 0.9333333333333333, 0.9333333333333333), [2 * mm, 1 * mm], 3, 0)",
     );
   });
 
@@ -246,7 +246,7 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      "_line(c, 0, 0, 10, 0, 0.3, (1, 0, 0), [0.4 * mm, 0.8 * mm])",
+      "_line(c, 0, 0, 10, 0, 0.3, (1, 0, 0), [0.4 * mm, 0.8 * mm], 0)",
     );
   });
 
@@ -268,7 +268,7 @@ describe("exportReportlab — mapping rules", () => {
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain("def _ellipse(c, x, y, w, h,");
     expect(result.code).toContain(
-      `_ellipse(c, 0, 0, 30, 20, 0.4, ${pyRgb("#123456")}, ${pyRgb("#abcdef")})`,
+      `_ellipse(c, 0, 0, 30, 20, 0.4, ${pyRgb("#123456")}, ${pyRgb("#abcdef")}, 0)`,
     );
   });
 
@@ -293,7 +293,7 @@ describe("exportReportlab — mapping rules", () => {
     const result = exportReportlab(doc, {}, FONT);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
-    expect(result.code).toContain('_image(c, 15, 15, 20, 20, "AAAA")');
+    expect(result.code).toContain('_image(c, 15, 15, 20, 20, "AAAA", 0)');
   });
 
   it.each([
@@ -319,10 +319,65 @@ describe("exportReportlab — mapping rules", () => {
       expect(result.ok).toBe(true);
       if (!result.ok) throw new Error("expected success");
       expect(result.code).toContain(
-        `_barcode(c, "${reportlabName}", "ABC-123", 15, 15, 30, 30)`,
+        `_barcode(c, "${reportlabName}", "ABC-123", 15, 15, 30, 30, 0)`,
       );
     },
   );
+
+  it("passes an element's rotate through as the rot argument", () => {
+    const doc = docOf(
+      {
+        type: "text",
+        id: "t",
+        x: 10,
+        y: 20,
+        pages: "first",
+        w: 100,
+        h: 12,
+        text: "回転",
+        fontSize: 10,
+        align: "left",
+        lineHeight: 1.25,
+        rotate: 45,
+      },
+      {
+        type: "line",
+        id: "ln",
+        x: 0,
+        y: 0,
+        pages: "first",
+        orientation: "horizontal",
+        length: 90,
+        thickness: 0.4,
+        rotate: -30.5,
+      },
+      {
+        type: "rect",
+        id: "box",
+        x: 0,
+        y: 0,
+        pages: "first",
+        w: 89,
+        h: 12,
+        borderWidth: 0.5,
+        rotate: 90,
+      },
+    );
+    const result = exportReportlab(doc, {}, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      '_text(c, font, 10, 20, 100, 12, 10, "left", 1.25, (0, 0, 0), 45, ["回転"])',
+    );
+    expect(result.code).toContain(
+      "_line(c, 0, 0, 90, 0, 0.4, (0, 0, 0), None, -30.5)",
+    );
+    expect(result.code).toContain(
+      "_rect(c, 0, 0, 89, 12, 0.5, (0, 0, 0), None, None, 0, 90)",
+    );
+    // PDF 座標系（y 上向き）では -rot が IR の時計回りに一致する
+    expect(result.code).toContain("c.rotate(-rot)");
+  });
 
   it("keeps the page's statement order equal to the element order", () => {
     const doc = docOf(
@@ -676,7 +731,7 @@ describe("exportReportlab — warnings passthrough", () => {
       { rule: "C01", path: "elements[0].text", message: expect.any(String) },
     ]);
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 50, 10, "left", 1.25, (0, 0, 0), [""])',
+      '_text(c, font, 0, 0, 50, 10, 10, "left", 1.25, (0, 0, 0), 0, [""])',
     );
   });
 
@@ -780,7 +835,7 @@ describe("exportReportlab — text wrapping and justify", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      `_text(c, font, 10, 20, ${w}, 1, "left", 1.25, (0, 0, 0), ["abc", "def"])`,
+      `_text(c, font, 10, 20, ${w}, 20, 1, "left", 1.25, (0, 0, 0), 0, ["abc", "def"])`,
     );
   });
 
@@ -791,7 +846,7 @@ describe("exportReportlab — text wrapping and justify", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      `_text(c, font, 10, 20, ${w}, 1, "justify", 1.25, (0, 0, 0), ["abc", "def"])`,
+      `_text(c, font, 10, 20, ${w}, 20, 1, "justify", 1.25, (0, 0, 0), 0, ["abc", "def"])`,
     );
   });
 });

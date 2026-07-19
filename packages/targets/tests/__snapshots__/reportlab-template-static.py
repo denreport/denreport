@@ -33,7 +33,13 @@ def _register_font():
     pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
     return FONT_NAME
 
-def _text(c, font, x, y, w, size, align, line_height, color, lines):
+def _text(c, font, x, y, w, h, size, align, line_height, color, rot, lines):
+    c.saveState()
+    if rot:
+        cx, cy = (x + w / 2) * mm, PAGE_HEIGHT - (y + h / 2) * mm
+        c.translate(cx, cy)
+        c.rotate(-rot)
+        c.translate(-cx, -cy)
     c.setFont(font, size)
     c.setFillColorRGB(*color)
     for i, line in enumerate(lines):
@@ -53,9 +59,15 @@ def _text(c, font, x, y, w, size, align, line_height, color, lines):
             c.drawCentredString((x + w / 2) * mm, baseline, line)
         else:
             c.drawRightString((x + w) * mm, baseline, line)
+    c.restoreState()
 
-def _line(c, x1, y1, x2, y2, thickness, color, dash):
+def _line(c, x1, y1, x2, y2, thickness, color, dash, rot):
     c.saveState()
+    if rot:
+        cx, cy = (x1 + x2) / 2 * mm, PAGE_HEIGHT - (y1 + y2) / 2 * mm
+        c.translate(cx, cy)
+        c.rotate(-rot)
+        c.translate(-cx, -cy)
     c.setLineWidth(thickness * mm)
     c.setStrokeColorRGB(*color)
     if dash is not None:
@@ -64,8 +76,8 @@ def _line(c, x1, y1, x2, y2, thickness, color, dash):
     c.restoreState()
 
 def _draw_page(c, font, data, page, page_count):
-    _text(c, font, 0, 18, 210, 22, "center", 1.25, (0, 0, 0), ["見本"])
-    _line(c, 15, 32, 195, 32, 0.4, (0, 0, 0), None)
+    _text(c, font, 0, 18, 210, 12, 22, "center", 1.25, (0, 0, 0), 0, ["見本"])
+    _line(c, 15, 32, 195, 32, 0.4, (0, 0, 0), None, 0)
 
 def build(output_path, data=None):
     data = {} if data is None else data

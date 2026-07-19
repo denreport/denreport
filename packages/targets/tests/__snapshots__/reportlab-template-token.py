@@ -34,7 +34,13 @@ def _register_font():
     pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
     return FONT_NAME
 
-def _text(c, font, x, y, w, size, align, line_height, color, lines):
+def _text(c, font, x, y, w, h, size, align, line_height, color, rot, lines):
+    c.saveState()
+    if rot:
+        cx, cy = (x + w / 2) * mm, PAGE_HEIGHT - (y + h / 2) * mm
+        c.translate(cx, cy)
+        c.rotate(-rot)
+        c.translate(-cx, -cy)
     c.setFont(font, size)
     c.setFillColorRGB(*color)
     for i, line in enumerate(lines):
@@ -54,6 +60,7 @@ def _text(c, font, x, y, w, size, align, line_height, color, lines):
             c.drawCentredString((x + w / 2) * mm, baseline, line)
         else:
             c.drawRightString((x + w) * mm, baseline, line)
+    c.restoreState()
 
 def _bind_str(data, key):
     if key not in data:
@@ -88,9 +95,9 @@ def _wrap(font, size, w, text):
 
 def _draw_page(c, font, data, page, page_count):
     if page == 1:
-        _text(c, font, 0, 0, 100, 12, "left", 1.2, (0, 0, 0), _wrap(font, 12, 100, _interpolate(data, "{customerName}")))
+        _text(c, font, 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, _wrap(font, 12, 100, _interpolate(data, "{customerName}")))
     if page == 1:
-        _text(c, font, 0, 10, 100, 12, "left", 1.2, (0, 0, 0), _wrap(font, 12, 100, _interpolate(data, "合計: {total} 円")))
+        _text(c, font, 0, 10, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, _wrap(font, 12, 100, _interpolate(data, "合計: {total} 円")))
 
 def build(output_path, data=None):
     data = {} if data is None else data

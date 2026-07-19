@@ -33,7 +33,13 @@ def _register_font():
     pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
     return FONT_NAME
 
-def _text(c, font, x, y, w, size, align, line_height, color, lines):
+def _text(c, font, x, y, w, h, size, align, line_height, color, rot, lines):
+    c.saveState()
+    if rot:
+        cx, cy = (x + w / 2) * mm, PAGE_HEIGHT - (y + h / 2) * mm
+        c.translate(cx, cy)
+        c.rotate(-rot)
+        c.translate(-cx, -cy)
     c.setFont(font, size)
     c.setFillColorRGB(*color)
     for i, line in enumerate(lines):
@@ -53,10 +59,11 @@ def _text(c, font, x, y, w, size, align, line_height, color, lines):
             c.drawCentredString((x + w / 2) * mm, baseline, line)
         else:
             c.drawRightString((x + w) * mm, baseline, line)
+    c.restoreState()
 
 def _draw_page(c, font, data, page, page_count):
-    _text(c, font, 0, 18, 210, 12, "left", 1.25, (0, 0, 0), ["税抜*1価格です"])
-    _text(c, font, 15, 283.47222222222223, 180, 8, "left", 1.25, (0, 0, 0), ["*1 本体価格は税抜表示です"])
+    _text(c, font, 0, 18, 210, 12, 12, "left", 1.25, (0, 0, 0), 0, ["税抜*1価格です"])
+    _text(c, font, 15, 283.47222222222223, 180, 3.5277777777777777, 8, "left", 1.25, (0, 0, 0), 0, ["*1 本体価格は税抜表示です"])
 
 def build(output_path, data=None):
     data = {} if data is None else data
