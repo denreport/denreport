@@ -5,7 +5,7 @@ import type { MmBox } from "../../state/geometry";
 import type { TableCellSource } from "../../state/table-cells";
 import { cellView, sketchMerges } from "../../state/table-cells";
 
-// ir-v1 の表の仕様定数（罫線・余白は属性化されない）
+// ir-v1 の表の仕様定数（セル余白・文字オフセットは属性化されない）
 const CELL_PADDING_X = 1.5;
 const HEADER_TEXT_OFFSET_Y = 1.8;
 const CELL_TEXT_OFFSET_Y = 2.0;

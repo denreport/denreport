@@ -1,11 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { TABLE_FRAME_WIDTH } from "@denreport/core";
+import { TABLE_FRAME_WIDTH, TABLE_GRID_WIDTH } from "@denreport/core";
 import { describe, expect, it } from "vitest";
 
 // vitest はパッケージルートを cwd として実行される
 const css = readFileSync(join(process.cwd(), "src/ui/styles/app.css"), "utf-8");
 const FRAME_W = String(TABLE_FRAME_WIDTH).replace(".", "\\.");
+const GRID_W = String(TABLE_GRID_WIDTH).replace(".", "\\.");
 
 /** セレクタの宣言ブロック本文を取り出す（対象セレクタは単独ルールのみ） */
 function ruleBody(selector: string): string {
@@ -18,8 +19,18 @@ function ruleBody(selector: string): string {
 // 低ズームでサブピクセルに潰れて消える罫線・枠線を画面表示上 1px 未満にしない
 describe("app.css の低ズーム時の枠線最低太さクランプ", () => {
   it.each([
-    [".apx-tbl-hline", /height:\s*max\(1px, calc\(0\.25 \* var\(--mm\)\)\)/],
-    [".apx-tbl-vline", /width:\s*max\(1px, calc\(0\.25 \* var\(--mm\)\)\)/],
+    [
+      ".apx-tbl-hline",
+      new RegExp(
+        String.raw`border-top:\s*max\(1px, calc\(var\(--grid-w, ${GRID_W}\) \* var\(--mm\)\)\)\s+var\(--grid-ls, solid\)`,
+      ),
+    ],
+    [
+      ".apx-tbl-vline",
+      new RegExp(
+        String.raw`border-left:\s*max\(1px, calc\(var\(--grid-w, ${GRID_W}\) \* var\(--mm\)\)\)\s+var\(--grid-ls, solid\)`,
+      ),
+    ],
     [
       ".apx-el-line-h",
       /border-top:\s*max\(1px, calc\(var\(--t, 0\.3\) \* var\(--mm\)\)\)/,

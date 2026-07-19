@@ -1,4 +1,4 @@
-import type { IrElement } from "@denreport/core";
+import type { IrElement, IrTableElement } from "@denreport/core";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
@@ -301,5 +301,53 @@ describe("PaperElement — rotate の CSS 変数", () => {
       rotate: 45,
     });
     expect(el().style.getPropertyValue("--rot")).toBe("45deg");
+  });
+});
+
+describe("PaperElement — table の CSS 変数", () => {
+  function tableEl(overrides: Partial<IrTableElement> = {}): IrTableElement {
+    return {
+      type: "table",
+      id: "tbl1",
+      x: 0,
+      y: 0,
+      bind: "items",
+      columns: [{ key: "a", label: "A", width: 40, align: "left" }],
+      rowHeight: 10,
+      headerHeight: 10,
+      fontSize: 10,
+      maxY: 100,
+      continuationY: 0,
+      minRows: 0,
+      ...overrides,
+    };
+  }
+
+  it("罫線属性の指定なしでは CSS 変数を出さない", () => {
+    renderEl(tableEl());
+    expect(el().style.getPropertyValue("--frame-w")).toBe("");
+    expect(el().style.getPropertyValue("--grid-w")).toBe("");
+    expect(el().style.getPropertyValue("--frame-ls")).toBe("");
+    expect(el().style.getPropertyValue("--grid-ls")).toBe("");
+  });
+
+  it("frameWidth / gridWidth / frameStyle / gridStyle が CSS 変数に写る", () => {
+    renderEl(
+      tableEl({
+        frameWidth: 1,
+        gridWidth: 0.5,
+        frameStyle: "dashed",
+        gridStyle: "dotted",
+      }),
+    );
+    expect(el().style.getPropertyValue("--frame-w")).toBe("1");
+    expect(el().style.getPropertyValue("--grid-w")).toBe("0.5");
+    expect(el().style.getPropertyValue("--frame-ls")).toBe("dashed");
+    expect(el().style.getPropertyValue("--grid-ls")).toBe("dotted");
+  });
+
+  it("frameStyle: dashdot は dashed に近似する", () => {
+    renderEl(tableEl({ frameStyle: "dashdot" }));
+    expect(el().style.getPropertyValue("--frame-ls")).toBe("dashed");
   });
 });

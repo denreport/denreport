@@ -964,18 +964,20 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: max(1px, calc(0.25 * var(--mm)));
+  height: 0;
+  border-top: max(1px, calc(var(--grid-w, 0.25) * var(--mm)))
+    var(--grid-ls, solid) var(--paper-text);
   top: calc(var(--ly) * var(--mm));
-  background: var(--paper-text);
 }
 
 .apx-tbl-vline {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: max(1px, calc(0.25 * var(--mm)));
+  width: 0;
+  border-left: max(1px, calc(var(--grid-w, 0.25) * var(--mm)))
+    var(--grid-ls, solid) var(--paper-text);
   left: calc(var(--lx) * var(--mm));
-  background: var(--paper-text);
 }
 
 .apx-tbl-th {

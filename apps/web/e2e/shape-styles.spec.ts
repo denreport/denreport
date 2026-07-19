@@ -130,3 +130,31 @@ test("表の内部罫線が外枠の内側にぴったり収まる", async ({ pa
     Math.abs(hlineBox.x + hlineBox.width - (tableBox.x + tableBox.width)),
   ).toBeLessThan(0.5);
 });
+
+test("表の罫線の太さ・線種がキャンバスに反映される", async ({ page }) => {
+  await page.goto("/");
+  await dragFromPalette(page, /^表/, { x: 100, y: 100 });
+  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  await expect(table).toBeVisible();
+
+  const props = page.getByRole("complementary", { name: "プロパティ" });
+  await commitField(props.getByLabel("外枠の太さ"), "1");
+  await props.getByLabel("外枠の線種").selectOption("dashed");
+  await commitField(props.getByLabel("内部罫線の太さ"), "0.5");
+  await props.getByLabel("内部罫線の線種").selectOption("dotted");
+
+  await expect(table).toHaveCSS("--frame-w", "1");
+  await expect(table).toHaveCSS("--grid-w", "0.5");
+  await expect(table.locator(".apx-tbl-frame")).toHaveCSS(
+    "border-top-style",
+    "dashed",
+  );
+  await expect(table.locator(".apx-tbl-hline").first()).toHaveCSS(
+    "border-top-style",
+    "dotted",
+  );
+  await expect(table.locator(".apx-tbl-vline").first()).toHaveCSS(
+    "border-left-style",
+    "dotted",
+  );
+});

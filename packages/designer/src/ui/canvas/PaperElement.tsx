@@ -114,6 +114,14 @@ export function PaperElement(props: {
       if (el.borderColor !== undefined) vars["--bc"] = el.borderColor;
       if (el.fillColor !== undefined) vars["--fc"] = el.fillColor;
       break;
+    case "table":
+      if (el.frameWidth !== undefined) vars["--frame-w"] = el.frameWidth;
+      if (el.gridWidth !== undefined) vars["--grid-w"] = el.gridWidth;
+      if (el.frameStyle !== undefined)
+        vars["--frame-ls"] = cssLineStyle(el.frameStyle);
+      if (el.gridStyle !== undefined)
+        vars["--grid-ls"] = cssLineStyle(el.gridStyle);
+      break;
     default:
       break;
   }
