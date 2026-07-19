@@ -9,7 +9,7 @@ test("記載事項チェックを有効化すると警告が出て、欄を配�
 
   const drawerBar = page.locator(".apx-drawer-bar");
   await drawerBar.click();
-  await expect(page.locator(".apx-badge-warn")).toHaveText("6");
+  await expect(page.locator(".apx-drawer-bar .apx-badge-warn")).toHaveText("6");
   await expect(page.locator(".apx-verr")).toHaveCount(6);
   const registrationWarning = page.locator(".apx-verr", {
     hasText: "発行者の登録番号",
@@ -24,7 +24,7 @@ test("記載事項チェックを有効化すると警告が出て、欄を配�
   await textField.fill("{registrationNumber}");
   await textField.blur();
 
-  await expect(page.locator(".apx-badge-warn")).toHaveText("5");
+  await expect(page.locator(".apx-drawer-bar .apx-badge-warn")).toHaveText("5");
   await expect(registrationWarning).toHaveCount(0);
 
   await page.getByRole("button", { name: "書き出し" }).click();

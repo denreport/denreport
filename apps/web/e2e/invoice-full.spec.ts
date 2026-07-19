@@ -437,7 +437,7 @@ function entryOf(entries: readonly ZipEntryData[], name: string): ZipEntryData {
 async function expectTableWarning(exportDialog: Locator): Promise<void> {
   const tableCard = exportDialog
     .locator(".apx-warn-card")
-    .filter({ hasText: "明細の分割" });
+    .filter({ hasText: "表の行がページをまたぐ" });
   await expect(tableCard).toBeVisible();
   await expect(
     tableCard.locator(".apx-chip").filter({ hasText: "table1" }),
@@ -447,7 +447,7 @@ async function expectTableWarning(exportDialog: Locator): Promise<void> {
 async function expectPageNumberWarning(exportDialog: Locator): Promise<void> {
   const card = exportDialog
     .locator(".apx-warn-card")
-    .filter({ hasText: "確定文字列" });
+    .filter({ hasText: "確定した文字列に変換" });
   await expect(card).toBeVisible();
   await expect(
     card.locator(".apx-chip").filter({ hasText: "pageNumber1" }),
