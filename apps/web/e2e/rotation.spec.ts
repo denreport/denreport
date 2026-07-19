@@ -143,3 +143,36 @@ test("回転した要素では選択枠とハンドルが回転に追従する",
   await commitField(props.getByLabel("回転"), "0");
   await expect(selBox).not.toHaveAttribute("style", /--rot/);
 });
+
+test("回転した要素をリサイズ中、ドラッグゴーストが回転角に追従する", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await dragFromPalette(page, /^矩形/, { x: 100, y: 100 });
+  const rect = page.locator('.apx-el[data-apx-id="rect1"]');
+  await expect(rect).toBeVisible();
+
+  const props = page.getByRole("complementary", { name: "プロパティ" });
+  await commitField(props.getByLabel("回転"), "90");
+  await expect(rect).toHaveAttribute("style", /--rot: 90deg/);
+
+  const seHandle = page.locator(
+    '.apx-h[data-apx-handle="se"][data-apx-id="rect1"]',
+  );
+  await expect(seHandle).toBeVisible();
+  const handleBox = await seHandle.boundingBox();
+  if (handleBox === null) throw new Error("se ハンドルが表示されていません");
+
+  await page.mouse.move(
+    handleBox.x + handleBox.width / 2,
+    handleBox.y + handleBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(handleBox.x + 40, handleBox.y + 40, { steps: 8 });
+
+  const ghost = page.locator(".apx-drag-ghost");
+  await expect(ghost).toHaveClass(/apx-drag-ghost--rotated/);
+  await expect(ghost).toHaveAttribute("style", /--rot: 90deg/);
+
+  await page.mouse.up();
+});

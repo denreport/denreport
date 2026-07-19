@@ -212,7 +212,11 @@ export function SelectionOverlay(props: {
       ? interaction.guides
       : [];
 
-  let dragGhosts: readonly { readonly key: string; readonly box: MmBox }[] = [];
+  let dragGhosts: readonly {
+    readonly key: string;
+    readonly box: MmBox;
+    readonly rotate?: number;
+  }[] = [];
   let rotatingGhost: {
     readonly box: MmBox;
     readonly rotate: number;
@@ -220,10 +224,11 @@ export function SelectionOverlay(props: {
   let tip: { readonly box: MmBox; readonly text: string } | null = null;
   if (interaction.kind === "moving") {
     dragGhosts = interaction.ids.flatMap((id) => {
-      const box = byId.get(id)?.box;
-      if (box === undefined) {
+      const view = byId.get(id);
+      if (view === undefined) {
         return [];
       }
+      const box = view.box;
       return [
         {
           key: id,
@@ -233,6 +238,7 @@ export function SelectionOverlay(props: {
             w: box.w,
             h: box.h,
           },
+          rotate: rotationDeg(view),
         },
       ];
     });
@@ -243,7 +249,14 @@ export function SelectionOverlay(props: {
       }
     }
   } else if (interaction.kind === "resizing") {
-    dragGhosts = [{ key: interaction.id, box: interaction.box }];
+    const view = byId.get(interaction.id);
+    dragGhosts = [
+      {
+        key: interaction.id,
+        box: interaction.box,
+        rotate: view !== undefined ? rotationDeg(view) : 0,
+      },
+    ];
     tip = {
       box: interaction.box,
       text: `${fmt(interaction.box.w)} × ${fmt(interaction.box.h)} mm`,
@@ -441,13 +454,25 @@ export function SelectionOverlay(props: {
         />
       )}
 
-      {dragGhosts.map((ghost) => (
-        <div
-          key={ghost.key}
-          className="apx-drag-ghost"
-          style={boxVars(ghost.box)}
-        />
-      ))}
+      {dragGhosts.map((ghost) => {
+        const rotate = ghost.rotate ?? 0;
+        return (
+          <div
+            key={ghost.key}
+            className={
+              rotate !== 0
+                ? "apx-drag-ghost apx-drag-ghost--rotated"
+                : "apx-drag-ghost"
+            }
+            style={
+              {
+                ...boxVars(ghost.box),
+                ...(rotate !== 0 ? { "--rot": `${rotate}deg` } : {}),
+              } as CSSProperties
+            }
+          />
+        );
+      })}
 
       {targetFlex !== undefined && (
         <div className="apx-flex-target" style={boxVars(targetFlex.box)} />

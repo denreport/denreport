@@ -5,6 +5,7 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { layoutDocument } from "../../state/geometry";
 import { EditorStore } from "../../state/store";
+import type { InteractionState } from "./interaction";
 import { SelectionOverlay } from "./SelectionOverlay";
 
 (
@@ -61,6 +62,37 @@ function renderRect(rotate: number | undefined): void {
       />,
     );
   });
+}
+
+function renderRectWithInteraction(
+  rotate: number | undefined,
+  interaction: InteractionState,
+): void {
+  const document: IrDocument = {
+    version: "1.0",
+    page: { width: 210, height: 297 },
+    font: { regular: "NotoSansJP" },
+    elements: [rectElement(rotate)],
+  };
+  const store = new EditorStore(document);
+  store.setSelection(["r1"]);
+  const state = store.getState();
+  const layout = layoutDocument(document, state.view.pageContext);
+  act(() => {
+    root.render(
+      <SelectionOverlay
+        state={state}
+        layout={layout}
+        interaction={interaction}
+      />,
+    );
+  });
+}
+
+function dragGhost(): HTMLElement {
+  const node = container.querySelector(".apx-drag-ghost");
+  if (node === null) throw new Error(".apx-drag-ghost がない");
+  return node as HTMLElement;
 }
 
 function handle(id: string): HTMLElement {
@@ -152,5 +184,69 @@ describe("SelectionOverlay — 回転に追従する選択枠・ハンドル", (
     const end = handle("line-end");
     expect(parseFloat(cssVar(end, "--hx"))).toBeCloseTo(30);
     expect(parseFloat(cssVar(end, "--hy"))).toBeCloseTo(40);
+  });
+});
+
+describe("SelectionOverlay — ドラッグゴーストが回転に追従する", () => {
+  it("moving 中、回転ありの要素は apx-drag-ghost--rotated と --rot を持つ", () => {
+    renderRectWithInteraction(45, {
+      kind: "moving",
+      ids: ["r1"],
+      start: { x: 10, y: 20 },
+      offset: { x: 5, y: 5 },
+      guides: [],
+      flexId: null,
+      insertIndex: null,
+    });
+
+    const ghost = dragGhost();
+    expect(ghost.classList.contains("apx-drag-ghost--rotated")).toBe(true);
+    expect(cssVar(ghost, "--rot")).toBe("45deg");
+  });
+
+  it("moving 中、回転なしの要素は apx-drag-ghost--rotated を持たない", () => {
+    renderRectWithInteraction(undefined, {
+      kind: "moving",
+      ids: ["r1"],
+      start: { x: 10, y: 20 },
+      offset: { x: 5, y: 5 },
+      guides: [],
+      flexId: null,
+      insertIndex: null,
+    });
+
+    const ghost = dragGhost();
+    expect(ghost.classList.contains("apx-drag-ghost--rotated")).toBe(false);
+    expect(cssVar(ghost, "--rot")).toBe("");
+  });
+
+  it("resizing 中、回転ありの要素は apx-drag-ghost--rotated と --rot を持つ", () => {
+    renderRectWithInteraction(30, {
+      kind: "resizing",
+      id: "r1",
+      handle: "se",
+      start: { x: 50, y: 40 },
+      box: { x: 10, y: 20, w: 60, h: 30 },
+      guides: [],
+    });
+
+    const ghost = dragGhost();
+    expect(ghost.classList.contains("apx-drag-ghost--rotated")).toBe(true);
+    expect(cssVar(ghost, "--rot")).toBe("30deg");
+  });
+
+  it("resizing 中、回転なしの要素は apx-drag-ghost--rotated を持たない", () => {
+    renderRectWithInteraction(undefined, {
+      kind: "resizing",
+      id: "r1",
+      handle: "se",
+      start: { x: 50, y: 40 },
+      box: { x: 10, y: 20, w: 60, h: 30 },
+      guides: [],
+    });
+
+    const ghost = dragGhost();
+    expect(ghost.classList.contains("apx-drag-ghost--rotated")).toBe(false);
+    expect(cssVar(ghost, "--rot")).toBe("");
   });
 });
