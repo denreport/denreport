@@ -152,6 +152,10 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 | `maxY` | number | 任意 | `page.height` | 各ページで行を置ける領域の下端（mm）。これを超える行は次ページへ送る（5.3節） |
 | `continuationY` | number | 任意 | `table.y` | 2ページ目以降（継続ページ）の表上端（ヘッダの上端）。継続ページではヘッダを再表示する |
 | `minRows` | number | 任意 | `0` | 表示する最低行数（0以上の整数）。データ行数が少ない場合は空行で埋めて N 行の枠を描く（5.3節） |
+| `frameWidth` | number | 任意 | `0.4` | 外枠の線の太さ（mm）。0より大きい値 |
+| `gridWidth` | number | 任意 | `0.25` | 内部罫線（行・列の区切り線）の太さ（mm）。0より大きい値 |
+| `frameStyle` | `"solid" \| "dotted" \| "dashed" \| "dashdot" \| "dashdotdot"` | 任意 | `"solid"` | 外枠の線種 |
+| `gridStyle` | `"solid" \| "dotted" \| "dashed" \| "dashdot" \| "dashdotdot"` | 任意 | `"solid"` | 内部罫線（行・列の区切り線）の線種 |
 | `style` | string | 任意 | — | 名前付きスタイル（3.9節）への参照 |
 
 Column:
@@ -165,8 +169,9 @@ Column:
 
 表の幅は Σ列幅から導出し、属性としては持たない。表の高さ・ページ数は行数に依存するため
 IR 単体では確定せず、データ結合時に決まる（5.3節）。明細が `maxY` を超える場合はエラーでは
-なく改ページする。行の途中分割はせず、ヘッダは各ページで再表示する。罫線の太さ・セル内余白は
-仕様定数（5.3節）とし、属性にしない。
+なく改ページする。行の途中分割はせず、ヘッダは各ページで再表示する。外枠と内部罫線の太さ・線種は
+上記の `frameWidth`/`gridWidth`/`frameStyle`/`gridStyle` で個別に指定できる（既定値は5.3節の
+定数と一致）。色は外枠・内部とも黒固定、セル内余白は仕様定数（5.3節）のままで、属性にしない。
 
 ### 3.6 image — 画像
 
@@ -437,8 +442,10 @@ table のチャンク p（1..P）は p ページ目に置く（表は常に1ペ�
 | `TABLE_CELL_PADDING_X` | 1.5 mm | セル文字の左右余白 |
 | `TABLE_HEADER_TEXT_OFFSET_Y` | 1.8 mm | ヘッダ文字の上端オフセット |
 | `TABLE_CELL_TEXT_OFFSET_Y` | 2.0 mm | 明細文字の上端オフセット |
-| `TABLE_FRAME_WIDTH` | 0.4 mm | 外枠の線太さ |
-| `TABLE_GRID_WIDTH` | 0.25 mm | 内部罫線の太さ |
+
+外枠・内部罫線の太さ・線種は table の `frameWidth`/`gridWidth`/`frameStyle`/`gridStyle` 属性
+（3.5節。省略時の既定はそれぞれ `TABLE_FRAME_WIDTH` = 0.4 mm・`TABLE_GRID_WIDTH` = 0.25 mm・
+`"solid"`）で決まる。
 
 列 i（0始まり）の左端 `X_i = table.x + Σ_{j<i} columns[j].width`、
 表の幅 `W = Σ columns[].width`、チャンクの高さ `H_p = headerHeight + c_p × rowHeight` として:
@@ -452,12 +459,15 @@ table のチャンク p（1..P）は p ページ目に置く（表は常に1ペ�
   h=`rowHeight − CELL_TEXT_OFFSET_Y`, align=`columns[i].align`,
   内容=行 t のデータの `columns[i].key` の値。x, w, fontSize, lineHeight はヘッダと同じ）。
   空行（t ≥ n）のセルは文字要素を生成しない（罫線・枠は生成する）。
-- 外枠: rect 相当（x=`table.x`, y=`Y0`, w=`W`, h=`H_p`, borderWidth=`FRAME_WIDTH`）。
+- 外枠: rect 相当（x=`table.x`, y=`Y0`, w=`W`, h=`H_p`, borderWidth=`table.frameWidth`,
+  borderStyle=`table.frameStyle`）。
 - 水平罫線: q = 0 .. c_p−1 に line 相当
   （orientation=horizontal, x=`table.x`, y=`Y0 + headerHeight + q×rowHeight`,
-  length=`W`, thickness=`GRID_WIDTH`）。q=0 がヘッダ下線。チャンクの底辺は外枠が兼ねる。
+  length=`W`, thickness=`table.gridWidth`, strokeStyle=`table.gridStyle`）。
+  q=0 がヘッダ下線。チャンクの底辺は外枠が兼ねる。
 - 垂直罫線: i = 1 .. 列数−1 に line 相当
-  （orientation=vertical, x=`X_i`, y=`Y0`, length=`H_p`, thickness=`GRID_WIDTH`）。
+  （orientation=vertical, x=`X_i`, y=`Y0`, length=`H_p`, thickness=`table.gridWidth`,
+  strokeStyle=`table.gridStyle`）。
 
 行の途中分割はしない（行は丸ごと次チャンクへ送る）。
 

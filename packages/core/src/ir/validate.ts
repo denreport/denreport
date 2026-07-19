@@ -224,6 +224,12 @@ function checkM03(walked: readonly WalkedElement[]): IrError[] {
       case "table":
         pushPositive(errors, path, "rowHeight", element.rowHeight);
         pushPositive(errors, path, "headerHeight", element.headerHeight);
+        if (element.frameWidth !== undefined) {
+          pushPositive(errors, path, "frameWidth", element.frameWidth);
+        }
+        if (element.gridWidth !== undefined) {
+          pushPositive(errors, path, "gridWidth", element.gridWidth);
+        }
         element.columns.forEach((col, i) => {
           pushPositive(errors, `${path}.columns[${i}]`, "width", col.width);
         });

@@ -308,10 +308,10 @@ function lowerTableChunk(
     y: y0,
     w: width,
     h: height,
-    borderWidth: TABLE_FRAME_WIDTH,
+    borderWidth: table.frameWidth ?? TABLE_FRAME_WIDTH,
     borderColor: TABLE_LINE_COLOR,
     fillColor: null,
-    borderStyle: TABLE_LINE_STYLE,
+    borderStyle: table.frameStyle ?? TABLE_LINE_STYLE,
     cornerRadius: 0,
   });
   for (let q = 0; q < chunkSize; q++) {
@@ -322,9 +322,9 @@ function lowerTableChunk(
       x: table.x,
       y: y0 + table.headerHeight + q * table.rowHeight,
       length: width,
-      thickness: TABLE_GRID_WIDTH,
+      thickness: table.gridWidth ?? TABLE_GRID_WIDTH,
       color: TABLE_LINE_COLOR,
-      strokeStyle: TABLE_LINE_STYLE,
+      strokeStyle: table.gridStyle ?? TABLE_LINE_STYLE,
     });
   }
   for (let i = 1; i < table.columns.length; i++) {
@@ -335,9 +335,9 @@ function lowerTableChunk(
       x: xOf(i),
       y: y0,
       length: height,
-      thickness: TABLE_GRID_WIDTH,
+      thickness: table.gridWidth ?? TABLE_GRID_WIDTH,
       color: TABLE_LINE_COLOR,
-      strokeStyle: TABLE_LINE_STYLE,
+      strokeStyle: table.gridStyle ?? TABLE_LINE_STYLE,
     });
   }
   table.columns.forEach((column, i) => {

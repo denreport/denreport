@@ -368,6 +368,62 @@ describe("exportReportlabTemplate — table stripeColor", () => {
   });
 });
 
+describe("exportReportlabTemplate — table frame/grid attributes", () => {
+  function tableWith(
+    overrides: Partial<
+      Extract<IrDocument["elements"][number], { type: "table" }>
+    >,
+  ): IrDocument {
+    return docOf({
+      type: "table",
+      id: "items",
+      x: 15,
+      y: 0,
+      bind: "items",
+      columns: [{ key: "name", label: "品目", width: 90, align: "left" }],
+      rowHeight: 10,
+      headerHeight: 10,
+      fontSize: 10,
+      maxY: 100,
+      continuationY: 20,
+      minRows: 5,
+      ...overrides,
+    });
+  }
+
+  it("uses the spec defaults (0.4mm frame, 0.25mm grid, no dash) when omitted", () => {
+    const result = exportReportlabTemplate(tableWith({}), FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      "_rect(c, 15, y0, 90, 10 + chunk_size * 10, 0.4, (0, 0, 0), None, None, 0)",
+    );
+    expect(result.code).toContain(
+      "_line(c, 15, y0 + 10 + q * 10, 105, y0 + 10 + q * 10, 0.25, (0, 0, 0), None)",
+    );
+  });
+
+  it("applies explicit frameWidth/gridWidth/frameStyle/gridStyle to the frame and grid draw calls", () => {
+    const result = exportReportlabTemplate(
+      tableWith({
+        frameWidth: 1,
+        gridWidth: 0.6,
+        frameStyle: "dashed",
+        gridStyle: "dotted",
+      }),
+      FONT,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      "_rect(c, 15, y0, 90, 10 + chunk_size * 10, 1, (0, 0, 0), None, [2 * mm, 1 * mm], 0)",
+    );
+    expect(result.code).toContain(
+      "_line(c, 15, y0 + 10 + q * 10, 105, y0 + 10 + q * 10, 0.6, (0, 0, 0), [0.4 * mm, 0.8 * mm])",
+    );
+  });
+});
+
 describe("exportReportlabTemplate — ellipse", () => {
   it("draws a static ellipse via _ellipse and includes the helper", () => {
     const doc = docOf({

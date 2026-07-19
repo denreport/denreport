@@ -563,6 +563,10 @@ function checkS08Table(
   checkOptionalType(errors, value, "maxY", path, "S08b", "number");
   checkOptionalType(errors, value, "continuationY", path, "S08b", "number");
   checkOptionalType(errors, value, "minRows", path, "S08b", "number");
+  checkOptionalType(errors, value, "frameWidth", path, "S08b", "number");
+  checkOptionalType(errors, value, "gridWidth", path, "S08b", "number");
+  checkOptionalType(errors, value, "frameStyle", path, "S08b", "string");
+  checkOptionalType(errors, value, "gridStyle", path, "S08b", "string");
   checkOptionalType(errors, value, "stripeColor", path, "S08b", "string");
   checkOptionalType(errors, value, "style", path, "S08b", "string");
 
@@ -755,6 +759,10 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "maxY",
     "continuationY",
     "minRows",
+    "frameWidth",
+    "gridWidth",
+    "frameStyle",
+    "gridStyle",
     "cellOverrides",
     "stripeColor",
     "style",
@@ -900,6 +908,8 @@ const ENUM_DOMAINS: Record<string, readonly string[]> = {
   pages: ["first", "rest", "last", "all"],
   strokeStyle: STROKE_STYLE_DOMAIN,
   borderStyle: STROKE_STYLE_DOMAIN,
+  frameStyle: STROKE_STYLE_DOMAIN,
+  gridStyle: STROKE_STYLE_DOMAIN,
   symbology: ["qrcode", "code39", "code128", "ean13"],
 };
 
@@ -1144,6 +1154,18 @@ function normalizeElement(
         maxY: (value.maxY as number | undefined) ?? page.height,
         continuationY: (value.continuationY as number | undefined) ?? y,
         minRows: (value.minRows as number | undefined) ?? 0,
+        ...("frameWidth" in value
+          ? { frameWidth: value.frameWidth as number }
+          : {}),
+        ...("gridWidth" in value
+          ? { gridWidth: value.gridWidth as number }
+          : {}),
+        ...("frameStyle" in value
+          ? { frameStyle: value.frameStyle as IrStrokeStyle }
+          : {}),
+        ...("gridStyle" in value
+          ? { gridStyle: value.gridStyle as IrStrokeStyle }
+          : {}),
         ...(cellOverrides !== undefined ? { cellOverrides } : {}),
         ...("stripeColor" in value
           ? { stripeColor: value.stripeColor as string }

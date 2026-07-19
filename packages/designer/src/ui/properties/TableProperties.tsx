@@ -1,3 +1,4 @@
+import { TABLE_FRAME_WIDTH, TABLE_GRID_WIDTH } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId } from "react";
 import { collectBindKeys, sampleDataKeys } from "../../state/bind-keys";
@@ -8,7 +9,13 @@ import { useEditorState } from "../useEditorState";
 import { ColumnsEditor } from "./ColumnsEditor";
 import type { ElementFormProps } from "./ElementProperties";
 import { commitReplace, withOptionalAttr } from "./ElementProperties";
-import { ColorField, NumberField, TextField } from "./fields";
+import {
+  ColorField,
+  NumberField,
+  SelectField,
+  STROKE_STYLE_OPTIONS,
+  TextField,
+} from "./fields";
 
 export function TableProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;
@@ -134,6 +141,78 @@ export function TableProperties(props: ElementFormProps): ReactNode {
         <p className="apx-sect-note">
           継続上端は2ページ目以降の表上端。継続ページの見えは編集ページの切替で確認できます。
         </p>
+      </section>
+      <section className="apx-sect">
+        <div className="apx-sect-h">罫線</div>
+        {/* 既定の gridWidth（0.25mm）が 0.1mm 刻みに乗らないため、他の mm 欄より細かい刻みにする */}
+        <NumberField
+          label="外枠の太さ"
+          value={el.frameWidth ?? TABLE_FRAME_WIDTH}
+          unit="mm"
+          precision={0.05}
+          error={errorMessageFor(errors, "frameWidth")}
+          onCommit={(frameWidth) =>
+            commitReplace(
+              store,
+              el.id,
+              withOptionalAttr(
+                el,
+                "frameWidth",
+                frameWidth === TABLE_FRAME_WIDTH ? undefined : frameWidth,
+              ),
+            )
+          }
+        />
+        <SelectField
+          label="外枠の線種"
+          value={el.frameStyle ?? "solid"}
+          options={STROKE_STYLE_OPTIONS}
+          onCommit={(frameStyle) =>
+            commitReplace(
+              store,
+              el.id,
+              withOptionalAttr(
+                el,
+                "frameStyle",
+                frameStyle === "solid" ? undefined : frameStyle,
+              ),
+            )
+          }
+        />
+        <NumberField
+          label="内部罫線の太さ"
+          value={el.gridWidth ?? TABLE_GRID_WIDTH}
+          unit="mm"
+          precision={0.05}
+          error={errorMessageFor(errors, "gridWidth")}
+          onCommit={(gridWidth) =>
+            commitReplace(
+              store,
+              el.id,
+              withOptionalAttr(
+                el,
+                "gridWidth",
+                gridWidth === TABLE_GRID_WIDTH ? undefined : gridWidth,
+              ),
+            )
+          }
+        />
+        <SelectField
+          label="内部罫線の線種"
+          value={el.gridStyle ?? "solid"}
+          options={STROKE_STYLE_OPTIONS}
+          onCommit={(gridStyle) =>
+            commitReplace(
+              store,
+              el.id,
+              withOptionalAttr(
+                el,
+                "gridStyle",
+                gridStyle === "solid" ? undefined : gridStyle,
+              ),
+            )
+          }
+        />
       </section>
       <section className="apx-sect">
         <div className="apx-sect-h">明細行の網掛け</div>

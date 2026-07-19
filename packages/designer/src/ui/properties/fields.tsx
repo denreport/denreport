@@ -28,8 +28,10 @@ export interface NumberFieldProps {
   readonly error?: string | undefined;
 }
 
+// ceil（round ではなく）でないと precision が10のべき乗でない場合（例: 0.05）に
+// 桁数が足りず、値を変更せず blur しただけで quantize 後の値が丸まってずれる
 function decimalsOf(precision: number): number {
-  return Math.max(0, Math.round(Math.log10(1 / precision)));
+  return Math.max(0, Math.ceil(Math.log10(1 / precision)));
 }
 
 function quantize(value: number, precision: number): number {

@@ -138,7 +138,7 @@ export function buildImports(
   return `${group1.join("\n")}\n\n${group2.join("\n")}`;
 }
 
-function pyDash(strokeStyle: IrStrokeStyle): string {
+export function pyDash(strokeStyle: IrStrokeStyle): string {
   if (strokeStyle === "solid") return "None";
   const pattern = STROKE_DASH_MM[strokeStyle];
   return `[${pattern.map((v) => `${pyNumber(v)} * mm`).join(", ")}]`;

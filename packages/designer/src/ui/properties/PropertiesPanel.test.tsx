@@ -830,6 +830,42 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     expect(elementById(store, "e1")).toMatchObject({ fillColor: "#abcdef" });
   });
 
+  it("table の外枠・内部罫線の太さ・線種の commit と、既定値への復帰による属性除去", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["tbl1"]);
+
+    const frameWidthInput = inputByLabel("外枠の太さ");
+    expect(frameWidthInput.value).toBe("0.40"); // TABLE_FRAME_WIDTH 既定値の表示
+    setValue(frameWidthInput, "1");
+    blur(frameWidthInput);
+    expect(elementById(store, "tbl1")).toMatchObject({ frameWidth: 1 });
+
+    setSelectValue(requireSelectByLabel("外枠の線種"), "dashed");
+    expect(elementById(store, "tbl1")).toMatchObject({ frameStyle: "dashed" });
+
+    const gridWidthInput = inputByLabel("内部罫線の太さ");
+    expect(gridWidthInput.value).toBe("0.25"); // TABLE_GRID_WIDTH 既定値の表示
+    setValue(gridWidthInput, "0.6");
+    blur(gridWidthInput);
+    expect(elementById(store, "tbl1")).toMatchObject({ gridWidth: 0.6 });
+
+    setSelectValue(requireSelectByLabel("内部罫線の線種"), "dotted");
+    expect(elementById(store, "tbl1")).toMatchObject({ gridStyle: "dotted" });
+
+    setValue(frameWidthInput, "0.4");
+    blur(frameWidthInput);
+    setValue(gridWidthInput, "0.25");
+    blur(gridWidthInput);
+    setSelectValue(requireSelectByLabel("外枠の線種"), "solid");
+    setSelectValue(requireSelectByLabel("内部罫線の線種"), "solid");
+    const tbl1 = elementById(store, "tbl1");
+    expect("frameWidth" in tbl1 && tbl1.frameWidth !== undefined).toBe(false);
+    expect("gridWidth" in tbl1 && tbl1.gridWidth !== undefined).toBe(false);
+    expect("frameStyle" in tbl1 && tbl1.frameStyle !== undefined).toBe(false);
+    expect("gridStyle" in tbl1 && tbl1.gridStyle !== undefined).toBe(false);
+  });
+
   it("table の網掛けトグルは ON で既定色を設定し、OFF で stripeColor を除去する", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);

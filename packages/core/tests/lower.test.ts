@@ -1287,3 +1287,61 @@ describe("lowerIr — table stripeColor", () => {
     expect(page2Stripes[0]?.y).toBe(0 + 10 + 0 * 10);
   });
 });
+
+describe("lowerIr — table frame/grid attributes", () => {
+  function frame(page: readonly LoweredElement[]) {
+    const el = page.find(
+      (el): el is Extract<LoweredElement, { type: "rect" }> =>
+        el.type === "rect",
+    );
+    if (!el) throw new Error("expected a frame rect");
+    return el;
+  }
+
+  function gridLines(page: readonly LoweredElement[]) {
+    return page.filter(
+      (el): el is Extract<LoweredElement, { type: "line" }> =>
+        el.type === "line",
+    );
+  }
+
+  it("uses the spec defaults (0.4mm frame, 0.25mm grid, solid) when omitted", () => {
+    const doc = docOf(table({ maxY: 100, headerHeight: 10, rowHeight: 10 }));
+    const result = lowerIr(doc, { items: rowsOf(1) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const page = result.document.pages[0] ?? [];
+    expect(frame(page)).toMatchObject({
+      borderWidth: 0.4,
+      borderStyle: "solid",
+    });
+    for (const line of gridLines(page)) {
+      expect(line).toMatchObject({ thickness: 0.25, strokeStyle: "solid" });
+    }
+  });
+
+  it("applies explicit frameWidth/gridWidth/frameStyle/gridStyle to the frame and grid lines", () => {
+    const doc = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        frameWidth: 1,
+        gridWidth: 0.6,
+        frameStyle: "dashed",
+        gridStyle: "dotted",
+      }),
+    );
+    const result = lowerIr(doc, { items: rowsOf(1) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const page = result.document.pages[0] ?? [];
+    expect(frame(page)).toMatchObject({
+      borderWidth: 1,
+      borderStyle: "dashed",
+    });
+    for (const line of gridLines(page)) {
+      expect(line).toMatchObject({ thickness: 0.6, strokeStyle: "dotted" });
+    }
+  });
+});

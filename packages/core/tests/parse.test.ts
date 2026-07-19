@@ -626,6 +626,42 @@ describe("parseIr", () => {
       expectRule(parse(doc), "S10", "elements[0].borderStyle");
     });
 
+    it("rejects an invalid table.frameStyle value", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+          frameStyle: "wavy",
+        },
+      ];
+      expectRule(parse(doc), "S10", "elements[0].frameStyle");
+    });
+
+    it("rejects an invalid table.gridStyle value", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+          gridStyle: "wavy",
+        },
+      ];
+      expectRule(parse(doc), "S10", "elements[0].gridStyle");
+    });
+
     it("reports only S09 (not S10) for an enum-named attribute unknown to the element type", () => {
       const doc = baseDoc();
       doc.elements = [
@@ -1587,6 +1623,57 @@ describe("parseIr", () => {
       expect(resultWithout.document.elements[0]).not.toHaveProperty(
         "stripeColor",
       );
+    });
+
+    it("does not add frameWidth/gridWidth/frameStyle/gridStyle when omitted, and preserves them when present", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+          frameWidth: 1,
+          gridWidth: 0.5,
+          frameStyle: "dashed",
+          gridStyle: "dotted",
+        },
+      ];
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.document.elements[0]).toMatchObject({
+        frameWidth: 1,
+        gridWidth: 0.5,
+        frameStyle: "dashed",
+        gridStyle: "dotted",
+      });
+
+      const withoutOverrides = baseDoc();
+      withoutOverrides.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+        },
+      ];
+      const resultWithout = parse(withoutOverrides);
+      expect(resultWithout.ok).toBe(true);
+      if (!resultWithout.ok) return;
+      const el = resultWithout.document.elements[0];
+      expect(el).not.toHaveProperty("frameWidth");
+      expect(el).not.toHaveProperty("gridWidth");
+      expect(el).not.toHaveProperty("frameStyle");
+      expect(el).not.toHaveProperty("gridStyle");
     });
   });
 

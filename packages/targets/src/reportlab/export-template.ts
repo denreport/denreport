@@ -42,6 +42,7 @@ import {
   IMAGE_FN,
   LINE_FN,
   MAIN_BLOCK,
+  pyDash,
   RECT_FN,
   REGISTER_FONT_FN,
   REPORTLAB_BARCODE_NAMES,
@@ -216,15 +217,19 @@ function buildTableFunction(
       `            _rect(c, ${pyNumber(table.x)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)}, ${pyNumber(width)}, ${pyNumber(table.rowHeight)}, 0, ${TABLE_BLACK_RGB}, ${pyRgb(table.stripeColor)}, None, 0)`,
     );
   }
+  const frameWidth = pyNumber(table.frameWidth ?? TABLE_FRAME_WIDTH);
+  const frameDash = pyDash(table.frameStyle ?? "solid");
+  const gridWidth = pyNumber(table.gridWidth ?? TABLE_GRID_WIDTH);
+  const gridDash = pyDash(table.gridStyle ?? "solid");
   lines.push(
-    `    _rect(c, ${pyNumber(table.x)}, y0, ${pyNumber(width)}, ${height}, ${pyNumber(TABLE_FRAME_WIDTH)}, ${TABLE_BLACK_RGB}, None, None, 0)`,
+    `    _rect(c, ${pyNumber(table.x)}, y0, ${pyNumber(width)}, ${height}, ${frameWidth}, ${TABLE_BLACK_RGB}, None, ${frameDash}, 0)`,
     "    for q in range(chunk_size):",
-    `        _line(c, ${pyNumber(table.x)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)}, ${pyNumber(table.x + width)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)}, ${pyNumber(TABLE_GRID_WIDTH)}, ${TABLE_BLACK_RGB}, None)`,
+    `        _line(c, ${pyNumber(table.x)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)}, ${pyNumber(table.x + width)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)}, ${gridWidth}, ${TABLE_BLACK_RGB}, ${gridDash})`,
   );
   for (let i = 1; i < table.columns.length; i++) {
     const x = pyNumber(xOf(table, i));
     lines.push(
-      `    _line(c, ${x}, y0, ${x}, y0 + ${height}, ${pyNumber(TABLE_GRID_WIDTH)}, ${TABLE_BLACK_RGB}, None)`,
+      `    _line(c, ${x}, y0, ${x}, y0 + ${height}, ${gridWidth}, ${TABLE_BLACK_RGB}, ${gridDash})`,
     );
   }
   table.columns.forEach((column, i) => {

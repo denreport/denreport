@@ -145,6 +145,10 @@ export interface IrTableElement extends IrElementCommon {
   readonly maxY: number;
   readonly continuationY: number;
   readonly minRows: number;
+  readonly frameWidth?: number;
+  readonly gridWidth?: number;
+  readonly frameStyle?: IrStrokeStyle;
+  readonly gridStyle?: IrStrokeStyle;
   readonly cellOverrides?: readonly IrTableCellOverride[];
   readonly stripeColor?: string;
   readonly style?: string;

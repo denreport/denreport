@@ -418,6 +418,31 @@ describe("validateIr", () => {
         "elements[7].w",
       );
     });
+
+    it("allows a table with frameWidth/gridWidth omitted", () => {
+      expectNoRule(validateIr(baseDocument()), "M03");
+    });
+
+    it("rejects a non-positive table frameWidth or gridWidth", () => {
+      const doc = baseDocument();
+      const zeroFrame = doc.elements.map((el) =>
+        el.type === "table" ? { ...el, frameWidth: 0 } : el,
+      );
+      expectRule(
+        validateIr(withElements(doc, zeroFrame)),
+        "M03",
+        "elements[3].frameWidth",
+      );
+
+      const negativeGrid = doc.elements.map((el) =>
+        el.type === "table" ? { ...el, gridWidth: -0.1 } : el,
+      );
+      expectRule(
+        validateIr(withElements(doc, negativeGrid)),
+        "M03",
+        "elements[3].gridWidth",
+      );
+    });
   });
 
   describe("M04", () => {

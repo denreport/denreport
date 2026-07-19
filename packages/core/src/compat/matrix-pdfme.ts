@@ -69,6 +69,30 @@ export const pdfmeCompatMatrix = {
       },
       attributes: {
         stripeColor: { level: "supported" },
+        frameWidth: {
+          level: "approximated",
+          note: "枠線の太さ分の塗りの位置は IR が規定せず、ターゲットの描画に従う",
+          userMessage:
+            "罫線を太くしたとき、太さが線のどちら側に広がるかは出力先によってわずかに異なることがあります。",
+        },
+        gridWidth: {
+          level: "approximated",
+          note: "太さ分の塗りが基準線のどちら側に付くかは IR が規定せず、ターゲットの描画に従う",
+          userMessage:
+            "罫線を太くしたとき、太さが線のどちら側に広がるかは出力先によってわずかに異なることがあります。",
+        },
+        frameStyle: {
+          level: "approximated",
+          note: "pdfme のスキーマは破線指定を持たないため、4辺を線分列に分解して近似する（角でパターンが継続しない）",
+          userMessage:
+            "表の外枠を破線・点線にすると、角の部分で破線の模様がつながらないことがあります。",
+        },
+        gridStyle: {
+          level: "approximated",
+          note: "pdfme のスキーマは破線指定を持たないため、短い実線線分の列へ静的展開して近似する（パターン端数・位相はターゲット近似）",
+          userMessage:
+            "表の中の罫線を破線・点線にすると、破線の間隔が出力先によってわずかに変わることがあります。",
+        },
       },
     },
     image: {

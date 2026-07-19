@@ -59,6 +59,20 @@ export const reportlabCompatMatrix = {
       },
       attributes: {
         stripeColor: { level: "supported" },
+        frameStyle: { level: "supported" },
+        gridStyle: { level: "supported" },
+        frameWidth: {
+          level: "approximated",
+          note: "枠線の太さ分の塗りの位置は IR が規定せず、ターゲットの描画に従う",
+          userMessage:
+            "罫線を太くしたとき、太さが線のどちら側に広がるかは出力先によってわずかに異なることがあります。",
+        },
+        gridWidth: {
+          level: "approximated",
+          note: "太さ分の塗りが基準線のどちら側に付くかは IR が規定せず、ターゲットの描画に従う",
+          userMessage:
+            "罫線を太くしたとき、太さが線のどちら側に広がるかは出力先によってわずかに異なることがあります。",
+        },
       },
     },
     image: {

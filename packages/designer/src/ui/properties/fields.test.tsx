@@ -165,6 +165,21 @@ describe("NumberField", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(5);
   });
 
+  it("precision 0.05 は10の累乗でない刻みでも表示と量子化が一致し、無編集の blur では commit しない", () => {
+    const onCommit = vi.fn();
+    render(
+      <NumberField
+        label="gridWidth"
+        value={0.25}
+        precision={0.05}
+        onCommit={onCommit}
+      />,
+    );
+    expect(input().value).toBe("0.25");
+    blur(input());
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
   it("外部変更（undo 等）でドラフトを破棄して追従する", () => {
     render(
       <NumberField label="x" value={12} precision={0.1} onCommit={() => {}} />,
