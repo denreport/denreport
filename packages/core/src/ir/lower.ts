@@ -1,3 +1,4 @@
+import { getMessages, type MessageLocale } from "../i18n/messages";
 import {
   PAGE_COUNT_MAX,
   TABLE_CELL_PADDING_X,
@@ -444,9 +445,16 @@ function lowerTableChunk(
  * consumes. Fails with C01/C02 data errors, C03 (more than one table
  * expanding to multiple pages), or C04 (total pages over PAGE_COUNT_MAX).
  * Assumes `document` is the output of parseIr and already passed validateIr;
- * the S/M rule groups are not re-checked.
+ * the S/M rule groups are not re-checked. `options.locale` controls the
+ * language of C03/C04 error messages (default "ja"); C01/C02 messages come
+ * from analyzeData and are always Japanese.
  */
-export function lowerIr(document: IrDocument, data: IrData): LowerIrResult {
+export function lowerIr(
+  document: IrDocument,
+  data: IrData,
+  options?: { readonly locale?: MessageLocale },
+): LowerIrResult {
+  const m = getMessages(options?.locale).lower;
   const resolved = resolveFootnotes(document);
   const problems = analyzeData(resolved, data);
   const dataErrors = problems
@@ -471,11 +479,7 @@ export function lowerIr(document: IrDocument, data: IrData): LowerIrResult {
   const c03Errors = multiPageEntries
     .slice(1)
     .map((entry) =>
-      err(
-        "C03",
-        `elements[${entry.index}]`,
-        "2ページ以上に展開される表が複数あります",
-      ),
+      err("C03", `elements[${entry.index}]`, m.multiplePagingTables),
     );
 
   const pageCount = Math.max(
@@ -484,13 +488,7 @@ export function lowerIr(document: IrDocument, data: IrData): LowerIrResult {
   );
   const c04Errors =
     pageCount > PAGE_COUNT_MAX
-      ? [
-          err(
-            "C04",
-            "",
-            `展開後の総ページ数 ${pageCount} が上限 ${PAGE_COUNT_MAX} を超えています`,
-          ),
-        ]
+      ? [err("C04", "", m.pageCountExceeded(pageCount, PAGE_COUNT_MAX))]
       : [];
 
   const errors = [...dataErrors, ...c03Errors, ...c04Errors];
