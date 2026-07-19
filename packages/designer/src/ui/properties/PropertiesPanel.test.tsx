@@ -346,6 +346,14 @@ describe("PropertiesPanel の振り分け", () => {
     expect(store.canUndo()).toBe(false);
   });
 
+  it("適格請求書チェックのラベルは「チェック」部分が単語内分断されないよう nowrap で囲む", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    const label = container.querySelector(".apx-frow-label");
+    expect(label?.textContent).toBe("記載事項チェック");
+    expect(label?.querySelector(".apx-nowrap")?.textContent).toBe("チェック");
+  });
+
   it("flex 子の選択では x / y / ページを出さず、注記を表示する", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);

@@ -111,7 +111,9 @@ export function DocumentProperties(props: {
       <section className="apx-sect">
         <div className="apx-sect-h">適格請求書</div>
         <div className="apx-frow">
-          <span className="apx-frow-label">記載事項チェック</span>
+          <span className="apx-frow-label">
+            記載事項<span className="apx-nowrap">チェック</span>
+          </span>
           <label className="apx-check" htmlFor={docTypeCheckId}>
             <input
               id={docTypeCheckId}
