@@ -1,6 +1,8 @@
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 
 let container: HTMLElement;
@@ -69,5 +71,22 @@ describe("ShortcutsDialog", () => {
       }),
     );
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("en の MessagesContext では文言が英語で描画される", async () => {
+    root.render(
+      <MessagesContext.Provider value={en}>
+        <ShortcutsDialog onClose={() => {}} />
+      </MessagesContext.Provider>,
+    );
+    await vi.waitFor(() => {
+      if (container.querySelector(".apx-dialog") === null) {
+        throw new Error("ダイアログが未描画");
+      }
+    });
+    const dialog = container.querySelector<HTMLElement>(".apx-dialog");
+    expect(dialog?.getAttribute("aria-label")).toBe("Keyboard shortcuts");
+    expect(dialog?.textContent).toContain("Duplicate");
+    expect(buttonByText("Close")).not.toBeUndefined();
   });
 });

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import type { SampleScenarioSet } from "../../state/sample-scenarios";
 import { useDraftValue } from "../properties/useDraftValue";
 
@@ -13,6 +14,7 @@ export function ScenarioBar(props: {
   readonly onRename: (name: string) => void;
 }): ReactNode {
   const { scenarios, onSelect, onAdd, onDuplicate, onRemove, onRename } = props;
+  const m = useMessages().scenarios;
   const activeName =
     scenarios.items.find((item) => item.id === scenarios.activeId)?.name ?? "";
   const nameHandlers = useDraftValue(activeName, (raw) => {
@@ -25,7 +27,7 @@ export function ScenarioBar(props: {
     <div className="apx-scenariobar">
       <span className="apx-field apx-scenariobar-select">
         <select
-          aria-label="サンプルデータのシナリオ"
+          aria-label={m.selectAriaLabel}
           value={scenarios.activeId}
           onChange={(e) => onSelect(e.currentTarget.value)}
         >
@@ -38,7 +40,7 @@ export function ScenarioBar(props: {
       </span>
       <span className="apx-field apx-scenariobar-name">
         <input
-          aria-label="シナリオ名"
+          aria-label={m.nameAriaLabel}
           value={nameHandlers.draft}
           onChange={(e) => nameHandlers.onChange(e.currentTarget.value)}
           onBlur={nameHandlers.onBlur}
@@ -50,14 +52,14 @@ export function ScenarioBar(props: {
         className="apx-btn apx-btn-secondary"
         onClick={onAdd}
       >
-        追加
+        {m.add}
       </button>
       <button
         type="button"
         className="apx-btn apx-btn-secondary"
         onClick={onDuplicate}
       >
-        複製
+        {m.duplicate}
       </button>
       <button
         type="button"
@@ -65,7 +67,7 @@ export function ScenarioBar(props: {
         disabled={scenarios.items.length === 1}
         onClick={onRemove}
       >
-        削除
+        {m.remove}
       </button>
     </div>
   );

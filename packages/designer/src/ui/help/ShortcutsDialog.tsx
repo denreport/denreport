@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
+import type { Messages } from "../../i18n/messages";
 import { Dialog } from "../dialog/Dialog";
 
 interface ShortcutItem {
@@ -11,60 +13,60 @@ interface ShortcutGroup {
   readonly items: readonly ShortcutItem[];
 }
 
-const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
-  {
-    heading: "編集",
-    items: [
-      { keys: "Ctrl/⌘+Z", description: "元に戻す" },
-      { keys: "Ctrl/⌘+Shift+Z、Ctrl/⌘+Y", description: "やり直す" },
-      { keys: "Ctrl/⌘+C", description: "コピー" },
-      { keys: "Ctrl/⌘+X", description: "切り取り" },
-      { keys: "Ctrl/⌘+V", description: "貼り付け" },
-      { keys: "Ctrl/⌘+D", description: "複製" },
-      { keys: "Ctrl/⌘+G", description: "グループ化" },
-      { keys: "Ctrl/⌘+Shift+G", description: "グループ解除" },
-      { keys: "Delete、Backspace", description: "選択要素を削除" },
-    ],
-  },
-  {
-    heading: "選択・移動",
-    items: [
-      { keys: "Ctrl/⌘+A", description: "すべての要素を選択" },
-      {
-        keys: "矢印キー",
-        description:
-          "選択要素を移動（スナップ有効時5mm、無効時1mm、Shift併用で0.1mm）",
-      },
-      { keys: "Escape", description: "選択解除・操作のキャンセル" },
-      { keys: "V", description: "選択モードに切り替え" },
-      { keys: "H", description: "移動（パン）モードに切り替え" },
-      { keys: "Space 長押し", description: "一時的にパンモードで操作" },
-    ],
-  },
-  {
-    heading: "表示",
-    items: [
-      { keys: "Ctrl/⌘+「+」", description: "ズームイン" },
-      { keys: "Ctrl/⌘+「−」", description: "ズームアウト" },
-    ],
-  },
-  {
-    heading: "ファイル",
-    items: [{ keys: "Ctrl/⌘+S", description: "保存" }],
-  },
-  {
-    heading: "ヘルプ",
-    items: [{ keys: "?、F1", description: "このショートカット一覧を開く" }],
-  },
-];
+function shortcutGroups(m: Messages["shortcuts"]): readonly ShortcutGroup[] {
+  return [
+    {
+      heading: m.groups.edit,
+      items: [
+        { keys: "Ctrl/⌘+Z", description: m.items.undo },
+        { keys: "Ctrl/⌘+Shift+Z、Ctrl/⌘+Y", description: m.items.redo },
+        { keys: "Ctrl/⌘+C", description: m.items.copy },
+        { keys: "Ctrl/⌘+X", description: m.items.cut },
+        { keys: "Ctrl/⌘+V", description: m.items.paste },
+        { keys: "Ctrl/⌘+D", description: m.items.duplicate },
+        { keys: "Ctrl/⌘+G", description: m.items.group },
+        { keys: "Ctrl/⌘+Shift+G", description: m.items.ungroup },
+        { keys: "Delete、Backspace", description: m.items.deleteSelection },
+      ],
+    },
+    {
+      heading: m.groups.selectMove,
+      items: [
+        { keys: "Ctrl/⌘+A", description: m.items.selectAll },
+        { keys: "矢印キー", description: m.items.moveSelection },
+        { keys: "Escape", description: m.items.deselectOrCancel },
+        { keys: "V", description: m.items.switchToSelect },
+        { keys: "H", description: m.items.switchToPan },
+        { keys: "Space 長押し", description: m.items.tempPan },
+      ],
+    },
+    {
+      heading: m.groups.view,
+      items: [
+        { keys: "Ctrl/⌘+「+」", description: m.items.zoomIn },
+        { keys: "Ctrl/⌘+「−」", description: m.items.zoomOut },
+      ],
+    },
+    {
+      heading: m.groups.file,
+      items: [{ keys: "Ctrl/⌘+S", description: m.items.save }],
+    },
+    {
+      heading: m.groups.help,
+      items: [{ keys: "?、F1", description: m.items.openShortcuts }],
+    },
+  ];
+}
 
 export function ShortcutsDialog(props: {
   readonly onClose: () => void;
 }): ReactNode {
   const { onClose } = props;
+  const messages = useMessages();
+  const m = messages.shortcuts;
   return (
     <Dialog
-      title="キーボードショートカット"
+      title={m.title}
       onClose={onClose}
       footer={
         <button
@@ -72,11 +74,11 @@ export function ShortcutsDialog(props: {
           className="apx-btn apx-btn-secondary"
           onClick={onClose}
         >
-          閉じる
+          {messages.dialog.close}
         </button>
       }
     >
-      {SHORTCUT_GROUPS.map((group) => (
+      {shortcutGroups(m).map((group) => (
         <section key={group.heading} className="apx-shortcuts-group">
           <h3 className="apx-shortcuts-h">{group.heading}</h3>
           <table className="apx-shortcuts-table">
