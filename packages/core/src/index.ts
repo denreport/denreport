@@ -75,6 +75,7 @@ export type {
   IrFont,
   IrFootnoteNote,
   IrFootnotes,
+  IrGroup,
   IrImageElement,
   IrLineElement,
   IrNamedStyle,

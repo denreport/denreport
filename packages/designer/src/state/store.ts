@@ -4,6 +4,7 @@ import type { ClipboardState } from "./clipboard";
 import type { EnvelopePresetId } from "./envelope-presets";
 import type { RegisteredFont } from "./fonts";
 import type { ElementGroup } from "./groups";
+import { livingGroups } from "./groups";
 import type { CustomGuide } from "./guides";
 import type { HistoryEntry } from "./history";
 import { History } from "./history";
@@ -70,7 +71,7 @@ export class EditorStore {
   }
 
   /** 履歴をクリアして文書を置き換える。選択も外れ、dirty は下りる。
-      グループは文書ごとに再利用される id との偶発一致を避けるため空にリセットする */
+      グループは document.groups から復元する（生存フィルタ適用。キー省略時は空） */
   replaceDocument(document: IrDocument): void {
     this.#history.clear();
     this.#setState({
@@ -80,7 +81,10 @@ export class EditorStore {
       validationErrors: validateIr(document),
       validationWarnings: checkQualifiedInvoice(document),
       dirty: false,
-      groups: [],
+      groups:
+        document.groups !== undefined
+          ? livingGroups(document.groups, document)
+          : [],
     });
   }
 

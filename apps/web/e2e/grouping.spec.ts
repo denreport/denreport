@@ -163,3 +163,36 @@ test("要素のグループ化: クリック選択・移動・複製・解除", 
   await page.locator('.apx-el[data-apx-id="text3"]').click();
   await expect(props.locator(".apx-props-id")).toHaveText("text3");
 });
+
+test("要素のグループ化: 保存・リロードを跨いでグループが維持される", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const props = page.getByRole("complementary", { name: "プロパティ" });
+
+  await dragFromPalette(page, TEXT_PALETTE, { x: 60, y: 60 });
+  await expect(page.locator('.apx-el[data-apx-id="text1"]')).toBeVisible();
+  await dragFromPalette(page, TEXT_PALETTE, { x: 120, y: 60 });
+  await expect(page.locator('.apx-el[data-apx-id="text2"]')).toBeVisible();
+
+  await page
+    .locator('.apx-el[data-apx-id="text1"]')
+    .click({ modifiers: ["Shift"] });
+  await page.keyboard.press("ControlOrMeta+g");
+
+  // グループ化自体は commit しないため、自動保存を発火させるには文書変更を1回挟む必要がある
+  const before = await waitForElementXY(page, "text1");
+  const dragStart = await elementCenterMm(page, "text1");
+  await dragOnCanvas(page, dragStart, { x: dragStart.x + 5, y: dragStart.y });
+  await waitForXChange(page, "text1", before.x);
+
+  await page.waitForFunction(() =>
+    (localStorage.getItem("denreport-designer.ir") ?? "").includes('"groups"'),
+  );
+
+  await page.reload();
+
+  await clickBackground(page);
+  await page.locator('.apx-el[data-apx-id="text1"]').click();
+  await expect(props.locator(".apx-props-id")).toHaveText("2 個の要素を選択中");
+});

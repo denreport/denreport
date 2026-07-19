@@ -3,6 +3,7 @@ import { IR_VERSION, parseIr } from "@denreport/core";
 import { createElement } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
+import { embedGroups } from "../state/groups";
 import type { SampleScenarioSet } from "../state/sample-scenarios";
 import {
   parseSampleDataStorage,
@@ -133,10 +134,12 @@ export class Designer {
     return { ok: true };
   }
 
-  /** 現在の文書を IR v1 JSON 文字列として返す（正規化済み = 任意属性のデフォルト明示済み） */
+  /** 現在の文書を IR v1 JSON 文字列として返す（正規化済み = 任意属性のデフォルト明示済み）。
+      グループ（生存分のみ）を groups キーへ書き込んだうえで直列化する */
   saveIr(): string {
     this.assertAlive();
-    const json = JSON.stringify(this.store.getState().document);
+    const state = this.store.getState();
+    const json = JSON.stringify(embedGroups(state.document, state.groups));
     this.store.markSaved();
     return json;
   }

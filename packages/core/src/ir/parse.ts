@@ -9,6 +9,7 @@ import type {
   IrFlexAlign,
   IrFlexDirection,
   IrFootnotes,
+  IrGroup,
   IrNamedStyle,
   IrOrientation,
   IrPage,
@@ -68,7 +69,12 @@ function isNumber(value: unknown): value is number {
 }
 
 const ROOT_REQUIRED_KEYS = ["version", "page", "font", "elements"] as const;
-const ROOT_OPTIONAL_KEYS = ["styles", "docType", "footnotes"] as const;
+const ROOT_OPTIONAL_KEYS = [
+  "styles",
+  "docType",
+  "footnotes",
+  "groups",
+] as const;
 const ROOT_KEYS = [...ROOT_REQUIRED_KEYS, ...ROOT_OPTIONAL_KEYS] as const;
 const STYLE_ATTR_KEYS = [
   "fontSize",
@@ -103,6 +109,7 @@ function collectSyntaxErrors(raw: unknown): IrError[] {
   if ("elements" in raw) errors.push(...checkElementsArray(raw.elements));
   if ("docType" in raw) errors.push(...checkDocType(raw.docType));
   if ("footnotes" in raw) errors.push(...checkFootnotes(raw.footnotes));
+  if ("groups" in raw) errors.push(...checkGroups(raw.groups));
   return errors;
 }
 
@@ -329,6 +336,41 @@ function checkFootnotes(value: unknown): IrError[] {
           err("F01", `${notePath}.${key}`, `未知のキー "${key}" です`),
         );
       }
+    }
+  });
+  return errors;
+}
+
+const GROUP_ALLOWED_KEYS = ["id", "memberIds"] as const;
+
+function checkGroups(value: unknown): IrError[] {
+  if (!Array.isArray(value)) {
+    return [err("S15", "groups", "groups は配列である必要があります")];
+  }
+  const errors: IrError[] = [];
+  value.forEach((item, i) => {
+    const path = `groups[${i}]`;
+    if (!isPlainObject(item)) {
+      errors.push(
+        err("S15", path, "groups の要素はオブジェクトである必要があります"),
+      );
+      return;
+    }
+    for (const key of Object.keys(item)) {
+      if (!(GROUP_ALLOWED_KEYS as readonly string[]).includes(key)) {
+        errors.push(err("S15", `${path}.${key}`, `未知のキー "${key}" です`));
+      }
+    }
+    checkRequiredType(errors, item, "id", path, "S15", "string");
+    const memberIds = item.memberIds;
+    if (!Array.isArray(memberIds) || !memberIds.every(isString)) {
+      errors.push(
+        err(
+          "S15",
+          `${path}.memberIds`,
+          "memberIds は string の配列である必要があります",
+        ),
+      );
     }
   });
   return errors;
@@ -930,6 +972,7 @@ function normalize(raw: Record<string, unknown>): IrDocument {
       ? normalizeStyles(raw.styles as Record<string, unknown>[])
       : undefined;
   const footnotesRaw = raw.footnotes as Record<string, unknown> | undefined;
+  const groupsRaw = raw.groups as Record<string, unknown>[] | undefined;
   return {
     version: raw.version as string,
     page,
@@ -940,7 +983,16 @@ function normalize(raw: Record<string, unknown>): IrDocument {
     ...(footnotesRaw !== undefined
       ? { footnotes: normalizeFootnotes(footnotesRaw) }
       : {}),
+    ...(groupsRaw !== undefined ? { groups: normalizeGroups(groupsRaw) } : {}),
   };
+}
+
+// groups の全属性は必須のため、S15 通過後はデフォルト補完なしでそのまま写す
+function normalizeGroups(raw: Record<string, unknown>[]): IrGroup[] {
+  return raw.map((item) => ({
+    id: item.id as string,
+    memberIds: item.memberIds as string[],
+  }));
 }
 
 // footnotes の全属性は必須のため、S/F01 通過後はデフォルト補完なしでそのまま写す

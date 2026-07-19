@@ -20,6 +20,7 @@ IR（Intermediate Representation）は、帳票レイアウトを表す単一の
 - `page` — 用紙（2節）。全ページ共通の寸法。文書のページ数は IR 単体では確定せず、
   データ結合時に表の展開で決まる（4.3節）。
 - `footnotes` — 脚注（任意。3.10節）。
+- `groups` — 要素のグループ化（任意。3.13節）。
 - `font` — 文書全体で使う論理フォント名。`font: { name: string }`。`name` は `id` と同じ
   識別子パターン。文書全体で1フォント（要素単位のフォント切替は非対応）。ファイルパス・
   バイナリは IR に含めない。論理名から実フォントへの解決・埋め込み・形式検証は
@@ -318,6 +319,19 @@ ReportLab 側のいずれも脚注固有の分岐を持たずに追随する。�
 
 領域（`x`, `y` 起点、`w` × `h`）に内接する楕円を描く。`style`（3.9節）は参照できない。
 
+### 3.13 groups — 要素のグループ化（ルート任意キー、要素ではない）
+
+編集 UI がトップレベル要素を束ね、クリック一回で全メンバーを選択できるようにするための
+メタデータ。要素ではなく `IrDocument` のルート任意キーであり、`elements` 配列には含まれない。
+
+| 属性 | 型 | 必須 | 説明 |
+|---|---|---|---|
+| `id` | string | 必須 | グループの識別子。`elements[].id` とは別の名前空間で、文書内一意の制約はない |
+| `memberIds` | string[] | 必須 | 束ねるトップレベル要素の `id`。文書に実在しない id を含んでいてもよく、生存判定は読み込み側の責務（本仕様は検証しない） |
+
+`resolveFlex`・`lowerIr`・ReportLab 側の書き出し・6節の検証規則はいずれも `groups` を参照しない。
+編集 UI 専用の表示・選択支援であり、描画・書き出し結果には一切影響しない。
+
 ## 4. バージョン番号と後方互換の方針
 
 ### 4.1 表現
@@ -476,7 +490,7 @@ flex の子はコンテナの配列位置に入る）。チャンク内部の描
 | ID | 規則 |
 |---|---|
 | S01 | 入力が JSON として構文解析できる |
-| S02 | ルートはオブジェクトで、キーは `version` `page` `font` `elements` の4つが必須、`styles` `docType` `footnotes` が任意（それ以外の未知キー拒否） |
+| S02 | ルートはオブジェクトで、キーは `version` `page` `font` `elements` の4つが必須、`styles` `docType` `footnotes` `groups` が任意（それ以外の未知キー拒否） |
 | S03 | `version` は `^1\.(0\|[1-9][0-9]*)$` に一致する文字列で、minor が実装のサポート値以下。major ≠ 1 または新しすぎる minor は専用メッセージで拒否 |
 | S04 | `page` は `{ width, height }`（両方 number・未知キー拒否） |
 | S05 | `font` は `{ name }`（string・未知キー拒否） |
@@ -488,6 +502,7 @@ flex の子はコンテナの配列位置に入る）。チャンク内部の描
 | S12 | image の `src` が data URI 構文（`data:<mediatype>;base64,<payload>`）に一致する |
 | S13 | flex の `children` は配列で、各子は table 以外の要素オブジェクト（入れ子の flex を含め再帰的に S 群を適用する） |
 | S14 | `styles` は配列で、各要素は `name`（string）と `attrs`（定義済みキーのみ・値の型が正しいオブジェクト。`align` の enum 判定を含む）からなる（3.9節） |
+| S15 | `groups` は配列で、各要素は `id`（string）と `memberIds`（string の配列）からなる未知キー拒否のオブジェクト（3.13節） |
 
 S11 は欠番（かつて text の `text`/`bind` 排他を定義していたが、`bind` の廃止に伴い規則ごと削除し、
 番号は再割当しない）。text の `bind` は S09（未知の属性）で拒否され、メッセージが
@@ -646,6 +661,7 @@ export interface IrFootnotes {
   readonly fontSize: number; readonly lineHeight: number; readonly pages: IrPages;
   readonly notes: readonly IrFootnoteNote[];
 }
+export interface IrGroup { readonly id: string; readonly memberIds: readonly string[] }
 export interface IrDocument {
   readonly version: string;
   readonly page: IrPage;
@@ -654,10 +670,11 @@ export interface IrDocument {
   readonly elements: readonly IrElement[];
   readonly docType?: IrDocType;            // 任意。"qualifiedInvoice" のみ（6節 Q群）
   readonly footnotes?: IrFootnotes;         // 任意（3.10節）。全属性必須・デフォルト補完なし
+  readonly groups?: readonly IrGroup[];     // 任意（3.13節）。編集 UI 専用、描画・書き出しに影響しない
 }
 
 // errors.ts
-export type IrRuleId = "S01" | /* ... */ | "S14" | "M01" | /* ... */ | "M18" | "C01" | "C02" | "C03" | "C04" | "Q01"
+export type IrRuleId = "S01" | /* ... */ | "S15" | "M01" | /* ... */ | "M18" | "C01" | "C02" | "C03" | "C04" | "Q01"
   | "F01" | "F02" | "F03" | "F04" | "F05" | "F06";
 export interface IrError { readonly rule: IrRuleId; readonly path: string; readonly message: string }
 

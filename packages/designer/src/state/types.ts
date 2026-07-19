@@ -41,6 +41,7 @@ export interface EditorState {
   /** 選択中の封筒窓プリセット。文書・履歴・dirty とは独立。永続化しない */
   readonly envelopePresetId: EnvelopePresetId | null;
   /** クリック1回で全メンバーを選択できる要素の束ね。文書・履歴・dirty とは独立
-      （fontRegistry と同格）。IR には持ち込まず saveIr で直列化しない */
+      （fontRegistry と同格。group/ungroup は commit しない）。saveIr は生存分を
+      document.groups へ書き込んで直列化し、replaceDocument はそこから復元する */
   readonly groups: readonly ElementGroup[];
 }

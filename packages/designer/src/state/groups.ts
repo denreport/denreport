@@ -28,6 +28,23 @@ export function livingGroups(
   return living;
 }
 
+/** 直列化用に document へ生存グループを書き込む。生存グループが無ければキーごと外す
+    （groups: [] を残さない） */
+export function embedGroups(
+  document: IrDocument,
+  groups: readonly ElementGroup[],
+): IrDocument {
+  const living = livingGroups(groups, document);
+  if (living.length === 0) {
+    if (document.groups === undefined) {
+      return document;
+    }
+    const { groups: _groups, ...rest } = document;
+    return rest;
+  }
+  return { ...document, groups: living };
+}
+
 /** id が属する生存グループ（なければ null） */
 export function groupContaining(
   groups: readonly ElementGroup[],

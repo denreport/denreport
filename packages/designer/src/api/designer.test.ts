@@ -344,17 +344,40 @@ describe("IR の入出力", () => {
     expect(reloaded.saveIr()).toBe(saved);
   });
 
-  it("saveIr の JSON にグループ由来のキーが現れない", () => {
+  it("saveIr は生存グループを groups キーへ直列化する", () => {
     const { designer } = mount({ initialIr: ROUND_TRIP_IR });
     storeOf(designer).setGroups([
       { id: "group1", memberIds: ["title", "customer"] },
     ]);
-    const json = designer.saveIr();
-    expect(json).not.toContain("group1");
-    expect(json).not.toContain("groups");
+    const parsed = JSON.parse(designer.saveIr()) as IrDocument;
+    expect(parsed.groups).toEqual([
+      { id: "group1", memberIds: ["title", "customer"] },
+    ]);
   });
 
-  it("loadIr は旧グループをリセットする", () => {
+  it("生存メンバーが2未満のグループは groups キーごと省かれる", () => {
+    const { designer } = mount({ initialIr: ROUND_TRIP_IR });
+    storeOf(designer).setGroups([{ id: "group1", memberIds: ["title"] }]);
+    const parsed = JSON.parse(designer.saveIr()) as IrDocument;
+    expect(parsed).not.toHaveProperty("groups");
+  });
+
+  it("saveIr → loadIr → saveIr でグループが同値に復元される", () => {
+    const { designer } = mount({ initialIr: ROUND_TRIP_IR });
+    storeOf(designer).setGroups([
+      { id: "group1", memberIds: ["title", "customer"] },
+    ]);
+    const saved = designer.saveIr();
+
+    const { designer: reloaded } = mount();
+    expect(reloaded.loadIr(saved)).toEqual({ ok: true });
+    expect(storeOf(reloaded).getState().groups).toEqual([
+      { id: "group1", memberIds: ["title", "customer"] },
+    ]);
+    expect(reloaded.saveIr()).toBe(saved);
+  });
+
+  it("loadIr は読み込んだ IR に groups が無ければ旧グループをリセットする", () => {
     const { designer } = mount({ initialIr: VALID_IR });
     const store = storeOf(designer);
     store.setGroups([{ id: "group1", memberIds: ["title"] }]);

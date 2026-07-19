@@ -258,6 +258,16 @@ export interface IrFootnotes {
   readonly notes: readonly IrFootnoteNote[];
 }
 
+/**
+ * A named subset of top-level element ids, used by editing UIs to select and
+ * move all members with one click. Not an element and not read by resolveFlex,
+ * lowerIr, or any target exporter — a display/editing convenience only.
+ */
+export interface IrGroup {
+  readonly id: string;
+  readonly memberIds: readonly string[];
+}
+
 /** A parsed and normalized IR document, as returned by parseIr. */
 export interface IrDocument {
   readonly version: string;
@@ -267,4 +277,5 @@ export interface IrDocument {
   readonly elements: readonly IrElement[];
   readonly docType?: IrDocType;
   readonly footnotes?: IrFootnotes;
+  readonly groups?: readonly IrGroup[];
 }

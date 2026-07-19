@@ -26,6 +26,7 @@ export type IrRuleId =
   | "S12"
   | "S13"
   | "S14"
+  | "S15"
   | "M01"
   | "M02"
   | "M03"
@@ -68,7 +69,7 @@ export interface IrError {
 
 export const IR_RULES: Readonly<Record<IrRuleId, string>> = {
   S01: "入力が JSON として構文解析できる",
-  S02: "ルートはオブジェクトで、必須キーは version/page/font/elements の4つ、任意キーは docType・footnotes（未知キー拒否）",
+  S02: "ルートはオブジェクトで、必須キーは version/page/font/elements の4つ、任意キーは docType・footnotes・groups（未知キー拒否）",
   S03: "version は仕様のバージョン文字列で、実装がサポートする minor 以下である",
   S04: "page は { width, height }（number・未知キー拒否）",
   S05: "font は { name }（string・未知キー拒否）",
@@ -88,6 +89,7 @@ export const IR_RULES: Readonly<Record<IrRuleId, string>> = {
   S12: "image の src が data URI 構文に一致する",
   S13: "flex の children は配列で、各子は table 以外の要素である",
   S14: "styles は配列で、各要素は name（string）と attrs（定義済みキーのみ・型が正しいオブジェクト）からなる",
+  S15: "groups は配列で、各要素は id（string）と memberIds（string の配列）からなる（未知キー拒否）",
   M01: "id が識別子パターンに一致し、flex の子孫を含む文書内で一意である",
   M02: "全要素が用紙内に収まる",
   M03: "寸法が正である（gap・rect / ellipse の borderWidth のみ 0 以上）",

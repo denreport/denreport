@@ -393,11 +393,35 @@ describe("EditorStore のグループ", () => {
     expect(store.getState().dirty).toBe(false);
   });
 
-  it("replaceDocument でグループが空になる", () => {
+  it("replaceDocument は新文書に groups が無ければグループを空にする", () => {
     const store = new EditorStore(makeDocument());
     store.setGroups([{ id: "group1", memberIds: ["a", "b"] }]);
 
     store.replaceDocument(makeDocument([textElement("t1", 10)]));
+    expect(store.getState().groups).toEqual([]);
+  });
+
+  it("replaceDocument は document.groups からグループを復元する", () => {
+    const store = new EditorStore(makeDocument());
+    const document: IrDocument = {
+      ...makeDocument([textElement("t1", 10), textElement("t2", 60)]),
+      groups: [{ id: "group1", memberIds: ["t1", "t2"] }],
+    };
+
+    store.replaceDocument(document);
+    expect(store.getState().groups).toEqual([
+      { id: "group1", memberIds: ["t1", "t2"] },
+    ]);
+  });
+
+  it("replaceDocument は生存メンバー2未満のグループを復元しない", () => {
+    const store = new EditorStore(makeDocument());
+    const document: IrDocument = {
+      ...makeDocument([textElement("t1", 10)]),
+      groups: [{ id: "group1", memberIds: ["t1", "ghost"] }],
+    };
+
+    store.replaceDocument(document);
     expect(store.getState().groups).toEqual([]);
   });
 

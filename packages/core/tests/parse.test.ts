@@ -1084,6 +1084,83 @@ describe("parseIr", () => {
     });
   });
 
+  describe("groups (S02, S15)", () => {
+    function withGroups(groups: Raw): Raw {
+      const doc = baseDoc();
+      doc.groups = groups;
+      return doc;
+    }
+
+    const VALID_GROUPS: Raw = [{ id: "group1", memberIds: ["t1", "l1"] }];
+
+    it("accepts a document with a valid groups array", () => {
+      expect(parse(withGroups(VALID_GROUPS)).ok).toBe(true);
+    });
+
+    it("accepts a document without groups (back-compat)", () => {
+      const doc = baseDoc();
+      expect("groups" in doc).toBe(false);
+      expect(parse(doc).ok).toBe(true);
+    });
+
+    it("accepts an empty groups array", () => {
+      expect(parse(withGroups([])).ok).toBe(true);
+    });
+
+    it("rejects a non-array groups", () => {
+      expectRule(parse(withGroups({ id: "group1" })), "S15", "groups");
+    });
+
+    it("rejects a non-object group entry", () => {
+      expectRule(parse(withGroups(["nope"])), "S15", "groups[0]");
+    });
+
+    it("rejects a group entry with an unknown key", () => {
+      expectRule(
+        parse(withGroups([{ id: "group1", memberIds: ["t1"], extra: 1 }])),
+        "S15",
+        "groups[0].extra",
+      );
+    });
+
+    it("rejects a non-string id", () => {
+      expectRule(
+        parse(withGroups([{ id: 1, memberIds: ["t1"] }])),
+        "S15",
+        "groups[0].id",
+      );
+    });
+
+    it("rejects a non-array memberIds", () => {
+      expectRule(
+        parse(withGroups([{ id: "group1", memberIds: "t1" }])),
+        "S15",
+        "groups[0].memberIds",
+      );
+    });
+
+    it("rejects a memberIds array with a non-string entry", () => {
+      expectRule(
+        parse(withGroups([{ id: "group1", memberIds: ["t1", 2] }])),
+        "S15",
+        "groups[0].memberIds",
+      );
+    });
+
+    it("passes groups through normalization unchanged", () => {
+      const result = parse(withGroups(VALID_GROUPS));
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.document.groups).toEqual(VALID_GROUPS);
+    });
+
+    it("rejects an unknown root key even when groups is present", () => {
+      const doc = withGroups(VALID_GROUPS);
+      doc.extra = 1;
+      expectRule(parse(doc), "S02", "extra");
+    });
+  });
+
   describe("multiple violations", () => {
     it("reports every violation, not just the first", () => {
       const doc = baseDoc();

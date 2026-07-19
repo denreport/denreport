@@ -4,6 +4,7 @@ import type { ElementGroup } from "./groups";
 import {
   createGroupFrom,
   dissolveGroupsOf,
+  embedGroups,
   expandIdsToGroups,
   groupContaining,
   livingGroups,
@@ -112,6 +113,40 @@ describe("livingGroups", () => {
     const doc = makeDocument(["a"]);
     livingGroups(groups, doc);
     expect(groups).toEqual([{ id: "group1", memberIds: ["a", "ghost"] }]);
+  });
+});
+
+describe("embedGroups", () => {
+  it("生存グループを document.groups へ書き込む", () => {
+    const groups: readonly ElementGroup[] = [
+      { id: "group1", memberIds: ["a", "b"] },
+    ];
+    const doc = makeDocument(["a", "b"]);
+    expect(embedGroups(doc, groups).groups).toEqual([
+      { id: "group1", memberIds: ["a", "b"] },
+    ]);
+  });
+
+  it("生存メンバー2未満のグループは含めない", () => {
+    const groups: readonly ElementGroup[] = [
+      { id: "group1", memberIds: ["a", "ghost"] },
+    ];
+    const doc = makeDocument(["a"]);
+    expect(embedGroups(doc, groups)).not.toHaveProperty("groups");
+  });
+
+  it("生存グループが無ければ既存の document.groups キーごと外す", () => {
+    const groups: readonly ElementGroup[] = [];
+    const doc: IrDocument = {
+      ...makeDocument(["a"]),
+      groups: [{ id: "stale", memberIds: ["a", "b"] }],
+    };
+    expect(embedGroups(doc, groups)).not.toHaveProperty("groups");
+  });
+
+  it("groups キーが元々無く生存グループも無ければ同じ参照を返す", () => {
+    const doc = makeDocument(["a"]);
+    expect(embedGroups(doc, [])).toBe(doc);
   });
 });
 
