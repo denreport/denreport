@@ -1,4 +1,5 @@
 import type { CharWidthEm, IrFont, IrFontSlot } from "@denreport/core";
+import { getMessages, type MessageLocale } from "../i18n/messages";
 import { detectFontFormat } from "./format";
 import { readAscentPerEm } from "./metrics";
 import type { FontIssue } from "./validate";
@@ -38,25 +39,24 @@ export const FONT_SLOTS: readonly IrFontSlot[] = [
   "boldItalic",
 ];
 
-export const FONT_METRICS_ISSUE_MESSAGE =
-  "フォントの計量（head / hhea テーブル）を読み取れないため、テキストのベースライン位置を確定できません。別の TTF フォントを使用してください。";
-export const FONT_WIDTH_ISSUE_MESSAGE =
-  "フォントの字幅（cmap / hmtx テーブル）を読み取れないため、テキストの折り返し・均等割付を計算できません。別の TTF フォントを使用してください。";
-
 /**
  * Runs every slot of `fonts` through validateFont and metrics reading,
  * returning per-slot metrics or the FontIssues (form check first, then
- * head/hhea, then cmap/hmtx — at most one issue per slot) that prevent export.
+ * head/hhea, then cmap/hmtx — at most one issue per slot) that prevent
+ * export. `options.locale` (default "ja") selects the message language.
  */
 export function resolveFontSetData(
   fonts: FontSetData,
+  options?: { readonly locale?: MessageLocale },
 ): ResolveFontSetDataResult {
+  const locale = options?.locale ?? "ja";
+  const messages = getMessages(locale);
   const issues: FontIssue[] = [];
   const slots = new Map<IrFontSlot, ResolvedSlotFont>();
   for (const slot of FONT_SLOTS) {
     const data = fonts[slot];
     if (data === undefined) continue;
-    const formatIssues = validateFont(data);
+    const formatIssues = validateFont(data, { locale });
     if (formatIssues.length > 0) {
       issues.push(...formatIssues.map((issue) => ({ ...issue, slot })));
       continue;
@@ -65,7 +65,7 @@ export function resolveFontSetData(
     if (ascentPerEm === null) {
       issues.push({
         format: detectFontFormat(data),
-        message: FONT_METRICS_ISSUE_MESSAGE,
+        message: messages.fontIssue.metricsUnreadable,
         slot,
       });
       continue;
@@ -74,7 +74,7 @@ export function resolveFontSetData(
     if (charWidthEm === null) {
       issues.push({
         format: detectFontFormat(data),
-        message: FONT_WIDTH_ISSUE_MESSAGE,
+        message: messages.fontIssue.widthUnreadable,
         slot,
       });
       continue;

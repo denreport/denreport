@@ -254,6 +254,43 @@ describe("exportReportlabTemplate — bound document", () => {
       '    _text(c, "NotoSansJP", 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, False, _wrap("NotoSansJP", 12, 100, _interpolate(data, "{title}")))',
     );
   });
+
+  it("defaults to Japanese sys.exit guard messages", () => {
+    const result = exportReportlabTemplate(boundDoc, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      'sys.exit("2ページ以上に展開される表が複数あります")',
+    );
+  });
+
+  it('emits English sys.exit guard messages for locale "en"', () => {
+    const result = exportReportlabTemplate(boundDoc, FONT, { locale: "en" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      'sys.exit("More than one table expands to 2 or more pages")',
+    );
+    expect(result.code).toContain(
+      'sys.exit(f"Total page count {page_count} after expansion exceeds the limit {PAGE_COUNT_MAX}")',
+    );
+    expect(result.code).toContain("Generated file; not intended");
+  });
+});
+
+describe("exportReportlabTemplate — locale (font issues)", () => {
+  it('returns English fontIssues messages for locale "en"', () => {
+    const result = exportReportlabTemplate(
+      docOf(),
+      { regular: syntheticCff() },
+      {
+        locale: "en",
+      },
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.fontIssues[0]?.message).toContain("TTF font");
+  });
 });
 
 describe("exportReportlabTemplate — cellOverrides", () => {

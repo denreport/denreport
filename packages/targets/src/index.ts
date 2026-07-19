@@ -17,6 +17,7 @@ export { resolveFontSetData } from "./fonts/set";
 export type { FontIssue } from "./fonts/validate";
 export { validateFont } from "./fonts/validate";
 export { readCharWidths } from "./fonts/widths";
+export type { MessageLocale } from "./i18n/messages";
 export type { ExportPdfmeResult } from "./pdfme/export";
 export { exportPdfme } from "./pdfme/export";
 export type { PdfmeFontEntry, PdfmeFontMap } from "./pdfme/font";

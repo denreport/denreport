@@ -9,6 +9,7 @@ import type {
 import { resolveFontSlot, STROKE_DASH_MM } from "@denreport/core";
 import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
 import { FONT_SLOTS } from "../fonts/set";
+import type { Messages } from "../i18n/messages";
 import { pyBool, pyNumber, pyRgb, pyString } from "./python";
 
 // createBarcodeDrawing の規格名（reportlab.graphics.barcode.getCodeNames() の表記）
@@ -71,15 +72,17 @@ export function buildFontsConstant(
   return `FONTS = {\n${body}\n}`;
 }
 
-export const REGISTER_FONTS_FN = [
-  "def _register_fonts():",
-  "    base_dir = os.path.dirname(os.path.abspath(__file__))",
-  "    for name, (file, _) in FONTS.items():",
-  "        font_path = os.path.join(base_dir, file)",
-  "        if not os.path.exists(font_path):",
-  '            sys.exit(f"フォントファイルが見つかりません: {font_path}（このファイルと同じディレクトリに置くこと）")',
-  "        pdfmetrics.registerFont(TTFont(name, font_path))",
-].join("\n");
+export function registerFontsFn(messages: Messages): string {
+  return [
+    "def _register_fonts():",
+    "    base_dir = os.path.dirname(os.path.abspath(__file__))",
+    "    for name, (file, _) in FONTS.items():",
+    "        font_path = os.path.join(base_dir, file)",
+    "        if not os.path.exists(font_path):",
+    `            sys.exit(f"${messages.reportlab.fontFileMissing}")`,
+    "        pdfmetrics.registerFont(TTFont(name, font_path))",
+  ].join("\n");
+}
 
 // IR の rotate は y 下向き座標系での時計回り正。PDF 座標系は y 上向きのため、
 // 各描画関数は c.rotate に符号を反転した -rot を渡して見た目の回転方向を一致させる
