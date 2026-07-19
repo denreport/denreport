@@ -176,3 +176,64 @@ test("回転した要素をリサイズ中、ドラッグゴーストが回転�
 
   await page.mouse.up();
 });
+
+test("90° 回転した矩形のリサイズがドラッグ方向に追従し、反対側の辺が動かない", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await dragFromPalette(page, /^矩形/, { x: 100, y: 100 });
+  const rect = page.locator('.apx-el[data-apx-id="rect1"]');
+  await expect(rect).toBeVisible();
+
+  const props = page.getByRole("complementary", { name: "プロパティ" });
+  await commitField(props.getByLabel("回転"), "90");
+  await expect(rect).toHaveAttribute("style", /--rot: 90deg/);
+  // グリッドスナップは非回転モデル箱基準（スコープ外）のため、ここではドラッグ量そのものを検証する
+  await page.getByRole("button", { name: "スナップ" }).click();
+
+  const before = await rect.boundingBox();
+  if (before === null) throw new Error("矩形が表示されていません");
+
+  // 90° 回転により、実体は e ハンドルだが見た目は下辺中央にある
+  const eHandle = page.locator(
+    '.apx-h[data-apx-handle="e"][data-apx-id="rect1"]',
+  );
+  const handleBox = await eHandle.boundingBox();
+  if (handleBox === null) throw new Error("e ハンドルが表示されていません");
+
+  await page.mouse.move(
+    handleBox.x + handleBox.width / 2,
+    handleBox.y + handleBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    handleBox.x + handleBox.width / 2,
+    handleBox.y + handleBox.height / 2 + 40,
+    { steps: 8 },
+  );
+  await page.mouse.up();
+
+  const after = await rect.boundingBox();
+  if (after === null) throw new Error("矩形が表示されていません");
+
+  // 見た目の下方向へドラッグした分だけ高さが伸び、他の辺（アンカー）は不動
+  expect(after.height - before.height).toBeGreaterThan(37);
+  expect(after.height - before.height).toBeLessThan(43);
+  expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(2);
+  expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(2);
+  expect(Math.abs(after.width - before.width)).toBeLessThanOrEqual(2);
+
+  await page.waitForFunction(() => {
+    const raw = localStorage.getItem("denreport-designer.ir");
+    if (raw === null) return false;
+    const parsed = JSON.parse(raw) as {
+      readonly elements?: readonly {
+        readonly type: string;
+        readonly w?: number;
+        readonly h?: number;
+      }[];
+    };
+    const rectEl = parsed.elements?.find((el) => el.type === "rect");
+    return rectEl !== undefined && rectEl.h === 20 && (rectEl.w ?? 0) > 40;
+  });
+});

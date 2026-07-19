@@ -29,6 +29,13 @@ export function visibleInContext(
   return pages === null || pages === "all" || pages === context;
 }
 
+/** table / flex は rotate を持たない。それ以外の要素の回転角（度）を返す */
+export function rotationDeg(element: IrElement | IrFlexChild): number {
+  return element.type !== "table" && element.type !== "flex"
+    ? (element.rotate ?? 0)
+    : 0;
+}
+
 /** 描画・ヒットテスト・スナップが共用する、文書中の全要素の箱と文脈情報 */
 export interface PlacedElementView {
   readonly id: string;

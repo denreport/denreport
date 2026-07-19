@@ -27,7 +27,7 @@ import {
   toTopLevelElement,
 } from "../../state/elements";
 import type { MmBox, PlacedElementView } from "../../state/geometry";
-import { roundMm, visibleInContext } from "../../state/geometry";
+import { rotationDeg, roundMm, visibleInContext } from "../../state/geometry";
 import { expandIdsToGroups } from "../../state/groups";
 import { guidesInPage } from "../../state/guides";
 import type { MovingEdges, SnapContext, SnapGuide } from "../../state/snapping";
@@ -396,8 +396,15 @@ function resizingUpdate(
   }
   const orig = view.box;
   const edges = edgesOf(handle, view.element);
-  const dx = at.x - start.x;
-  const dy = at.y - start.y;
+  const rot = rotationDeg(view.element);
+  const rad = (rot * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const rawDx = at.x - start.x;
+  const rawDy = at.y - start.y;
+  // ハンドル表示は回転後の位置にあるため、ポインタ差分を要素ローカル系へ逆回転してから辺に適用する
+  const dx = rot === 0 ? rawDx : rawDx * cos + rawDy * sin;
+  const dy = rot === 0 ? rawDy : -rawDx * sin + rawDy * cos;
   const isLine = view.element.type === "line";
   const minW = isLine && orig.w === 0 ? 0 : MIN_SIZE_MM;
   const minH = isLine && orig.h === 0 ? 0 : MIN_SIZE_MM;
@@ -418,6 +425,18 @@ function resizingUpdate(
     const snap = snapForResize(box, edges, snapContextFor(ctx, new Set([id])));
     box = clampBoxMin(snap.box, edges, minW, minH);
     guides = snap.guides;
+  }
+  // 回転はモデル箱の中心周りのため、中心移動 S に (R−I) を掛けた平行移動で
+  // 掴んでいない側の画面位置を固定する（flex 子は x/y を持たないため適用しない）
+  if (rot !== 0 && view.parentFlexId === null) {
+    const sx = box.x + box.w / 2 - (orig.x + orig.w / 2);
+    const sy = box.y + box.h / 2 - (orig.y + orig.h / 2);
+    box = {
+      x: box.x + sx * (cos - 1) - sy * sin,
+      y: box.y + sx * sin + sy * (cos - 1),
+      w: box.w,
+      h: box.h,
+    };
   }
   return { kind: "resizing", id, handle, start, box, guides };
 }

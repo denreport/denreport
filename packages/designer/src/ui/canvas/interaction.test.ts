@@ -530,6 +530,336 @@ describe("リサイズ", () => {
   });
 });
 
+describe("回転要素のリサイズ", () => {
+  // b は x100 y10 w40 h20 → 中心 (120, 20)
+  const B_ORIG = { x: 100, y: 10, w: 40, h: 20 };
+
+  function withBRotate(rotate: number): readonly IrElement[] {
+    return ELEMENTS.map((el) => (el.id === "b" ? { ...el, rotate } : el));
+  }
+
+  // rotatePointDeg（SelectionOverlay）と同じ回転行列で、box 中心周りの点 p の画面座標を求める
+  function screenPoint(
+    box: { x: number; y: number; w: number; h: number },
+    p: { x: number; y: number },
+    deg: number,
+  ): { x: number; y: number } {
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.h / 2;
+    const rad = (deg * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    return {
+      x: cx + (p.x - cx) * cos - (p.y - cy) * sin,
+      y: cy + (p.x - cx) * sin + (p.y - cy) * cos,
+    };
+  }
+
+  it("rot=90・e ハンドル（見た目の下辺）・縦ドラッグで幅が伸びる", () => {
+    const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 120, y: 40 }, "b", { handle: "e" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 120, y: 50 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(95, 10);
+      expect(moved.state.box.y).toBeCloseTo(15, 10);
+      expect(moved.state.box.w).toBeCloseTo(50, 10);
+      expect(moved.state.box.h).toBeCloseTo(20, 10);
+
+      const anchorOrig = screenPoint(B_ORIG, { x: 100, y: 20 }, 90);
+      const anchorNew = screenPoint(
+        moved.state.box,
+        { x: moved.state.box.x, y: moved.state.box.y + moved.state.box.h / 2 },
+        90,
+      );
+      expect(anchorNew.x).toBeCloseTo(anchorOrig.x, 9);
+      expect(anchorNew.y).toBeCloseTo(anchorOrig.y, 9);
+    }
+
+    const up = reduceInteraction(
+      moved.state,
+      { kind: "pointerUp", at: { x: 120, y: 50 } },
+      ctx,
+    );
+    const el = up.effect?.document?.elements.find((e) => e.id === "b");
+    expect(el).toMatchObject({ x: 95, y: 15, w: 50, h: 20 });
+  });
+
+  it("rot=90・e ハンドル・横ドラッグではサイズ不変（回転前の生差分は写像されない）", () => {
+    const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 120, y: 40 }, "b", { handle: "e" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 130, y: 40 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(100, 10);
+      expect(moved.state.box.y).toBeCloseTo(10, 10);
+      expect(moved.state.box.w).toBeCloseTo(40, 10);
+      expect(moved.state.box.h).toBeCloseTo(20, 10);
+    }
+
+    const up = reduceInteraction(
+      moved.state,
+      { kind: "pointerUp", at: { x: 130, y: 40 } },
+      ctx,
+    );
+    expect(up.effect).toBeNull();
+  });
+
+  it("rot=90・n ハンドル（見た目の右辺）・横ドラッグで反対側の辺が固定される", () => {
+    const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 130, y: 20 }, "b", { handle: "n" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 138, y: 20 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(104, 10);
+      expect(moved.state.box.y).toBeCloseTo(6, 10);
+      expect(moved.state.box.w).toBeCloseTo(40, 10);
+      expect(moved.state.box.h).toBeCloseTo(28, 10);
+
+      const anchorOrig = screenPoint(B_ORIG, { x: 120, y: 30 }, 90);
+      const anchorNew = screenPoint(
+        moved.state.box,
+        {
+          x: moved.state.box.x + moved.state.box.w / 2,
+          y: moved.state.box.y + moved.state.box.h,
+        },
+        90,
+      );
+      expect(anchorNew.x).toBeCloseTo(anchorOrig.x, 9);
+      expect(anchorNew.y).toBeCloseTo(anchorOrig.y, 9);
+    }
+  });
+
+  it("rot=45・se ハンドル・ローカル +x 方向ドラッグでアンカー（nw）が画面上不動", () => {
+    const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(45));
+    const seHandle = { x: 127.07106781186548, y: 41.21320343559643 };
+    const pressed = reduceInteraction(
+      IDLE,
+      down(seHandle, "b", { handle: "se" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      {
+        kind: "pointerMove",
+        shiftKey: false,
+        at: {
+          x: seHandle.x + 7.071067811865476,
+          y: seHandle.y + 7.071067811865476,
+        },
+      },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(98.53553390593274, 6);
+      expect(moved.state.box.y).toBeCloseTo(13.535533905932738, 6);
+      expect(moved.state.box.w).toBeCloseTo(50, 6);
+      expect(moved.state.box.h).toBeCloseTo(20, 6);
+
+      const anchorOrig = screenPoint(B_ORIG, { x: 100, y: 10 }, 45);
+      const anchorNew = screenPoint(
+        moved.state.box,
+        { x: moved.state.box.x, y: moved.state.box.y },
+        45,
+      );
+      expect(anchorNew.x).toBeCloseTo(anchorOrig.x, 9);
+      expect(anchorNew.y).toBeCloseTo(anchorOrig.y, 9);
+    }
+  });
+
+  it("回転あり・元に戻して離す → effect なし", () => {
+    const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 120, y: 40 }, "b", { handle: "e" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 120, y: 50 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    const movedBack = reduceInteraction(
+      moved.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 120, y: 40 } },
+      ctx,
+    );
+    expect(movedBack.state.kind).toBe("resizing");
+    if (movedBack.state.kind === "resizing") {
+      expect(movedBack.state.box.x).toBeCloseTo(100, 10);
+      expect(movedBack.state.box.y).toBeCloseTo(10, 10);
+      expect(movedBack.state.box.w).toBeCloseTo(40, 10);
+      expect(movedBack.state.box.h).toBeCloseTo(20, 10);
+    }
+    const up = reduceInteraction(
+      movedBack.state,
+      { kind: "pointerUp", at: { x: 120, y: 40 } },
+      ctx,
+    );
+    expect(up.state).toEqual(IDLE);
+    expect(up.effect).toBeNull();
+  });
+
+  it("クランプで w が最小寸法に切られても、掴んでいない辺は画面上不動", () => {
+    const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 120, y: 40 }, "b", { handle: "e" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 120, y: -5 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(119.5, 9);
+      expect(moved.state.box.y).toBeCloseTo(-9.5, 9);
+      expect(moved.state.box.w).toBeCloseTo(1, 9);
+      expect(moved.state.box.h).toBeCloseTo(20, 9);
+
+      const anchorOrig = screenPoint(B_ORIG, { x: 100, y: 20 }, 90);
+      const anchorNew = screenPoint(
+        moved.state.box,
+        { x: moved.state.box.x, y: moved.state.box.y + moved.state.box.h / 2 },
+        90,
+      );
+      expect(anchorNew.x).toBeCloseTo(anchorOrig.x, 9);
+      expect(anchorNew.y).toBeCloseTo(anchorOrig.y, 9);
+    }
+  });
+
+  it("スナップはモデル箱基準のまま働き、回転補正は後段に乗る", () => {
+    const ctx = makeCtx(["b"], {}, withBRotate(90));
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 120, y: 40 }, "b", { handle: "e" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 120, y: 49.3 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(95, 6);
+      expect(moved.state.box.y).toBeCloseTo(15, 6);
+      expect(moved.state.box.w).toBeCloseTo(50, 6);
+      expect(moved.state.box.h).toBeCloseTo(20, 6);
+      expect(moved.state.guides).toEqual([]);
+    }
+  });
+
+  it("回転した line（退化箱）は交差軸成分が常に 0 で成立する", () => {
+    const lineEl: IrElement = {
+      type: "line",
+      id: "ln",
+      x: 20,
+      y: 50,
+      pages: "first",
+      orientation: "horizontal",
+      length: 30,
+      thickness: 0.3,
+      rotate: 90,
+    };
+    const ctx = makeCtx(["ln"], { snapEnabled: false }, [...ELEMENTS, lineEl]);
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 35, y: 65 }, "ln", { handle: "line-end" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 35, y: 75 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(15, 9);
+      expect(moved.state.box.y).toBeCloseTo(55, 9);
+      expect(moved.state.box.w).toBeCloseTo(40, 9);
+      expect(moved.state.box.h).toBeCloseTo(0, 9);
+    }
+
+    const up = reduceInteraction(
+      moved.state,
+      { kind: "pointerUp", at: { x: 35, y: 75 } },
+      ctx,
+    );
+    const el = up.effect?.document?.elements.find((e) => e.id === "ln");
+    expect(el).toMatchObject({ x: 15, y: 55, length: 40 });
+  });
+
+  it("回転した flex 子は逆回転のみ適用され、x/y は書かれない", () => {
+    const elements = ELEMENTS.map((el) =>
+      el.id === "f" && el.type === "flex"
+        ? {
+            ...el,
+            children: el.children.map((c) =>
+              c.id === "ct1" ? { ...c, rotate: 90 } : c,
+            ),
+          }
+        : el,
+    );
+    const ctx = makeCtx(["ct1"], {}, elements);
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 40, y: 124 }, "ct1", { handle: "e" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 40, y: 134 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box).toMatchObject({ x: 20, y: 100, w: 50, h: 8 });
+    }
+
+    const up = reduceInteraction(
+      moved.state,
+      { kind: "pointerUp", at: { x: 40, y: 134 } },
+      ctx,
+    );
+    const flex = up.effect?.document?.elements.find((e) => e.id === "f");
+    if (flex?.type === "flex") {
+      expect(flex.children[0]).toMatchObject({ w: 50, h: 8 });
+      expect(flex.children[0]).not.toHaveProperty("x");
+    } else {
+      expect.unreachable();
+    }
+  });
+});
+
 describe("回転", () => {
   // b は x100 y10 w40 h20 → 中心 (120, 20)。ハンドル押下点は上辺中央 (120, 10)
   function pressRotate(ctx: InteractionContext) {

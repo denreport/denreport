@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
 import { errorElementIds } from "../../state/error-index";
 import type { MmBox, PlacedElementView } from "../../state/geometry";
-import { visibleInContext } from "../../state/geometry";
+import { rotationDeg, visibleInContext } from "../../state/geometry";
 import type { EditorState } from "../../state/types";
 import type { HandleId, InteractionState } from "./interaction";
 import { isRotatable } from "./interaction";
@@ -35,12 +35,6 @@ function rotatePointDeg(
   const dx = p.x - cx;
   const dy = p.y - cy;
   return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
-}
-
-// PaperElement.tsx の --rot 判定と同じ: table/flex は rotate を持たない
-function rotationDeg(view: PlacedElementView): number {
-  const el = view.element;
-  return el.type !== "table" && el.type !== "flex" ? (el.rotate ?? 0) : 0;
 }
 
 const BOX_HANDLES: readonly {
@@ -113,7 +107,7 @@ function handlesFor(view: PlacedElementView): readonly {
     }
     return toHandles(BOX_HANDLES, box);
   })();
-  const rot = rotationDeg(view);
+  const rot = rotationDeg(view.element);
   if (rot === 0) {
     return raw;
   }
@@ -238,7 +232,7 @@ export function SelectionOverlay(props: {
             w: box.w,
             h: box.h,
           },
-          rotate: rotationDeg(view),
+          rotate: rotationDeg(view.element),
         },
       ];
     });
@@ -254,7 +248,7 @@ export function SelectionOverlay(props: {
       {
         key: interaction.id,
         box: interaction.box,
-        rotate: view !== undefined ? rotationDeg(view) : 0,
+        rotate: view !== undefined ? rotationDeg(view.element) : 0,
       },
     ];
     tip = {
@@ -371,7 +365,7 @@ export function SelectionOverlay(props: {
       )}
 
       {selectedViews.map((view) => {
-        const rot = view === single ? rotationDeg(view) : 0;
+        const rot = view === single ? rotationDeg(view.element) : 0;
         return (
           <div
             key={view.id}
@@ -395,7 +389,7 @@ export function SelectionOverlay(props: {
       {single !== undefined &&
         visibleInContext(single.pages, context) &&
         (() => {
-          const singleRot = rotationDeg(single);
+          const singleRot = rotationDeg(single.element);
           return handlesFor(single).map((handle) => (
             <span
               key={handle.id}
@@ -417,7 +411,7 @@ export function SelectionOverlay(props: {
         visibleInContext(single.pages, context) &&
         isRotatable(single.element.type) &&
         (() => {
-          const singleRot = rotationDeg(single);
+          const singleRot = rotationDeg(single.element);
           const cx = single.box.x + single.box.w / 2;
           const cy = single.box.y + single.box.h / 2;
           const p = rotatePointDeg(
