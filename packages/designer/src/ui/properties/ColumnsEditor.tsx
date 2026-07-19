@@ -1,5 +1,6 @@
 import type { IrAlign, IrDocument } from "@denreport/core";
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorMessageFor } from "../../state/error-index";
 import {
   addTableColumn,
@@ -79,6 +80,7 @@ function WidthCell(props: {
 
 export function ColumnsEditor(props: ElementFormProps): ReactNode {
   const { store, view, errors } = props;
+  const m = useMessages();
   const el = view.element;
   if (el.type !== "table") {
     return null;
@@ -216,7 +218,9 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
       <button
         type="button"
         className="apx-add-col"
-        onClick={() => commitDoc((doc) => addTableColumn(doc, el.id))}
+        onClick={() =>
+          commitDoc((doc) => addTableColumn(doc, el.id, m.defaults))
+        }
       >
         ＋ 列を追加
       </button>

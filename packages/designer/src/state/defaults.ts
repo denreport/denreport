@@ -137,8 +137,8 @@ export function createDefaultElement(
         y: py,
         bind: "items",
         columns: [
-          { key: "col1", label: m.column1, width: 40, align: "left" },
-          { key: "col2", label: m.column2, width: 40, align: "left" },
+          { key: "col1", label: m.columnName(1), width: 40, align: "left" },
+          { key: "col2", label: m.columnName(2), width: 40, align: "left" },
         ],
         rowHeight: 8,
         headerHeight: 8,

@@ -35,8 +35,7 @@ export const stateJa = {
   } satisfies Record<EnvelopePresetId, string>,
   defaults: {
     text: "テキスト",
-    column1: "列1",
-    column2: "列2",
+    columnName: (n: number): string => `列${n}`,
     imagePlaceholder: "画像未設定",
     scenarioName: (n: number): string => `シナリオ ${n}`,
     copyOf: (name: string): string => `${name} のコピー`,
