@@ -113,3 +113,20 @@ test("表の網掛けトグルがキャンバスの縞とプレビューの塗�
     page.locator('[data-apx-id="table1"] .apx-tbl-stripe'),
   ).toHaveCount(0);
 });
+
+test("表の内部罫線が外枠の内側にぴったり収まる", async ({ page }) => {
+  await page.goto("/");
+  await dragFromPalette(page, /^表/, { x: 100, y: 100 });
+  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  await expect(table).toBeVisible();
+  const hline = table.locator(".apx-tbl-hline").first();
+  await expect(hline).toBeVisible();
+  const tableBox = await table.boundingBox();
+  const hlineBox = await hline.boundingBox();
+  if (tableBox === null || hlineBox === null)
+    throw new Error("boundingBox がない");
+  expect(Math.abs(hlineBox.x - tableBox.x)).toBeLessThan(0.5);
+  expect(
+    Math.abs(hlineBox.x + hlineBox.width - (tableBox.x + tableBox.width)),
+  ).toBeLessThan(0.5);
+});

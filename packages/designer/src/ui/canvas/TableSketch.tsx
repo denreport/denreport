@@ -159,6 +159,7 @@ export function TableSketch(props: {
           }
         />
       ))}
+      <span className="apx-tbl-frame" />
       {hlines.map((line) => (
         <span
           key={line.key}

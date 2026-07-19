@@ -821,10 +821,6 @@
   outline: 1px dashed var(--paper-selection);
 }
 
-.apx-el-table {
-  border: max(1px, calc(0.4 * var(--mm))) solid var(--paper-text);
-}
-
 .apx-el-barcode {
   overflow: hidden;
   border: 1px solid var(--paper-annot);
@@ -953,6 +949,14 @@
   top: calc(var(--sy) * var(--mm));
   height: calc(var(--sh) * var(--mm));
   background: var(--sc);
+  pointer-events: none;
+}
+
+.apx-tbl-frame {
+  position: absolute;
+  inset: 0;
+  border: max(1px, calc(var(--frame-w, 0.4) * var(--mm))) var(--frame-ls, solid)
+    var(--paper-text);
   pointer-events: none;
 }
 

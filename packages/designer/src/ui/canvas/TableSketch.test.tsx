@@ -219,3 +219,31 @@ describe("TableSketch — セル結合", () => {
     expect(container.textContent).not.toContain("無効な上書き");
   });
 });
+
+describe("TableSketch — 外枠", () => {
+  it(".apx-tbl-frame をちょうど1個描画する", () => {
+    renderSketch(table(), { x: 0, y: 0, w: 40, h: 10 + 2 * 10 });
+    expect(container.querySelectorAll(".apx-tbl-frame")).toHaveLength(1);
+  });
+
+  it("描画順は 縞 → 外枠 → 内部罫線", () => {
+    renderSketch(table({ stripeColor: "#f0f0f0" }), {
+      x: 0,
+      y: 0,
+      w: 40,
+      h: 10 + 2 * 10,
+    });
+    const classes = [
+      ...container.querySelectorAll(
+        ".apx-tbl-stripe, .apx-tbl-frame, .apx-tbl-hline",
+      ),
+    ].map((node) =>
+      node.classList.contains("apx-tbl-stripe")
+        ? "stripe"
+        : node.classList.contains("apx-tbl-frame")
+          ? "frame"
+          : "hline",
+    );
+    expect(classes).toEqual(["stripe", "frame", "hline", "hline"]);
+  });
+});

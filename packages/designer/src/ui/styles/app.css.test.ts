@@ -1,9 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { TABLE_FRAME_WIDTH } from "@denreport/core";
 import { describe, expect, it } from "vitest";
 
 // vitest はパッケージルートを cwd として実行される
 const css = readFileSync(join(process.cwd(), "src/ui/styles/app.css"), "utf-8");
+const FRAME_W = String(TABLE_FRAME_WIDTH).replace(".", "\\.");
 
 /** セレクタの宣言ブロック本文を取り出す（対象セレクタは単独ルールのみ） */
 function ruleBody(selector: string): string {
@@ -35,11 +37,22 @@ describe("app.css の低ズーム時の枠線最低太さクランプ", () => {
       /border-width:\s*max\(1px, calc\(var\(--bw, 0\.3\) \* var\(--mm\)\)\)/,
     ],
     [
-      ".apx-el-table",
-      /border:\s*max\(1px, calc\(0\.4 \* var\(--mm\)\)\) solid var\(--paper-text\)/,
+      ".apx-tbl-frame",
+      new RegExp(
+        String.raw`border:\s*max\(1px, calc\(var\(--frame-w, ${FRAME_W}\) \* var\(--mm\)\)\) var\(--frame-ls, solid\)\s+var\(--paper-text\)`,
+      ),
     ],
   ])("%s は max(1px, ...) で下限クランプされる", (selector, pattern) => {
     expect(ruleBody(selector)).toMatch(pattern);
+  });
+});
+
+// 外枠は表の全内部要素を覆う位置に描かれるため、クリック・ダブルクリック操作を透過させる
+describe("app.css の表の外枠は選択・編集操作をブロックしない", () => {
+  it(".apx-tbl-frame は inset:0 かつ pointer-events:none", () => {
+    const body = ruleBody(".apx-tbl-frame");
+    expect(body).toMatch(/inset:\s*0;/);
+    expect(body).toMatch(/pointer-events:\s*none;/);
   });
 });
 
