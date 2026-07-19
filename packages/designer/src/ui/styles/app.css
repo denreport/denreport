@@ -1064,6 +1064,12 @@
 .apx-sel-box {
   outline: 2px solid var(--paper-selection);
   outline-offset: 1px;
+  transform: rotate(var(--rot, 0deg));
+}
+
+/* チップは水平のまま読めるよう、枠の回転を打ち消す（枠内の左上位置は不変） */
+.apx-sel-box > .apx-el-chip {
+  transform: rotate(calc(-1 * var(--rot, 0deg)));
 }
 
 .apx-sel-box--preview {
@@ -1104,12 +1110,14 @@
   border: 1.5px solid var(--paper-selection);
   z-index: 3;
   pointer-events: auto;
+  transform: rotate(var(--rot, 0deg));
 }
 
-/* 選択枠上辺中央の少し上に浮かせた円形の回転ハンドル */
+/* 選択枠上辺中央の少し上に浮かせた円形の回転ハンドル。
+   --hx/--hy は回転後の上辺中央のため、浮きは回転後のローカル上方向への translateY で表す */
 .apx-h--rotate {
   border-radius: 50%;
-  top: calc(var(--hy) * var(--mm) - 20px);
+  transform: rotate(var(--rot, 0deg)) translateY(-16px);
   cursor: grab;
 }
 

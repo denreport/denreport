@@ -21,6 +21,28 @@ function fmt(value: number): string {
   return value.toFixed(1);
 }
 
+// CSS の rotate() と同じ向き（y 下向きスクリーン座標での時計回り）で
+// 点 p を中心 (cx, cy) 周りに deg 度回した点を返す
+function rotatePointDeg(
+  p: { readonly x: number; readonly y: number },
+  cx: number,
+  cy: number,
+  deg: number,
+): { x: number; y: number } {
+  const rad = (deg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const dx = p.x - cx;
+  const dy = p.y - cy;
+  return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+}
+
+// PaperElement.tsx の --rot 判定と同じ: table/flex は rotate を持たない
+function rotationDeg(view: PlacedElementView): number {
+  const el = view.element;
+  return el.type !== "table" && el.type !== "flex" ? (el.rotate ?? 0) : 0;
+}
+
 const BOX_HANDLES: readonly {
   readonly id: HandleId;
   readonly fx: number;
@@ -68,25 +90,36 @@ function handlesFor(view: PlacedElementView): readonly {
 }[] {
   const type = view.element.type;
   const box = view.box;
-  if (view.parentFlexId !== null) {
-    if (type === "flex" || type === "table") {
-      return [];
+  const raw = (() => {
+    if (view.parentFlexId !== null) {
+      if (type === "flex" || type === "table") {
+        return [];
+      }
+      if (type === "line") {
+        return [
+          { id: "line-end" as const, x: box.x + box.w, y: box.y + box.h },
+        ];
+      }
+      return toHandles(FLEX_CHILD_HANDLES, box);
     }
     if (type === "line") {
-      return [{ id: "line-end", x: box.x + box.w, y: box.y + box.h }];
+      return [
+        { id: "line-start" as const, x: box.x, y: box.y },
+        { id: "line-end" as const, x: box.x + box.w, y: box.y + box.h },
+      ];
     }
-    return toHandles(FLEX_CHILD_HANDLES, box);
+    if (type === "table" || type === "flex") {
+      return [];
+    }
+    return toHandles(BOX_HANDLES, box);
+  })();
+  const rot = rotationDeg(view);
+  if (rot === 0) {
+    return raw;
   }
-  if (type === "line") {
-    return [
-      { id: "line-start", x: box.x, y: box.y },
-      { id: "line-end", x: box.x + box.w, y: box.y + box.h },
-    ];
-  }
-  if (type === "table" || type === "flex") {
-    return [];
-  }
-  return toHandles(BOX_HANDLES, box);
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
+  return raw.map((h) => ({ id: h.id, ...rotatePointDeg(h, cx, cy, rot) }));
 }
 
 function unionBox(boxes: readonly MmBox[]): MmBox | null {
@@ -324,43 +357,77 @@ export function SelectionOverlay(props: {
         </>
       )}
 
-      {selectedViews.map((view) => (
-        <div key={view.id} className="apx-sel-box" style={boxVars(view.box)}>
-          {single !== undefined && (
-            <span className="apx-el-chip">
-              {ELEMENT_TYPE_LABEL[view.element.type]} · {view.id}
-            </span>
-          )}
-        </div>
-      ))}
-
-      {single !== undefined &&
-        visibleInContext(single.pages, context) &&
-        handlesFor(single).map((handle) => (
-          <span
-            key={handle.id}
-            className="apx-h"
-            data-apx-handle={handle.id}
-            data-apx-id={single.id}
-            style={{ "--hx": handle.x, "--hy": handle.y } as CSSProperties}
-          />
-        ))}
-
-      {single !== undefined &&
-        visibleInContext(single.pages, context) &&
-        isRotatable(single.element.type) && (
-          <span
-            className="apx-h apx-h--rotate"
-            data-apx-handle="rotate"
-            data-apx-id={single.id}
+      {selectedViews.map((view) => {
+        const rot = view === single ? rotationDeg(view) : 0;
+        return (
+          <div
+            key={view.id}
+            className="apx-sel-box"
             style={
               {
-                "--hx": single.box.x + single.box.w / 2,
-                "--hy": single.box.y,
+                ...boxVars(view.box),
+                ...(rot !== 0 ? { "--rot": `${rot}deg` } : {}),
               } as CSSProperties
             }
-          />
-        )}
+          >
+            {single !== undefined && (
+              <span className="apx-el-chip">
+                {ELEMENT_TYPE_LABEL[view.element.type]} · {view.id}
+              </span>
+            )}
+          </div>
+        );
+      })}
+
+      {single !== undefined &&
+        visibleInContext(single.pages, context) &&
+        (() => {
+          const singleRot = rotationDeg(single);
+          return handlesFor(single).map((handle) => (
+            <span
+              key={handle.id}
+              className="apx-h"
+              data-apx-handle={handle.id}
+              data-apx-id={single.id}
+              style={
+                {
+                  "--hx": handle.x,
+                  "--hy": handle.y,
+                  ...(singleRot !== 0 ? { "--rot": `${singleRot}deg` } : {}),
+                } as CSSProperties
+              }
+            />
+          ));
+        })()}
+
+      {single !== undefined &&
+        visibleInContext(single.pages, context) &&
+        isRotatable(single.element.type) &&
+        (() => {
+          const singleRot = rotationDeg(single);
+          const cx = single.box.x + single.box.w / 2;
+          const cy = single.box.y + single.box.h / 2;
+          const p = rotatePointDeg(
+            { x: cx, y: single.box.y },
+            cx,
+            cy,
+            singleRot,
+          );
+          return (
+            <span
+              className="apx-h apx-h--rotate"
+              data-apx-handle="rotate"
+              data-apx-id={single.id}
+              style={
+                {
+                  "--hx": p.x,
+                  "--hy": p.y,
+                  ...(singleRot !== 0 ? { "--rot": `${singleRot}deg` } : {}),
+                } as CSSProperties
+              }
+            />
+          );
+        })()}
 
       {rotatingGhost !== null && (
         <div

@@ -101,3 +101,45 @@ test("プロパティパネルの角度入力で rotate が設定・解除され
   });
   expect(await storedRectRotate(page)).toBeUndefined();
 });
+
+test("回転した要素では選択枠とハンドルが回転に追従する", async ({ page }) => {
+  await page.goto("/");
+  await dragFromPalette(page, /^矩形/, { x: 100, y: 100 });
+  const rect = page.locator('.apx-el[data-apx-id="rect1"]');
+  await expect(rect).toBeVisible();
+
+  const props = page.getByRole("complementary", { name: "プロパティ" });
+  await commitField(props.getByLabel("回転"), "90");
+  await expect(rect).toHaveAttribute("style", /--rot: 90deg/);
+
+  const selBox = page.locator(".apx-sel-box");
+  await expect(selBox).toHaveAttribute("style", /--rot: 90deg/);
+
+  // 回転は要素中心周りのため、AABB の寸法が変わっても中心は不変
+  const box = await rect.boundingBox();
+  if (box === null) throw new Error("矩形が表示されていません");
+  const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+
+  // 90° 回転で上辺中央のハンドルは要素中心の右側（同じ高さ）に移る
+  const nHandle = page.locator('.apx-h[data-apx-handle="n"]');
+  const nBox = await nHandle.boundingBox();
+  if (nBox === null) throw new Error("n ハンドルが表示されていません");
+  const nCenter = { x: nBox.x + nBox.width / 2, y: nBox.y + nBox.height / 2 };
+  expect(nCenter.x).toBeGreaterThan(center.x + 5);
+  expect(Math.abs(nCenter.y - center.y)).toBeLessThanOrEqual(2);
+
+  // 回転ハンドルは同じ方向にさらに浮いた位置にある
+  const rotateHandle = page.locator('[data-apx-handle="rotate"]');
+  const rotateBox = await rotateHandle.boundingBox();
+  if (rotateBox === null) throw new Error("回転ハンドルが表示されていません");
+  const rotateCenter = {
+    x: rotateBox.x + rotateBox.width / 2,
+    y: rotateBox.y + rotateBox.height / 2,
+  };
+  expect(rotateCenter.x).toBeGreaterThan(nCenter.x);
+  expect(Math.abs(rotateCenter.y - center.y)).toBeLessThanOrEqual(3);
+
+  // 0 に戻すと選択枠から --rot が消える
+  await commitField(props.getByLabel("回転"), "0");
+  await expect(selBox).not.toHaveAttribute("style", /--rot/);
+});
