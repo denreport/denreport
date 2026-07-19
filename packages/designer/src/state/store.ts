@@ -1,4 +1,4 @@
-import type { IrDocument } from "@denreport/core";
+import type { CompatTargetId, IrDocument } from "@denreport/core";
 import { checkQualifiedInvoice, validateIr } from "@denreport/core";
 import type { ClipboardState } from "./clipboard";
 import type { EnvelopePresetId } from "./envelope-presets";
@@ -27,7 +27,11 @@ export class EditorStore {
   readonly #listeners = new Set<() => void>();
   #clipboard: ClipboardState | null = null;
 
-  constructor(initialDocument: IrDocument, initialSampleData?: string) {
+  constructor(
+    initialDocument: IrDocument,
+    initialSampleData?: string,
+    initialExportTarget?: CompatTargetId,
+  ) {
     this.#state = {
       document: initialDocument,
       selection: [],
@@ -39,6 +43,7 @@ export class EditorStore {
       fontRegistry: new Map(),
       customGuides: [],
       envelopePresetId: null,
+      selectedExportTarget: initialExportTarget ?? "pdfme",
       groups: [],
     };
   }
@@ -113,6 +118,11 @@ export class EditorStore {
   /** 履歴に積まず、dirty を変えない状態変更（setSampleData と同格）。購読者には通知する */
   setEnvelopePreset(id: EnvelopePresetId | null): void {
     this.#setState({ ...this.#state, envelopePresetId: id });
+  }
+
+  /** 履歴に積まず、dirty を変えない状態変更（setEnvelopePreset と同格）。購読者には通知する */
+  setSelectedExportTarget(target: CompatTargetId): void {
+    this.#setState({ ...this.#state, selectedExportTarget: target });
   }
 
   /** 履歴に積まず、dirty を変えない状態変更（setSampleData と同格）。購読者には通知する */

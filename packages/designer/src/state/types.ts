@@ -1,4 +1,4 @@
-import type { IrDocument, IrError } from "@denreport/core";
+import type { CompatTargetId, IrDocument, IrError } from "@denreport/core";
 import type { EnvelopePresetId } from "./envelope-presets";
 import type { RegisteredFont } from "./fonts";
 import type { ElementGroup } from "./groups";
@@ -40,6 +40,9 @@ export interface EditorState {
   readonly customGuides: readonly CustomGuide[];
   /** 選択中の封筒窓プリセット。文書・履歴・dirty とは独立。永続化しない */
   readonly envelopePresetId: EnvelopePresetId | null;
+  /** 選択中の書き出しターゲット。文書・履歴・dirty とは独立（envelopePresetId と同格）。
+      IR には持ち込まないが、ホストが localStorage 等へ永続化できるよう Designer API で公開する */
+  readonly selectedExportTarget: CompatTargetId;
   /** クリック1回で全メンバーを選択できる要素の束ね。文書・履歴・dirty とは独立
       （fontRegistry と同格。group/ungroup は commit しない）。saveIr は生存分を
       document.groups へ書き込んで直列化し、replaceDocument はそこから復元する */

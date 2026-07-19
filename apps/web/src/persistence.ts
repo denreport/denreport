@@ -1,8 +1,11 @@
-import type { Designer } from "@denreport/designer";
+import type { CompatTargetId, Designer } from "@denreport/designer";
 
 export const IR_STORAGE_KEY = "denreport-designer.ir";
 export const SAMPLE_DATA_STORAGE_KEY = "denreport-designer.sample-data";
+export const EXPORT_TARGET_STORAGE_KEY = "denreport-designer.export-target";
 export const AUTOSAVE_DEBOUNCE_MS = 500;
+
+const VALID_EXPORT_TARGETS: readonly CompatTargetId[] = ["pdfme", "reportlab"];
 
 /** 起動時の IR 復元。値なし → "blank"、成功 → "restored"、破損・バージョン不一致 → "invalid"。
     "invalid" でも保存値は消さない（次の自動保存で上書きされるまで救出の機会を残す） */
@@ -17,13 +20,27 @@ export function restoreIr(
   return designer.loadIr(stored).ok ? "restored" : "invalid";
 }
 
+/** 起動時の書き出しターゲット復元。値なし・不正値は undefined を返し、
+    Designer 既定（"pdfme"）へのフォールバックに委ねる */
+export function restoreExportTarget(
+  storage: Storage,
+): CompatTargetId | undefined {
+  const stored = storage.getItem(EXPORT_TARGET_STORAGE_KEY);
+  return VALID_EXPORT_TARGETS.find((id) => id === stored);
+}
+
 /** 変更通知を 500ms トレーリングデバウンスで localStorage へ書く自動保存の配線。
     setItem の失敗（QuotaExceededError 等）は onError に渡し、編集は妨げない。
     返り値はリスナー・タイマー・pagehide ハンドラを外す解除関数 */
 export function attachAutosave(
   designer: Pick<
     Designer,
-    "onChange" | "onSampleDataChange" | "saveIr" | "getSampleData"
+    | "onChange"
+    | "onSampleDataChange"
+    | "onExportTargetChange"
+    | "saveIr"
+    | "getSampleData"
+    | "getExportTarget"
   >,
   storage: Storage,
   win: Window,
@@ -43,6 +60,11 @@ export function attachAutosave(
       key: SAMPLE_DATA_STORAGE_KEY,
       read: () => designer.getSampleData(),
       listen: (listener) => designer.onSampleDataChange(listener),
+    },
+    {
+      key: EXPORT_TARGET_STORAGE_KEY,
+      read: () => designer.getExportTarget(),
+      listen: (listener) => designer.onExportTargetChange(listener),
     },
   ];
 

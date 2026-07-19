@@ -1718,6 +1718,11 @@
   font-size: var(--text-sm);
 }
 
+.apx-drawer-compat {
+  padding: var(--space-3);
+  border-top: 1px solid var(--color-border);
+}
+
 /* ==== ステータスバー ==== */
 
 .apx-statusbar {

@@ -1,4 +1,4 @@
-import type { IrDocument, IrError } from "@denreport/core";
+import type { CompatTargetId, IrDocument, IrError } from "@denreport/core";
 import { IR_VERSION, parseIr } from "@denreport/core";
 import { createElement } from "react";
 import type { Root } from "react-dom/client";
@@ -37,6 +37,8 @@ export interface DesignerOptions {
       またはレガシー生 JSON。省略時は既定1件（空 json）。
       不正な JSON も受理する（編集の常態。initialIr と異なり throw しない） */
   readonly initialSampleData?: string;
+  /** 選択中の書き出しターゲット（getExportTarget の返り値）。省略時は "pdfme" */
+  readonly initialExportTarget?: CompatTargetId;
   /** 省略時 "auto"（prefers-color-scheme 追従） */
   readonly theme?: DesignerTheme;
 }
@@ -71,11 +73,13 @@ export class Designer {
   private readonly changeListeners = new Set<() => void>();
   private readonly saveRequestListeners = new Set<() => void>();
   private readonly sampleDataListeners = new Set<() => void>();
+  private readonly exportTargetListeners = new Set<() => void>();
   private readonly mediaQuery: MediaQueryList;
   private readonly onMediaChange: () => void;
   private lastDocument: IrDocument;
   private lastGroups: readonly ElementGroup[];
   private lastSampleScenarios: SampleScenarioSet;
+  private lastExportTarget: CompatTargetId;
   private theme: DesignerTheme;
   private destroyed = false;
 
@@ -86,10 +90,15 @@ export class Designer {
         ? BLANK_DOCUMENT
         : parseInitialIr(options.initialIr);
 
-    this.store = new EditorStore(initialDocument, options?.initialSampleData);
+    this.store = new EditorStore(
+      initialDocument,
+      options?.initialSampleData,
+      options?.initialExportTarget,
+    );
     this.lastDocument = initialDocument;
     this.lastGroups = this.store.getState().groups;
     this.lastSampleScenarios = this.store.getState().sampleScenarios;
+    this.lastExportTarget = this.store.getState().selectedExportTarget;
     // 選択・ズーム等の変更ではホストに通知しないため、参照比較で通知対象を絞る。
     // group/ungroup は document を変えず groups だけを差し替えるため、両方を見る
     this.unsubscribeStore = this.store.subscribe(() => {
@@ -106,6 +115,12 @@ export class Designer {
       if (state.sampleScenarios !== this.lastSampleScenarios) {
         this.lastSampleScenarios = state.sampleScenarios;
         for (const listener of [...this.sampleDataListeners]) {
+          listener();
+        }
+      }
+      if (state.selectedExportTarget !== this.lastExportTarget) {
+        this.lastExportTarget = state.selectedExportTarget;
+        for (const listener of [...this.exportTargetListeners]) {
           listener();
         }
       }
@@ -195,6 +210,22 @@ export class Designer {
     };
   }
 
+  /** 現在選択中の書き出しターゲット。ホスト側の永続化用 */
+  getExportTarget(): CompatTargetId {
+    this.assertAlive();
+    return this.store.getState().selectedExportTarget;
+  }
+
+  /** 書き出しターゲットの選択変更（ツールバー・書き出しダイアログ）で呼ばれる
+      リスナーを登録し、解除関数を返す */
+  onExportTargetChange(listener: () => void): () => void {
+    this.assertAlive();
+    this.exportTargetListeners.add(listener);
+    return () => {
+      this.exportTargetListeners.delete(listener);
+    };
+  }
+
   /** テーマを切り替える。"auto" は OS 設定に追従する */
   setTheme(theme: DesignerTheme): void {
     this.assertAlive();
@@ -215,6 +246,7 @@ export class Designer {
     this.changeListeners.clear();
     this.saveRequestListeners.clear();
     this.sampleDataListeners.clear();
+    this.exportTargetListeners.clear();
   }
 
   private requestSave(): void {

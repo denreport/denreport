@@ -445,6 +445,7 @@ describe("段階的選択（resolveClickTarget）とダブルクリックの整�
       fontRegistry: new Map(),
       customGuides: [],
       envelopePresetId: null,
+      selectedExportTarget: "pdfme",
       groups: [],
     };
     return {

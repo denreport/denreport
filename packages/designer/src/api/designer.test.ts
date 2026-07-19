@@ -1,4 +1,4 @@
-import type { IrDocument } from "@denreport/core";
+import type { CompatTargetId, IrDocument } from "@denreport/core";
 import { parseIr } from "@denreport/core";
 import {
   afterEach,
@@ -255,6 +255,8 @@ describe("Designer のマウントと破棄", () => {
     expect(() => designer.getSampleData()).toThrow();
     expect(() => designer.setSampleData("{}")).toThrow();
     expect(() => designer.onSampleDataChange(() => {})).toThrow();
+    expect(() => designer.getExportTarget()).toThrow();
+    expect(() => designer.onExportTargetChange(() => {})).toThrow();
   });
 
   it("不正な initialIr はコンストラクタで throw する", () => {
@@ -555,6 +557,46 @@ describe("サンプルデータ API", () => {
   });
 });
 
+describe("書き出しターゲット API", () => {
+  it("省略時は既定の pdfme になる", () => {
+    const { designer } = mount();
+    expect(designer.getExportTarget()).toBe("pdfme");
+  });
+
+  it("initialExportTarget を渡すと初期値になる", () => {
+    const { designer } = mount({ initialExportTarget: "reportlab" });
+    expect(designer.getExportTarget()).toBe("reportlab");
+  });
+
+  it("store 経由の選択変更（ツールバー・書き出しダイアログ相当）で onExportTargetChange が発火し、onChange は発火しない", () => {
+    const { designer } = mount({ initialIr: VALID_IR });
+    let targetFired = 0;
+    let changeFired = 0;
+    designer.onExportTargetChange(() => {
+      targetFired += 1;
+    });
+    designer.onChange(() => {
+      changeFired += 1;
+    });
+
+    storeOf(designer).setSelectedExportTarget("reportlab");
+    expect(targetFired).toBe(1);
+    expect(changeFired).toBe(0);
+    expect(designer.getExportTarget()).toBe("reportlab");
+  });
+
+  it("解除関数でリスナーが外れる", () => {
+    const { designer } = mount();
+    let fired = 0;
+    const unsubscribe = designer.onExportTargetChange(() => {
+      fired += 1;
+    });
+    unsubscribe();
+    storeOf(designer).setSelectedExportTarget("reportlab");
+    expect(fired).toBe(0);
+  });
+});
+
 describe("テーマ", () => {
   it("setTheme で data-theme 属性が切り替わる", () => {
     const { container, designer } = mount();
@@ -677,6 +719,12 @@ describe("公開面の型（React 非漏洩）", () => {
     expectTypeOf<Designer["onSampleDataChange"]>().toEqualTypeOf<
       (listener: () => void) => () => void
     >();
+    expectTypeOf<Designer["getExportTarget"]>().toEqualTypeOf<
+      () => CompatTargetId
+    >();
+    expectTypeOf<Designer["onExportTargetChange"]>().toEqualTypeOf<
+      (listener: () => void) => () => void
+    >();
     expectTypeOf<Designer["setTheme"]>().toEqualTypeOf<
       (theme: DesignerTheme) => void
     >();
@@ -685,6 +733,7 @@ describe("公開面の型（React 非漏洩）", () => {
     expectTypeOf<DesignerOptions>().toEqualTypeOf<{
       readonly initialIr?: string;
       readonly initialSampleData?: string;
+      readonly initialExportTarget?: CompatTargetId;
       readonly theme?: DesignerTheme;
     }>();
   });

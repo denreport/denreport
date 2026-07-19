@@ -1,6 +1,12 @@
 import type { CompatFinding } from "@denreport/core";
 import { describe, expect, it } from "vitest";
-import { groupCompatFindings } from "./export-warnings";
+import { EXPORT_TARGET_IDS, groupCompatFindings } from "./export-warnings";
+
+describe("EXPORT_TARGET_IDS", () => {
+  it("pdfme・reportlab の2件をこの順で並べる", () => {
+    expect(EXPORT_TARGET_IDS).toEqual(["pdfme", "reportlab"]);
+  });
+});
 
 function finding(overrides: Partial<CompatFinding>): CompatFinding {
   return {

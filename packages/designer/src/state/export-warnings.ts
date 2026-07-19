@@ -1,4 +1,10 @@
-import type { CompatFinding } from "@denreport/core";
+import type { CompatFinding, CompatTargetId } from "@denreport/core";
+
+/** UI で選べる書き出しターゲットの全量。表示順もこの並び */
+export const EXPORT_TARGET_IDS: readonly CompatTargetId[] = [
+  "pdfme",
+  "reportlab",
+];
 
 export interface CompatWarningGroup {
   readonly level: "approximated" | "unsupported";

@@ -1,4 +1,4 @@
-export type { IrError } from "@denreport/core";
+export type { CompatTargetId, IrError } from "@denreport/core";
 export type {
   DesignerOptions,
   DesignerTheme,

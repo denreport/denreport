@@ -1,5 +1,8 @@
+import type { CompatTargetId } from "@denreport/core";
+import { COMPAT_MATRICES } from "@denreport/core";
 import type { ReactNode } from "react";
 import type { DesignerChrome } from "../../api/designer";
+import { EXPORT_TARGET_IDS } from "../../state/export-warnings";
 import type { EditorStore } from "../../state/store";
 import { useEditorState } from "../useEditorState";
 import { OpenIrButton } from "./OpenIrButton";
@@ -184,6 +187,23 @@ export function Toolbar(props: {
       >
         プレビュー
       </button>
+      <span className="apx-field">
+        <select
+          aria-label="書き出しターゲット"
+          value={state.selectedExportTarget}
+          onChange={(e) =>
+            store.setSelectedExportTarget(
+              e.currentTarget.value as CompatTargetId,
+            )
+          }
+        >
+          {EXPORT_TARGET_IDS.map((id) => (
+            <option key={id} value={id}>
+              {COMPAT_MATRICES[id].displayName}
+            </option>
+          ))}
+        </select>
+      </span>
       <button
         type="button"
         className="apx-btn apx-btn-primary"

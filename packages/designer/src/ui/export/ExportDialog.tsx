@@ -3,8 +3,10 @@ import { COMPAT_MATRICES, checkCompat } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { triggerDownload } from "../../api/download";
-import type { CompatWarningGroup } from "../../state/export-warnings";
-import { groupCompatFindings } from "../../state/export-warnings";
+import {
+  EXPORT_TARGET_IDS,
+  groupCompatFindings,
+} from "../../state/export-warnings";
 import { resolveFont } from "../../state/fonts";
 import { layoutDocument, visibleInContext } from "../../state/geometry";
 import { activeSampleJson } from "../../state/sample-scenarios";
@@ -21,6 +23,7 @@ import {
   buildReportlabTemplateArtifact,
   parseExportData,
 } from "./run-export";
+import { WarningGroupCard } from "./WarningGroupCard";
 
 type RunState =
   | { readonly kind: "idle" }
@@ -42,48 +45,6 @@ const TARGET_DESCRIPTIONS: Readonly<Record<CompatTargetId, string>> = {
   reportlab: "生成コード（.py + フォント、zip）",
 };
 
-const TARGET_IDS: readonly CompatTargetId[] = ["pdfme", "reportlab"];
-
-const COMPAT_LEVEL_LABELS: Readonly<
-  Record<CompatWarningGroup["level"], string>
-> = {
-  approximated: "近似",
-  unsupported: "非対応",
-};
-
-function WarningGroupCard(props: {
-  readonly group: CompatWarningGroup;
-  readonly onJump: (id: string) => void;
-}): ReactNode {
-  const { group, onJump } = props;
-  return (
-    <div className={`apx-warn-card is-${group.level}`}>
-      <p className="apx-warn-note">
-        <b className="apx-warn-mark" aria-hidden="true">
-          !
-        </b>
-        <span className="apx-warn-level">
-          {COMPAT_LEVEL_LABELS[group.level]}
-        </span>
-        <span>{group.userMessage}</span>
-        <span className="apx-warn-count">{group.findingCount} 箇所</span>
-      </p>
-      <div className="apx-warn-chips">
-        {group.elementIds.map((id) => (
-          <button
-            key={id}
-            type="button"
-            className="apx-chip"
-            onClick={() => onJump(id)}
-          >
-            {id}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function ExportDialog(props: {
   readonly store: EditorStore;
   readonly onClose: () => void;
@@ -92,7 +53,9 @@ export function ExportDialog(props: {
 }): ReactNode {
   const { store, onClose, onReveal } = props;
   const state = useEditorState(store);
-  const [target, setTarget] = useState<CompatTargetId>("pdfme");
+  const [target, setTarget] = useState<CompatTargetId>(
+    state.selectedExportTarget,
+  );
   const [run, setRun] = useState<RunState>(RUN_IDLE);
   const [fullEmbedFont, setFullEmbedFont] = useState(false);
 
@@ -231,7 +194,7 @@ export function ExportDialog(props: {
       }
     >
       <div className="apx-tcards">
-        {TARGET_IDS.map((id) => (
+        {EXPORT_TARGET_IDS.map((id) => (
           <button
             key={id}
             type="button"
@@ -239,6 +202,7 @@ export function ExportDialog(props: {
             className={`apx-tcard${target === id ? " is-selected" : ""}`}
             onClick={() => {
               setTarget(id);
+              store.setSelectedExportTarget(id);
               setRun(RUN_IDLE);
             }}
           >

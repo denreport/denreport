@@ -121,6 +121,7 @@ function makeCtx(
     fontRegistry: new Map(),
     customGuides,
     envelopePresetId: null,
+    selectedExportTarget: "pdfme",
     groups,
   };
   return {

@@ -266,6 +266,27 @@ describe("Toolbar", () => {
     expect(onToggleSidebar).toHaveBeenCalledOnce();
   });
 
+  it("書き出しターゲットの select は state.selectedExportTarget に追従し、選択で setSelectedExportTarget が呼ばれる", async () => {
+    const store = await renderToolbar(makeChrome());
+    const select = container.querySelector<HTMLSelectElement>(
+      'select[aria-label="書き出しターゲット"]',
+    );
+    if (select === null) {
+      throw new Error("書き出しターゲットの select がない");
+    }
+    expect(select.value).toBe("pdfme");
+
+    Object.getOwnPropertyDescriptor(
+      HTMLSelectElement.prototype,
+      "value",
+    )?.set?.call(select, "reportlab");
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+
+    await vi.waitFor(() => {
+      expect(store.getState().selectedExportTarget).toBe("reportlab");
+    });
+  });
+
   it("右パネルトグルのクリックで onToggleProps が1回呼ばれる", async () => {
     const onToggleProps = vi.fn();
     await renderToolbar(

@@ -310,6 +310,49 @@ describe("EditorStore のカスタムガイド・封筒プリセット", () => {
   });
 });
 
+describe("EditorStore の書き出しターゲット", () => {
+  it("省略時の初期値は pdfme", () => {
+    const state = new EditorStore(makeDocument()).getState();
+    expect(state.selectedExportTarget).toBe("pdfme");
+  });
+
+  it("コンストラクタ第3引数で初期値を指定できる", () => {
+    const state = new EditorStore(
+      makeDocument(),
+      undefined,
+      "reportlab",
+    ).getState();
+    expect(state.selectedExportTarget).toBe("reportlab");
+  });
+
+  it("setSelectedExportTarget は購読者に通知し、履歴にも dirty にも影響しない", () => {
+    const store = new EditorStore(makeDocument());
+    let notified = 0;
+    store.subscribe(() => {
+      notified += 1;
+    });
+
+    store.setSelectedExportTarget("reportlab");
+
+    expect(notified).toBe(1);
+    expect(store.getState().selectedExportTarget).toBe("reportlab");
+    expect(store.canUndo()).toBe(false);
+    expect(store.getState().dirty).toBe(false);
+  });
+
+  it("undo / redo・commit・replaceDocument を経ても維持される", () => {
+    const store = new EditorStore(makeDocument());
+    store.setSelectedExportTarget("reportlab");
+
+    store.commit(makeDocument([textElement("t1", 10)]));
+    store.undo();
+    expect(store.getState().selectedExportTarget).toBe("reportlab");
+
+    store.replaceDocument(makeDocument());
+    expect(store.getState().selectedExportTarget).toBe("reportlab");
+  });
+});
+
 function registeredFont(name: string): RegisteredFont {
   return {
     name,

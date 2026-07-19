@@ -4,6 +4,7 @@ import { Designer } from "@denreport/designer";
 import { createNoticeArea } from "./notice";
 import {
   attachAutosave,
+  restoreExportTarget,
   restoreIr,
   SAMPLE_DATA_STORAGE_KEY,
 } from "./persistence";
@@ -17,12 +18,13 @@ if (container === null) {
 }
 
 const storedSampleData = localStorage.getItem(SAMPLE_DATA_STORAGE_KEY);
-const designer = new Designer(
-  container,
-  storedSampleData === null
-    ? undefined
-    : { initialSampleData: storedSampleData },
-);
+const storedExportTarget = restoreExportTarget(localStorage);
+const designer = new Designer(container, {
+  ...(storedSampleData === null ? {} : { initialSampleData: storedSampleData }),
+  ...(storedExportTarget === undefined
+    ? {}
+    : { initialExportTarget: storedExportTarget }),
+});
 
 if (restoreIr(designer, localStorage) === "invalid") {
   notice.show(
