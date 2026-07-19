@@ -175,16 +175,21 @@ test("要素のグループ化: 保存・リロードを跨いでグループが
   await dragFromPalette(page, TEXT_PALETTE, { x: 120, y: 60 });
   await expect(page.locator('.apx-el[data-apx-id="text2"]')).toBeVisible();
 
+  // 要素配置ぶんの自動保存デバウンスを先に完了させておく。未完了のままだと、後続の
+  // タイマー発火が saveIr() を遅延評価するため、グループ化自体の通知漏れが隠れてしまう
+  await waitForElementXY(page, "text2");
+  expect(
+    await page.evaluate(() =>
+      (localStorage.getItem("denreport-designer.ir") ?? "").includes(
+        '"groups"',
+      ),
+    ),
+  ).toBe(false);
+
   await page
     .locator('.apx-el[data-apx-id="text1"]')
     .click({ modifiers: ["Shift"] });
   await page.keyboard.press("ControlOrMeta+g");
-
-  // グループ化自体は commit しないため、自動保存を発火させるには文書変更を1回挟む必要がある
-  const before = await waitForElementXY(page, "text1");
-  const dragStart = await elementCenterMm(page, "text1");
-  await dragOnCanvas(page, dragStart, { x: dragStart.x + 5, y: dragStart.y });
-  await waitForXChange(page, "text1", before.x);
 
   await page.waitForFunction(() =>
     (localStorage.getItem("denreport-designer.ir") ?? "").includes('"groups"'),

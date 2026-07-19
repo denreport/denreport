@@ -3,6 +3,7 @@ import { IR_VERSION, parseIr } from "@denreport/core";
 import { createElement } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
+import type { ElementGroup } from "../state/groups";
 import { embedGroups } from "../state/groups";
 import type { SampleScenarioSet } from "../state/sample-scenarios";
 import {
@@ -73,6 +74,7 @@ export class Designer {
   private readonly mediaQuery: MediaQueryList;
   private readonly onMediaChange: () => void;
   private lastDocument: IrDocument;
+  private lastGroups: readonly ElementGroup[];
   private lastSampleScenarios: SampleScenarioSet;
   private theme: DesignerTheme;
   private destroyed = false;
@@ -86,12 +88,17 @@ export class Designer {
 
     this.store = new EditorStore(initialDocument, options?.initialSampleData);
     this.lastDocument = initialDocument;
+    this.lastGroups = this.store.getState().groups;
     this.lastSampleScenarios = this.store.getState().sampleScenarios;
-    // 選択・ズーム等の変更ではホストに通知しないため、参照比較で通知対象を絞る
+    // 選択・ズーム等の変更ではホストに通知しないため、参照比較で通知対象を絞る。
+    // group/ungroup は document を変えず groups だけを差し替えるため、両方を見る
     this.unsubscribeStore = this.store.subscribe(() => {
       const state = this.store.getState();
-      if (state.document !== this.lastDocument) {
+      const documentChanged = state.document !== this.lastDocument;
+      const groupsChanged = state.groups !== this.lastGroups;
+      if (documentChanged || groupsChanged) {
         this.lastDocument = state.document;
+        this.lastGroups = state.groups;
         for (const listener of [...this.changeListeners]) {
           listener();
         }
@@ -144,8 +151,8 @@ export class Designer {
     return json;
   }
 
-  /** 文書変更（編集の確定・undo/redo・loadIr）で呼ばれるリスナーを登録し、解除関数を返す。
-      選択・ズーム・ページ文脈の変更では発火しない */
+  /** 文書変更（編集の確定・undo/redo・loadIr）またはグループ変更（group/ungroup）で
+      呼ばれるリスナーを登録し、解除関数を返す。選択・ズーム・ページ文脈の変更では発火しない */
   onChange(listener: () => void): () => void {
     this.assertAlive();
     this.changeListeners.add(listener);

@@ -441,6 +441,21 @@ describe("onChange", () => {
     designer.loadIr(VALID_IR);
     expect(fired).toBe(0);
   });
+
+  it("グループ化・解除（setGroups）は文書を変えなくても発火する", () => {
+    const { designer } = mount({ initialIr: ROUND_TRIP_IR });
+    const store = storeOf(designer);
+    let fired = 0;
+    designer.onChange(() => {
+      fired += 1;
+    });
+
+    store.setGroups([{ id: "group1", memberIds: ["title", "customer"] }]);
+    expect(fired).toBe(1);
+
+    store.setGroups([]);
+    expect(fired).toBe(2);
+  });
 });
 
 describe("サンプルデータ API", () => {
