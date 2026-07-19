@@ -25,6 +25,24 @@ describe("paperPresetsForLanguage", () => {
     const ids = paperPresetsForLanguage("en-US").map((p) => p.id);
     expect(ids).toEqual(["a3", "a4", "a5", "b5iso", "letter", "legal"]);
   });
+
+  it("Letter/Legal は規格値どおりの mm 寸法（8.5x11in / 8.5x14in）を持つ", () => {
+    const intl = paperPresetsForLanguage("en-US");
+    const letter = intl.find((p) => p.id === "letter");
+    const legal = intl.find((p) => p.id === "legal");
+    expect(letter).toEqual(
+      expect.objectContaining({ width: 215.9, height: 279.4 }),
+    );
+    expect(legal).toEqual(
+      expect.objectContaining({ width: 215.9, height: 355.6 }),
+    );
+    const jaLetter = paperPresetsForLanguage("ja").find(
+      (p) => p.id === "letter",
+    );
+    expect(jaLetter).toEqual(
+      expect.objectContaining({ width: 215.9, height: 279.4 }),
+    );
+  });
 });
 
 describe("paperPresetIdForSize", () => {

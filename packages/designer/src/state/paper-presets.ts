@@ -23,7 +23,7 @@ const JA_PRESETS: readonly PaperPreset[] = [
   { id: "b4jis", label: "B4", width: 257, height: 364 },
   { id: "b5jis", label: "B5", width: 182, height: 257 },
   { id: "postcard", label: "はがき", width: 100, height: 148 },
-  { id: "letter", label: "レター", width: 216, height: 279 },
+  { id: "letter", label: "レター", width: 215.9, height: 279.4 },
 ];
 
 const INTL_PRESETS: readonly PaperPreset[] = [
@@ -31,8 +31,8 @@ const INTL_PRESETS: readonly PaperPreset[] = [
   { id: "a4", label: "A4", width: 210, height: 297 },
   { id: "a5", label: "A5", width: 148, height: 210 },
   { id: "b5iso", label: "B5", width: 176, height: 250 },
-  { id: "letter", label: "Letter", width: 216, height: 279 },
-  { id: "legal", label: "Legal", width: 216, height: 356 },
+  { id: "letter", label: "Letter", width: 215.9, height: 279.4 },
+  { id: "legal", label: "Legal", width: 215.9, height: 355.6 },
 ];
 
 /** UI 言語（BCP 47 言語タグ）に応じたプリセット一覧を返す。日本語のみ専用セット、他は英語圏セット共通 */

@@ -411,6 +411,19 @@ describe("用紙サイズプリセット", () => {
     expect(inputByLabel("高さ").value).toBe("257.0");
   });
 
+  it("レターを選ぶと規格値（215.9x279.4mm）がそのまま commit される", () => {
+    stubLanguage("ja-JP");
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    setSelectValue(requireSelectByLabel("サイズ"), "letter");
+    expect(store.getState().document.page).toEqual({
+      width: 215.9,
+      height: 279.4,
+    });
+    expect(inputByLabel("幅").value).toBe("215.9");
+    expect(inputByLabel("高さ").value).toBe("279.4");
+  });
+
   it("どのプリセットとも一致しない寸法では「カスタム」を選択済みにする", () => {
     stubLanguage("ja-JP");
     const store = makeStore();
