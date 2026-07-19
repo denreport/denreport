@@ -27,6 +27,7 @@ import type { TableCellSource } from "../../state/table-cells";
 import { cellView, tableCellSources } from "../../state/table-cells";
 import { ContextMenu } from "../context-menu/ContextMenu";
 import { useCanvasContextMenu } from "../context-menu/useCanvasContextMenu";
+import { useFontMetrics } from "../fonts/font-metrics";
 import { commitReplace } from "../properties/ElementProperties";
 import { useEditorState } from "../useEditorState";
 import { GuidesLayer } from "./GuidesLayer";
@@ -195,6 +196,7 @@ export function Canvas(props: {
   const state = useEditorState(store);
   const { document: doc, view } = state;
   const activeJson = activeSampleJson(state.sampleScenarios);
+  const metrics = useFontMetrics(doc.font, state.fontRegistry);
   const layout = useMemo(
     () => layoutDocument(doc, view.pageContext),
     [doc, view.pageContext],
@@ -466,6 +468,7 @@ export function Canvas(props: {
                   ? cellSources.get(view_.element.id)
                   : undefined
               }
+              metrics={metrics}
             />
           ))}
           {cellSel.selectionBox !== null && (

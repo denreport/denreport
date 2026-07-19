@@ -6,8 +6,11 @@ import type { PlacedElementView } from "../../state/geometry";
 import { visibleInContext } from "../../state/geometry";
 import type { TableCellSource } from "../../state/table-cells";
 import type { PageContext } from "../../state/types";
+import type { FontMetricsSet } from "../fonts/font-metrics";
+import { charWidthsFor } from "../fonts/font-metrics";
 import { BarcodeSketch } from "./BarcodeSketch";
 import { TableSketch } from "./TableSketch";
+import { TextSketch } from "./TextSketch";
 
 // キャンバスは模式表示に割り切り、二点鎖線・一点鎖線は dashed で近似する（正確な線種はプレビューで確認する）
 function cssLineStyle(
@@ -25,12 +28,40 @@ function cssLineStyle(
   }
 }
 
-function elementContent(el: IrElement | IrFlexChild): ReactNode {
+function elementContent(
+  el: IrElement | IrFlexChild,
+  metrics: FontMetricsSet | null,
+): ReactNode {
   switch (el.type) {
     case "text":
-      return el.text;
+      return (
+        <TextSketch
+          content={el.text}
+          widthMm={el.w}
+          fontSize={el.fontSize}
+          align={el.align}
+          charWidths={
+            metrics === null
+              ? null
+              : charWidthsFor(
+                  metrics,
+                  el.fontWeight ?? "normal",
+                  el.fontStyle ?? "normal",
+                )
+          }
+        />
+      );
     case "pageNumber":
-      return <span className="apx-bind">{el.format}</span>;
+      return (
+        <TextSketch
+          content={el.format}
+          widthMm={el.w}
+          fontSize={el.fontSize}
+          align={el.align}
+          bind
+          charWidths={metrics === null ? null : charWidthsFor(metrics)}
+        />
+      );
     case "image":
       if (el.src === IMAGE_PLACEHOLDER_SRC) {
         return <span className="apx-image-placeholder">画像未設定</span>;
@@ -50,6 +81,7 @@ export function PaperElement(props: {
   readonly context: PageContext;
   readonly dragging: boolean;
   readonly tableCells?: TableCellSource | undefined;
+  readonly metrics?: FontMetricsSet | null | undefined;
 }): ReactNode {
   const { view } = props;
   const el = view.element;
@@ -149,9 +181,14 @@ export function PaperElement(props: {
         </span>
       )}
       {el.type === "table" ? (
-        <TableSketch element={el} box={view.box} cells={props.tableCells} />
+        <TableSketch
+          element={el}
+          box={view.box}
+          cells={props.tableCells}
+          charWidths={props.metrics?.regular ?? null}
+        />
       ) : (
-        elementContent(el)
+        elementContent(el, props.metrics ?? null)
       )}
     </div>
   );

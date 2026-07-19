@@ -753,6 +753,11 @@
   text-align: right;
 }
 
+.apx-text-line {
+  white-space: pre;
+  letter-spacing: calc(var(--cs, 0) * var(--pt));
+}
+
 .apx-el-line-h {
   height: 0;
   border-top: max(1px, calc(var(--t, 0.3) * var(--mm))) var(--ls, solid)

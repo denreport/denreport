@@ -4,6 +4,7 @@ import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { PlacedElementView } from "../../state/geometry";
+import type { FontMetricsSet } from "../fonts/font-metrics";
 import { PaperElement } from "./PaperElement";
 
 (
@@ -37,10 +38,15 @@ function viewOf(element: IrElement): PlacedElementView {
   };
 }
 
-function renderEl(element: IrElement): void {
+function renderEl(element: IrElement, metrics?: FontMetricsSet | null): void {
   act(() => {
     root.render(
-      <PaperElement view={viewOf(element)} context="first" dragging={false} />,
+      <PaperElement
+        view={viewOf(element)}
+        context="first"
+        dragging={false}
+        metrics={metrics}
+      />,
     );
   });
 }
@@ -349,5 +355,69 @@ describe("PaperElement — table の CSS 変数", () => {
   it("frameStyle: dashdot は dashed に近似する", () => {
     renderEl(tableEl({ frameStyle: "dashdot" }));
     expect(el().style.getPropertyValue("--frame-ls")).toBe("dashed");
+  });
+});
+
+describe("PaperElement — フォント計量の有無による text / pageNumber の描画", () => {
+  const METRICS: FontMetricsSet = { regular: () => 0.5 };
+
+  it("metrics 未指定では従来どおり生テキストのまま描画する", () => {
+    renderEl({
+      type: "text",
+      id: "t1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      text: "本文",
+      fontSize: 10,
+      align: "left",
+      lineHeight: 1.25,
+    });
+    expect(el().querySelectorAll(".apx-text-line")).toHaveLength(0);
+    expect(el().textContent).toBe("本文");
+  });
+
+  it("metrics 指定の text は .apx-text-line で行分割描画する", () => {
+    renderEl(
+      {
+        type: "text",
+        id: "t1",
+        x: 0,
+        y: 0,
+        pages: "first",
+        w: 40,
+        h: 20,
+        text: "本文",
+        fontSize: 10,
+        align: "left",
+        lineHeight: 1.25,
+      },
+      METRICS,
+    );
+    expect(el().querySelectorAll(".apx-text-line")).toHaveLength(1);
+    expect(el().textContent).toBe("本文");
+  });
+
+  it("metrics 指定の pageNumber は .apx-text-line > .apx-bind になる", () => {
+    renderEl(
+      {
+        type: "pageNumber",
+        id: "p1",
+        x: 0,
+        y: 0,
+        pages: "all",
+        w: 40,
+        h: 20,
+        format: "{n} / {N}",
+        fontSize: 10,
+        align: "left",
+        lineHeight: 1.25,
+      },
+      METRICS,
+    );
+    const line = el().querySelector(".apx-text-line");
+    expect(line?.querySelector(".apx-bind")?.textContent).toBe("{n} / {N}");
   });
 });
