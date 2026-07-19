@@ -32,6 +32,11 @@ describe("exportReportlab — golden fixture snapshots", () => {
       irFile: "rotation.json",
       dataFile: "rotation-data.json",
     },
+    {
+      name: "reportlab-table-merge",
+      irFile: "table-merge.json",
+      dataFile: "table-merge-data.json",
+    },
   ])("$name", async ({ name, irFile, dataFile }) => {
     const parsed = parseIr(
       readFileSync(`${coreFixturesDir}/${irFile}`, "utf-8"),

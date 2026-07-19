@@ -321,6 +321,127 @@ describe("exportReportlabTemplate — cellOverrides", () => {
   });
 });
 
+describe("exportReportlabTemplate — cell merges", () => {
+  function mergeTable(
+    overrides: Partial<
+      Extract<IrDocument["elements"][number], { type: "table" }>
+    > = {},
+  ): IrDocument {
+    return docOf({
+      type: "table",
+      id: "items",
+      x: 15,
+      y: 0,
+      bind: "items",
+      columns: [
+        {
+          key: "cat",
+          label: "分類",
+          width: 40,
+          align: "left",
+          mergeSameValue: true,
+        },
+        { key: "name", label: "品目", width: 50, align: "left" },
+        { key: "amount", label: "金額", width: 30, align: "right" },
+      ],
+      rowHeight: 10,
+      headerHeight: 10,
+      fontSize: 10,
+      maxY: 100,
+      continuationY: 20,
+      minRows: 0,
+      ...overrides,
+    });
+  }
+
+  it("emits the merge helpers and a per-table _chunk_merges call with span/column literals", () => {
+    const doc = mergeTable({
+      cellSpans: [
+        { row: "header", key: "name", colSpan: 2 },
+        { row: 1, key: "name", rowSpan: 2 },
+      ],
+    });
+    const result = exportReportlabTemplate(doc, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      "def _chunk_merges(rows, spans, merge_cols, col_keys, row_offset, chunk_size):",
+    );
+    expect(result.code).toContain("def _kept(start, end, skips):");
+    expect(result.code).toContain("def _row_edge(y0, header_h, row_h, edge):");
+    expect(result.code).toContain(
+      'rects, covered, h_skips, v_skips = _chunk_merges(rows, [(1, 1, 2, 1)], [0], ["cat", "name", "amount"], row_offset, chunk_size)',
+    );
+    expect(result.code).toContain("xs = [15, 55, 105, 135]");
+  });
+
+  it("splits grid lines at runtime and appends the static header skip to the merged vertical line", () => {
+    const doc = mergeTable({
+      cellSpans: [{ row: "header", key: "name", colSpan: 2 }],
+    });
+    const result = exportReportlabTemplate(doc, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      "for s, e in _kept(0, 3, h_skips.get(q, [])):",
+    );
+    expect(result.code).toContain(
+      "for s, e in _kept(-1, chunk_size, v_skips.get(1, [])):",
+    );
+    // ヘッダで name+amount が結合されるため、その間の垂直罫線だけヘッダ帯を除く
+    expect(result.code).toContain(
+      "for s, e in _kept(-1, chunk_size, v_skips.get(2, []) + [(-1, 0)]):",
+    );
+  });
+
+  it("bakes the merged header cell at generation time (covered label omitted, origin widened)", () => {
+    const doc = mergeTable({
+      cellSpans: [{ row: "header", key: "name", colSpan: 2 }],
+    });
+    const result = exportReportlabTemplate(doc, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).not.toContain('["金額"]');
+    // 品目ヘッダの幅 = (50 + 30) − 2×1.5
+    expect(result.code).toContain('77, 8.2, 10, "center", 1.25');
+  });
+
+  it("guards every data cell on covered and derives the width from rects at runtime", () => {
+    const result = exportReportlabTemplate(mergeTable(), FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain("if (q, 0) not in covered:");
+    expect(result.code).toContain("_rs, _cs = rects.get((q, 0), (1, 1))");
+    expect(result.code).toContain("_w = xs[0 + _cs] - xs[0] - 3");
+    expect(result.code).toContain(
+      '_wrap("NotoSansJP", 10, _w, rows[t]["cat"])',
+    );
+  });
+
+  it("omits the merge helpers and keeps the plain table function without merges", () => {
+    const plain = docOf({
+      type: "table",
+      id: "items",
+      x: 15,
+      y: 0,
+      bind: "items",
+      columns: [{ key: "name", label: "品目", width: 90, align: "left" }],
+      rowHeight: 10,
+      headerHeight: 10,
+      fontSize: 10,
+      maxY: 100,
+      continuationY: 20,
+      minRows: 5,
+    });
+    const result = exportReportlabTemplate(plain, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).not.toContain("_chunk_merges");
+    expect(result.code).not.toContain("_kept(");
+    expect(result.code).not.toContain("_row_edge(");
+  });
+});
+
 describe("exportReportlabTemplate — table stripeColor", () => {
   function tableWithStripe(): IrDocument {
     return docOf({

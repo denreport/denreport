@@ -206,6 +206,75 @@ export const BARCODE_FN = [
   "    c.restoreState()",
 ].join("\n");
 
+// ir/table-merge.ts の結合区間計算と同一（二重実装のため同期が必要）。
+// rects は起点 (q, col) → (row_span, col_span) の辞書
+export const CHUNK_MERGES_FN = [
+  "def _chunk_merges(rows, spans, merge_cols, col_keys, row_offset, chunk_size):",
+  "    intervals = []",
+  "    boundaries = set()",
+  "    for col in merge_cols:",
+  "        key = col_keys[col]",
+  "        n = len(rows)",
+  "        changes = []",
+  "        start = 0",
+  "        for t in range(1, n + 1):",
+  '            prev = rows[t - 1].get(key, "")',
+  '            changed = t == n or rows[t].get(key, "") != prev',
+  "            if changed or t in boundaries:",
+  '                if t - start >= 2 and prev != "":',
+  "                    intervals.append((start, t, col, 1))",
+  "                if changed and t < n:",
+  "                    changes.append(t)",
+  "                start = t",
+  "        boundaries.update(changes)",
+  "    for row, col, row_span, col_span in spans:",
+  "        intervals.append((row, row + row_span, col, col_span))",
+  "    rects = {}",
+  "    covered = set()",
+  "    h_skips = {}",
+  "    v_skips = {}",
+  "    for start, end, col, col_span in intervals:",
+  "        s = max(start, row_offset)",
+  "        e = min(end, row_offset + chunk_size)",
+  "        if e <= s:",
+  "            continue",
+  "        q = s - row_offset",
+  "        row_span = e - s",
+  "        rects[(q, col)] = (row_span, col_span)",
+  "        for r in range(q, q + row_span):",
+  "            for c2 in range(col, col + col_span):",
+  "                if r != q or c2 != col:",
+  "                    covered.add((r, c2))",
+  "        for line in range(q + 1, q + row_span):",
+  "            h_skips.setdefault(line, []).append((col, col + col_span))",
+  "        for c2 in range(col + 1, col + col_span):",
+  "            v_skips.setdefault(c2, []).append((q, q + row_span))",
+  "    return rects, covered, h_skips, v_skips",
+].join("\n");
+
+// ir/table-merge.ts の subtractSkips と同一（二重実装のため同期が必要）
+export const KEPT_SEGMENTS_FN = [
+  "def _kept(start, end, skips):",
+  "    out = []",
+  "    pos = start",
+  "    for s, e in sorted(skips):",
+  "        s = max(s, pos)",
+  "        e = min(e, end)",
+  "        if e <= s:",
+  "            continue",
+  "        if pos < s:",
+  "            out.append((pos, s))",
+  "        pos = e",
+  "    if pos < end:",
+  "        out.append((pos, end))",
+  "    return out",
+].join("\n");
+
+export const ROW_EDGE_FN = [
+  "def _row_edge(y0, header_h, row_h, edge):",
+  "    return y0 if edge < 0 else y0 + header_h + edge * row_h",
+].join("\n");
+
 export const MAIN_BLOCK = [
   'if __name__ == "__main__":',
   '    build(sys.argv[1] if len(sys.argv) > 1 else "output.pdf")',

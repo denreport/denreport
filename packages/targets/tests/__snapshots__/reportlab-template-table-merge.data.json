@@ -1,0 +1,47 @@
+{
+  "data": {
+    "items": [
+      {
+        "category": "食品",
+        "name": "りんご",
+        "amount": "100"
+      },
+      {
+        "category": "食品",
+        "name": "みかん",
+        "amount": "200"
+      },
+      {
+        "category": "雑貨",
+        "name": "ノート",
+        "amount": "300"
+      },
+      {
+        "category": "雑貨",
+        "name": "ペン",
+        "amount": "400"
+      },
+      {
+        "category": "雑貨",
+        "name": "はさみ",
+        "amount": "500"
+      },
+      {
+        "category": "雑貨",
+        "name": "のり",
+        "amount": "600"
+      },
+      {
+        "category": "雑貨",
+        "name": "テープ",
+        "amount": "700"
+      },
+      {
+        "category": "雑貨",
+        "name": "定規",
+        "amount": "800"
+      }
+    ]
+  },
+  "pages": 2
+}

@@ -183,6 +183,31 @@ describe("exportReportlabTemplate — golden fixture snapshots", () => {
     );
   });
 
+  it("reportlab-template-table-merge", async () => {
+    const parsed = parseIr(
+      readFileSync(`${coreFixturesDir}/table-merge.json`, "utf-8"),
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) throw new Error("expected valid IR fixture");
+    const data = readJson<IrData>(fixturesDir, "table-merge-data.json");
+    const fontData = new Uint8Array(readFileSync(EMBEDDED_FONT_URL));
+
+    const result = exportReportlabTemplate(parsed.document, {
+      regular: fontData,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+
+    await expect(result.code).toMatchFileSnapshot(
+      "./__snapshots__/reportlab-template-table-merge.py",
+    );
+    await expect(
+      JSON.stringify({ data, pages: 2 }, null, 2),
+    ).toMatchFileSnapshot(
+      "./__snapshots__/reportlab-template-table-merge.data.json",
+    );
+  });
+
   it("reportlab-template-footnotes", async () => {
     const fontData = new Uint8Array(readFileSync(EMBEDDED_FONT_URL));
     const result = exportReportlabTemplate(footnotesDocument(), {

@@ -51,6 +51,11 @@ describe.skipIf(reportlabPdfDir === undefined || reportlabPdfDir === "")(
         irFile: "invoice-multipage.json",
         dataFile: "invoice-multipage-data.json",
       },
+      {
+        name: "table-merge",
+        irFile: "table-merge.json",
+        dataFile: "table-merge-data.json",
+      },
     ])("$name", async ({ name, irFile, dataFile }) => {
       const { document, data } = loadFixture(irFile, dataFile);
       const expectation = buildReferenceExpectation(document, data, fontData);
@@ -67,6 +72,30 @@ describe.skipIf(reportlabPdfDir === undefined || reportlabPdfDir === "")(
       writeFileSync(`${outputDir}/pdfme-${name}.pdf`, pdfmeBytes);
       const pdfmePdf = await extractPdf(pdfmeBytes);
       expect(checkCrossTarget(pdfmePdf, reportlabPdf, expectation)).toEqual([]);
+    });
+
+    it("table-merge: テンプレート経路（実行時データ）の PDF が lowerIr の参照意味論と一致する", async () => {
+      const { document, data } = loadFixture(
+        "table-merge.json",
+        "table-merge-data.json",
+      );
+      const expectation = buildReferenceExpectation(document, data, fontData);
+
+      const templatePdf = await extractPdf(
+        new Uint8Array(
+          readFileSync(resolve(pdfDir, "reportlab-template-table-merge.pdf")),
+        ),
+      );
+      expect(checkAgainstReference(templatePdf, expectation)).toEqual([]);
+
+      const loweredPathPdf = await extractPdf(
+        new Uint8Array(
+          readFileSync(resolve(pdfDir, "reportlab-table-merge.pdf")),
+        ),
+      );
+      expect(
+        checkCrossTarget(templatePdf, loweredPathPdf, expectation),
+      ).toEqual([]);
     });
 
     const MM_PER_PT = 25.4 / 72;

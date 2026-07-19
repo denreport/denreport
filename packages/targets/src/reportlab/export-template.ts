@@ -16,6 +16,7 @@ import type {
   LoweredTextElement,
 } from "@denreport/core";
 import {
+  computeChunkMerges,
   layoutTextLines,
   PAGE_COUNT_MAX,
   resolveEllipseStyle,
@@ -40,15 +41,18 @@ import {
   BARCODE_FN,
   buildFontsConstant,
   buildImports,
+  CHUNK_MERGES_FN,
   ELLIPSE_FN,
   fontEntriesFor,
   IMAGE_FN,
+  KEPT_SEGMENTS_FN,
   LINE_FN,
   MAIN_BLOCK,
   pyDash,
   RECT_FN,
   REGISTER_FONTS_FN,
   REPORTLAB_BARCODE_NAMES,
+  ROW_EDGE_FN,
   statementFor,
   TEXT_FN,
 } from "./snippets";
@@ -260,6 +264,124 @@ function buildTableFunction(
     const cellWidth = column.width - 2 * TABLE_CELL_PADDING_X;
     lines.push(
       `        _text(c, ${fontName}, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)} + ${pyNumber(TABLE_CELL_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.rowHeight - TABLE_CELL_TEXT_OFFSET_Y)}, ${pyNumber(table.fontSize)}, ${pyString(column.align)}, 1.25, ${TABLE_BLACK_RGB}, 0, False, _wrap(${fontName}, ${pyNumber(table.fontSize)}, ${pyNumber(cellWidth)}, ${cellAccess}))`,
+    );
+  });
+  return lines.join("\n");
+}
+
+function tableHasMerges(table: IrTableElement): boolean {
+  return (
+    (table.cellSpans?.length ?? 0) > 0 ||
+    table.columns.some((column) => column.mergeSameValue === true)
+  );
+}
+
+// 結合つきの表は、被覆セル・分節罫線が実行時データに依存するため
+// _chunk_merges の結果を参照する形の関数を生成する
+function buildMergedTableFunction(
+  table: IrTableElement,
+  regularName: string,
+  wrapText: (
+    content: string,
+    widthMm: number,
+    fontSize: number,
+  ) => readonly string[],
+): string {
+  const hasOverrides = (table.cellOverrides?.length ?? 0) > 0;
+  const columnCount = table.columns.length;
+  const width = table.columns.reduce((total, col) => total + col.width, 0);
+  const height = `${pyNumber(table.headerHeight)} + chunk_size * ${pyNumber(table.rowHeight)}`;
+  const fontName = pyString(regularName);
+  const headerHeight = pyNumber(table.headerHeight);
+  const rowHeight = pyNumber(table.rowHeight);
+  const pad = pyNumber(2 * TABLE_CELL_PADDING_X);
+  const cellOffsetY = pyNumber(TABLE_CELL_TEXT_OFFSET_Y);
+  const indexByKey = new Map(table.columns.map((col, i) => [col.key, i]));
+  const bodySpans = (table.cellSpans ?? []).flatMap((span) => {
+    const col = span.row === "header" ? undefined : indexByKey.get(span.key);
+    if (span.row === "header" || col === undefined) return [];
+    const colSpan = Math.min(span.colSpan ?? 1, columnCount - col);
+    return [
+      `(${pyNumber(span.row)}, ${pyNumber(col)}, ${pyNumber(span.rowSpan ?? 1)}, ${pyNumber(colSpan)})`,
+    ];
+  });
+  const mergeCols = table.columns.flatMap((column, i) =>
+    column.mergeSameValue === true ? [pyNumber(i)] : [],
+  );
+  const columnKeys = table.columns
+    .map((column) => pyString(column.key))
+    .join(", ");
+  const xsLiteral = Array.from({ length: columnCount + 1 }, (_, i) =>
+    pyNumber(xOf(table, i)),
+  ).join(", ");
+  // ヘッダの結合は静的（データ非依存）なので生成時に確定させる
+  const headerMerges = computeChunkMerges(table, [], 0, 0);
+
+  const lines: string[] = [
+    `def _table_${table.id}(c, rows, chunk_index, row_offset, chunk_size):`,
+    `    y0 = ${pyNumber(table.y)} if chunk_index == 0 else ${pyNumber(table.continuationY)}`,
+    `    xs = [${xsLiteral}]`,
+    `    rects, covered, h_skips, v_skips = _chunk_merges(rows, [${bodySpans.join(", ")}], [${mergeCols.join(", ")}], [${columnKeys}], row_offset, chunk_size)`,
+  ];
+  if (table.stripeColor !== undefined) {
+    lines.push(
+      "    for q in range(chunk_size):",
+      "        if (row_offset + q) % 2 == 1:",
+      `            _rect(c, ${pyNumber(table.x)}, y0 + ${headerHeight} + q * ${rowHeight}, ${pyNumber(width)}, ${rowHeight}, 0, ${TABLE_BLACK_RGB}, ${pyRgb(table.stripeColor)}, None, 0, 0)`,
+    );
+  }
+  const frameWidth = pyNumber(table.frameWidth ?? TABLE_FRAME_WIDTH);
+  const frameDash = pyDash(table.frameStyle ?? "solid");
+  const gridWidth = pyNumber(table.gridWidth ?? TABLE_GRID_WIDTH);
+  const gridDash = pyDash(table.gridStyle ?? "solid");
+  lines.push(
+    `    _rect(c, ${pyNumber(table.x)}, y0, ${pyNumber(width)}, ${height}, ${frameWidth}, ${TABLE_BLACK_RGB}, None, ${frameDash}, 0, 0)`,
+    "    for q in range(chunk_size):",
+    `        y = y0 + ${headerHeight} + q * ${rowHeight}`,
+    `        for s, e in _kept(0, ${pyNumber(columnCount)}, h_skips.get(q, [])):`,
+    `            _line(c, xs[s], y, xs[e], y, ${gridWidth}, ${TABLE_BLACK_RGB}, ${gridDash}, 0)`,
+  );
+  for (let i = 1; i < columnCount; i++) {
+    const x = pyNumber(xOf(table, i));
+    const headerSkip = headerMerges.verticalSkips.has(i) ? " + [(-1, 0)]" : "";
+    lines.push(
+      `    for s, e in _kept(-1, chunk_size, v_skips.get(${pyNumber(i)}, [])${headerSkip}):`,
+      `        _line(c, ${x}, _row_edge(y0, ${headerHeight}, ${rowHeight}, s), ${x}, _row_edge(y0, ${headerHeight}, ${rowHeight}, e), ${gridWidth}, ${TABLE_BLACK_RGB}, ${gridDash}, 0)`,
+    );
+  }
+  table.columns.forEach((column, i) => {
+    if (headerMerges.covered.has(`header:${i}`)) return;
+    const rect = headerMerges.rects.find(
+      (r) => r.q === "header" && r.col === i,
+    );
+    const spanWidth =
+      rect === undefined
+        ? column.width
+        : xOf(table, i + rect.colSpan) - xOf(table, i);
+    const cellWidth = spanWidth - 2 * TABLE_CELL_PADDING_X;
+    const headerLines = wrapText(column.label, cellWidth, table.fontSize)
+      .map(pyString)
+      .join(", ");
+    lines.push(
+      `    _text(c, ${fontName}, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(TABLE_HEADER_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.headerHeight - TABLE_HEADER_TEXT_OFFSET_Y)}, ${pyNumber(table.fontSize)}, "center", 1.25, ${TABLE_BLACK_RGB}, 0, False, [${headerLines}])`,
+    );
+  });
+  lines.push(
+    "    for q in range(chunk_size):",
+    "        t = row_offset + q",
+    "        if t >= len(rows):",
+    "            continue",
+  );
+  table.columns.forEach((column, i) => {
+    const cellAccess = hasOverrides
+      ? `rows[t].get(${pyString(column.key)}, "")`
+      : `rows[t][${pyString(column.key)}]`;
+    const index = pyNumber(i);
+    lines.push(
+      `        if (q, ${index}) not in covered:`,
+      `            _rs, _cs = rects.get((q, ${index}), (1, 1))`,
+      `            _w = xs[${index} + _cs] - xs[${index}] - ${pad}`,
+      `            _text(c, ${fontName}, xs[${index}] + ${pyNumber(TABLE_CELL_PADDING_X)}, y0 + ${headerHeight} + q * ${rowHeight} + ${cellOffsetY}, _w, _rs * ${rowHeight} - ${cellOffsetY}, ${pyNumber(table.fontSize)}, ${pyString(column.align)}, 1.25, ${TABLE_BLACK_RGB}, 0, False, _wrap(${fontName}, ${pyNumber(table.fontSize)}, _w, ${cellAccess}))`,
     );
   });
   return lines.join("\n");
@@ -606,6 +728,7 @@ function buildTemplateSource(
   const hasCellOverrides = tables.some(
     (table) => (table.cellOverrides?.length ?? 0) > 0,
   );
+  const hasMerges = tables.some(tableHasMerges);
   const needsText =
     hasTables ||
     placed.some(
@@ -631,6 +754,7 @@ function buildTemplateSource(
     ...(hasTokenText ? [INTERPOLATE_FN] : []),
     ...(needsWrapFn ? [WRAP_FN] : []),
     ...(hasTables ? [BIND_ROWS_FN, CHUNK_SIZES_FN] : []),
+    ...(hasMerges ? [CHUNK_MERGES_FN, KEPT_SEGMENTS_FN, ROW_EDGE_FN] : []),
     ...(hasCellOverrides ? [APPLY_CELL_OVERRIDES_FN] : []),
     ...(hasPageNumber ? [PAGE_LABEL_FN] : []),
   ];
@@ -669,7 +793,11 @@ function buildTemplateSource(
     buildImports(hasImage, hasTokenText, hasBarcode),
     buildConstants(resolved, entries),
     helperFns.join("\n\n"),
-    ...tables.map((table) => buildTableFunction(table, font.regular, wrapText)),
+    ...tables.map((table) =>
+      tableHasMerges(table)
+        ? buildMergedTableFunction(table, font.regular, wrapText)
+        : buildTableFunction(table, font.regular, wrapText),
+    ),
     buildDrawPage(placed, hasTables, layoutLines, font),
     buildBuildFunction(tables),
     MAIN_BLOCK,
