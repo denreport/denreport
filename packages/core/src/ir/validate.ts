@@ -1,5 +1,6 @@
 import {
   DATA_URI_PATTERN,
+  ELEMENT_NAME_MAX_LENGTH,
   FONT_SIZE_MAX,
   IDENTIFIER_MAX_LENGTH,
   IDENTIFIER_PATTERN,
@@ -77,6 +78,7 @@ export function validateIr(document: IrDocument): readonly IrError[] {
     ...checkM15(document, walked),
     ...checkM16(walked),
     ...checkM17(walked),
+    ...checkM18(walked),
     ...checkF02(document),
     ...checkF03(document),
     ...checkF04(document, walked),
@@ -870,6 +872,25 @@ function checkM17(walked: readonly WalkedElement[]): IrError[] {
           "M17",
           `${path}.borderStyle`,
           "cornerRadius を指定する場合、borderStyle は solid（省略含む）である必要があります",
+        ),
+      );
+    }
+  }
+  return errors;
+}
+
+function checkM18(walked: readonly WalkedElement[]): IrError[] {
+  const errors: IrError[] = [];
+  for (const { path, element } of walked) {
+    if (
+      element.name !== undefined &&
+      element.name.length > ELEMENT_NAME_MAX_LENGTH
+    ) {
+      errors.push(
+        err(
+          "M18",
+          `${path}.name`,
+          `name は${ELEMENT_NAME_MAX_LENGTH}文字以下である必要があります`,
         ),
       );
     }

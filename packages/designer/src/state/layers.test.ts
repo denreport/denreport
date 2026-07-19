@@ -221,4 +221,14 @@ describe("layerLabel", () => {
       }),
     ).toBe("フレックス");
   });
+
+  it("name が指定されていれば自動ラベルより優先する", () => {
+    expect(layerLabel({ ...base, text: "見出し", name: "表題" })).toBe("表題");
+    expect(layerLabel(TABLE)).toBe("表");
+    expect(layerLabel({ ...TABLE, name: "明細表" })).toBe("明細表");
+  });
+
+  it("name が空文字なら自動ラベルへフォールバックする", () => {
+    expect(layerLabel({ ...base, text: "見出し", name: "" })).toBe("見出し");
+  });
 });

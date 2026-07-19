@@ -67,6 +67,8 @@ export interface IrColumn {
 
 interface IrElementCommon {
   readonly id: string;
+  /** Display-only label (no identifier pattern, may repeat). See ELEMENT_NAME_MAX_LENGTH. */
+  readonly name?: string;
 }
 
 interface IrPositioned {

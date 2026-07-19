@@ -449,6 +449,54 @@ describe("用紙サイズプリセット", () => {
   });
 });
 
+describe("名前フィールド", () => {
+  it("ヘッダーの名前欄への入力が commit に到達し、undo で戻る", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["r1"]);
+
+    const nameInput = inputByLabel("名前");
+    expect(nameInput.value).toBe("");
+    setValue(nameInput, "見出し枠");
+    blur(nameInput);
+    expect(elementById(store, "r1")).toMatchObject({ name: "見出し枠" });
+
+    act(() => {
+      store.undo();
+    });
+    expect(elementById(store, "r1")).not.toHaveProperty("name");
+  });
+
+  it("空欄への変更は name 属性を除去する", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["r1"]);
+
+    const nameInput = inputByLabel("名前");
+    setValue(nameInput, "見出し枠");
+    blur(nameInput);
+    expect(elementById(store, "r1")).toMatchObject({ name: "見出し枠" });
+
+    setValue(nameInput, "  ");
+    blur(nameInput);
+    expect(elementById(store, "r1")).not.toHaveProperty("name");
+  });
+
+  it("flex 子でも名前欄を表示・編集できる", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["c1"]);
+
+    const nameInput = inputByLabel("名前");
+    setValue(nameInput, "子要素名");
+    blur(nameInput);
+    const flex = elementById(store, "f1");
+    expect(flex.type === "flex" ? flex.children[0] : null).toMatchObject({
+      name: "子要素名",
+    });
+  });
+});
+
 describe("スタイルセクション", () => {
   it("スタイル対象の型（text）でのみ select を表示し、対象外（image）では表示しない", () => {
     const store = makeStoreWithStyle();

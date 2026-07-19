@@ -409,6 +409,7 @@ function checkCommonRequired(
 ): IrError[] {
   const errors: IrError[] = [];
   checkRequiredType(errors, value, "id", path, rule, "string");
+  checkOptionalType(errors, value, "name", path, rule, "string");
   if (!isFlexChild) {
     checkRequiredType(errors, value, "x", path, rule, "number");
     checkRequiredType(errors, value, "y", path, rule, "number");
@@ -642,6 +643,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
   text: [
     "type",
     "id",
+    "name",
     "x",
     "y",
     "pages",
@@ -657,6 +659,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
   line: [
     "type",
     "id",
+    "name",
     "x",
     "y",
     "pages",
@@ -670,6 +673,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
   rect: [
     "type",
     "id",
+    "name",
     "x",
     "y",
     "pages",
@@ -685,6 +689,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
   ellipse: [
     "type",
     "id",
+    "name",
     "x",
     "y",
     "pages",
@@ -697,6 +702,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
   table: [
     "type",
     "id",
+    "name",
     "x",
     "y",
     "bind",
@@ -711,10 +717,11 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "stripeColor",
     "style",
   ],
-  image: ["type", "id", "x", "y", "pages", "w", "h", "src"],
+  image: ["type", "id", "name", "x", "y", "pages", "w", "h", "src"],
   flex: [
     "type",
     "id",
+    "name",
     "x",
     "y",
     "pages",
@@ -729,6 +736,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
   pageNumber: [
     "type",
     "id",
+    "name",
     "x",
     "y",
     "pages",
@@ -741,7 +749,18 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "color",
     "style",
   ],
-  barcode: ["type", "id", "x", "y", "pages", "w", "h", "symbology", "value"],
+  barcode: [
+    "type",
+    "id",
+    "name",
+    "x",
+    "y",
+    "pages",
+    "w",
+    "h",
+    "symbology",
+    "value",
+  ],
 };
 const COLUMN_ALLOWED_KEYS = ["key", "label", "width", "align"];
 const CELL_OVERRIDE_ALLOWED_KEYS = ["row", "key", "value"];
@@ -956,6 +975,11 @@ function styleAttr(value: Record<string, unknown>): { style?: string } {
   return value.style !== undefined ? { style: value.style as string } : {};
 }
 
+/** name は任意属性のため、指定時のみキーを持つオブジェクトを返す（`{}` へスプレッドする） */
+function nameAttr(value: Record<string, unknown>): { name?: string } {
+  return value.name !== undefined ? { name: value.name as string } : {};
+}
+
 function normalizeElement(
   value: Record<string, unknown>,
   page: IrPage,
@@ -971,7 +995,12 @@ function normalizeElement(
           (value.pages as IrPages | undefined) ??
           (type === "pageNumber" ? "all" : "first"),
       };
-  const common = { type, id: value.id as string, ...positioned };
+  const common = {
+    type,
+    id: value.id as string,
+    ...nameAttr(value),
+    ...positioned,
+  };
 
   switch (type) {
     case "text":
@@ -1052,6 +1081,7 @@ function normalizeElement(
       return {
         type,
         id: value.id as string,
+        ...nameAttr(value),
         x: value.x as number,
         y,
         bind: value.bind as string,

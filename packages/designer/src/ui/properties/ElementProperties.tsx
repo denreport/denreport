@@ -10,7 +10,7 @@ import { applyStyle, clearStyle } from "../../state/styles";
 import { BarcodeProperties } from "./BarcodeProperties";
 import { EllipseProperties } from "./EllipseProperties";
 import { FlexProperties } from "./FlexProperties";
-import { SegmentField } from "./fields";
+import { SegmentField, TextField } from "./fields";
 import { ImageProperties } from "./ImageProperties";
 import { LineProperties } from "./LineProperties";
 import { PageNumberProperties } from "./PageNumberProperties";
@@ -102,8 +102,29 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
   return (
     <>
       <div className="apx-props-head">
-        <span className="apx-type-badge">{ELEMENT_TYPE_LABEL[el.type]}</span>
-        <span className="apx-props-id">{el.id}</span>
+        <div className="apx-props-head-top">
+          <span className="apx-type-badge">{ELEMENT_TYPE_LABEL[el.type]}</span>
+          <span className="apx-props-id">{el.id}</span>
+        </div>
+        <TextField
+          label="名前"
+          value={el.name ?? ""}
+          onCommit={(raw) => {
+            const trimmed = raw.trim();
+            if (trimmed === (el.name ?? "")) {
+              return;
+            }
+            commitReplace(
+              store,
+              el.id,
+              withOptionalAttr(
+                el,
+                "name",
+                trimmed === "" ? undefined : trimmed,
+              ),
+            );
+          }}
+        />
       </div>
       {view.parentFlexId !== null && (
         <p className="apx-sect apx-sect-note">

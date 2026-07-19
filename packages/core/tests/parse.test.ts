@@ -910,6 +910,76 @@ describe("parseIr", () => {
     });
   });
 
+  describe("name (common optional attribute)", () => {
+    it("accepts a name on every element type, including a table", () => {
+      const doc = baseDoc();
+      doc.elements = doc.elements.map((el: Raw, i: number) => ({
+        ...el,
+        name: `名前${i}`,
+      }));
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(
+        result.document.elements.map((el) => "name" in el && el.name),
+      ).toEqual(doc.elements.map((el: Raw) => el.name));
+    });
+
+    it("accepts a name with no identifier constraint (Japanese, duplicates allowed)", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        { type: "rect", id: "r1", x: 0, y: 0, w: 10, h: 10, name: "同じ名前" },
+        { type: "rect", id: "r2", x: 0, y: 0, w: 10, h: 10, name: "同じ名前" },
+      ];
+      expect(parse(doc).ok).toBe(true);
+    });
+
+    it("accepts a name on a flex child", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "flex",
+          id: "flex1",
+          x: 0,
+          y: 0,
+          direction: "column",
+          children: [
+            {
+              type: "text",
+              id: "ft1",
+              w: 1,
+              h: 1,
+              text: "a",
+              name: "子の名前",
+            },
+          ],
+        },
+      ];
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const flex = result.document.elements[0];
+      expect(flex?.type === "flex" && flex.children[0]).toMatchObject({
+        name: "子の名前",
+      });
+    });
+
+    it("rejects a non-string name", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        { type: "rect", id: "r1", x: 0, y: 0, w: 10, h: 10, name: 1 },
+      ];
+      expectRule(parse(doc), "S08r", "elements[0].name");
+    });
+
+    it("does not add a name attribute when omitted", () => {
+      const result = parse(baseDoc());
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.document.elements[0]).not.toHaveProperty("name");
+    });
+  });
+
   describe("footnotes (S02, F01)", () => {
     function withFootnotes(footnotes: Raw): Raw {
       const doc = baseDoc();

@@ -1006,6 +1006,63 @@ describe("validateIr", () => {
     });
   });
 
+  describe("M18", () => {
+    it("accepts a document without any name", () => {
+      expectNoRule(validateIr(baseDocument()), "M18");
+    });
+
+    it("accepts a name at the 64-character boundary", () => {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.id === "r1" ? { ...el, name: "あ".repeat(64) } : el,
+      );
+      expectNoRule(validateIr(withElements(doc, elements)), "M18");
+    });
+
+    it("rejects a name over 64 characters", () => {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.id === "r1" ? { ...el, name: "あ".repeat(65) } : el,
+      );
+      expectRule(
+        validateIr(withElements(doc, elements)),
+        "M18",
+        "elements[2].name",
+      );
+    });
+
+    it("does not require non-empty or uniqueness (unlike style names)", () => {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.type === "text" || el.type === "line" ? { ...el, name: "" } : el,
+      );
+      expectNoRule(validateIr(withElements(doc, elements)), "M18");
+
+      const duplicated = doc.elements.map((el) =>
+        el.id === "t1" || el.id === "l1" ? { ...el, name: "同じ" } : el,
+      );
+      expectNoRule(validateIr(withElements(doc, duplicated)), "M18");
+    });
+
+    it("applies to flex descendants", () => {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.type === "flex"
+          ? {
+              ...el,
+              children: el.children.map((child) => ({
+                ...child,
+                name: "あ".repeat(65),
+              })),
+            }
+          : el,
+      );
+      const errors = validateIr(withElements(doc, elements));
+      expectRule(errors, "M18", "elements[5].children[0].name");
+      expectRule(errors, "M18", "elements[5].children[1].name");
+    });
+  });
+
   describe("F02-F06 (footnotes)", () => {
     function withFootnotes(
       doc: IrDocument,

@@ -14,7 +14,7 @@ export type CompatEntry =
 
 type CompatAttributeOf<K extends IrElementType> = Exclude<
   keyof Extract<IrElement, { readonly type: K }>,
-  "type" | "id"
+  "type" | "id" | "name"
 >;
 
 /**

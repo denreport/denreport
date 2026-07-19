@@ -40,8 +40,11 @@ export function buildLayerTree(document: IrDocument): readonly LayerNode[] {
 
 const TEXT_LABEL_MAX = 12;
 
-/** ツリー行の表示名（プレーン文字列） */
+/** ツリー行の表示名（プレーン文字列）。name があれば name を優先する */
 export function layerLabel(element: IrElement | IrFlexChild): string {
+  if (element.name !== undefined && element.name !== "") {
+    return element.name;
+  }
   switch (element.type) {
     case "text": {
       const text = element.text;

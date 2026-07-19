@@ -94,6 +94,7 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 |---|---|---|---|
 | `type` | `"text" \| "line" \| "rect" \| "ellipse" \| "table" \| "image" \| "flex" \| "pageNumber"` | 必須 | 要素型 |
 | `id` | string | 必須 | 文書内で一意（flex の子孫を含む）。パターン `^[A-Za-z_][A-Za-z0-9_]*$`、64文字以内 |
+| `name` | string | 任意 | 表示用の名前。識別子制約なし（日本語可）、文書内での一意性は課さない。64文字以内 |
 | `x`, `y` | number | 必須※ | 要素の左上（線は基準点）。mm（2節）。※flex の子は持たない（位置はコンテナが決める。3.7節） |
 | `pages` | `"first" \| "rest" \| "last" \| "all"` | 任意 | 配置先ページ。first=1ページ目のみ / rest=2ページ目以降 / last=最終ページのみ / all=全ページ（フッタ等の共通領域）。デフォルトは `"first"`（**pageNumber のみ `"all"`**）。**table は持たない**（常に1ページ目起点で流し込み）。flex の子も持たない（コンテナから継承） |
 
@@ -481,7 +482,7 @@ flex の子はコンテナの配列位置に入る）。チャンク内部の描
 | S05 | `font` は `{ name }`（string・未知キー拒否） |
 | S06 | `elements` は配列で、各要素はオブジェクト |
 | S07 | 各要素の `type` が9種のいずれか |
-| S08 | 要素型ごとの必須属性が揃い、各属性の型が正しい（型ごとに個別の規則: S08t, S08l, S08r, S08e, S08b, S08i, S08f, S08p, S08c。text/line/rect/table/pageNumber の任意属性 `style` の型検証もここに含む） |
+| S08 | 要素型ごとの必須属性が揃い、各属性の型が正しい（型ごとに個別の規則: S08t, S08l, S08r, S08e, S08b, S08i, S08f, S08p, S08c。全型共通の任意属性 `name`、text/line/rect/table/pageNumber の任意属性 `style` の型検証もここに含む） |
 | S09 | 要素・Column に未知の属性がない（table の `pages`、flex の子の `x`/`y`/`pages`、flex の交差軸寸法＝row の `h` / column の `w`、image/flex の `style` も未知属性として拒否） |
 | S10 | enum 値が定義域内（`align`, `orientation`, `direction`, `justifyContent`, `alignItems`, `pages`, `symbology`） |
 | S12 | image の `src` が data URI 構文（`data:<mediatype>;base64,<payload>`）に一致する |
@@ -514,6 +515,7 @@ S 群通過後、任意属性のデフォルト（3節の各表。`maxY = page.h
 | M12 | flex の主軸寸法を明示した場合（row の `w` / column の `h`）、その値が内容寸法 `C`（子の主軸寸法の合計 + `gap`×(子数−1)。3.7節）以上 |
 | M14 | `styles` の各定義: `name` が非空・64文字以内・文書内一意、`attrs` が1フィールド以上で、各値が対応する要素属性と同じ許容範囲（`fontSize`/`lineHeight` は M04 と同じ範囲、`borderWidth`/`thickness` は `> 0`） |
 | M15 | 要素（flex の子孫を含む）の `style` が `styles` 内に存在する `name` を指す |
+| M18 | 要素（flex の子孫を含む）の `name`（指定時）が64文字以内である |
 
 ### C 群（データ結合時。実装は書き出し器側）
 
@@ -596,6 +598,7 @@ export type IrBarcodeSymbology = "qrcode" | "code39" | "code128" | "ean13";
 export interface IrBarcodeElement {
   readonly type: "barcode";
   readonly id: string;
+  readonly name?: string;                  // 表示用の名前（3.1節）。識別子制約・一意性制約なし
   readonly x: number; readonly y: number;
   readonly pages: IrPages;
   readonly w: number; readonly h: number;
@@ -605,6 +608,7 @@ export interface IrBarcodeElement {
 export interface IrFlexElement {
   readonly type: "flex";
   readonly id: string;
+  readonly name?: string;                  // 表示用の名前（3.1節）。識別子制約・一意性制約なし
   readonly x: number; readonly y: number;
   readonly pages: IrPages;
   readonly direction: IrFlexDirection;
@@ -628,6 +632,7 @@ export type IrFlexChild =
 export interface IrPageNumberElement {
   readonly type: "pageNumber";
   readonly id: string;
+  readonly name?: string;                  // 表示用の名前（3.1節）。識別子制約・一意性制約なし
   readonly x: number; readonly y: number;
   readonly pages: IrPages;                 // デフォルトのみ "all"（3.1節）
   readonly w: number; readonly h: number;
@@ -652,7 +657,7 @@ export interface IrDocument {
 }
 
 // errors.ts
-export type IrRuleId = "S01" | /* ... */ | "S14" | "M01" | /* ... */ | "M17" | "C01" | "C02" | "C03" | "C04" | "Q01"
+export type IrRuleId = "S01" | /* ... */ | "S14" | "M01" | /* ... */ | "M18" | "C01" | "C02" | "C03" | "C04" | "Q01"
   | "F01" | "F02" | "F03" | "F04" | "F05" | "F06";
 export interface IrError { readonly rule: IrRuleId; readonly path: string; readonly message: string }
 

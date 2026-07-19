@@ -1,6 +1,7 @@
 export const IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 export const IDENTIFIER_MAX_LENGTH = 64;
 export const STYLE_NAME_MAX_LENGTH = 64;
+export const ELEMENT_NAME_MAX_LENGTH = 64;
 
 export const PAGE_NUMBER_DEFAULT_FORMAT = "{n} / {N}";
 
