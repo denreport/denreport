@@ -1,12 +1,6 @@
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import type { CompatWarningGroup } from "../../state/export-warnings";
-
-const COMPAT_LEVEL_LABELS: Readonly<
-  Record<CompatWarningGroup["level"], string>
-> = {
-  approximated: "近似",
-  unsupported: "非対応",
-};
 
 /** 互換性判定1グループ（level + userMessage）のカード表示。書き出しダイアログと検証ペインで共有する */
 export function WarningGroupCard(props: {
@@ -14,6 +8,7 @@ export function WarningGroupCard(props: {
   readonly onJump: (id: string) => void;
 }): ReactNode {
   const { group, onJump } = props;
+  const m = useMessages();
   return (
     <div className={`apx-warn-card is-${group.level}`}>
       <p className="apx-warn-note">
@@ -21,10 +16,12 @@ export function WarningGroupCard(props: {
           !
         </b>
         <span className="apx-warn-level">
-          {COMPAT_LEVEL_LABELS[group.level]}
+          {m.export.compatLevel[group.level]}
         </span>
         <span>{group.userMessage}</span>
-        <span className="apx-warn-count">{group.findingCount} 箇所</span>
+        <span className="apx-warn-count">
+          {m.export.findingCount(group.findingCount)}
+        </span>
       </p>
       <div className="apx-warn-chips">
         {group.elementIds.map((id) => (

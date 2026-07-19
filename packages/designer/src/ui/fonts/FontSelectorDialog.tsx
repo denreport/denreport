@@ -1,6 +1,7 @@
 import type { IrFontSlot } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { useMessages } from "../../i18n/context";
 import type { RegisteredFont } from "../../state/fonts";
 import { sanitizeFontName } from "../../state/fonts";
 import { Dialog } from "../dialog/Dialog";
@@ -26,22 +27,13 @@ type ConfirmState =
   | { readonly kind: "loading" }
   | { readonly kind: "failed"; readonly issues: readonly FontIssue[] };
 
-const REASON_MESSAGES: Readonly<
-  Record<"unsupported" | "denied" | "error", string>
-> = {
-  unsupported:
-    "お使いのブラウザは PC 内フォントの一覧取得に対応していません（Chromium 系ブラウザで利用できます）",
-  denied:
-    "フォントへのアクセスが許可されませんでした。ブラウザのサイト設定から許可できます",
-  error: "フォント一覧を取得できませんでした。",
-};
-
 /** スロットに同梱フォントがある場合のみ、その論理名（「同梱フォントに戻す」行の表示対象） */
 const EMBEDDED_NAME_BY_SLOT: Readonly<Partial<Record<IrFontSlot, string>>> = {
   regular: EMBEDDED_FONT_NAME,
   bold: EMBEDDED_BOLD_FONT_NAME,
 };
 
+// DocumentProperties.tsx（プロパティパネル、別カタログの担当）が引き続き参照する既存 API
 export const FONT_SLOT_LABELS: Readonly<Record<IrFontSlot, string>> = {
   regular: "標準",
   bold: "太字",
@@ -67,6 +59,7 @@ export function FontSelectorDialog(props: {
 }): ReactNode {
   const { slot, currentName, onSelect, onSelectEmbedded, onClear, onClose } =
     props;
+  const m = useMessages();
   const [list, setList] = useState<ListState>({ kind: "loading" });
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<LocalFontCandidate | null>(null);
@@ -107,9 +100,11 @@ export function FontSelectorDialog(props: {
     setConfirm({ kind: "loading" });
     candidate.loadData().then(
       (data) => {
-        const built = buildRegisteredFont(data, {
-          fullName: candidate.fullName,
-        });
+        const built = buildRegisteredFont(
+          data,
+          { fullName: candidate.fullName },
+          m.fonts,
+        );
         if (!built.ok) {
           setConfirm({ kind: "failed", issues: built.issues });
           return;
@@ -122,7 +117,7 @@ export function FontSelectorDialog(props: {
           issues: [
             {
               format: "unknown",
-              message: "フォントデータを取得できませんでした。",
+              message: m.fonts.loadDataFailed,
             },
           ],
         });
@@ -132,19 +127,17 @@ export function FontSelectorDialog(props: {
 
   return (
     <Dialog
-      title={`${FONT_SLOT_LABELS[slot]}のフォントを選択`}
+      title={m.fonts.selectTitle(m.fonts.slotLabels[slot])}
       onClose={onClose}
       footer={
         <>
-          <span className="apx-dialog-note">
-            選択したフォントは書き出し物に埋め込まれます。フォントのライセンスをご確認ください。
-          </span>
+          <span className="apx-dialog-note">{m.fonts.licenseNote}</span>
           <button
             type="button"
             className="apx-btn apx-btn-secondary"
             onClick={onClose}
           >
-            キャンセル
+            {m.fonts.cancel}
           </button>
           <button
             type="button"
@@ -152,7 +145,7 @@ export function FontSelectorDialog(props: {
             disabled={selected === null || confirm.kind === "loading"}
             onClick={confirmSelection}
           >
-            このフォントを使う
+            {m.fonts.useThisFont}
           </button>
         </>
       }
@@ -169,7 +162,7 @@ export function FontSelectorDialog(props: {
                 onSelectEmbedded(embeddedName);
               }}
             >
-              同梱フォント（{embeddedName}）に戻す
+              {m.fonts.revertToEmbedded(embeddedName)}
             </button>
           </li>
         )}
@@ -184,22 +177,22 @@ export function FontSelectorDialog(props: {
                 onClear();
               }}
             >
-              未設定に戻す（標準フォントで代替）
+              {m.fonts.clearToDefault}
             </button>
           </li>
         )}
       </ul>
-      {list.kind === "loading" && <p>フォント一覧を取得しています…</p>}
+      {list.kind === "loading" && <p>{m.fonts.loadingList}</p>}
       {list.kind === "failed" && (
         <div className="apx-font-notice" role="alert">
-          <p>{REASON_MESSAGES[list.reason]}</p>
+          <p>{m.fonts.reasons[list.reason]}</p>
           {list.reason === "error" && (
             <button
               type="button"
               className="apx-btn apx-btn-secondary"
               onClick={load}
             >
-              再試行
+              {m.fonts.retry}
             </button>
           )}
         </div>
@@ -209,8 +202,8 @@ export function FontSelectorDialog(props: {
           <input
             type="search"
             className="apx-font-search"
-            placeholder="フォント名で検索"
-            aria-label="フォント名で検索"
+            placeholder={m.fonts.searchPlaceholder}
+            aria-label={m.fonts.searchPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.currentTarget.value)}
           />

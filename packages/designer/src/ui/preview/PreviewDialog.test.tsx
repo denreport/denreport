@@ -8,6 +8,8 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { generateSampleData } from "../../state/preview";
 import { activeSampleJson } from "../../state/sample-scenarios";
 import { EditorStore } from "../../state/store";
@@ -528,5 +530,23 @@ describe("フォント解決の反映", () => {
       "フォント「GoneFont」の実データが未選択のため",
     );
     expect(banner?.textContent).toContain("PC のフォントから選択");
+  });
+});
+
+describe("en の MessagesContext", () => {
+  it("文言が英語で描画される", async () => {
+    const store = new EditorStore(makeDocument([]));
+    await act(async () => {
+      root.render(
+        <MessagesContext.Provider value={en}>
+          <PreviewDialog store={store} onClose={() => {}} />
+        </MessagesContext.Provider>,
+      );
+    });
+    await act(async () => {});
+    expect(container.querySelector(".apx-preview-title")?.textContent).toBe(
+      "Preview",
+    );
+    expect(buttonByText("Close")).not.toBeNull();
   });
 });

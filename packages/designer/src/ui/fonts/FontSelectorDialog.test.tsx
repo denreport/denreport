@@ -2,6 +2,8 @@ import type { IrFontSlot } from "@denreport/core";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { FontSelectorDialog } from "./FontSelectorDialog";
 
 // jsdom では globalThis === window のため、vi.stubGlobal で queryLocalFonts を生やせば
@@ -282,5 +284,28 @@ describe("非対応・拒否・失敗の表示", () => {
       expect(container.textContent).toContain("取得できませんでした");
       buttonByText("再試行");
     });
+  });
+});
+
+describe("en の MessagesContext", () => {
+  it("文言が英語で描画される", async () => {
+    stubQueryLocalFonts(async () => []);
+    root.render(
+      <MessagesContext.Provider value={en}>
+        <FontSelectorDialog
+          slot="regular"
+          currentName="NotoSansJP"
+          onSelect={vi.fn()}
+          onSelectEmbedded={vi.fn()}
+          onClear={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </MessagesContext.Provider>,
+    );
+    await vi.waitFor(() => {
+      expect(container.textContent).toContain("Choose the regular font");
+    });
+    expect(buttonByText("Cancel")).not.toBeNull();
+    expect(buttonByText("Revert to bundled font (NotoSansJP)")).not.toBeNull();
   });
 });

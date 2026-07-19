@@ -10,6 +10,7 @@ import {
   exportReportlab,
   exportReportlabTemplate,
 } from "@denreport/targets";
+import type { Messages } from "../../i18n/messages";
 import { buildZip } from "./zip";
 
 export type { FontIssue };
@@ -19,7 +20,7 @@ export const PDFME_EXPORT_FILE_NAME = "report-pdfme.json";
 export const REPORTLAB_EXPORT_FILE_NAME = "report-reportlab.zip";
 export const REPORTLAB_CODE_FILE_NAME = "report.py";
 
-const DATA_EDIT_GUIDE = "プレビューのサンプルデータ欄で入力・生成できます。";
+export type ExportMessages = Messages["export"];
 
 export type ParseExportDataResult =
   | { readonly ok: true; readonly mode: "data"; readonly data: IrData }
@@ -30,7 +31,10 @@ export type ParseExportDataResult =
     空文字列（trim 後）は雛形モード。非空は厳格パースし、JSON.parse 不能 /
     トップレベルが非オブジェクト（配列・null 含む）はエラー。
     message は利用者向け文言（プレビューのサンプルデータ欄への誘導を含む） */
-export function parseExportData(json: string): ParseExportDataResult {
+export function parseExportData(
+  json: string,
+  m: ExportMessages,
+): ParseExportDataResult {
   if (json.trim() === "") {
     return { ok: true, mode: "template" };
   }
@@ -38,16 +42,10 @@ export function parseExportData(json: string): ParseExportDataResult {
   try {
     parsed = JSON.parse(json);
   } catch {
-    return {
-      ok: false,
-      message: `サンプルデータを JSON として解釈できません。${DATA_EDIT_GUIDE}`,
-    };
+    return { ok: false, message: m.jsonParseError };
   }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    return {
-      ok: false,
-      message: `サンプルデータのトップレベルがオブジェクトではありません。${DATA_EDIT_GUIDE}`,
-    };
+    return { ok: false, message: m.notObjectError };
   }
   return { ok: true, mode: "data", data: parsed as IrData };
 }
