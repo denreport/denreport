@@ -2,9 +2,11 @@ import type { CompatTargetId } from "@denreport/core";
 import { COMPAT_MATRICES } from "@denreport/core";
 import type { ReactNode } from "react";
 import type { DesignerChrome } from "../../api/designer";
+import { useMessages } from "../../i18n/context";
 import { EXPORT_TARGET_IDS } from "../../state/export-warnings";
 import type { EditorStore } from "../../state/store";
 import { useEditorState } from "../useEditorState";
+import { BrandLogo } from "./BrandLogo";
 import { OpenIrButton } from "./OpenIrButton";
 
 export function Toolbar(props: {
@@ -32,15 +34,16 @@ export function Toolbar(props: {
     onToggleProps,
   } = props;
   const state = useEditorState(store);
+  const m = useMessages();
   const isDark = chrome.resolvedTheme === "dark";
   return (
     <header className="apx-toolbar">
       <button
         type="button"
         className="apx-tbtn"
-        aria-label="左パネルを開閉"
+        aria-label={m.toolbar.togglePanelLeft}
         aria-expanded={sidebarOpen}
-        title="要素・レイヤー"
+        title={m.toolbar.elementsPanel}
         onClick={onToggleSidebar}
       >
         <svg
@@ -58,20 +61,20 @@ export function Toolbar(props: {
       </button>
       <div className="apx-brand">
         <span className="apx-brand-mark" aria-hidden="true">
-          帳
+          <BrandLogo />
         </span>
-        <span className="apx-brand-name">帳票デザイナー</span>
+        <span className="apx-brand-name">{m.toolbar.brandName}</span>
       </div>
       <span className="apx-toolbar-sep" />
       <span
         className={`apx-doc-dirty${state.dirty ? " is-on" : ""}`}
-        title={state.dirty ? "未保存の変更あり" : undefined}
+        title={state.dirty ? m.toolbar.unsavedChanges : undefined}
       />
       <span className="apx-toolbar-sep" />
       <button
         type="button"
         className="apx-tbtn"
-        aria-label="元に戻す"
+        aria-label={m.toolbar.undo}
         disabled={!store.canUndo()}
         onClick={() => store.undo()}
       >
@@ -80,31 +83,31 @@ export function Toolbar(props: {
       <button
         type="button"
         className="apx-tbtn"
-        aria-label="やり直す"
+        aria-label={m.toolbar.redo}
         disabled={!store.canRedo()}
         onClick={() => store.redo()}
       >
         ↷
       </button>
       <span className="apx-toolbar-sep" />
-      <fieldset className="apx-seg" aria-label="キャンバスモード">
+      <fieldset className="apx-seg" aria-label={m.toolbar.canvasMode}>
         <button
           type="button"
           className={
             state.view.canvasMode === "select" ? "is-active" : undefined
           }
-          title="選択 (V)"
+          title={m.toolbar.selectTitle}
           onClick={() => store.setView({ canvasMode: "select" })}
         >
-          選択
+          {m.toolbar.select}
         </button>
         <button
           type="button"
           className={state.view.canvasMode === "pan" ? "is-active" : undefined}
-          title="移動 (H)"
+          title={m.toolbar.panTitle}
           onClick={() => store.setView({ canvasMode: "pan" })}
         >
-          移動
+          {m.toolbar.pan}
         </button>
       </fieldset>
       <span className="apx-toolbar-spacer" />
@@ -112,12 +115,8 @@ export function Toolbar(props: {
         type="button"
         className={`apx-tbtn${isDark ? " is-on" : ""}`}
         aria-pressed={isDark}
-        aria-label="テーマ"
-        title={
-          isDark
-            ? "テーマを切り替え（現在: ダーク）"
-            : "テーマを切り替え（現在: ライト）"
-        }
+        aria-label={m.toolbar.theme}
+        title={m.toolbar.themeTitle(isDark)}
         onClick={chrome.toggleTheme}
       >
         {isDark ? (
@@ -159,7 +158,16 @@ export function Toolbar(props: {
       <button
         type="button"
         className="apx-tbtn"
-        aria-label="ショートカット一覧"
+        aria-label={m.toolbar.locale}
+        title={m.toolbar.localeTitle}
+        onClick={chrome.toggleLocale}
+      >
+        {chrome.locale === "ja" ? "JA" : "EN"}
+      </button>
+      <button
+        type="button"
+        className="apx-tbtn"
+        aria-label={m.toolbar.shortcuts}
         onClick={onShowShortcuts}
       >
         ?
@@ -171,25 +179,25 @@ export function Toolbar(props: {
         className="apx-btn apx-btn-secondary"
         onClick={chrome.requestSave}
       >
-        保存
+        {m.toolbar.save}
       </button>
       <button
         type="button"
         className="apx-btn apx-btn-secondary"
         onClick={onManageStyles}
       >
-        スタイル
+        {m.toolbar.manageStyles}
       </button>
       <button
         type="button"
         className="apx-btn apx-btn-secondary"
         onClick={onPreview}
       >
-        プレビュー
+        {m.toolbar.preview}
       </button>
       <span className="apx-field">
         <select
-          aria-label="書き出しターゲット"
+          aria-label={m.toolbar.exportTarget}
           value={state.selectedExportTarget}
           onChange={(e) =>
             store.setSelectedExportTarget(
@@ -209,14 +217,14 @@ export function Toolbar(props: {
         className="apx-btn apx-btn-primary"
         onClick={onExport}
       >
-        書き出し
+        {m.toolbar.export}
       </button>
       <button
         type="button"
         className="apx-tbtn"
-        aria-label="右パネルを開閉"
+        aria-label={m.toolbar.togglePanelRight}
         aria-expanded={propsOpen}
-        title="プロパティ"
+        title={m.toolbar.propertiesPanel}
         onClick={onToggleProps}
       >
         <svg
