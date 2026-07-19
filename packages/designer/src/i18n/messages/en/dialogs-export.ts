@@ -42,7 +42,7 @@ export const dialogsExportEn = {
     pageCount: (count: number): string =>
       `${count} page${count === 1 ? "" : "s"}`,
     validationErrorsNote: (count: number): string =>
-      `There ${count === 1 ? "is" : "are"} ${count} validation error${count === 1 ? "" : "s"}. Please resolve them.`,
+      `There ${count === 1 ? "is" : "are"} ${count} validation error${count === 1 ? "" : "s"}. Please resolve ${count === 1 ? "it" : "them"}.`,
     cannotDisplay: "Preview isn't available.",
     loadingFont: "Loading font…",
     fontLoadFailed:
