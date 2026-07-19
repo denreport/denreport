@@ -92,7 +92,7 @@ test("表の網掛けトグルがキャンバスの縞とプレビューの塗�
   await expect(table).toBeVisible();
 
   const props = page.getByRole("complementary", { name: "プロパティ" });
-  const stripeToggle = props.locator('.apx-check input[type="checkbox"]');
+  const stripeToggle = props.getByLabel("1行おきに背景色を付ける");
   await stripeToggle.check();
   await expect(
     page.locator('[data-apx-id="table1"] .apx-tbl-stripe').first(),
