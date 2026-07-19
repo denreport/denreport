@@ -1,3 +1,4 @@
+import type { MessageLocale } from "../i18n/messages";
 import type { IrElement, IrElementType } from "../ir/types";
 
 /** Support level of an IR element or attribute for a given export target. */
@@ -5,20 +6,21 @@ export type CompatLevel = "supported" | "approximated" | "unsupported";
 
 /**
  * Compatibility level for a single element or attribute. For every level
- * except "supported", both a `note` (developer-facing, technical) and a
- * `userMessage` (plain-language, shown in the UI) are required.
+ * except "supported", both a `note` (developer-facing, technical, always
+ * Japanese) and a `userMessage` (plain-language, shown in the UI, resolved
+ * per locale) are required.
  */
 export type CompatEntry =
   | { readonly level: "supported" }
   | {
       readonly level: "approximated";
       readonly note: string;
-      readonly userMessage: string;
+      readonly userMessage: (locale: MessageLocale) => string;
     }
   | {
       readonly level: "unsupported";
       readonly note: string;
-      readonly userMessage: string;
+      readonly userMessage: (locale: MessageLocale) => string;
     };
 
 type CompatAttributeOf<K extends IrElementType> = Exclude<

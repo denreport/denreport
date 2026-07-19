@@ -1,26 +1,35 @@
+import { getMessages, type MessageLocale } from "../i18n/messages";
 import type { IrError } from "./errors";
 import { textTemplateKeys } from "./interpolate";
 import type { IrDocument, IrElement, IrFlexChild } from "./types";
 
+type InvoiceItemId =
+  | "registrationNumber"
+  | "transactionDate"
+  | "description"
+  | "taxableAmount"
+  | "taxAmount"
+  | "customerName";
+
 interface InvoiceItem {
-  readonly label: string;
+  readonly id: InvoiceItemId;
   readonly keys: readonly string[];
 }
 
 // 国税庁の記載必要6項目。項目4（適用税率）は税率別の対価の額の欄で代表させる
 const INVOICE_ITEMS: readonly InvoiceItem[] = [
-  { label: "発行者の登録番号", keys: ["registrationNumber"] },
-  { label: "取引年月日", keys: ["issueDate", "transactionDate"] },
-  { label: "取引内容", keys: ["description", "itemName"] },
+  { id: "registrationNumber", keys: ["registrationNumber"] },
+  { id: "transactionDate", keys: ["issueDate", "transactionDate"] },
+  { id: "description", keys: ["description", "itemName"] },
   {
-    label: "税率ごとに区分した対価の額・適用税率",
+    id: "taxableAmount",
     keys: ["taxableAmount", "taxableAmount8", "taxableAmount10"],
   },
   {
-    label: "税率ごとに区分した消費税額等",
+    id: "taxAmount",
     keys: ["taxAmount", "taxAmount8", "taxAmount10"],
   },
-  { label: "交付を受ける事業者の氏名又は名称", keys: ["customerName"] },
+  { id: "customerName", keys: ["customerName"] },
 ];
 
 function describeKeys(keys: readonly string[]): string {
@@ -62,11 +71,14 @@ function placedKeys(document: IrDocument): ReadonlySet<string> {
  * Japan's qualified invoice system, and returns a Q01 warning for each
  * missing item. Returns an empty array when `docType` is unset. Assumes
  * `document` is the output of parseIr and already passed validateIr.
+ * `options.locale` controls the warning messages' language (default "ja").
  */
 export function checkQualifiedInvoice(
   document: IrDocument,
+  options?: { readonly locale?: MessageLocale },
 ): readonly IrError[] {
   if (document.docType !== "qualifiedInvoice") return [];
+  const m = getMessages(options?.locale).invoice;
   const placed = placedKeys(document);
   const errors: IrError[] = [];
   for (const item of INVOICE_ITEMS) {
@@ -74,7 +86,11 @@ export function checkQualifiedInvoice(
     errors.push({
       rule: "Q01",
       path: "elements",
-      message: `適格請求書の記載事項「${item.label}」の差し込み欄がありません（キー ${describeKeys(item.keys)} の ${describeTokens(item.keys)} トークンまたは表の列キーを配置してください）`,
+      message: m.missingField(
+        m.itemLabels[item.id],
+        describeKeys(item.keys),
+        describeTokens(item.keys),
+      ),
     });
   }
   return errors;
