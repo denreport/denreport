@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
+import { useMessages } from "../../i18n/context";
 import { layoutDocument } from "../../state/geometry";
 import type { EditorStore } from "../../state/store";
 import type { MmPoint } from "../canvas/interaction";
@@ -15,6 +15,7 @@ export function StatusBar(props: {
   readonly cursorMm: MmPoint | null;
 }): ReactNode {
   const state = useEditorState(props.store);
+  const m = useMessages();
   const layout = useMemo(
     () => layoutDocument(state.document, state.view.pageContext),
     [state.document, state.view.pageContext],
@@ -28,7 +29,7 @@ export function StatusBar(props: {
       selectionSummary = (
         <span>
           選択: <span className="apx-mono">{view.id}</span>（
-          {ELEMENT_TYPE_LABEL[view.element.type]}）{" "}
+          {m.elementTypes[view.element.type]}）{" "}
           <span className="apx-mono">
             {fmt(view.box.x)}, {fmt(view.box.y)} / {fmt(view.box.w)}×
             {fmt(view.box.h)} mm

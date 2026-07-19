@@ -1,7 +1,8 @@
 import type { IrElementType } from "@denreport/core";
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import type { CanvasInteraction } from "../canvas/useCanvasInteraction";
-import { ELEMENT_TYPE_META } from "../element-meta";
+import { ELEMENT_TYPE_ICON } from "../element-meta";
 
 const PALETTE_ORDER: readonly IrElementType[] = [
   "text",
@@ -19,12 +20,12 @@ export function Palette(props: {
   readonly beginPlacement: CanvasInteraction["beginPlacement"];
   readonly onQuickAdd: (type: IrElementType) => void;
 }): ReactNode {
+  const m = useMessages();
   return (
     <nav className="apx-palette" aria-label="要素パレット">
       <div className="apx-panel-caption">要素</div>
       <ul className="apx-pal-list">
         {PALETTE_ORDER.map((type) => {
-          const meta = ELEMENT_TYPE_META[type];
           return (
             <li key={type}>
               <button
@@ -34,9 +35,9 @@ export function Palette(props: {
                 onClick={() => props.onQuickAdd(type)}
               >
                 <span className="apx-pal-icon" aria-hidden="true">
-                  {meta.icon}
+                  {ELEMENT_TYPE_ICON[type]}
                 </span>
-                {meta.label}
+                {m.elementTypes[type]}
               </button>
             </li>
           );

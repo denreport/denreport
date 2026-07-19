@@ -1,7 +1,7 @@
 import type { IrElement, IrFlexChild, IrStrokeStyle } from "@denreport/core";
 import type { CSSProperties, ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { IMAGE_PLACEHOLDER_SRC } from "../../state/constants";
-import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
 import type { PlacedElementView } from "../../state/geometry";
 import { visibleInContext } from "../../state/geometry";
 import type { TableCellSource } from "../../state/table-cells";
@@ -84,6 +84,7 @@ export function PaperElement(props: {
   readonly metrics?: FontMetricsSet | null | undefined;
 }): ReactNode {
   const { view } = props;
+  const m = useMessages();
   const el = view.element;
   const ghost = !visibleInContext(view.pages, props.context);
 
@@ -172,7 +173,7 @@ export function PaperElement(props: {
     <div className={classes.join(" ")} style={style} data-apx-id={view.id}>
       {el.type === "flex" && (
         <span className="apx-el-chip apx-el-chip--muted">
-          {ELEMENT_TYPE_LABEL.flex} · {el.id}
+          {m.elementTypes.flex} · {el.id}
         </span>
       )}
       {ghost && view.pages !== null && (

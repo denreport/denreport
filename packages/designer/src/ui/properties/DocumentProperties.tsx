@@ -1,6 +1,7 @@
 import type { IrDocument, IrFontSlot } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorMessageFor } from "../../state/error-index";
 import type { FontResolution } from "../../state/fonts";
 import { resolveFontSet } from "../../state/fonts";
@@ -62,6 +63,7 @@ export function DocumentProperties(props: {
   readonly store: EditorStore;
 }): ReactNode {
   const { store } = props;
+  const m = useMessages();
   const state = useEditorState(store);
   const [fontDialogSlot, setFontDialogSlot] = useState<IrFontSlot | null>(null);
   const docTypeCheckId = useId();
@@ -108,7 +110,7 @@ export function DocumentProperties(props: {
           options={[
             ...paperPresets.map((preset) => ({
               value: preset.id,
-              label: preset.label,
+              label: m.paperPresets[preset.id],
             })),
             { value: CUSTOM_PAPER_PRESET, label: "カスタム" },
           ]}

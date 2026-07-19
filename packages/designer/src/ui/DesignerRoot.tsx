@@ -29,7 +29,8 @@ export function DesignerRoot(props: {
   readonly locale: Locale;
 }): ReactNode {
   const { store, chrome, locale } = props;
-  const interaction = useCanvasInteraction(store);
+  const messages = getMessages(locale);
+  const interaction = useCanvasInteraction(store, messages.defaults);
   const layoutRef = useRef<HTMLDivElement | null>(null);
   // 一覧を閉じた直後もショートカットを受けられるよう、閉じたら layout へフォーカスを戻す
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -90,16 +91,16 @@ export function DesignerRoot(props: {
   const onQuickAdd = useCallback(
     (type: IrElementType): void => {
       const document = store.getState().document;
-      const element = createCenteredElement(document, type);
+      const element = createCenteredElement(document, type, messages.defaults);
       store.commit(addElement(document, element), [element.id]);
       // ボタンの pointerdown が preventDefault されておりクリックでは
       // フォーカスが body から動かないため、undo 等を受けられる位置へ明示的に移す
       layoutRef.current?.focus();
     },
-    [store],
+    [store, messages],
   );
   return (
-    <MessagesContext.Provider value={getMessages(locale)}>
+    <MessagesContext.Provider value={messages}>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: キー操作はルートで束ね、フォーム要素は無視する */}
       <div
         className={

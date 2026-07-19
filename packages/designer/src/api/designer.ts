@@ -5,6 +5,7 @@ import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import type { DesignerLocale, Locale } from "../i18n/locale";
 import { resolveLocale } from "../i18n/locale";
+import { getMessages } from "../i18n/messages";
 import type { ElementGroup } from "../state/groups";
 import { embedGroups } from "../state/groups";
 import type { SampleScenarioSet } from "../state/sample-scenarios";
@@ -100,11 +101,13 @@ export class Designer {
       options?.initialIr === undefined
         ? BLANK_DOCUMENT
         : parseInitialIr(options.initialIr);
+    const initialLocale = options?.locale ?? "auto";
 
     this.store = new EditorStore(
       initialDocument,
       options?.initialSampleData,
       options?.initialExportTarget,
+      getMessages(resolveLocale(initialLocale, navigator.languages)).defaults,
     );
     this.lastDocument = initialDocument;
     this.lastGroups = this.store.getState().groups;
@@ -143,7 +146,7 @@ export class Designer {
     container.append(this.rootEl);
 
     this.theme = options?.theme ?? "auto";
-    this.locale = options?.locale ?? "auto";
+    this.locale = initialLocale;
     this.mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     this.onMediaChange = () => {
       if (this.theme === "auto") {
@@ -209,7 +212,9 @@ export class Designer {
       undo 履歴・dirty・onChange には影響せず、onSampleDataChange を発火する */
   setSampleData(json: string): void {
     this.assertAlive();
-    this.store.setSampleScenarios(parseSampleDataStorage(json));
+    this.store.setSampleScenarios(
+      parseSampleDataStorage(json, getMessages(this.getLocale()).defaults),
+    );
   }
 
   /** サンプルデータ変更（編集 UI・setSampleData）で呼ばれるリスナーを登録し、解除関数を返す。

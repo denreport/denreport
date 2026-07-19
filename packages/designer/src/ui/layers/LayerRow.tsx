@@ -1,9 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { visibleInContext } from "../../state/geometry";
 import type { LayerNode } from "../../state/layers";
 import { layerLabel } from "../../state/layers";
 import type { PageContext } from "../../state/types";
-import { ELEMENT_TYPE_META } from "../element-meta";
+import { ELEMENT_TYPE_ICON } from "../element-meta";
 
 export function LayerRow(props: {
   readonly node: LayerNode;
@@ -25,9 +26,10 @@ export function LayerRow(props: {
     onSelect,
     onDelete,
   } = props;
+  const m = useMessages();
   const isFlex = node.children !== null;
   const isCollapsed = isFlex && collapsed.has(node.id);
-  const meta = ELEMENT_TYPE_META[node.element.type];
+  const icon = ELEMENT_TYPE_ICON[node.element.type];
 
   const classes = ["apx-layer-row"];
   if (selection.has(node.id)) {
@@ -64,9 +66,11 @@ export function LayerRow(props: {
           onClick={() => onSelect(node)}
         >
           <span className="apx-layer-icon" aria-hidden="true">
-            {meta.icon}
+            {icon}
           </span>
-          <span className="apx-layer-label">{layerLabel(node.element)}</span>
+          <span className="apx-layer-label">
+            {layerLabel(node.element, m.elementTypes)}
+          </span>
         </button>
         <button
           type="button"

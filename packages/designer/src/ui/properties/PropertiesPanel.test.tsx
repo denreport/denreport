@@ -4,8 +4,10 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
+import { ja } from "../../i18n/messages/ja";
 import { IMAGE_PLACEHOLDER_SRC } from "../../state/constants";
-import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
 import { layoutDocument } from "../../state/geometry";
 import { EditorStore } from "../../state/store";
 import type { InteractionState } from "../canvas/interaction";
@@ -289,24 +291,22 @@ describe("PropertiesPanel の振り分け", () => {
   it("単一選択では型ごとのフォームを表示する（全8型）", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
-    const cases: readonly (readonly [
-      string,
-      keyof typeof ELEMENT_TYPE_LABEL,
-    ])[] = [
-      ["t1", "text"],
-      ["l1", "line"],
-      ["r1", "rect"],
-      ["e1", "ellipse"],
-      ["tbl1", "table"],
-      ["img1", "image"],
-      ["f1", "flex"],
-      ["p1", "pageNumber"],
-      ["bc1", "barcode"],
-    ];
+    const cases: readonly (readonly [string, keyof typeof ja.elementTypes])[] =
+      [
+        ["t1", "text"],
+        ["l1", "line"],
+        ["r1", "rect"],
+        ["e1", "ellipse"],
+        ["tbl1", "table"],
+        ["img1", "image"],
+        ["f1", "flex"],
+        ["p1", "pageNumber"],
+        ["bc1", "barcode"],
+      ];
     for (const [id, type] of cases) {
       select(store, [id]);
       expect(container.querySelector(".apx-type-badge")?.textContent).toBe(
-        ELEMENT_TYPE_LABEL[type],
+        ja.elementTypes[type],
       );
       expect(container.querySelector(".apx-props-id")?.textContent).toBe(id);
     }
@@ -360,7 +360,7 @@ describe("PropertiesPanel の振り分け", () => {
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["c1"]);
     expect(container.querySelector(".apx-type-badge")?.textContent).toBe(
-      ELEMENT_TYPE_LABEL.text,
+      ja.elementTypes.text,
     );
     const labels = [...container.querySelectorAll("label")].map(
       (l) => l.textContent,
@@ -384,7 +384,12 @@ describe("用紙サイズプリセット", () => {
   it("英語圏 UI では A3/A4/A5/B5(ISO)/Letter/Legal を選択肢に出し、A4 の白紙初期値を選択済みにする", () => {
     stubLanguage("en-US");
     const store = makeStore();
-    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    // プリセットの候補セットは navigator.language、ラベルは UI ロケール（ここでは en）に従う
+    render(
+      <MessagesContext.Provider value={en}>
+        <PropertiesPanel store={store} interaction={IDLE} />
+      </MessagesContext.Provider>,
+    );
     const select = requireSelectByLabel("サイズ");
     expect(
       [...select.querySelectorAll("option")].map((o) => o.textContent),

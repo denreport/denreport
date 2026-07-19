@@ -12,6 +12,7 @@ import {
   MIN_SIZE_MM,
   SNAP_TOLERANCE_PX,
 } from "../../state/constants";
+import type { DefaultsMessages } from "../../state/defaults";
 import { createDefaultElement, defaultSizeMm } from "../../state/defaults";
 import {
   addElement,
@@ -143,6 +144,7 @@ export interface InteractionContext {
   readonly state: EditorState;
   readonly layout: readonly PlacedElementView[];
   readonly toleranceMm: number;
+  readonly messages: DefaultsMessages;
 }
 
 /** 確定時のみ返る。document は文書編集純関数の適用結果 */
@@ -713,10 +715,13 @@ function commitPlacing(
   if (state.flexId !== null && state.insertIndex !== null) {
     // flexId は table 以外でのみ設定される
     const child = toFlexChild(
-      createDefaultElement(doc, state.elementType, 0, 0) as Exclude<
-        IrElement,
-        IrTableElement
-      >,
+      createDefaultElement(
+        doc,
+        state.elementType,
+        0,
+        0,
+        ctx.messages,
+      ) as Exclude<IrElement, IrTableElement>,
     );
     return {
       document: insertFlexChild(doc, state.flexId, child, state.insertIndex),
@@ -728,6 +733,7 @@ function commitPlacing(
     state.elementType,
     state.box.x,
     state.box.y,
+    ctx.messages,
   );
   return { document: addElement(doc, element), selection: [element.id] };
 }

@@ -2,7 +2,7 @@ import type { IrElement, IrError, IrFlexChild, IrPages } from "@denreport/core";
 import { applicableStyleAttrs } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId } from "react";
-import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
+import { useMessages } from "../../i18n/context";
 import { rotateElement } from "../../state/elements";
 import type { MmBox, PlacedElementView } from "../../state/geometry";
 import { replaceElement } from "../../state/properties";
@@ -98,13 +98,14 @@ function formFor(props: ElementFormProps): ReactNode {
 
 export function ElementProperties(props: ElementFormProps): ReactNode {
   const { store, view } = props;
+  const m = useMessages();
   const el = view.element;
   const styleSelectId = useId();
   return (
     <>
       <div className="apx-props-head">
         <div className="apx-props-head-top">
-          <span className="apx-type-badge">{ELEMENT_TYPE_LABEL[el.type]}</span>
+          <span className="apx-type-badge">{m.elementTypes[el.type]}</span>
           <span className="apx-props-id">{el.id}</span>
         </div>
         <TextField

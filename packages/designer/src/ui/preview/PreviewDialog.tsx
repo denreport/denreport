@@ -7,6 +7,7 @@ import {
 } from "@denreport/targets";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useMessages } from "../../i18n/context";
 import type { FontResolution } from "../../state/fonts";
 import { resolveFontSet } from "../../state/fonts";
 import { buildPreview, generateSampleData } from "../../state/preview";
@@ -98,6 +99,7 @@ export function PreviewDialog(props: {
   readonly onClose: () => void;
 }): ReactNode {
   const { store, onClose } = props;
+  const m = useMessages();
   const state = useEditorState(store);
   const activeJson = activeSampleJson(state.sampleScenarios);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -304,11 +306,13 @@ export function PreviewDialog(props: {
               )
             }
             onAdd={() =>
-              store.setSampleScenarios(addScenario(state.sampleScenarios))
+              store.setSampleScenarios(
+                addScenario(state.sampleScenarios, m.defaults),
+              )
             }
             onDuplicate={() =>
               store.setSampleScenarios(
-                duplicateActiveScenario(state.sampleScenarios),
+                duplicateActiveScenario(state.sampleScenarios, m.defaults),
               )
             }
             onRemove={() => setConfirmingRemove(true)}

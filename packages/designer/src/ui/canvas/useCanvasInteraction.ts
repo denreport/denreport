@@ -2,6 +2,7 @@ import type { IrElementType } from "@denreport/core";
 import type { PointerEvent as ReactPointerEvent, RefCallback } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MM_TO_PX, SNAP_TOLERANCE_PX } from "../../state/constants";
+import type { DefaultsMessages } from "../../state/defaults";
 import type { PlacedElementView } from "../../state/geometry";
 import { layoutDocument } from "../../state/geometry";
 import type { EditorStore } from "../../state/store";
@@ -33,7 +34,10 @@ export interface CanvasInteraction {
 
 const IDLE: InteractionState = { kind: "idle" };
 
-export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
+export function useCanvasInteraction(
+  store: EditorStore,
+  messages: DefaultsMessages,
+): CanvasInteraction {
   const [interaction, setInteraction] = useState<InteractionState>(IDLE);
   const [cursorMm, setCursorMm] = useState<MmPoint | null>(null);
   const paperRef = useRef<HTMLDivElement | null>(null);
@@ -80,6 +84,7 @@ export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
         state: editorState,
         layout: layoutCache.current.layout,
         toleranceMm: SNAP_TOLERANCE_PX / (MM_TO_PX * editorState.view.zoom),
+        messages,
       };
       const result = reduceInteraction(interactionRef.current, event, ctx);
       interactionRef.current = result.state;
@@ -92,7 +97,7 @@ export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
         }
       }
     },
-    [store],
+    [store, messages],
   );
 
   // ドラッグ中の Esc キャンセル（pointer capture 中はフォーカス位置に依らず効かせる）

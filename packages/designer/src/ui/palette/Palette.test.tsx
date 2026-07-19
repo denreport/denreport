@@ -1,7 +1,7 @@
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
+import { ja } from "../../i18n/messages/ja";
 import { Palette } from "./Palette";
 
 let container: HTMLElement;
@@ -18,8 +18,8 @@ afterEach(() => {
   container.remove();
 });
 
-function buttonFor(type: keyof typeof ELEMENT_TYPE_LABEL): HTMLButtonElement {
-  const label = ELEMENT_TYPE_LABEL[type];
+function buttonFor(type: keyof typeof ja.elementTypes): HTMLButtonElement {
+  const label = ja.elementTypes[type];
   const button = [...container.querySelectorAll(".apx-pal-item")].find((el) =>
     el.textContent?.includes(label),
   );

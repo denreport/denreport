@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import {
   ENVELOPE_PRESETS,
   type EnvelopePresetId,
@@ -20,6 +21,7 @@ const CONTEXTS: readonly {
 
 export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
   const { store } = props;
+  const m = useMessages();
   const state = useEditorState(store);
   const { view } = state;
   const lower = zoomStepOut(view.zoom);
@@ -75,7 +77,7 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
           <option value="">封筒窓: なし</option>
           {ENVELOPE_PRESETS.map((preset) => (
             <option key={preset.id} value={preset.id}>
-              {preset.label}
+              {m.envelopePresets[preset.id]}
             </option>
           ))}
         </select>

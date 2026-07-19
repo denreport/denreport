@@ -5,6 +5,7 @@ import type {
   IrTableElement,
 } from "@denreport/core";
 import { describe, expect, it } from "vitest";
+import { ja } from "../../i18n/messages/ja";
 import { layoutDocument } from "../../state/geometry";
 import { defaultScenarioSet } from "../../state/sample-scenarios";
 import type { EditorState, PageContext } from "../../state/types";
@@ -441,7 +442,7 @@ describe("段階的選択（resolveClickTarget）とダブルクリックの整�
       validationErrors: [],
       validationWarnings: [],
       dirty: false,
-      sampleScenarios: defaultScenarioSet(),
+      sampleScenarios: defaultScenarioSet("", ja.defaults),
       fontRegistry: new Map(),
       customGuides: [],
       envelopePresetId: null,
@@ -452,6 +453,7 @@ describe("段階的選択（resolveClickTarget）とダブルクリックの整�
       state,
       layout: layoutDocument(document, state.view.pageContext),
       toleranceMm: 2,
+      messages: ja.defaults,
     };
   }
 
