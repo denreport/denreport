@@ -1,4 +1,9 @@
 import {
+  getMessages,
+  type MessageLocale,
+  type Messages,
+} from "../i18n/messages";
+import {
   DATA_URI_PATTERN,
   ELEMENT_NAME_MAX_LENGTH,
   FONT_SIZE_MAX,
@@ -15,6 +20,8 @@ import type { IrError, IrRuleId } from "./errors";
 import { measureFlex } from "./flex";
 import { footnoteMarkIds } from "./footnotes";
 import type { IrDocument, IrElement, IrFlexChild } from "./types";
+
+type ValidateMessages = Messages["validate"];
 
 interface WalkedElement {
   readonly path: string;
@@ -58,50 +65,52 @@ function err(rule: IrRuleId, path: string, message: string): IrError {
  * (C*, Q01) require analyzeData/validateData and checkQualifiedInvoice
  * separately. An empty result means the document is safe to pass to
  * resolveFlex, resolveFootnotes, and lowerIr.
+ * `options.locale` controls the error messages' language (default "ja").
  */
-export function validateIr(document: IrDocument): readonly IrError[] {
+export function validateIr(
+  document: IrDocument,
+  options?: { readonly locale?: MessageLocale },
+): readonly IrError[] {
+  const m = getMessages(options?.locale).validate;
   const walked = walkElements(document);
   return [
-    ...checkM01(walked),
-    ...checkM02(document),
-    ...checkM03(walked),
-    ...checkM04(walked),
-    ...checkM05(document),
-    ...checkM06(document),
-    ...checkM07(document, walked),
-    ...checkM08(walked),
-    ...checkM09(document),
-    ...checkM10(document),
-    ...checkM11(walked),
-    ...checkM12(walked),
-    ...checkM13(document),
-    ...checkM14(document),
-    ...checkM15(document, walked),
-    ...checkM16(walked),
-    ...checkM17(walked),
-    ...checkM18(walked),
-    ...checkM19(walked),
-    ...checkM20(document),
-    ...checkF02(document),
-    ...checkF03(document),
-    ...checkF04(document, walked),
-    ...checkF05(document),
-    ...checkF06(document),
+    ...checkM01(walked, m),
+    ...checkM02(document, m),
+    ...checkM03(walked, m),
+    ...checkM04(walked, m),
+    ...checkM05(document, m),
+    ...checkM06(document, m),
+    ...checkM07(document, walked, m),
+    ...checkM08(walked, m),
+    ...checkM09(document, m),
+    ...checkM10(document, m),
+    ...checkM11(walked, m),
+    ...checkM12(walked, m),
+    ...checkM13(document, m),
+    ...checkM14(document, m),
+    ...checkM15(document, walked, m),
+    ...checkM16(walked, m),
+    ...checkM17(walked, m),
+    ...checkM18(walked, m),
+    ...checkM19(walked, m),
+    ...checkM20(document, m),
+    ...checkF02(document, m),
+    ...checkF03(document, m),
+    ...checkF04(document, walked, m),
+    ...checkF05(document, m),
+    ...checkF06(document, m),
   ];
 }
 
-function checkM01(walked: readonly WalkedElement[]): IrError[] {
+function checkM01(
+  walked: readonly WalkedElement[],
+  m: ValidateMessages,
+): IrError[] {
   const errors: IrError[] = [];
   const pathsById = new Map<string, string[]>();
   for (const { path, element } of walked) {
     if (!isIdentifier(element.id)) {
-      errors.push(
-        err(
-          "M01",
-          `${path}.id`,
-          `id "${element.id}" は識別子パターンに一致しません`,
-        ),
-      );
+      errors.push(err("M01", `${path}.id`, m.idNotIdentifier(element.id)));
     }
     const paths = pathsById.get(element.id) ?? [];
     paths.push(path);
@@ -110,9 +119,7 @@ function checkM01(walked: readonly WalkedElement[]): IrError[] {
   for (const [id, paths] of pathsById) {
     if (paths.length > 1) {
       for (const path of paths) {
-        errors.push(
-          err("M01", `${path}.id`, `id "${id}" が文書内で重複しています`),
-        );
+        errors.push(err("M01", `${path}.id`, m.idDuplicate(id)));
       }
     }
   }
@@ -120,7 +127,7 @@ function checkM01(walked: readonly WalkedElement[]): IrError[] {
 }
 
 // M02 は用紙内判定であり、子はコンテナの箱に含まれるため個別判定しない（トップレベルのみを見る）。
-function checkM02(document: IrDocument): IrError[] {
+function checkM02(document: IrDocument, m: ValidateMessages): IrError[] {
   const errors: IrError[] = [];
   const { width: pageWidth, height: pageHeight } = document.page;
   document.elements.forEach((element, i) => {
@@ -130,24 +137,20 @@ function checkM02(document: IrDocument): IrError[] {
         (total, col) => total + col.width,
         0,
       );
-      if (element.x < 0)
-        errors.push(err("M02", `${path}.x`, "x が 0 未満です"));
-      if (element.y < 0)
-        errors.push(err("M02", `${path}.y`, "y が 0 未満です"));
+      if (element.x < 0) errors.push(err("M02", `${path}.x`, m.xNegative));
+      if (element.y < 0) errors.push(err("M02", `${path}.y`, m.yNegative));
       if (element.x + width > pageWidth) {
-        errors.push(
-          err("M02", `${path}.x`, "table の幅が用紙の右端を超えています"),
-        );
+        errors.push(err("M02", `${path}.x`, m.tableWidthExceedsPage));
       }
       return;
     }
     const { w, h } = footprint(element);
-    if (element.x < 0) errors.push(err("M02", `${path}.x`, "x が 0 未満です"));
-    if (element.y < 0) errors.push(err("M02", `${path}.y`, "y が 0 未満です"));
+    if (element.x < 0) errors.push(err("M02", `${path}.x`, m.xNegative));
+    if (element.y < 0) errors.push(err("M02", `${path}.y`, m.yNegative));
     if (element.x + w > pageWidth)
-      errors.push(err("M02", `${path}.x`, "要素が用紙の右端を超えています"));
+      errors.push(err("M02", `${path}.x`, m.elementExceedsPageRight));
     if (element.y + h > pageHeight)
-      errors.push(err("M02", `${path}.y`, "要素が用紙の下端を超えています"));
+      errors.push(err("M02", `${path}.y`, m.elementExceedsPageBottom));
   });
   return errors;
 }
@@ -180,11 +183,10 @@ function pushPositive(
   path: string,
   field: string,
   value: number,
+  m: ValidateMessages,
 ): void {
   if (!(value > 0))
-    errors.push(
-      err("M03", `${path}.${field}`, `${field} は 0 より大きい必要があります`),
-    );
+    errors.push(err("M03", `${path}.${field}`, m.mustBePositive(field)));
 }
 
 function pushNonNegative(
@@ -192,14 +194,16 @@ function pushNonNegative(
   path: string,
   field: string,
   value: number,
+  m: ValidateMessages,
 ): void {
   if (!(value >= 0))
-    errors.push(
-      err("M03", `${path}.${field}`, `${field} は 0 以上である必要があります`),
-    );
+    errors.push(err("M03", `${path}.${field}`, m.mustBeNonNegative(field)));
 }
 
-function checkM03(walked: readonly WalkedElement[]): IrError[] {
+function checkM03(
+  walked: readonly WalkedElement[],
+  m: ValidateMessages,
+): IrError[] {
   const errors: IrError[] = [];
   for (const { path, element } of walked) {
     switch (element.type) {
@@ -207,38 +211,38 @@ function checkM03(walked: readonly WalkedElement[]): IrError[] {
       case "image":
       case "pageNumber":
       case "barcode":
-        pushPositive(errors, path, "w", element.w);
-        pushPositive(errors, path, "h", element.h);
+        pushPositive(errors, path, "w", element.w, m);
+        pushPositive(errors, path, "h", element.h, m);
         break;
       case "rect":
-        pushPositive(errors, path, "w", element.w);
-        pushPositive(errors, path, "h", element.h);
-        pushNonNegative(errors, path, "borderWidth", element.borderWidth);
+        pushPositive(errors, path, "w", element.w, m);
+        pushPositive(errors, path, "h", element.h, m);
+        pushNonNegative(errors, path, "borderWidth", element.borderWidth, m);
         break;
       case "ellipse":
-        pushPositive(errors, path, "w", element.w);
-        pushPositive(errors, path, "h", element.h);
-        pushNonNegative(errors, path, "borderWidth", element.borderWidth);
+        pushPositive(errors, path, "w", element.w, m);
+        pushPositive(errors, path, "h", element.h, m);
+        pushNonNegative(errors, path, "borderWidth", element.borderWidth, m);
         break;
       case "line":
-        pushPositive(errors, path, "length", element.length);
-        pushPositive(errors, path, "thickness", element.thickness);
+        pushPositive(errors, path, "length", element.length, m);
+        pushPositive(errors, path, "thickness", element.thickness, m);
         break;
       case "table":
-        pushPositive(errors, path, "rowHeight", element.rowHeight);
-        pushPositive(errors, path, "headerHeight", element.headerHeight);
+        pushPositive(errors, path, "rowHeight", element.rowHeight, m);
+        pushPositive(errors, path, "headerHeight", element.headerHeight, m);
         if (element.frameWidth !== undefined) {
-          pushPositive(errors, path, "frameWidth", element.frameWidth);
+          pushPositive(errors, path, "frameWidth", element.frameWidth, m);
         }
         if (element.gridWidth !== undefined) {
-          pushPositive(errors, path, "gridWidth", element.gridWidth);
+          pushPositive(errors, path, "gridWidth", element.gridWidth, m);
         }
         element.columns.forEach((col, i) => {
-          pushPositive(errors, `${path}.columns[${i}]`, "width", col.width);
+          pushPositive(errors, `${path}.columns[${i}]`, "width", col.width, m);
         });
         break;
       case "flex": {
-        pushNonNegative(errors, path, "gap", element.gap);
+        pushNonNegative(errors, path, "gap", element.gap, m);
         const explicitMain =
           element.direction === "row" ? element.w : element.h;
         if (explicitMain !== undefined) {
@@ -247,6 +251,7 @@ function checkM03(walked: readonly WalkedElement[]): IrError[] {
             path,
             element.direction === "row" ? "w" : "h",
             explicitMain,
+            m,
           );
         }
         break;
@@ -262,38 +267,37 @@ function checkRange(
   field: string,
   value: number,
   max: number,
+  m: ValidateMessages,
 ): void {
   if (!(value > 0 && value <= max)) {
-    errors.push(
-      err(
-        "M04",
-        `${path}.${field}`,
-        `${field} は 0 より大きく ${max} 以下である必要があります`,
-      ),
-    );
+    errors.push(err("M04", `${path}.${field}`, m.mustBeInRange(field, max)));
   }
 }
 
-function checkM04(walked: readonly WalkedElement[]): IrError[] {
+function checkM04(
+  walked: readonly WalkedElement[],
+  m: ValidateMessages,
+): IrError[] {
   const errors: IrError[] = [];
   for (const { path, element } of walked) {
     if (element.type === "text" || element.type === "pageNumber") {
-      checkRange(errors, path, "fontSize", element.fontSize, FONT_SIZE_MAX);
+      checkRange(errors, path, "fontSize", element.fontSize, FONT_SIZE_MAX, m);
       checkRange(
         errors,
         path,
         "lineHeight",
         element.lineHeight,
         LINE_HEIGHT_MAX,
+        m,
       );
     } else if (element.type === "table") {
-      checkRange(errors, path, "fontSize", element.fontSize, FONT_SIZE_MAX);
+      checkRange(errors, path, "fontSize", element.fontSize, FONT_SIZE_MAX, m);
     }
   }
   return errors;
 }
 
-function checkM05(document: IrDocument): IrError[] {
+function checkM05(document: IrDocument, m: ValidateMessages): IrError[] {
   const errors: IrError[] = [];
   const { width, height } = document.page;
   if (!(width >= PAGE_DIMENSION_MIN && width <= PAGE_DIMENSION_MAX)) {
@@ -301,7 +305,11 @@ function checkM05(document: IrDocument): IrError[] {
       err(
         "M05",
         "page.width",
-        `page.width は ${PAGE_DIMENSION_MIN} 以上 ${PAGE_DIMENSION_MAX} 以下である必要があります`,
+        m.pageDimensionRange(
+          "page.width",
+          PAGE_DIMENSION_MIN,
+          PAGE_DIMENSION_MAX,
+        ),
       ),
     );
   }
@@ -310,20 +318,24 @@ function checkM05(document: IrDocument): IrError[] {
       err(
         "M05",
         "page.height",
-        `page.height は ${PAGE_DIMENSION_MIN} 以上 ${PAGE_DIMENSION_MAX} 以下である必要があります`,
+        m.pageDimensionRange(
+          "page.height",
+          PAGE_DIMENSION_MIN,
+          PAGE_DIMENSION_MAX,
+        ),
       ),
     );
   }
   return errors;
 }
 
-function checkM06(document: IrDocument): IrError[] {
+function checkM06(document: IrDocument, m: ValidateMessages): IrError[] {
   const errors: IrError[] = [];
   document.elements.forEach((el, i) => {
     if (el.type !== "table") return;
     const path = `elements[${i}]`;
     if (el.columns.length < 1) {
-      errors.push(err("M06", `${path}.columns`, "columns は1個以上必要です"));
+      errors.push(err("M06", `${path}.columns`, m.columnsRequired));
     }
     const indicesByKey = new Map<string, number[]>();
     el.columns.forEach((col, j) => {
@@ -335,11 +347,7 @@ function checkM06(document: IrDocument): IrError[] {
       if (indices.length > 1) {
         for (const j of indices) {
           errors.push(
-            err(
-              "M06",
-              `${path}.columns[${j}].key`,
-              `key "${key}" が table 内で重複しています`,
-            ),
+            err("M06", `${path}.columns[${j}].key`, m.columnKeyDuplicate(key)),
           );
         }
       }
@@ -351,17 +359,14 @@ function checkM06(document: IrDocument): IrError[] {
 function checkM07(
   document: IrDocument,
   walked: readonly WalkedElement[],
+  m: ValidateMessages,
 ): IrError[] {
   const errors: IrError[] = [];
   for (const slot of ["regular", "bold", "italic", "boldItalic"] as const) {
     const name = document.font[slot];
     if (name !== undefined && !isIdentifier(name)) {
       errors.push(
-        err(
-          "M07",
-          `font.${slot}`,
-          `font.${slot} "${name}" は識別子パターンに一致しません`,
-        ),
+        err("M07", `font.${slot}`, m.fontNameNotIdentifier(slot, name)),
       );
     }
   }
@@ -369,11 +374,7 @@ function checkM07(
     if (element.type === "table") {
       if (!isIdentifier(element.bind)) {
         errors.push(
-          err(
-            "M07",
-            `${path}.bind`,
-            `bind "${element.bind}" は識別子パターンに一致しません`,
-          ),
+          err("M07", `${path}.bind`, m.bindNotIdentifier(element.bind)),
         );
       }
       element.columns.forEach((col, i) => {
@@ -382,7 +383,7 @@ function checkM07(
             err(
               "M07",
               `${path}.columns[${i}].key`,
-              `key "${col.key}" は識別子パターンに一致しません`,
+              m.columnKeyNotIdentifier(col.key),
             ),
           );
         }
@@ -405,7 +406,10 @@ function isValidBase64(payload: string): boolean {
   }
 }
 
-function checkM08(walked: readonly WalkedElement[]): IrError[] {
+function checkM08(
+  walked: readonly WalkedElement[],
+  m: ValidateMessages,
+): IrError[] {
   const errors: IrError[] = [];
   for (const { path, element } of walked) {
     if (element.type !== "image") continue;
@@ -414,23 +418,17 @@ function checkM08(walked: readonly WalkedElement[]): IrError[] {
     const [, mediatype, payload] = match;
     if (mediatype !== "image/png" && mediatype !== "image/jpeg") {
       errors.push(
-        err(
-          "M08",
-          `${path}.src`,
-          `対応していない mediatype です: "${mediatype}"`,
-        ),
+        err("M08", `${path}.src`, m.unsupportedMediatype(String(mediatype))),
       );
     }
     if (payload === undefined || !isValidBase64(payload)) {
-      errors.push(
-        err("M08", `${path}.src`, "base64 payload をデコードできません"),
-      );
+      errors.push(err("M08", `${path}.src`, m.base64DecodeFailed));
     }
   }
   return errors;
 }
 
-function checkM09(document: IrDocument): IrError[] {
+function checkM09(document: IrDocument, m: ValidateMessages): IrError[] {
   const errors: IrError[] = [];
   document.elements.forEach((el, i) => {
     if (el.type !== "table") return;
@@ -440,61 +438,53 @@ function checkM09(document: IrDocument): IrError[] {
         err(
           "M09",
           `${path}.continuationY`,
-          "continuationY は 0 以上である必要があります",
+          m.mustBeNonNegative("continuationY"),
         ),
       );
     }
     if (el.maxY > document.page.height) {
-      errors.push(
-        err("M09", `${path}.maxY`, "maxY が用紙の高さを超えています"),
-      );
+      errors.push(err("M09", `${path}.maxY`, m.maxYExceedsPageHeight));
     }
     if (!(el.y + el.headerHeight + el.rowHeight <= el.maxY)) {
-      errors.push(
-        err("M09", `${path}.maxY`, "先頭ページの行容量が1行分もありません"),
-      );
+      errors.push(err("M09", `${path}.maxY`, m.firstPageNoRowCapacity));
     }
     if (!(el.continuationY + el.headerHeight + el.rowHeight <= el.maxY)) {
       errors.push(
-        err(
-          "M09",
-          `${path}.continuationY`,
-          "継続ページの行容量が1行分もありません",
-        ),
+        err("M09", `${path}.continuationY`, m.continuationPageNoRowCapacity),
       );
     }
   });
   return errors;
 }
 
-function checkM10(document: IrDocument): IrError[] {
+function checkM10(document: IrDocument, m: ValidateMessages): IrError[] {
   const errors: IrError[] = [];
   document.elements.forEach((el, i) => {
     if (el.type !== "table") return;
     if (!Number.isInteger(el.minRows) || el.minRows < 0) {
-      errors.push(
-        err(
-          "M10",
-          `elements[${i}].minRows`,
-          "minRows は0以上の整数である必要があります",
-        ),
-      );
+      errors.push(err("M10", `elements[${i}].minRows`, m.minRowsInvalid));
     }
   });
   return errors;
 }
 
-function checkM11(walked: readonly WalkedElement[]): IrError[] {
+function checkM11(
+  walked: readonly WalkedElement[],
+  m: ValidateMessages,
+): IrError[] {
   const errors: IrError[] = [];
   for (const { path, element } of walked) {
     if (element.type === "flex" && element.children.length < 1) {
-      errors.push(err("M11", `${path}.children`, "children は1個以上必要です"));
+      errors.push(err("M11", `${path}.children`, m.flexChildrenRequired));
     }
   }
   return errors;
 }
 
-function checkM12(walked: readonly WalkedElement[]): IrError[] {
+function checkM12(
+  walked: readonly WalkedElement[],
+  m: ValidateMessages,
+): IrError[] {
   const errors: IrError[] = [];
   for (const { path, element } of walked) {
     if (element.type !== "flex") continue;
@@ -503,15 +493,13 @@ function checkM12(walked: readonly WalkedElement[]): IrError[] {
     const { contentMain } = measureFlex(element);
     if (explicit < contentMain) {
       const field = element.direction === "row" ? "w" : "h";
-      errors.push(
-        err("M12", `${path}.${field}`, "主軸寸法が内容寸法を下回っています"),
-      );
+      errors.push(err("M12", `${path}.${field}`, m.mainAxisTooSmall));
     }
   }
   return errors;
 }
 
-function checkM13(document: IrDocument): IrError[] {
+function checkM13(document: IrDocument, m: ValidateMessages): IrError[] {
   const errors: IrError[] = [];
   document.elements.forEach((el, i) => {
     if (el.type !== "table" || el.cellOverrides === undefined) return;
@@ -522,20 +510,12 @@ function checkM13(document: IrDocument): IrError[] {
       const entryPath = `${path}.cellOverrides[${j}]`;
       if (!Number.isInteger(override.row) || override.row < 0) {
         errors.push(
-          err(
-            "M13",
-            `${entryPath}.row`,
-            "row は0以上の整数である必要があります",
-          ),
+          err("M13", `${entryPath}.row`, m.rowMustBeNonNegativeInteger),
         );
       }
       if (!keys.has(override.key)) {
         errors.push(
-          err(
-            "M13",
-            `${entryPath}.key`,
-            `key "${override.key}" が table の columns にありません`,
-          ),
+          err("M13", `${entryPath}.key`, m.keyNotInColumns(override.key)),
         );
       }
       const dedupeKey = `${override.row}:${override.key}`;
@@ -547,11 +527,7 @@ function checkM13(document: IrDocument): IrError[] {
       if (indices.length > 1) {
         for (const j of indices) {
           errors.push(
-            err(
-              "M13",
-              `${path}.cellOverrides[${j}]`,
-              "(row, key) の組み合わせが table 内で重複しています",
-            ),
+            err("M13", `${path}.cellOverrides[${j}]`, m.rowKeyDuplicate),
           );
         }
       }
@@ -560,7 +536,7 @@ function checkM13(document: IrDocument): IrError[] {
   return errors;
 }
 
-function checkM14(document: IrDocument): IrError[] {
+function checkM14(document: IrDocument, m: ValidateMessages): IrError[] {
   const errors: IrError[] = [];
   const styles = document.styles ?? [];
   const countByName = new Map<string, number>();
@@ -574,23 +550,15 @@ function checkM14(document: IrDocument): IrError[] {
         err(
           "M14",
           `${path}.name`,
-          `name は1文字以上${STYLE_NAME_MAX_LENGTH}文字以下である必要があります`,
+          m.styleNameLengthInvalid(STYLE_NAME_MAX_LENGTH),
         ),
       );
     }
     if ((countByName.get(style.name) ?? 0) > 1) {
-      errors.push(
-        err(
-          "M14",
-          `${path}.name`,
-          `name "${style.name}" が文書内で重複しています`,
-        ),
-      );
+      errors.push(err("M14", `${path}.name`, m.styleNameDuplicate(style.name)));
     }
     if (Object.keys(style.attrs).length === 0) {
-      errors.push(
-        err("M14", `${path}.attrs`, "attrs は1フィールド以上必要です"),
-      );
+      errors.push(err("M14", `${path}.attrs`, m.styleAttrsRequired));
     }
     const { fontSize, lineHeight, borderWidth, thickness } = style.attrs;
     if (
@@ -601,7 +569,7 @@ function checkM14(document: IrDocument): IrError[] {
         err(
           "M14",
           `${path}.attrs.fontSize`,
-          `fontSize は 0 より大きく ${FONT_SIZE_MAX} 以下である必要があります`,
+          m.mustBeInRange("fontSize", FONT_SIZE_MAX),
         ),
       );
     }
@@ -613,7 +581,7 @@ function checkM14(document: IrDocument): IrError[] {
         err(
           "M14",
           `${path}.attrs.lineHeight`,
-          `lineHeight は 0 より大きく ${LINE_HEIGHT_MAX} 以下である必要があります`,
+          m.mustBeInRange("lineHeight", LINE_HEIGHT_MAX),
         ),
       );
     }
@@ -622,24 +590,20 @@ function checkM14(document: IrDocument): IrError[] {
         err(
           "M14",
           `${path}.attrs.borderWidth`,
-          "borderWidth は 0 より大きい必要があります",
+          m.mustBePositive("borderWidth"),
         ),
       );
     }
     if (thickness !== undefined && !(thickness > 0)) {
       errors.push(
-        err(
-          "M14",
-          `${path}.attrs.thickness`,
-          "thickness は 0 より大きい必要があります",
-        ),
+        err("M14", `${path}.attrs.thickness`, m.mustBePositive("thickness")),
       );
     }
   });
   return errors;
 }
 
-function checkF02(document: IrDocument): IrError[] {
+function checkF02(document: IrDocument, m: ValidateMessages): IrError[] {
   const { footnotes } = document;
   if (footnotes === undefined) return [];
   const errors: IrError[] = [];
@@ -647,11 +611,7 @@ function checkF02(document: IrDocument): IrError[] {
   footnotes.notes.forEach((note, i) => {
     if (!isIdentifier(note.id)) {
       errors.push(
-        err(
-          "F02",
-          `footnotes.notes[${i}].id`,
-          `id "${note.id}" は識別子パターンに一致しません`,
-        ),
+        err("F02", `footnotes.notes[${i}].id`, m.idNotIdentifier(note.id)),
       );
     }
     const indices = indicesById.get(note.id) ?? [];
@@ -662,11 +622,7 @@ function checkF02(document: IrDocument): IrError[] {
     if (indices.length > 1) {
       for (const i of indices) {
         errors.push(
-          err(
-            "F02",
-            `footnotes.notes[${i}].id`,
-            `id "${id}" が footnotes 内で重複しています`,
-          ),
+          err("F02", `footnotes.notes[${i}].id`, m.noteIdDuplicate(id)),
         );
       }
     }
@@ -674,7 +630,7 @@ function checkF02(document: IrDocument): IrError[] {
   return errors;
 }
 
-function checkF03(document: IrDocument): IrError[] {
+function checkF03(document: IrDocument, m: ValidateMessages): IrError[] {
   const notesById = new Set(
     (document.footnotes?.notes ?? []).map((note) => note.id),
   );
@@ -684,11 +640,7 @@ function checkF03(document: IrDocument): IrError[] {
     for (const id of new Set(footnoteMarkIds(element.text))) {
       if (!notesById.has(id)) {
         errors.push(
-          err(
-            "F03",
-            `elements[${i}].text`,
-            `参照先の注記 "${id}" が定義されていません`,
-          ),
+          err("F03", `elements[${i}].text`, m.footnoteRefNotDefined(id)),
         );
       }
     }
@@ -710,6 +662,7 @@ function pushMarkError(
 function checkF04(
   document: IrDocument,
   walked: readonly WalkedElement[],
+  m: ValidateMessages,
 ): IrError[] {
   const errors: IrError[] = [];
   for (const { path, element, isTopLevel } of walked) {
@@ -718,7 +671,7 @@ function checkF04(
         errors,
         `${path}.text`,
         element.text,
-        "脚注マークは flex 内の text には書けません",
+        m.markNotAllowedInFlexText,
       );
     }
     if (element.type === "pageNumber") {
@@ -726,7 +679,7 @@ function checkF04(
         errors,
         `${path}.format`,
         element.format,
-        "脚注マークは pageNumber の format には書けません",
+        m.markNotAllowedInPageNumberFormat,
       );
     }
   }
@@ -738,7 +691,7 @@ function checkF04(
         errors,
         `${path}.columns[${j}].label`,
         column.label,
-        "脚注マークは table の列見出しには書けません",
+        m.markNotAllowedInColumnLabel,
       );
     });
     (element.cellOverrides ?? []).forEach((override, j) => {
@@ -746,7 +699,7 @@ function checkF04(
         errors,
         `${path}.cellOverrides[${j}].value`,
         override.value,
-        "脚注マークは table の固定値上書きには書けません",
+        m.markNotAllowedInCellOverride,
       );
     });
   });
@@ -755,13 +708,13 @@ function checkF04(
       errors,
       `footnotes.notes[${i}].text`,
       note.text,
-      "脚注マークは注記本文には書けません",
+      m.markNotAllowedInNoteText,
     );
   });
   return errors;
 }
 
-function checkF05(document: IrDocument): IrError[] {
+function checkF05(document: IrDocument, m: ValidateMessages): IrError[] {
   const { footnotes } = document;
   if (footnotes === undefined) return [];
   const referenced = new Set<string>();
@@ -773,11 +726,7 @@ function checkF05(document: IrDocument): IrError[] {
   footnotes.notes.forEach((note, i) => {
     if (!referenced.has(note.id)) {
       errors.push(
-        err(
-          "F05",
-          `footnotes.notes[${i}].id`,
-          `note "${note.id}" がどのマークからも参照されていません`,
-        ),
+        err("F05", `footnotes.notes[${i}].id`, m.noteNotReferenced(note.id)),
       );
     }
   });
@@ -798,19 +747,14 @@ function elementStyleName(
 function checkM15(
   document: IrDocument,
   walked: readonly WalkedElement[],
+  m: ValidateMessages,
 ): IrError[] {
   const errors: IrError[] = [];
   const names = new Set((document.styles ?? []).map((s) => s.name));
   for (const { path, element } of walked) {
     const style = elementStyleName(element);
     if (style !== undefined && !names.has(style)) {
-      errors.push(
-        err(
-          "M15",
-          `${path}.style`,
-          `style "${style}" を参照するスタイルが見つかりません`,
-        ),
-      );
+      errors.push(err("M15", `${path}.style`, m.styleNotFound(style)));
     }
   }
   return errors;
@@ -823,37 +767,37 @@ function checkColorField(
   path: string,
   field: string,
   value: string | undefined,
+  m: ValidateMessages,
 ): void {
   if (value === undefined) return;
   if (!COLOR_PATTERN.test(value)) {
     errors.push(
-      err(
-        "M16",
-        `${path}.${field}`,
-        `${field} は #rrggbb 形式である必要があります: "${value}"`,
-      ),
+      err("M16", `${path}.${field}`, m.colorFormatInvalid(field, value)),
     );
   }
 }
 
-function checkM16(walked: readonly WalkedElement[]): IrError[] {
+function checkM16(
+  walked: readonly WalkedElement[],
+  m: ValidateMessages,
+): IrError[] {
   const errors: IrError[] = [];
   for (const { path, element } of walked) {
     switch (element.type) {
       case "text":
       case "pageNumber":
-        checkColorField(errors, path, "color", element.color);
+        checkColorField(errors, path, "color", element.color, m);
         break;
       case "line":
-        checkColorField(errors, path, "color", element.color);
+        checkColorField(errors, path, "color", element.color, m);
         break;
       case "rect":
       case "ellipse":
-        checkColorField(errors, path, "borderColor", element.borderColor);
-        checkColorField(errors, path, "fillColor", element.fillColor);
+        checkColorField(errors, path, "borderColor", element.borderColor, m);
+        checkColorField(errors, path, "fillColor", element.fillColor, m);
         break;
       case "table":
-        checkColorField(errors, path, "stripeColor", element.stripeColor);
+        checkColorField(errors, path, "stripeColor", element.stripeColor, m);
         break;
       default:
         break;
@@ -862,7 +806,10 @@ function checkM16(walked: readonly WalkedElement[]): IrError[] {
   return errors;
 }
 
-function checkM17(walked: readonly WalkedElement[]): IrError[] {
+function checkM17(
+  walked: readonly WalkedElement[],
+  m: ValidateMessages,
+): IrError[] {
   const errors: IrError[] = [];
   for (const { path, element } of walked) {
     if (element.type !== "rect") continue;
@@ -871,27 +818,22 @@ function checkM17(walked: readonly WalkedElement[]): IrError[] {
     const maxRadius = Math.min(w, h) / 2;
     if (!(cornerRadius >= 0 && cornerRadius <= maxRadius)) {
       errors.push(
-        err(
-          "M17",
-          `${path}.cornerRadius`,
-          `cornerRadius は 0 以上 ${maxRadius} 以下である必要があります`,
-        ),
+        err("M17", `${path}.cornerRadius`, m.cornerRadiusRange(maxRadius)),
       );
     }
     if (cornerRadius > 0 && (borderStyle ?? "solid") !== "solid") {
       errors.push(
-        err(
-          "M17",
-          `${path}.borderStyle`,
-          "cornerRadius を指定する場合、borderStyle は solid（省略含む）である必要があります",
-        ),
+        err("M17", `${path}.borderStyle`, m.cornerRadiusRequiresSolidBorder),
       );
     }
   }
   return errors;
 }
 
-function checkM18(walked: readonly WalkedElement[]): IrError[] {
+function checkM18(
+  walked: readonly WalkedElement[],
+  m: ValidateMessages,
+): IrError[] {
   const errors: IrError[] = [];
   for (const { path, element } of walked) {
     if (
@@ -902,7 +844,7 @@ function checkM18(walked: readonly WalkedElement[]): IrError[] {
         err(
           "M18",
           `${path}.name`,
-          `name は${ELEMENT_NAME_MAX_LENGTH}文字以下である必要があります`,
+          m.nameLengthInvalid(ELEMENT_NAME_MAX_LENGTH),
         ),
       );
     }
@@ -910,7 +852,10 @@ function checkM18(walked: readonly WalkedElement[]): IrError[] {
   return errors;
 }
 
-function checkM19(walked: readonly WalkedElement[]): IrError[] {
+function checkM19(
+  walked: readonly WalkedElement[],
+  m: ValidateMessages,
+): IrError[] {
   const errors: IrError[] = [];
   for (const { path, element } of walked) {
     if (element.type === "table" || element.type === "flex") continue;
@@ -923,13 +868,7 @@ function checkM19(walked: readonly WalkedElement[]): IrError[] {
         rotate <= ROTATE_MAX
       )
     ) {
-      errors.push(
-        err(
-          "M19",
-          `${path}.rotate`,
-          `rotate は −${ROTATE_MAX} 以上 ${ROTATE_MAX} 以下の有限の number である必要があります`,
-        ),
-      );
+      errors.push(err("M19", `${path}.rotate`, m.rotateInvalid(ROTATE_MAX)));
     }
   }
   return errors;
@@ -952,7 +891,7 @@ function extentsOverlap(a: SpanExtent, b: SpanExtent): boolean {
   return rowsOverlap && colsOverlap;
 }
 
-function checkM20(document: IrDocument): IrError[] {
+function checkM20(document: IrDocument, m: ValidateMessages): IrError[] {
   const errors: IrError[] = [];
   document.elements.forEach((el, i) => {
     if (el.type !== "table" || el.cellSpans === undefined) return;
@@ -970,7 +909,7 @@ function checkM20(document: IrDocument): IrError[] {
           err(
             "M20",
             `${entryPath}.row`,
-            'row は0以上の整数または "header" である必要があります',
+            m.cellSpanRowNotNonNegativeIntegerOrHeader,
           ),
         );
         ok = false;
@@ -978,11 +917,7 @@ function checkM20(document: IrDocument): IrError[] {
       const col = indexByKey.get(span.key);
       if (col === undefined) {
         errors.push(
-          err(
-            "M20",
-            `${entryPath}.key`,
-            `key "${span.key}" が table の columns にありません`,
-          ),
+          err("M20", `${entryPath}.key`, m.keyNotInColumns(span.key)),
         );
         ok = false;
       }
@@ -994,38 +929,24 @@ function checkM20(document: IrDocument): IrError[] {
       ] as const) {
         if (!Number.isInteger(value) || value < 1) {
           errors.push(
-            err(
-              "M20",
-              `${entryPath}.${field}`,
-              `${field} は1以上の整数である必要があります`,
-            ),
+            err("M20", `${entryPath}.${field}`, m.mustBePositiveInteger(field)),
           );
           ok = false;
         }
       }
       if (ok && rowSpan === 1 && colSpan === 1) {
-        errors.push(
-          err(
-            "M20",
-            entryPath,
-            "rowSpan・colSpan の少なくとも一方は2以上である必要があります",
-          ),
-        );
+        errors.push(err("M20", entryPath, m.spanMustHaveOneGreaterThanOne));
         ok = false;
       }
       if (span.row === "header" && rowSpan !== 1) {
         errors.push(
-          err(
-            "M20",
-            `${entryPath}.rowSpan`,
-            '"header" 行では rowSpan は1である必要があります',
-          ),
+          err("M20", `${entryPath}.rowSpan`, m.headerRowSpanMustBeOne),
         );
         ok = false;
       }
       if (ok && col !== undefined && col + colSpan > el.columns.length) {
         errors.push(
-          err("M20", `${entryPath}.colSpan`, "結合範囲が列範囲を超えています"),
+          err("M20", `${entryPath}.colSpan`, m.spanExceedsColumnRange),
         );
         ok = false;
       }
@@ -1036,7 +957,7 @@ function checkM20(document: IrDocument): IrError[] {
               err(
                 "M20",
                 entryPath,
-                `結合範囲が mergeSameValue の列 "${el.columns[c]?.key}" に掛かっています`,
+                m.spanOverlapsMergedColumn(String(el.columns[c]?.key)),
               ),
             );
             ok = false;
@@ -1061,7 +982,7 @@ function checkM20(document: IrDocument): IrError[] {
             err(
               "M20",
               `${path}.cellSpans[${second.index}]`,
-              `結合範囲が cellSpans[${first.index}] と重なっています`,
+              m.spanOverlapsOtherSpan(first.index),
             ),
           );
         }
@@ -1071,27 +992,25 @@ function checkM20(document: IrDocument): IrError[] {
   return errors;
 }
 
-function checkF06(document: IrDocument): IrError[] {
+function checkF06(document: IrDocument, m: ValidateMessages): IrError[] {
   const { footnotes, page } = document;
   if (footnotes === undefined) return [];
   const errors: IrError[] = [];
   if (!(footnotes.x >= 0)) {
-    errors.push(err("F06", "footnotes.x", "x は 0 以上である必要があります"));
+    errors.push(err("F06", "footnotes.x", m.mustBeNonNegative("x")));
   }
   if (!(footnotes.w >= 0)) {
-    errors.push(err("F06", "footnotes.w", "w は 0 以上である必要があります"));
+    errors.push(err("F06", "footnotes.w", m.mustBeNonNegative("w")));
   }
   if (!(footnotes.bottom >= 0)) {
-    errors.push(
-      err("F06", "footnotes.bottom", "bottom は 0 以上である必要があります"),
-    );
+    errors.push(err("F06", "footnotes.bottom", m.mustBeNonNegative("bottom")));
   }
   if (!(footnotes.fontSize > 0 && footnotes.fontSize <= FONT_SIZE_MAX)) {
     errors.push(
       err(
         "F06",
         "footnotes.fontSize",
-        `fontSize は 0 より大きく ${FONT_SIZE_MAX} 以下である必要があります`,
+        m.mustBeInRange("fontSize", FONT_SIZE_MAX),
       ),
     );
   }
@@ -1100,14 +1019,12 @@ function checkF06(document: IrDocument): IrError[] {
       err(
         "F06",
         "footnotes.lineHeight",
-        `lineHeight は 0 より大きく ${LINE_HEIGHT_MAX} 以下である必要があります`,
+        m.mustBeInRange("lineHeight", LINE_HEIGHT_MAX),
       ),
     );
   }
   if (footnotes.x + footnotes.w > page.width) {
-    errors.push(
-      err("F06", "footnotes.w", "注記ブロックが用紙の右端を超えています"),
-    );
+    errors.push(err("F06", "footnotes.w", m.footnotesExceedPageRight));
   }
   if (footnotes.notes.length > 0) {
     const totalLines = footnotes.notes.reduce(
@@ -1117,13 +1034,7 @@ function checkF06(document: IrDocument): IrError[] {
     const blockHeight =
       totalLines * footnotes.fontSize * footnotes.lineHeight * PT_TO_MM;
     if (page.height - footnotes.bottom - blockHeight < 0) {
-      errors.push(
-        err(
-          "F06",
-          "footnotes.bottom",
-          "注記ブロックが用紙の上端を超えています",
-        ),
-      );
+      errors.push(err("F06", "footnotes.bottom", m.footnotesExceedPageTop));
     }
   }
   return errors;

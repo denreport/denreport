@@ -124,18 +124,18 @@ const matrix: TargetCompatMatrix = {
       element: {
         level: "approximated",
         note: "text-approx",
-        userMessage: "text-approx-message",
+        userMessage: () => "text-approx-message",
       },
       attributes: {
         lineHeight: {
           level: "approximated",
           note: "text-lineHeight-approx",
-          userMessage: "text-lineHeight-approx-message",
+          userMessage: () => "text-lineHeight-approx-message",
         },
         pages: {
           level: "approximated",
           note: "text-pages-approx",
-          userMessage: "text-pages-approx-message",
+          userMessage: () => "text-pages-approx-message",
         },
       },
     },
@@ -143,13 +143,13 @@ const matrix: TargetCompatMatrix = {
       element: {
         level: "unsupported",
         note: "line-unsupported",
-        userMessage: "line-unsupported-message",
+        userMessage: () => "line-unsupported-message",
       },
       attributes: {
         thickness: {
           level: "approximated",
           note: "should-not-fire",
-          userMessage: "should-not-fire-message",
+          userMessage: () => "should-not-fire-message",
         },
       },
     },
@@ -161,7 +161,7 @@ const matrix: TargetCompatMatrix = {
         cellOverrides: {
           level: "approximated",
           note: "table-cellOverrides-approx",
-          userMessage: "table-cellOverrides-approx-message",
+          userMessage: () => "table-cellOverrides-approx-message",
         },
       },
     },
@@ -172,7 +172,7 @@ const matrix: TargetCompatMatrix = {
         w: {
           level: "approximated",
           note: "flex-w-approx",
-          userMessage: "flex-w-approx-message",
+          userMessage: () => "flex-w-approx-message",
         },
       },
     },
@@ -205,7 +205,7 @@ const matrixWithUnsupportedFlex: TargetCompatMatrix = {
       element: {
         level: "unsupported",
         note: "flex-unsupported",
-        userMessage: "flex-unsupported-message",
+        userMessage: () => "flex-unsupported-message",
       },
     },
   },
