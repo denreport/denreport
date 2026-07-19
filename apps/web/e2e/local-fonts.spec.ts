@@ -6,9 +6,9 @@ test.describe("PC 内フォントからの選択（許可済み環境）", () =>
   test("一覧取得〜選択〜プレビュー反映まで通しで動く", async ({ page }) => {
     await page.goto("/");
     const props = page.getByRole("complementary", { name: "プロパティ" });
-    await props.getByRole("button", { name: "PC のフォントから選択…" }).click();
+    await props.getByRole("button", { name: "標準のフォントを選択…" }).click();
 
-    const dialog = page.getByRole("dialog", { name: "PC のフォントから選択" });
+    const dialog = page.getByRole("dialog", { name: "標準のフォントを選択" });
     await expect(dialog).toBeVisible();
 
     // fonts-liberation は CI（playwright install --with-deps）・開発コンテナの双方に
@@ -52,7 +52,7 @@ test.describe("PC 内フォント選択が非対応の環境", () => {
 
     const props = page.getByRole("complementary", { name: "プロパティ" });
     await expect(
-      props.getByRole("button", { name: "PC のフォントから選択…" }),
+      props.getByRole("button", { name: /のフォントを選択…$/ }),
     ).toHaveCount(0);
     await expect(
       props.getByText(/PC 内フォントの一覧取得に対応していません/),

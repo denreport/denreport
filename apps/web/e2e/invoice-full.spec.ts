@@ -659,10 +659,12 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
     const entries = readStoreZip(readFileSync(ZIP_SAVE_PATH));
     expect(entries.map((e) => e.name).sort()).toEqual([
       "NotoSansJP.ttf",
+      "NotoSansJPBold.ttf",
       "report.py",
     ]);
     const code = entryOf(entries, "report.py").data.toString("utf8");
-    expect(code).toContain('FONT_FILE = "NotoSansJP.ttf"');
+    expect(code).toContain('"NotoSansJP": ("NotoSansJP.ttf", ');
+    expect(code).toContain('"NotoSansJPBold": ("NotoSansJPBold.ttf", ');
     expect(code).toMatch(/^PAGE_COUNT = 1$/m);
     expect(code).toContain("import base64");
     expect(code).toContain("Pillow");
@@ -675,9 +677,9 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
     expect(code).toContain("360撮影");
     expect(code).toContain("¥50,000");
 
-    expect(code).toContain("_text(c, font, 130, 85,");
-    expect(code).toContain("_text(c, font, 130, 95,");
-    expect(code).toContain("_text(c, font, 90, 288,");
+    expect(code).toContain('_text(c, "NotoSansJP", 130, 85,');
+    expect(code).toContain('_text(c, "NotoSansJP", 130, 95,');
+    expect(code).toContain('_text(c, "NotoSansJP", 90, 288,');
     expect(code).toContain(`"${FLEX_CHILD_TEXT.text20}"`);
     expect(code).toContain(`"${FLEX_CHILD_TEXT.text21}"`);
     expect(code).toContain('["1 / 1"]');

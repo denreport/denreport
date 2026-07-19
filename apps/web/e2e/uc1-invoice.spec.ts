@@ -10,6 +10,12 @@ const FONT_ASSET_PATH = fileURLToPath(
     import.meta.url,
   ),
 );
+const BOLD_FONT_ASSET_PATH = fileURLToPath(
+  new URL(
+    "../../../packages/targets/assets/fonts/NotoSansJP-Bold.ttf",
+    import.meta.url,
+  ),
+);
 const ZIP_SAVE_PATH = fileURLToPath(
   new URL("../test-results/uc1/report-reportlab.zip", import.meta.url),
 );
@@ -146,13 +152,13 @@ test("UC-1: 請求書レイアウトを作りプレビューして ReportLab コ
   );
   await expect(preview.locator(".apx-preview-warnings")).toHaveCount(0);
 
-  // プレビューを開き直してもフォント本体の再ダウンロードは起きない
-  expect(await fontDownloadCount()).toBe(1);
+  // プレビューを開き直してもフォント本体の再ダウンロードは起きない（regular + bold の2本）
+  expect(await fontDownloadCount()).toBe(2);
   await preview.getByRole("button", { name: "閉じる" }).click();
   await expect(preview).toBeHidden();
   await page.getByRole("button", { name: "プレビュー" }).click();
   await expect(preview.locator(".apx-preview-pageno").first()).toBeVisible();
-  expect(await fontDownloadCount()).toBe(1);
+  expect(await fontDownloadCount()).toBe(2);
   await preview.getByRole("button", { name: "閉じる" }).click();
   await expect(preview).toBeHidden();
 
@@ -181,12 +187,18 @@ test("UC-1: 請求書レイアウトを作りプレビューして ReportLab コ
   const entries = readStoreZip(readFileSync(ZIP_SAVE_PATH));
   expect(entries.map((e) => e.name).sort()).toEqual([
     "NotoSansJP.ttf",
+    "NotoSansJPBold.ttf",
     "report.py",
   ]);
   const fontEntry = entryOf(entries, "NotoSansJP.ttf");
   expect(fontEntry.data.equals(readFileSync(FONT_ASSET_PATH))).toBe(true);
+  const boldFontEntry = entryOf(entries, "NotoSansJPBold.ttf");
+  expect(boldFontEntry.data.equals(readFileSync(BOLD_FONT_ASSET_PATH))).toBe(
+    true,
+  );
   const code = entryOf(entries, "report.py").data.toString("utf8");
-  expect(code).toContain('FONT_FILE = "NotoSansJP.ttf"');
+  expect(code).toContain('"NotoSansJP": ("NotoSansJP.ttf", ');
+  expect(code).toContain('"NotoSansJPBold": ("NotoSansJPBold.ttf", ');
   expect(code).toMatch(/^PAGE_COUNT = \d+$/m);
   expect(code).toContain("株式会社サンプル商事");
   // 既定幅 40mm には収まらず1文字単位の折り返しで2行に分かれる

@@ -89,7 +89,10 @@ test("フォント全体埋め込みをオンにすると font ブロック付�
 
   const path = await download.path();
   const artifact = JSON.parse(readFileSync(path, "utf8")) as {
-    readonly font?: { readonly name?: string; readonly subset?: boolean };
+    readonly font?: {
+      readonly names?: readonly string[];
+      readonly subset?: boolean;
+    };
   };
   expect(Object.keys(artifact).sort()).toEqual(["font", "inputs", "template"]);
   expect(artifact.font?.subset).toBe(false);
