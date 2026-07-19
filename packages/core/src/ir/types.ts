@@ -25,6 +25,13 @@ export type IrStrokeStyle =
   | "dashdot"
   | "dashdotdot";
 
+/** A logical font slot of IrFont. */
+export type IrFontSlot = "regular" | "bold" | "italic" | "boldItalic";
+/** Requested font weight of a text element. */
+export type IrFontWeight = "normal" | "bold";
+/** Requested font style of a text element. */
+export type IrFontStyle = "normal" | "italic";
+
 /**
  * Attribute values a named style (IrNamedStyle) can set. Each element type
  * only applies the subset of keys listed for it in STYLEABLE_ATTRS.
@@ -33,6 +40,9 @@ export interface IrStyleAttrs {
   readonly fontSize?: number;
   readonly align?: IrAlign;
   readonly lineHeight?: number;
+  readonly fontWeight?: IrFontWeight;
+  readonly fontStyle?: IrFontStyle;
+  readonly underline?: boolean;
   readonly borderWidth?: number;
   readonly thickness?: number;
 }
@@ -52,9 +62,16 @@ export interface IrPage {
   readonly height: number;
 }
 
-/** The document's single font, identified by name (a target resolves the name to actual font data). */
+/**
+ * The document's font as a set of logical names, one per slot (a target
+ * resolves each name to actual font data). `regular` is required; slots left
+ * undefined degrade per resolveFontSlot.
+ */
 export interface IrFont {
-  readonly name: string;
+  readonly regular: string;
+  readonly bold?: string;
+  readonly italic?: string;
+  readonly boldItalic?: string;
 }
 
 /** A table column: its data key, header label, width (mm), and text alignment. */
@@ -89,6 +106,9 @@ export type IrTextElement = IrElementCommon &
     readonly fontSize: number;
     readonly align: IrAlign;
     readonly lineHeight: number;
+    readonly fontWeight?: IrFontWeight;
+    readonly fontStyle?: IrFontStyle;
+    readonly underline?: boolean;
     readonly color?: string;
     readonly style?: string;
   };

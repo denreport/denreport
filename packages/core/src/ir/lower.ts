@@ -24,6 +24,8 @@ import type {
   IrBarcodeSymbology,
   IrDocument,
   IrFont,
+  IrFontStyle,
+  IrFontWeight,
   IrOrientation,
   IrPage,
   IrPageNumberElement,
@@ -51,6 +53,9 @@ export interface LoweredTextElement {
   readonly align: IrAlign;
   readonly lineHeight: number;
   readonly color: string;
+  readonly fontWeight: IrFontWeight;
+  readonly fontStyle: IrFontStyle;
+  readonly underline: boolean;
   /** Resolved rotation in degrees; 0 means no rotation. */
   readonly rotate: number;
 }
@@ -364,6 +369,9 @@ function lowerTableChunk(
       align: "center",
       lineHeight: 1.25,
       color: TABLE_LINE_COLOR,
+      fontWeight: "normal",
+      fontStyle: "normal",
+      underline: false,
       rotate: 0,
     });
   });
@@ -388,6 +396,9 @@ function lowerTableChunk(
         align: column.align,
         lineHeight: 1.25,
         color: TABLE_LINE_COLOR,
+        fontWeight: "normal",
+        fontStyle: "normal",
+        underline: false,
         rotate: 0,
       });
     });
@@ -496,6 +507,9 @@ export function lowerIr(document: IrDocument, data: IrData): LowerIrResult {
             align: element.align,
             lineHeight: element.lineHeight,
             color: style.color,
+            fontWeight: style.fontWeight,
+            fontStyle: style.fontStyle,
+            underline: style.underline,
             rotate: element.rotate ?? 0,
           });
         }
@@ -547,6 +561,9 @@ function lowerPlacedElement(
         align: element.align,
         lineHeight: element.lineHeight,
         color: style.color,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
+        underline: style.underline,
         rotate: element.rotate ?? 0,
       };
     }

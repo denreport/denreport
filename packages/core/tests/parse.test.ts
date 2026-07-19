@@ -12,7 +12,7 @@ function baseDoc(): Raw {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [
       { type: "text", id: "t1", x: 0, y: 0, w: 50, h: 10, text: "hello" },
       {
@@ -195,16 +195,49 @@ describe("parseIr", () => {
       expectRule(parse(doc), "S05", "font");
     });
 
-    it("rejects a missing font.name", () => {
+    it("rejects a missing font.regular", () => {
       const doc = baseDoc();
-      doc.font = {};
-      expectRule(parse(doc), "S05", "font.name");
+      doc.font = { bold: "NotoSansJPBold" };
+      expectRule(parse(doc), "S05", "font.regular");
     });
 
     it("rejects an unknown font key", () => {
       const doc = baseDoc();
-      doc.font = { name: "NotoSansJP", path: "/tmp/font.ttf" };
+      doc.font = { regular: "NotoSansJP", path: "/tmp/font.ttf" };
       expectRule(parse(doc), "S05", "font.path");
+    });
+
+    it("rejects a non-string optional slot", () => {
+      const doc = baseDoc();
+      doc.font = { regular: "NotoSansJP", bold: 1 };
+      expectRule(parse(doc), "S05", "font.bold");
+    });
+
+    it("accepts a full four-slot font and keeps only the declared slots", () => {
+      const doc = baseDoc();
+      doc.font = {
+        regular: "NotoSansJP",
+        bold: "NotoSansJPBold",
+        italic: "NotoSansJPItalic",
+        boldItalic: "NotoSansJPBoldItalic",
+      };
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error("expected success");
+      expect(result.document.font).toEqual({
+        regular: "NotoSansJP",
+        bold: "NotoSansJPBold",
+        italic: "NotoSansJPItalic",
+        boldItalic: "NotoSansJPBoldItalic",
+      });
+    });
+
+    it("keeps a regular-only font free of undefined slot keys", () => {
+      const doc = baseDoc();
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error("expected success");
+      expect(Object.keys(result.document.font)).toEqual(["regular"]);
     });
   });
 
@@ -243,6 +276,43 @@ describe("parseIr", () => {
       const doc = baseDoc();
       doc.elements = [{ type: "text", id: "t1", x: 0, y: 0, w: 10, h: 10 }];
       expectRule(parse(doc), "S08t", "elements[0].text");
+    });
+
+    it("S08t: rejects a non-string fontWeight and fontStyle", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "text",
+          id: "t1",
+          x: 0,
+          y: 0,
+          w: 10,
+          h: 10,
+          text: "hi",
+          fontWeight: 700,
+          fontStyle: 1,
+        },
+      ];
+      const result = parse(doc);
+      expectRule(result, "S08t", "elements[0].fontWeight");
+      expectRule(result, "S08t", "elements[0].fontStyle");
+    });
+
+    it("S08t: rejects a non-boolean underline", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "text",
+          id: "t1",
+          x: 0,
+          y: 0,
+          w: 10,
+          h: 10,
+          text: "hi",
+          underline: "yes",
+        },
+      ];
+      expectRule(parse(doc), "S08t", "elements[0].underline");
     });
 
     it("S08l: rejects line missing orientation", () => {
@@ -569,6 +639,42 @@ describe("parseIr", () => {
       expectRule(parse(doc), "S10", "elements[0].align");
     });
 
+    it("rejects out-of-domain fontWeight and fontStyle values", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "text",
+          id: "t1",
+          x: 0,
+          y: 0,
+          w: 10,
+          h: 10,
+          text: "hi",
+          fontWeight: "bolder",
+          fontStyle: "oblique",
+        },
+      ];
+      const result = parse(doc);
+      expectRule(result, "S10", "elements[0].fontWeight");
+      expectRule(result, "S10", "elements[0].fontStyle");
+    });
+
+    it("rejects fontWeight on pageNumber as an unknown attribute (S09)", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "pageNumber",
+          id: "p1",
+          x: 0,
+          y: 0,
+          w: 30,
+          h: 6,
+          fontWeight: "bold",
+        },
+      ];
+      expectRule(parse(doc), "S09", "elements[0].fontWeight");
+    });
+
     it("rejects an invalid symbology value", () => {
       const doc = baseDoc();
       doc.elements = [
@@ -853,6 +959,38 @@ describe("parseIr", () => {
       const doc = baseDoc();
       doc.styles = [{ name: "x", attrs: { align: "middle" } }];
       expectRule(parse(doc), "S14", "styles[0].attrs.align");
+    });
+
+    it("rejects out-of-domain fontWeight/fontStyle and non-boolean underline attrs", () => {
+      const doc = baseDoc();
+      doc.styles = [
+        {
+          name: "x",
+          attrs: { fontWeight: 700, fontStyle: "oblique", underline: "yes" },
+        },
+      ];
+      const result = parse(doc);
+      expectRule(result, "S14", "styles[0].attrs.fontWeight");
+      expectRule(result, "S14", "styles[0].attrs.fontStyle");
+      expectRule(result, "S14", "styles[0].attrs.underline");
+    });
+
+    it("accepts fontWeight/fontStyle/underline style attrs", () => {
+      const doc = baseDoc();
+      doc.styles = [
+        {
+          name: "強調",
+          attrs: { fontWeight: "bold", fontStyle: "italic", underline: true },
+        },
+      ];
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.document.styles?.[0]?.attrs).toEqual({
+        fontWeight: "bold",
+        fontStyle: "italic",
+        underline: true,
+      });
     });
 
     it("rejects a non-object attrs", () => {
@@ -1545,6 +1683,36 @@ describe("parseIr", () => {
       });
       expect(result.document.elements[0]).not.toHaveProperty("borderColor");
       expect(result.document.elements[0]).not.toHaveProperty("fillColor");
+    });
+
+    it("passes explicit text fontWeight/fontStyle/underline through and omits them when unspecified", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "text",
+          id: "t1",
+          x: 0,
+          y: 0,
+          w: 50,
+          h: 10,
+          text: "強調",
+          fontWeight: "bold",
+          fontStyle: "italic",
+          underline: false,
+        },
+        { type: "text", id: "t2", x: 0, y: 20, w: 50, h: 10, text: "通常" },
+      ];
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.document.elements[0]).toMatchObject({
+        fontWeight: "bold",
+        fontStyle: "italic",
+        underline: false,
+      });
+      expect(result.document.elements[1]).not.toHaveProperty("fontWeight");
+      expect(result.document.elements[1]).not.toHaveProperty("fontStyle");
+      expect(result.document.elements[1]).not.toHaveProperty("underline");
     });
 
     it("projects style attributes only when present, leaving unstyled elements unchanged", () => {

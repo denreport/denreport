@@ -352,14 +352,17 @@ function checkM07(
   walked: readonly WalkedElement[],
 ): IrError[] {
   const errors: IrError[] = [];
-  if (!isIdentifier(document.font.name)) {
-    errors.push(
-      err(
-        "M07",
-        "font.name",
-        `font.name "${document.font.name}" は識別子パターンに一致しません`,
-      ),
-    );
+  for (const slot of ["regular", "bold", "italic", "boldItalic"] as const) {
+    const name = document.font[slot];
+    if (name !== undefined && !isIdentifier(name)) {
+      errors.push(
+        err(
+          "M07",
+          `font.${slot}`,
+          `font.${slot} "${name}" は識別子パターンに一致しません`,
+        ),
+      );
+    }
   }
   for (const { path, element } of walked) {
     if (element.type === "table") {

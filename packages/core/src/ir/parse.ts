@@ -8,6 +8,9 @@ import type {
   IrElement,
   IrFlexAlign,
   IrFlexDirection,
+  IrFont,
+  IrFontStyle,
+  IrFontWeight,
   IrFootnotes,
   IrGroup,
   IrNamedStyle,
@@ -80,6 +83,9 @@ const STYLE_ATTR_KEYS = [
   "fontSize",
   "align",
   "lineHeight",
+  "fontWeight",
+  "fontStyle",
+  "underline",
   "borderWidth",
   "thickness",
 ] as const;
@@ -165,9 +171,15 @@ function checkStyles(value: unknown): IrError[] {
         continue;
       }
       const v = attrs[key];
-      if (key === "align") {
-        if (!isString(v) || !(ENUM_DOMAINS.align ?? []).includes(v)) {
-          errors.push(err("S14", attrPath, `align の値が不正です: "${v}"`));
+      if (key === "align" || key === "fontWeight" || key === "fontStyle") {
+        if (!isString(v) || !(ENUM_DOMAINS[key] ?? []).includes(v)) {
+          errors.push(err("S14", attrPath, `${key} の値が不正です: "${v}"`));
+        }
+      } else if (key === "underline") {
+        if (typeof v !== "boolean") {
+          errors.push(
+            err("S14", attrPath, "underline は boolean である必要があります"),
+          );
         }
       } else if (!isNumber(v)) {
         errors.push(
@@ -239,16 +251,27 @@ function checkPage(value: unknown): IrError[] {
   return errors;
 }
 
+const FONT_SLOT_KEYS = ["regular", "bold", "italic", "boldItalic"] as const;
+
 function checkFont(value: unknown): IrError[] {
   if (!isPlainObject(value))
     return [err("S05", "font", "font はオブジェクトである必要があります")];
   const errors: IrError[] = [];
   for (const key of Object.keys(value)) {
-    if (key !== "name")
+    if (!(FONT_SLOT_KEYS as readonly string[]).includes(key))
       errors.push(err("S05", `font.${key}`, `未知のキー "${key}" です`));
   }
-  if (!isString(value.name))
-    errors.push(err("S05", "font.name", "name は string である必要があります"));
+  if (!isString(value.regular))
+    errors.push(
+      err("S05", "font.regular", "regular は string である必要があります"),
+    );
+  for (const slot of FONT_SLOT_KEYS) {
+    if (slot === "regular") continue;
+    if (slot in value && !isString(value[slot]))
+      errors.push(
+        err("S05", `font.${slot}`, `${slot} は string である必要があります`),
+      );
+  }
   return errors;
 }
 
@@ -432,11 +455,16 @@ function checkOptionalType(
   key: string,
   path: string,
   rule: IrRuleId,
-  kind: "string" | "number",
+  kind: "string" | "number" | "boolean",
 ): void {
   if (!(key in value)) return;
   const v = value[key];
-  const ok = kind === "string" ? isString(v) : isNumber(v);
+  const ok =
+    kind === "string"
+      ? isString(v)
+      : kind === "number"
+        ? isNumber(v)
+        : typeof v === "boolean";
   if (!ok)
     errors.push(
       err(rule, `${path}.${key}`, `${key} は ${kind} である必要があります`),
@@ -500,6 +528,9 @@ function checkS08Text(
   checkOptionalType(errors, value, "fontSize", path, "S08t", "number");
   checkOptionalType(errors, value, "align", path, "S08t", "string");
   checkOptionalType(errors, value, "lineHeight", path, "S08t", "number");
+  checkOptionalType(errors, value, "fontWeight", path, "S08t", "string");
+  checkOptionalType(errors, value, "fontStyle", path, "S08t", "string");
+  checkOptionalType(errors, value, "underline", path, "S08t", "boolean");
   checkOptionalType(errors, value, "color", path, "S08t", "string");
   checkOptionalType(errors, value, "style", path, "S08t", "string");
   checkOptionalType(errors, value, "rotate", path, "S08t", "number");
@@ -706,6 +737,9 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "fontSize",
     "align",
     "lineHeight",
+    "fontWeight",
+    "fontStyle",
+    "underline",
     "color",
     "style",
     "rotate",
@@ -914,6 +948,8 @@ const STROKE_STYLE_DOMAIN = [
 
 const ENUM_DOMAINS: Record<string, readonly string[]> = {
   align: ["left", "center", "right", "justify"],
+  fontWeight: ["normal", "bold"],
+  fontStyle: ["normal", "italic"],
   orientation: ["horizontal", "vertical"],
   direction: ["row", "column"],
   justifyContent: ["start", "center", "end"],
@@ -999,7 +1035,7 @@ function normalize(raw: Record<string, unknown>): IrDocument {
   return {
     version: raw.version as string,
     page,
-    font: { name: fontRaw.name as string },
+    font: normalizeFont(fontRaw),
     ...(styles !== undefined ? { styles } : {}),
     elements: elements as unknown as readonly IrElement[],
     ...("docType" in raw ? { docType: raw.docType as IrDocType } : {}),
@@ -1007,6 +1043,16 @@ function normalize(raw: Record<string, unknown>): IrDocument {
       ? { footnotes: normalizeFootnotes(footnotesRaw) }
       : {}),
     ...(groupsRaw !== undefined ? { groups: normalizeGroups(groupsRaw) } : {}),
+  };
+}
+
+// 任意スロットは指定時のみキーを持たせる（undefined 埋めしない）
+function normalizeFont(raw: Record<string, unknown>): IrFont {
+  return {
+    regular: raw.regular as string,
+    ...("bold" in raw ? { bold: raw.bold as string } : {}),
+    ...("italic" in raw ? { italic: raw.italic as string } : {}),
+    ...("boldItalic" in raw ? { boldItalic: raw.boldItalic as string } : {}),
   };
 }
 
@@ -1092,6 +1138,15 @@ function normalizeElement(
         fontSize: (value.fontSize as number | undefined) ?? 10,
         align: (value.align as IrAlign | undefined) ?? "left",
         lineHeight: (value.lineHeight as number | undefined) ?? 1.25,
+        ...("fontWeight" in value
+          ? { fontWeight: value.fontWeight as IrFontWeight }
+          : {}),
+        ...("fontStyle" in value
+          ? { fontStyle: value.fontStyle as IrFontStyle }
+          : {}),
+        ...("underline" in value
+          ? { underline: value.underline as boolean }
+          : {}),
         ...("color" in value ? { color: value.color as string } : {}),
         ...styleAttr(value),
         ...rotateAttr(value),

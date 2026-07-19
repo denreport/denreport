@@ -25,7 +25,17 @@ describe("STYLEABLE_ATTRS", () => {
   });
 
   it.each([
-    ["text", ["fontSize", "align", "lineHeight"]],
+    [
+      "text",
+      [
+        "fontSize",
+        "align",
+        "lineHeight",
+        "fontWeight",
+        "fontStyle",
+        "underline",
+      ],
+    ],
     ["pageNumber", ["fontSize", "align", "lineHeight"]],
     ["table", ["fontSize"]],
     ["rect", ["borderWidth"]],

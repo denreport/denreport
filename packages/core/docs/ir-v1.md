@@ -10,7 +10,7 @@ IR（Intermediate Representation）は、帳票レイアウトを表す単一の
 {
   "version": "1.0",
   "page": { "width": 210, "height": 297 },
-  "font": { "name": "NotoSansJP" },
+  "font": { "regular": "NotoSansJP", "bold": "NotoSansJPBold" },
   "styles": [ ... ],
   "elements": [ ... ]
 }
@@ -21,10 +21,14 @@ IR（Intermediate Representation）は、帳票レイアウトを表す単一の
   データ結合時に表の展開で決まる（4.3節）。
 - `footnotes` — 脚注（任意。3.10節）。
 - `groups` — 要素のグループ化（任意。3.13節）。
-- `font` — 文書全体で使う論理フォント名。`font: { name: string }`。`name` は `id` と同じ
-  識別子パターン。文書全体で1フォント（要素単位のフォント切替は非対応）。ファイルパス・
-  バイナリは IR に含めない。論理名から実フォントへの解決・埋め込み・形式検証は
-  書き出し器側の責務であり、本仕様の検証には含まれない。
+- `font` — 文書のフォント。`regular` / `bold` / `italic` / `boldItalic` の4スロットの
+  論理名の組で、`regular` のみ必須。各論理名は `id` と同じ識別子パターン。フォントファミリーは
+  文書単位の1つ（要素ごとのファミリー切替は非対応）で、text 要素の `fontWeight` /
+  `fontStyle`（3.2節）が参照するスロットを決める。未定義スロットへの要求は検証エラーに
+  ならず、`resolveFontSlot` の劣化規則（斜体性優先: boldItalic → italic → bold → regular、
+  bold → regular、italic → regular）で定義済みスロットへ落とす。ファイルパス・バイナリは
+  IR に含めない。論理名から実フォントへの解決・埋め込み・形式検証は書き出し器側の責務であり、
+  本仕様の検証には含まれない。
 - `styles` — 任意。名前付きスタイルの定義（3.9節）。省略時は名前付きスタイルを使わない文書。
 - `elements` — 要素の配列。空配列は妥当（白紙の帳票）。配列順が描画順（後の要素が上に
   描かれる。同一ページ内の規則。flex の子はコンテナの位置に子の並び順で入る）。重なりは
@@ -49,7 +53,9 @@ IR（Intermediate Representation）は、帳票レイアウトを表す単一の
   (ascender / unitsPerEm + (lineHeight − 1) / 2 + i × lineHeight) × fontSize
   ```
 
-  （pt。mm への換算は 1pt = 0.352778mm）だけ下に置く。`ascender` は解決された実フォントの
+  （pt。mm への換算は 1pt = 0.352778mm）だけ下に置く。実フォントは、その要素の
+  `fontWeight` / `fontStyle` を `resolveFontSlot`（1節）で解決したスロットの実フォントを
+  指す。`ascender` はその実フォントの
   hhea テーブル（horizontal header）の ascender、`unitsPerEm` は head テーブル（font header）の
   unitsPerEm（フォント内部のテーブルの定義は OpenType 仕様
   https://learn.microsoft.com/en-us/typography/opentype/spec/hhea ・
@@ -57,8 +63,8 @@ IR（Intermediate Representation）は、帳票レイアウトを表す単一の
   第1項が em 単位のアセント（ベースラインから行上端までの距離）、第2項はフォントサイズを
   超える行送り分（leading）を行の上下に半分ずつ配る half-leading、第3項が行送り
   （`lineHeight × fontSize`）である。この式は書き出し器の近似裁量ではなく規範であり、
-  同一の実フォントを与えたすべてのターゲットで初行位置・行送りが一致する。行 i は
-  `\n` の単純分割ではなく、2.1節の折り返し後の行を指す。
+  同一のフォント組を与えたすべてのターゲットで初行位置・行送りがスロット単位で一致する。
+  行 i は `\n` の単純分割ではなく、2.1節の折り返し後の行を指す。
 
 ### 2.1 テキストの折り返し・行頭禁則（規範）
 
@@ -69,7 +75,9 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 1. `content` を `\n` で段落に分割する（空段落は空行として保持する）。
 2. 段落内をコードポイント単位で貪欲に詰める。行が非空で、次の1文字を加えると行の実測幅
    （実フォントの advance の合算 × `fontSize`）が実効幅を超えるとき、その文字の前で改行する。
-   文字単位の折り返しであり、欧文の単語境界は考慮しない。
+   実フォントは2節と同じく、その要素に `resolveFontSlot` で解決されたスロットの実フォント
+   （table のヘッダ・明細セルは常に `regular`）。文字単位の折り返しであり、欧文の単語境界は
+   考慮しない。
 3. 行頭禁則（追い出し）: 新しい行の先頭が禁則文字（下記）のとき、直前行の末尾1文字を
    新しい行の先頭へ送る。送った結果まだ先頭が禁則文字なら繰り返す。ただし直前行は最低
    1文字残す（残り1文字になったら打ち切り、禁則違反のまま許容する）。
@@ -109,12 +117,17 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 | `fontSize` | number | 任意 | `10` | pt。mm ではない点に注意（2節） |
 | `align` | `"left" \| "center" \| "right" \| "justify"` | 任意 | `"left"` | 水平揃え。`"justify"` は均等割付（2.2節） |
 | `lineHeight` | number | 任意 | `1.25` | 行送り倍率 |
+| `fontWeight` | `"normal" \| "bold"` | 任意 | `"normal"` | 太さ。`font` の対応スロット（1節）で描画する |
+| `fontStyle` | `"normal" \| "italic"` | 任意 | `"normal"` | 斜体。`font` の対応スロット（1節）で描画する |
+| `underline` | boolean | 任意 | `false` | 下線。位置・太さは本仕様が規定せず、ターゲットの描画に従う |
 | `color` | string | 任意 | `"#000000"` | 文字色（`#rrggbb`） |
 | `style` | string | 任意 | — | 名前付きスタイル（3.9節）への参照 |
 
 折り返し・行頭禁則は2.1節、均等割付は2.2節の規範に従う。領域からの縦方向のはみ出し時の
-挙動は本仕様では規定しない。行のベースライン位置は2節の規範式（実フォントの計量に基づく）で
-一意に定まる。
+挙動は本仕様では規定しない。行のベースライン位置は2節の規範式（解決スロットの実フォントの
+計量に基づく）で一意に定まる。`fontWeight` / `fontStyle` は要素単位の指定であり、
+文字単位（リッチテキスト）のスタイル指定は持たない。合成（フェイク）太字・斜体は行わず、
+対応スロットが未定義の場合は `resolveFontSlot` の劣化規則（1節）に従う。
 
 `text` は `{key}` トークン（`key` は `id` と同じ識別子パターン、64文字以内）を
 1個以上含められ、データ結合時（5節）にそのキーの値へ置換される（部分差し込み）。
@@ -256,7 +269,7 @@ grow / stretch / wrap / padding / space-between 等の均等配置は非対応�
 | 属性 | 型 | 必須 | 説明 |
 |---|---|---|---|
 | `name` | string | 必須 | 表示名。非空・64文字以内・文書内で一意（識別子パターンは課さない） |
-| `attrs` | object | 必須（1フィールド以上） | `fontSize` / `align` / `lineHeight` / `borderWidth` / `thickness` の部分集合。各値の型・許容範囲は3節の対応する要素属性と同じ |
+| `attrs` | object | 必須（1フィールド以上） | `fontSize` / `align` / `lineHeight` / `fontWeight` / `fontStyle` / `underline` / `borderWidth` / `thickness` の部分集合。各値の型・許容範囲は3節の対応する要素属性と同じ（`fontWeight` / `fontStyle` / `underline` の適用先は text のみ） |
 
 `attrs` のうち要素型に該当しない属性（例: `borderWidth` を持つスタイルを `text` へ
 参照させる）は本仕様上は許容し、意味の解釈（どの属性を実際に反映するか）は書き出し器・
@@ -364,10 +377,12 @@ ReportLab 側のいずれも脚注固有の分岐を持たずに追随する。�
 - 検証規則（6節）の規則 ID は v1 系列内で安定（規則の追加はあっても、既存 ID の意味変更はしない）。
 - 複数ページの展開結果（ページ数・各ページの要素配置）は5.3節の参照意味論で
   ターゲット非依存に一意に決まる。
-- テキストの初行位置・行送り: 行のベースラインは2節の規範式（実フォントの hhea ascender と
-  head unitsPerEm に基づく）で一意に決まり、同一の実フォントを与えたすべてのターゲットで一致する。
-- テキストの折り返し・行頭禁則・均等割付の字間: 2.1節・2.2節の規範式で一意に決まり、
-  同一の実フォントを与えたすべてのターゲットで行分割・字間が一致する。
+- テキストの初行位置・行送り: 行のベースラインは2節の規範式（解決スロットの実フォントの
+  hhea ascender と head unitsPerEm に基づく）で一意に決まり、同一のフォント組を与えた
+  すべてのターゲットでスロット単位で一致する。
+- テキストの折り返し・行頭禁則・均等割付の字間: 2.1節・2.2節の規範式（解決スロットの
+  実フォントの字幅に基づく）で一意に決まり、同一のフォント組を与えたすべてのターゲットで
+  行分割・字間がスロット単位で一致する。
 
 保証しない:
 
@@ -506,12 +521,12 @@ flex の子はコンテナの配列位置に入る）。チャンク内部の描
 | S02 | ルートはオブジェクトで、キーは `version` `page` `font` `elements` の4つが必須、`styles` `docType` `footnotes` `groups` が任意（それ以外の未知キー拒否） |
 | S03 | `version` は `^1\.(0\|[1-9][0-9]*)$` に一致する文字列で、minor が実装のサポート値以下。major ≠ 1 または新しすぎる minor は専用メッセージで拒否 |
 | S04 | `page` は `{ width, height }`（両方 number・未知キー拒否） |
-| S05 | `font` は `{ name }`（string・未知キー拒否） |
+| S05 | `font` は `{ regular, bold?, italic?, boldItalic? }`（各値 string・`regular` 必須・未知キー拒否） |
 | S06 | `elements` は配列で、各要素はオブジェクト |
 | S07 | 各要素の `type` が9種のいずれか |
 | S08 | 要素型ごとの必須属性が揃い、各属性の型が正しい（型ごとに個別の規則: S08t, S08l, S08r, S08e, S08b, S08i, S08f, S08p, S08c。全型共通の任意属性 `name`、text/line/rect/table/pageNumber の任意属性 `style` の型検証もここに含む） |
 | S09 | 要素・Column に未知の属性がない（table の `pages`、flex の子の `x`/`y`/`pages`、flex の交差軸寸法＝row の `h` / column の `w`、image/flex の `style` も未知属性として拒否） |
-| S10 | enum 値が定義域内（`align`, `orientation`, `direction`, `justifyContent`, `alignItems`, `pages`, `symbology`） |
+| S10 | enum 値が定義域内（`align`, `fontWeight`, `fontStyle`, `orientation`, `direction`, `justifyContent`, `alignItems`, `pages`, `symbology`） |
 | S12 | image の `src` が data URI 構文（`data:<mediatype>;base64,<payload>`）に一致する |
 | S13 | flex の `children` は配列で、各子は table 以外の要素オブジェクト（入れ子の flex を含め再帰的に S 群を適用する） |
 | S14 | `styles` は配列で、各要素は `name`（string）と `attrs`（定義済みキーのみ・値の型が正しいオブジェクト。`align` の enum 判定を含む）からなる（3.9節） |
@@ -535,7 +550,7 @@ S 群通過後、任意属性のデフォルト（3節の各表。`maxY = page.h
 | M04 | `fontSize` は `0 < fontSize ≤ 200`（pt）、`lineHeight` は `0 < lineHeight ≤ 5` |
 | M05 | `page.width`, `page.height` は `1 ≤ 値 ≤ 5000`（mm） |
 | M06 | table の `columns` は1個以上、`key` は table 内で一意 |
-| M07 | `font.name`・table の `bind`・`columns[].key` が識別子パターンに一致する |
+| M07 | `font` の全定義スロットの論理名・table の `bind`・`columns[].key` が識別子パターンに一致する |
 | M08 | image の `src` の mediatype が `image/png` または `image/jpeg` で、base64 payload がデコード可能 |
 | M09 | table のページ領域が成立する: `continuationY ≥ 0`、`maxY ≤ page.height`、`table.y + headerHeight + rowHeight ≤ maxY`、`continuationY + headerHeight + rowHeight ≤ maxY`（先頭・継続の各ページに最低1行入る） |
 | M10 | `minRows` は0以上の整数 |
@@ -607,13 +622,23 @@ export type IrFlexDirection = "row" | "column";
 export type IrFlexAlign = "start" | "center" | "end";
 export type IrDocType = "qualifiedInvoice";
 export interface IrPage { readonly width: number; readonly height: number }
-export interface IrFont { readonly name: string }
+export type IrFontSlot = "regular" | "bold" | "italic" | "boldItalic";
+export type IrFontWeight = "normal" | "bold";
+export type IrFontStyle = "normal" | "italic";
+export interface IrFont {
+  readonly regular: string;
+  readonly bold?: string;
+  readonly italic?: string;
+  readonly boldItalic?: string;
+}
 export interface IrColumn {
   readonly key: string; readonly label: string;
   readonly width: number; readonly align: IrAlign;   // 正規化後はデフォルト適用済み
 }
 export interface IrStyleAttrs {
   readonly fontSize?: number; readonly align?: IrAlign; readonly lineHeight?: number;
+  readonly fontWeight?: IrFontWeight; readonly fontStyle?: IrFontStyle;
+  readonly underline?: boolean;
   readonly borderWidth?: number; readonly thickness?: number;
 }
 export type StyleAttrKey = keyof IrStyleAttrs;
@@ -695,6 +720,12 @@ export type IrRuleId = "S01" | /* ... */ | "S15" | "M01" | /* ... */ | "M19" | "
   | "F01" | "F02" | "F03" | "F04" | "F05" | "F06";
 export interface IrError { readonly rule: IrRuleId; readonly path: string; readonly message: string }
 
+// font.ts — 1節の未定義スロット劣化規則の唯一の定義点。純関数。
+// 両ターゲット・デザイナープレビューが共用する
+export function resolveFontSlot(
+  font: IrFont, weight: IrFontWeight, style: IrFontStyle,
+): IrFontSlot;
+
 // parse.ts
 export type ParseIrResult =
   | { readonly ok: true; readonly document: IrDocument }
@@ -746,7 +777,7 @@ v1 の語彙で書いた A4 請求書の骨子。発行者情報は flex（縦�
 {
   "version": "1.0",
   "page": { "width": 210, "height": 297 },
-  "font": { "name": "NotoSansJP" },
+  "font": { "regular": "NotoSansJP" },
   "elements": [
     { "type": "text", "id": "title", "text": "{title}", "x": 0, "y": 18, "w": 210, "h": 12, "fontSize": 22, "align": "center" },
     { "type": "flex", "id": "issuerBlock", "x": 130, "y": 40, "direction": "column", "h": 20, "justifyContent": "center", "gap": 1.5,

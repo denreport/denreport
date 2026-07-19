@@ -22,6 +22,7 @@ export { analyzeData, emptyDataFor, validateData } from "./ir/data";
 export type { IrError, IrRuleId } from "./ir/errors";
 export type { IrPlacedElement } from "./ir/flex";
 export { resolveFlex } from "./ir/flex";
+export { resolveFontSlot } from "./ir/font";
 export { resolveFootnotes } from "./ir/footnotes";
 export { textTemplateKeys } from "./ir/interpolate";
 export { checkQualifiedInvoice } from "./ir/invoice";
@@ -73,6 +74,9 @@ export type {
   IrFlexDirection,
   IrFlexElement,
   IrFont,
+  IrFontSlot,
+  IrFontStyle,
+  IrFontWeight,
   IrFootnoteNote,
   IrFootnotes,
   IrGroup,

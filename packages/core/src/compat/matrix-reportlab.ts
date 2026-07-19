@@ -14,6 +14,12 @@ export const reportlabCompatMatrix = {
       attributes: {
         color: { level: "supported" },
         rotate: { level: "supported" },
+        underline: {
+          level: "approximated",
+          note: "下線の位置・太さは IR が規定せず、生成コードの線描画に従う",
+          userMessage:
+            "下線の位置や太さは出力先によってわずかに異なることがあります。",
+        },
       },
     },
     line: {

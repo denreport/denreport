@@ -20,7 +20,7 @@ function baseDocument(): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [
       {
         type: "text",
@@ -556,9 +556,19 @@ describe("validateIr", () => {
       expectRule(errors, "M07", "elements[3].columns[0].key");
     });
 
-    it("rejects a font.name that is not a valid identifier", () => {
-      const doc = { ...baseDocument(), font: { name: "日本語!" } };
-      expectRule(validateIr(doc), "M07", "font.name");
+    it("rejects a font.regular that is not a valid identifier", () => {
+      const doc = { ...baseDocument(), font: { regular: "日本語!" } };
+      expectRule(validateIr(doc), "M07", "font.regular");
+    });
+
+    it("rejects an optional slot name that is not a valid identifier", () => {
+      const doc = {
+        ...baseDocument(),
+        font: { regular: "NotoSansJP", bold: "1bad", italic: "スラント" },
+      };
+      const errors = validateIr(doc);
+      expectRule(errors, "M07", "font.bold");
+      expectRule(errors, "M07", "font.italic");
     });
   });
 

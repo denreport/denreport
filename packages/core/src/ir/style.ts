@@ -1,5 +1,7 @@
 import type {
   IrEllipseElement,
+  IrFontStyle,
+  IrFontWeight,
   IrLineElement,
   IrRectElement,
   IrStrokeStyle,
@@ -83,16 +85,29 @@ export function resolveEllipseStyle(
   };
 }
 
-/** A text or pageNumber element's color with IR's optional field resolved to a concrete default. */
+/**
+ * A text or pageNumber element's color and font-style attributes with IR's
+ * optional fields resolved to concrete defaults.
+ */
 export interface ResolvedTextStyle {
   readonly color: string;
+  readonly fontWeight: IrFontWeight;
+  readonly fontStyle: IrFontStyle;
+  readonly underline: boolean;
 }
 
-/** Resolves a text or pageNumber element's optional `color` to a concrete default (black). */
+/**
+ * Resolves a text or pageNumber element's optional `color`, `fontWeight`,
+ * `fontStyle`, and `underline` to concrete defaults (black, normal, normal,
+ * no underline).
+ */
 export function resolveTextStyle(
-  el: Pick<IrTextElement, "color">,
+  el: Pick<IrTextElement, "color" | "fontWeight" | "fontStyle" | "underline">,
 ): ResolvedTextStyle {
   return {
     color: el.color ?? DEFAULT_COLOR,
+    fontWeight: el.fontWeight ?? "normal",
+    fontStyle: el.fontStyle ?? "normal",
+    underline: el.underline ?? false,
   };
 }

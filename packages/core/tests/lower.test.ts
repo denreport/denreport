@@ -207,7 +207,7 @@ function docOf(...elements: readonly IrElement[]): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -951,6 +951,78 @@ describe("lowerIr — text/pageNumber color", () => {
     expect(texts.length).toBeGreaterThan(0);
     for (const text of texts) {
       expect(text.color).toBe("#000000");
+    }
+  });
+});
+
+describe("lowerIr — text font style attributes", () => {
+  it("defaults fontWeight/fontStyle/underline to normal/normal/false", () => {
+    const doc = docOf(staticText(), pageNumber());
+    const result = lowerIr(doc, {});
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const [text, pn] = result.document.pages[0] ?? [];
+    expect(text).toMatchObject({
+      fontWeight: "normal",
+      fontStyle: "normal",
+      underline: false,
+    });
+    expect(pn).toMatchObject({
+      fontWeight: "normal",
+      fontStyle: "normal",
+      underline: false,
+    });
+  });
+
+  it("resolves explicit fontWeight/fontStyle/underline to concrete values", () => {
+    const doc = docOf(
+      staticText({ fontWeight: "bold", fontStyle: "italic", underline: true }),
+    );
+    const result = lowerIr(doc, {});
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.document.pages[0]?.[0]).toMatchObject({
+      fontWeight: "bold",
+      fontStyle: "italic",
+      underline: true,
+    });
+  });
+
+  it("resolves the attributes on a named-style-referencing element from its concrete values", () => {
+    const doc: IrDocument = {
+      ...docOf(
+        staticText({ style: "強調", fontWeight: "bold", underline: true }),
+      ),
+      styles: [
+        { name: "強調", attrs: { fontWeight: "bold", underline: true } },
+      ],
+    };
+    const result = lowerIr(doc, {});
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.document.pages[0]?.[0]).toMatchObject({
+      fontWeight: "bold",
+      fontStyle: "normal",
+      underline: true,
+    });
+  });
+
+  it("keeps table header/cell text at normal weight and style", () => {
+    const doc = docOf(table({ maxY: 100 }));
+    const result = lowerIr(doc, { items: rowsOf(1) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const texts = (result.document.pages[0] ?? []).filter(
+      (el): el is Extract<LoweredElement, { type: "text" }> =>
+        el.type === "text",
+    );
+    expect(texts.length).toBeGreaterThan(0);
+    for (const text of texts) {
+      expect(text).toMatchObject({
+        fontWeight: "normal",
+        fontStyle: "normal",
+        underline: false,
+      });
     }
   });
 });

@@ -72,13 +72,28 @@ describe("resolveEllipseStyle", () => {
 });
 
 describe("resolveTextStyle", () => {
-  it("defaults to black when color is absent", () => {
-    expect(resolveTextStyle({})).toEqual({ color: "#000000" });
+  it("defaults to black, normal weight/style and no underline when all fields are absent", () => {
+    expect(resolveTextStyle({})).toEqual({
+      color: "#000000",
+      fontWeight: "normal",
+      fontStyle: "normal",
+      underline: false,
+    });
   });
 
-  it("passes an explicit color through unchanged", () => {
-    expect(resolveTextStyle({ color: "#ff00aa" })).toEqual({
+  it("passes explicit values through unchanged", () => {
+    expect(
+      resolveTextStyle({
+        color: "#ff00aa",
+        fontWeight: "bold",
+        fontStyle: "italic",
+        underline: true,
+      }),
+    ).toEqual({
       color: "#ff00aa",
+      fontWeight: "bold",
+      fontStyle: "italic",
+      underline: true,
     });
   });
 });
