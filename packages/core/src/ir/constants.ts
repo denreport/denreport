@@ -7,6 +7,8 @@ export const PAGE_NUMBER_DEFAULT_FORMAT = "{n} / {N}";
 
 export const FONT_SIZE_MAX = 200;
 export const LINE_HEIGHT_MAX = 5;
+/** Maximum absolute value, in degrees, of an element's `rotate` attribute (rule M19). */
+export const ROTATE_MAX = 360;
 export const PAGE_DIMENSION_MIN = 1;
 export const PAGE_DIMENSION_MAX = 5000;
 /** Maximum number of pages a lowered document may expand to (rule C04). */

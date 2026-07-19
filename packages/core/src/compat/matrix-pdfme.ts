@@ -13,6 +13,7 @@ export const pdfmeCompatMatrix = {
       },
       attributes: {
         color: { level: "supported" },
+        rotate: { level: "supported" },
       },
     },
     line: {
@@ -31,6 +32,7 @@ export const pdfmeCompatMatrix = {
           userMessage:
             "破線・点線は短い実線をつなげた形で表示されます。間隔や開始位置が出力先によってわずかに変わることがあります。",
         },
+        rotate: { level: "supported" },
       },
     },
     rect: {
@@ -51,6 +53,7 @@ export const pdfmeCompatMatrix = {
             "四角形の破線・点線の枠は、4辺をそれぞれ短い線に分けて表示されるため、角で模様がつながらないことがあります。",
         },
         cornerRadius: { level: "supported" },
+        rotate: { level: "supported" },
       },
     },
     ellipse: {
@@ -58,6 +61,7 @@ export const pdfmeCompatMatrix = {
       attributes: {
         borderColor: { level: "supported" },
         fillColor: { level: "supported" },
+        rotate: { level: "supported" },
       },
     },
     table: {
@@ -97,6 +101,9 @@ export const pdfmeCompatMatrix = {
     },
     image: {
       element: { level: "supported" },
+      attributes: {
+        rotate: { level: "supported" },
+      },
     },
     flex: {
       element: { level: "supported" },
@@ -110,6 +117,7 @@ export const pdfmeCompatMatrix = {
       },
       attributes: {
         color: { level: "supported" },
+        rotate: { level: "supported" },
       },
     },
     barcode: {
@@ -118,6 +126,9 @@ export const pdfmeCompatMatrix = {
         note: "規格は qrcode / code39 / code128 / ean13。w×h への伸縮のみ IR が規定し、バー太さ・クワイエットゾーン・人間可読文字（ean13 のみあり）の細部はターゲットの描画に従う。値の規格適合（チェックデジット等）は検証しない",
         userMessage:
           "バーコードは指定した幅・高さに収まるように表示されます。バーの太さや余白などの細部は出力先によってわずかに変わることがあります。入力した値がバーコードの規格（チェックデジット等）に合っているかどうかは確認されません。",
+      },
+      attributes: {
+        rotate: { level: "supported" },
       },
     },
   },

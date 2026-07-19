@@ -1069,6 +1069,7 @@ describe("lowerIr — other basic element lowering", () => {
       thickness: 0.5,
       color: "#000000",
       strokeStyle: "solid",
+      rotate: 0,
     });
     expect(rc).toEqual({
       type: "rect",
@@ -1082,6 +1083,7 @@ describe("lowerIr — other basic element lowering", () => {
       fillColor: null,
       borderStyle: "solid",
       cornerRadius: 0,
+      rotate: 0,
     });
     expect(im).toEqual({
       type: "image",
@@ -1091,6 +1093,7 @@ describe("lowerIr — other basic element lowering", () => {
       w: 10,
       h: 10,
       src: "data:image/png;base64,AAAA",
+      rotate: 0,
     });
   });
 
@@ -1110,6 +1113,7 @@ describe("lowerIr — other basic element lowering", () => {
       h: 30,
       symbology: "ean13",
       content: "4912345678904",
+      rotate: 0,
     });
   });
 
@@ -1128,6 +1132,7 @@ describe("lowerIr — other basic element lowering", () => {
       borderWidth: 0.5,
       borderColor: "#000000",
       fillColor: null,
+      rotate: 0,
     });
   });
 
@@ -1170,6 +1175,63 @@ describe("lowerIr — other basic element lowering", () => {
       borderStyle: "dotted",
       cornerRadius: 3,
     });
+  });
+});
+
+describe("lowerIr — rotate resolution", () => {
+  it("resolves an explicit rotate and defaults omitted rotate to 0", () => {
+    const doc = docOf(
+      staticText({ rotate: 45 }),
+      line({ rotate: -30.5 }),
+      rect(),
+    );
+    const result = lowerIr(doc, {});
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const [text, ln, rc] = result.document.pages[0] ?? [];
+    expect(text).toMatchObject({ rotate: 45 });
+    expect(ln).toMatchObject({ rotate: -30.5 });
+    expect(rc).toMatchObject({ rotate: 0 });
+  });
+
+  it("propagates a flex child's rotate to its placed element", () => {
+    const doc = docOf(
+      flex({ children: [boundTextChild("k", { rotate: 90 })] }),
+    );
+    const result = lowerIr(doc, { k: "v" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.document.pages[0]?.[0]).toMatchObject({
+      sourceId: "c1",
+      rotate: 90,
+    });
+  });
+
+  it("propagates pageNumber's rotate to every page", () => {
+    const doc = docOf(
+      pageNumber({ rotate: 15 }),
+      table({ maxY: 100, headerHeight: 10, rowHeight: 10, continuationY: 0 }),
+    );
+    const result = lowerIr(doc, { items: rowsOf(10) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    for (const page of result.document.pages) {
+      expect(page.find((el) => el.sourceId === "pn1")).toMatchObject({
+        rotate: 15,
+      });
+    }
+  });
+
+  it("gives every table-expanded element rotate 0", () => {
+    const doc = docOf(table({ stripeColor: "#eeeeee" }));
+    const result = lowerIr(doc, { items: rowsOf(3) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const expanded = (result.document.pages[0] ?? []).filter(
+      (el) => el.sourceId === "items",
+    );
+    expect(expanded.length).toBeGreaterThan(0);
+    expect(expanded.every((el) => el.rotate === 0)).toBe(true);
   });
 });
 

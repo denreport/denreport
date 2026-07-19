@@ -13,6 +13,7 @@ export const reportlabCompatMatrix = {
       },
       attributes: {
         color: { level: "supported" },
+        rotate: { level: "supported" },
       },
     },
     line: {
@@ -26,6 +27,7 @@ export const reportlabCompatMatrix = {
           userMessage:
             "線の太さの分だけ、線が基準位置のどちら側にずれて見えるかが出力先によって変わることがあります。",
         },
+        rotate: { level: "supported" },
       },
     },
     rect: {
@@ -41,6 +43,7 @@ export const reportlabCompatMatrix = {
             "枠線の太さの分だけ、線が基準位置のどちら側にずれて見えるかが出力先によって変わることがあります。",
         },
         cornerRadius: { level: "supported" },
+        rotate: { level: "supported" },
       },
     },
     ellipse: {
@@ -48,6 +51,7 @@ export const reportlabCompatMatrix = {
       attributes: {
         borderColor: { level: "supported" },
         fillColor: { level: "supported" },
+        rotate: { level: "supported" },
       },
     },
     table: {
@@ -84,6 +88,7 @@ export const reportlabCompatMatrix = {
           userMessage:
             "画像を出力するには、生成された Python スクリプトの実行環境に Pillow というライブラリのインストールが必要です。PNG 画像を表示するには、その Pillow が PNG に対応している必要があります。",
         },
+        rotate: { level: "supported" },
       },
     },
     flex: {
@@ -98,6 +103,7 @@ export const reportlabCompatMatrix = {
       },
       attributes: {
         color: { level: "supported" },
+        rotate: { level: "supported" },
       },
     },
     barcode: {
@@ -106,6 +112,9 @@ export const reportlabCompatMatrix = {
         note: "規格は qrcode / code39 / code128 / ean13。w×h への伸縮のみ IR が規定し、バー太さ・クワイエットゾーン・人間可読文字（ean13 のみあり）の細部はターゲットの描画に従う。値の規格適合（チェックデジット等）は検証しない。EAN-13 はチェックデジット自動補完（12桁入力時）が働く",
         userMessage:
           "バーコードは指定した幅・高さに収まるように表示されます。バーの太さや余白などの細部は出力先によってわずかに変わることがあります。入力した値がバーコードの規格（チェックデジット等）に合っているかどうかは確認されません。ただし EAN-13 は、12桁で入力するとチェックデジットが自動的に補われます。",
+      },
+      attributes: {
+        rotate: { level: "supported" },
       },
     },
   },

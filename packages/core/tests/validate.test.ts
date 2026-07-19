@@ -312,6 +312,25 @@ describe("validateIr", () => {
         "elements[8].y",
       );
     });
+
+    it("judges the unrotated box: rotate neither causes nor cures an M02 error", () => {
+      const doc = baseDocument();
+      // 回転すれば紙からはみ出す位置だが、非回転の箱は収まっている
+      const inside = doc.elements.map((el) =>
+        el.id === "r1" ? { ...el, x: 160, w: 50, rotate: 45 } : el,
+      );
+      expectNoRule(validateIr(withElements(doc, inside)), "M02");
+
+      // 回転すれば紙に収まる位置だが、非回転の箱がはみ出している
+      const outside = doc.elements.map((el) =>
+        el.id === "r1" ? { ...el, x: 161, w: 50, rotate: 90 } : el,
+      );
+      expectRule(
+        validateIr(withElements(doc, outside)),
+        "M02",
+        "elements[2].x",
+      );
+    });
   });
 
   describe("M03", () => {
@@ -1085,6 +1104,46 @@ describe("validateIr", () => {
       const errors = validateIr(withElements(doc, elements));
       expectRule(errors, "M18", "elements[5].children[0].name");
       expectRule(errors, "M18", "elements[5].children[1].name");
+    });
+  });
+
+  describe("M19", () => {
+    function withRotate(rotate: number): IrDocument {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.id === "r1" ? { ...el, rotate } : el,
+      );
+      return withElements(doc, elements);
+    }
+
+    it("accepts a document without any rotate", () => {
+      expectNoRule(validateIr(baseDocument()), "M19");
+    });
+
+    it.each([360, -360, 0, 15.5])("accepts rotate = %d", (rotate) => {
+      expectNoRule(validateIr(withRotate(rotate)), "M19");
+    });
+
+    it.each([360.1, -360.1, Number.NaN, Number.POSITIVE_INFINITY])(
+      "rejects rotate = %d",
+      (rotate) => {
+        expectRule(validateIr(withRotate(rotate)), "M19", "elements[2].rotate");
+      },
+    );
+
+    it("applies to flex descendants", () => {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.type === "flex"
+          ? {
+              ...el,
+              children: el.children.map((child) => ({ ...child, rotate: 400 })),
+            }
+          : el,
+      );
+      const errors = validateIr(withElements(doc, elements));
+      expectRule(errors, "M19", "elements[5].children[0].rotate");
+      expectRule(errors, "M19", "elements[5].children[1].rotate");
     });
   });
 

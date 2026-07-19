@@ -51,6 +51,8 @@ export interface LoweredTextElement {
   readonly align: IrAlign;
   readonly lineHeight: number;
   readonly color: string;
+  /** Resolved rotation in degrees; 0 means no rotation. */
+  readonly rotate: number;
 }
 
 /**
@@ -67,6 +69,7 @@ export interface LoweredLineElement {
   readonly thickness: number;
   readonly color: string;
   readonly strokeStyle: IrStrokeStyle;
+  readonly rotate: number;
 }
 
 /**
@@ -85,6 +88,7 @@ export interface LoweredRectElement {
   readonly fillColor: string | null;
   readonly borderStyle: IrStrokeStyle;
   readonly cornerRadius: number;
+  readonly rotate: number;
 }
 
 /**
@@ -101,6 +105,7 @@ export interface LoweredEllipseElement {
   readonly borderWidth: number;
   readonly borderColor: string;
   readonly fillColor: string | null;
+  readonly rotate: number;
 }
 
 /** An image element with its data URI `src` carried through unchanged. */
@@ -112,6 +117,7 @@ export interface LoweredImageElement {
   readonly w: number;
   readonly h: number;
   readonly src: string;
+  readonly rotate: number;
 }
 
 /**
@@ -127,6 +133,7 @@ export interface LoweredBarcodeElement {
   readonly h: number;
   readonly symbology: IrBarcodeSymbology;
   readonly content: string;
+  readonly rotate: number;
 }
 
 /** Union of every element type lowerIr can produce. */
@@ -298,6 +305,7 @@ function lowerTableChunk(
         fillColor: stripeColor,
         borderStyle: TABLE_LINE_STYLE,
         cornerRadius: 0,
+        rotate: 0,
       });
     }
   }
@@ -313,6 +321,7 @@ function lowerTableChunk(
     fillColor: null,
     borderStyle: table.frameStyle ?? TABLE_LINE_STYLE,
     cornerRadius: 0,
+    rotate: 0,
   });
   for (let q = 0; q < chunkSize; q++) {
     out.push({
@@ -325,6 +334,7 @@ function lowerTableChunk(
       thickness: table.gridWidth ?? TABLE_GRID_WIDTH,
       color: TABLE_LINE_COLOR,
       strokeStyle: table.gridStyle ?? TABLE_LINE_STYLE,
+      rotate: 0,
     });
   }
   for (let i = 1; i < table.columns.length; i++) {
@@ -338,6 +348,7 @@ function lowerTableChunk(
       thickness: table.gridWidth ?? TABLE_GRID_WIDTH,
       color: TABLE_LINE_COLOR,
       strokeStyle: table.gridStyle ?? TABLE_LINE_STYLE,
+      rotate: 0,
     });
   }
   table.columns.forEach((column, i) => {
@@ -353,6 +364,7 @@ function lowerTableChunk(
       align: "center",
       lineHeight: 1.25,
       color: TABLE_LINE_COLOR,
+      rotate: 0,
     });
   });
   for (let q = 0; q < chunkSize; q++) {
@@ -376,6 +388,7 @@ function lowerTableChunk(
         align: column.align,
         lineHeight: 1.25,
         color: TABLE_LINE_COLOR,
+        rotate: 0,
       });
     });
   }
@@ -483,6 +496,7 @@ export function lowerIr(document: IrDocument, data: IrData): LowerIrResult {
             align: element.align,
             lineHeight: element.lineHeight,
             color: style.color,
+            rotate: element.rotate ?? 0,
           });
         }
         break;
@@ -533,6 +547,7 @@ function lowerPlacedElement(
         align: element.align,
         lineHeight: element.lineHeight,
         color: style.color,
+        rotate: element.rotate ?? 0,
       };
     }
     case "line": {
@@ -547,6 +562,7 @@ function lowerPlacedElement(
         thickness: element.thickness,
         color: style.color,
         strokeStyle: style.strokeStyle,
+        rotate: element.rotate ?? 0,
       };
     }
     case "rect": {
@@ -563,6 +579,7 @@ function lowerPlacedElement(
         fillColor: style.fillColor,
         borderStyle: style.borderStyle,
         cornerRadius: style.cornerRadius,
+        rotate: element.rotate ?? 0,
       };
     }
     case "ellipse": {
@@ -577,6 +594,7 @@ function lowerPlacedElement(
         borderWidth: element.borderWidth,
         borderColor: style.borderColor,
         fillColor: style.fillColor,
+        rotate: element.rotate ?? 0,
       };
     }
     case "image":
@@ -588,6 +606,7 @@ function lowerPlacedElement(
         w: element.w,
         h: element.h,
         src: element.src,
+        rotate: element.rotate ?? 0,
       };
     case "barcode":
       return {
@@ -599,6 +618,7 @@ function lowerPlacedElement(
         h: element.h,
         symbology: element.symbology,
         content: interpolateText(element.value, data),
+        rotate: element.rotate ?? 0,
       };
   }
 }

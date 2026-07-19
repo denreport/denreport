@@ -98,6 +98,7 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 | `name` | string | 任意 | 表示用の名前。識別子制約なし（日本語可）、文書内での一意性は課さない。64文字以内 |
 | `x`, `y` | number | 必須※ | 要素の左上（線は基準点）。mm（2節）。※flex の子は持たない（位置はコンテナが決める。3.7節） |
 | `pages` | `"first" \| "rest" \| "last" \| "all"` | 任意 | 配置先ページ。first=1ページ目のみ / rest=2ページ目以降 / last=最終ページのみ / all=全ページ（フッタ等の共通領域）。デフォルトは `"first"`（**pageNumber のみ `"all"`**）。**table は持たない**（常に1ページ目起点で流し込み）。flex の子も持たない（コンテナから継承） |
+| `rotate` | number | 任意 | 外接箱中心（line は太さ0の箱＝線分中点）周りの時計回り回転角（度）。省略時 `0`（回転なし）。許容範囲は6節 M19。**table / flex は持たない**（未知属性として S09 が拒否）。flex の子は持てる（レイアウトは非回転の寸法で行い、回転は描画時に子自身の中心周りで適用する） |
 
 ### 3.2 text — テキスト（`{key}` による差し込み対応）
 
@@ -121,7 +122,7 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 エスケープ構文はなく、`{{key}}` は内側の `{key}` がトークンとして展開されるため
 `{値}` になる。置換は1パスのみで、データ値の中の `{key}` 形の文字列は再展開しない。
 
-### 3.3 line — 直線（水平・垂直のみ）
+### 3.3 line — 直線
 
 | 属性 | 型 | 必須 | デフォルト | 説明 |
 |---|---|---|---|---|
@@ -130,7 +131,9 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 | `thickness` | number | 任意 | `0.3` | 太さ（mm） |
 | `style` | string | 任意 | — | 名前付きスタイル（3.9節）への参照 |
 
-斜め線は非対応。太さ分の塗りが基準線のどちら側に付くかはターゲット近似を許容し規定しない。
+基準の幾何は水平・垂直の2方向のみ（`orientation` + `length`）。斜め線は共通属性 `rotate`
+（3.1節）で表現する: 回転中心は線分の中点（太さ0の箱の中心）。
+太さ分の塗りが基準線のどちら側に付くかはターゲット近似を許容し規定しない。
 
 ### 3.4 rect — 矩形（枠線のみ、塗りつぶし無し）
 
@@ -527,7 +530,7 @@ S 群通過後、任意属性のデフォルト（3節の各表。`maxY = page.h
 | ID | 規則 |
 |---|---|
 | M01 | `id` が識別子パターン（3.1節）に一致し、flex の子孫を含む全要素で文書内一意 |
-| M02 | 全要素が用紙内に収まる: `x ≥ 0`, `y ≥ 0`, `x + 幅 ≤ page.width`, `y + 高さ ≤ page.height`。幅・高さは text/rect/ellipse/image/pageNumber/barcode = `w`/`h`、line = orientation に応じ `length`（太さ方向は基準線のみで判定）、flex = 3.7節の箱（主軸寸法を明示した場合はその値。子はコンテナの箱に含まれるため個別判定しない）、table = 幅 `Σ列幅`（縦方向のページ領域は M09） |
+| M02 | 全要素が用紙内に収まる: `x ≥ 0`, `y ≥ 0`, `x + 幅 ≤ page.width`, `y + 高さ ≤ page.height`。幅・高さは text/rect/ellipse/image/pageNumber/barcode = `w`/`h`、line = orientation に応じ `length`（太さ方向は基準線のみで判定）、flex = 3.7節の箱（主軸寸法を明示した場合はその値。子はコンテナの箱に含まれるため個別判定しない）、table = 幅 `Σ列幅`（縦方向のページ領域は M09）。判定は常に**非回転の箱**で行い、`rotate` によるはみ出しは規定しない |
 | M03 | 寸法が正: `w`, `h`（flex の明示主軸寸法＝row の `w` / column の `h`、barcode の `w`/`h` を含む）, `length`, `thickness`, `borderWidth`, `rowHeight`, `headerHeight`, `columns[].width` はすべて `> 0`。`gap` のみ `≥ 0`（間隔ゼロの密着を許す）。M03 は「正であること」のみを見る — flex 主軸寸法と内容寸法の比較は M12 の責務 |
 | M04 | `fontSize` は `0 < fontSize ≤ 200`（pt）、`lineHeight` は `0 < lineHeight ≤ 5` |
 | M05 | `page.width`, `page.height` は `1 ≤ 値 ≤ 5000`（mm） |
@@ -541,6 +544,7 @@ S 群通過後、任意属性のデフォルト（3節の各表。`maxY = page.h
 | M14 | `styles` の各定義: `name` が非空・64文字以内・文書内一意、`attrs` が1フィールド以上で、各値が対応する要素属性と同じ許容範囲（`fontSize`/`lineHeight` は M04 と同じ範囲、`borderWidth`/`thickness` は `> 0`） |
 | M15 | 要素（flex の子孫を含む）の `style` が `styles` 内に存在する `name` を指す |
 | M18 | 要素（flex の子孫を含む）の `name`（指定時）が64文字以内である |
+| M19 | 要素（flex の子孫を含む）の `rotate`（指定時）が有限の number で `−360 ≤ rotate ≤ 360` である |
 
 ### C 群（データ結合時。実装は書き出し器側）
 
@@ -618,7 +622,8 @@ export type IrElement =
   | IrTextElement | IrLineElement | IrRectElement | IrEllipseElement | IrTableElement
   | IrImageElement | IrFlexElement | IrPageNumberElement | IrBarcodeElement;
 // 各 Ir*Element は3節の属性表どおり（正規化後は pages 等のデフォルト適用済み。
-// table は maxY / continuationY / minRows が具体値）。text.text は必須（string）
+// table は maxY / continuationY / minRows が具体値）。text.text は必須（string）。
+// table / flex 以外の7要素型は共通任意属性 rotate?: number を持つ（3.1節。正規化でも 0 埋めしない）
 export type IrBarcodeSymbology = "qrcode" | "code39" | "code128" | "ean13";
 export interface IrBarcodeElement {
   readonly type: "barcode";
@@ -629,6 +634,7 @@ export interface IrBarcodeElement {
   readonly w: number; readonly h: number;
   readonly symbology: IrBarcodeSymbology;
   readonly value: string;                  // {key} トークン可（text.text と同一文法）
+  readonly rotate?: number;                // 外接箱中心周りの時計回り回転角（度）。省略時 0（3.1節）
 }
 export interface IrFlexElement {
   readonly type: "flex";
@@ -664,6 +670,7 @@ export interface IrPageNumberElement {
   readonly format: string;
   readonly fontSize: number; readonly align: IrAlign; readonly lineHeight: number;
   readonly color?: string;
+  readonly rotate?: number;                // 外接箱中心周りの時計回り回転角（度）。省略時 0（3.1節）
 }
 export interface IrFootnoteNote { readonly id: string; readonly text: string }
 export interface IrFootnotes {
@@ -684,7 +691,7 @@ export interface IrDocument {
 }
 
 // errors.ts
-export type IrRuleId = "S01" | /* ... */ | "S15" | "M01" | /* ... */ | "M18" | "C01" | "C02" | "C03" | "C04" | "Q01"
+export type IrRuleId = "S01" | /* ... */ | "S15" | "M01" | /* ... */ | "M19" | "C01" | "C02" | "C03" | "C04" | "Q01"
   | "F01" | "F02" | "F03" | "F04" | "F05" | "F06";
 export interface IrError { readonly rule: IrRuleId; readonly path: string; readonly message: string }
 

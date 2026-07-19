@@ -502,6 +502,7 @@ function checkS08Text(
   checkOptionalType(errors, value, "lineHeight", path, "S08t", "number");
   checkOptionalType(errors, value, "color", path, "S08t", "string");
   checkOptionalType(errors, value, "style", path, "S08t", "string");
+  checkOptionalType(errors, value, "rotate", path, "S08t", "number");
   return errors;
 }
 
@@ -517,6 +518,7 @@ function checkS08Line(
   checkOptionalType(errors, value, "color", path, "S08l", "string");
   checkOptionalType(errors, value, "strokeStyle", path, "S08l", "string");
   checkOptionalType(errors, value, "style", path, "S08l", "string");
+  checkOptionalType(errors, value, "rotate", path, "S08l", "number");
   return errors;
 }
 
@@ -534,6 +536,7 @@ function checkS08Rect(
   checkOptionalType(errors, value, "fillColor", path, "S08r", "string");
   checkOptionalType(errors, value, "borderStyle", path, "S08r", "string");
   checkOptionalType(errors, value, "cornerRadius", path, "S08r", "number");
+  checkOptionalType(errors, value, "rotate", path, "S08r", "number");
   return errors;
 }
 
@@ -548,6 +551,7 @@ function checkS08Ellipse(
   checkRequiredType(errors, value, "borderWidth", path, "S08e", "number");
   checkOptionalType(errors, value, "borderColor", path, "S08e", "string");
   checkOptionalType(errors, value, "fillColor", path, "S08e", "string");
+  checkOptionalType(errors, value, "rotate", path, "S08e", "number");
   return errors;
 }
 
@@ -632,6 +636,7 @@ function checkS08Image(
   checkRequiredType(errors, value, "w", path, "S08i", "number");
   checkRequiredType(errors, value, "h", path, "S08i", "number");
   checkRequiredType(errors, value, "src", path, "S08i", "string");
+  checkOptionalType(errors, value, "rotate", path, "S08i", "number");
   return errors;
 }
 
@@ -669,6 +674,7 @@ function checkS08PageNumber(
   checkOptionalType(errors, value, "lineHeight", path, "S08p", "number");
   checkOptionalType(errors, value, "color", path, "S08p", "string");
   checkOptionalType(errors, value, "style", path, "S08p", "string");
+  checkOptionalType(errors, value, "rotate", path, "S08p", "number");
   return errors;
 }
 
@@ -682,6 +688,7 @@ function checkS08Barcode(
   checkRequiredType(errors, value, "h", path, "S08c", "number");
   checkRequiredType(errors, value, "symbology", path, "S08c", "string");
   checkRequiredType(errors, value, "value", path, "S08c", "string");
+  checkOptionalType(errors, value, "rotate", path, "S08c", "number");
   return errors;
 }
 
@@ -701,6 +708,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "lineHeight",
     "color",
     "style",
+    "rotate",
   ],
   line: [
     "type",
@@ -715,6 +723,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "color",
     "strokeStyle",
     "style",
+    "rotate",
   ],
   rect: [
     "type",
@@ -731,6 +740,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "borderStyle",
     "cornerRadius",
     "style",
+    "rotate",
   ],
   ellipse: [
     "type",
@@ -744,6 +754,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "borderWidth",
     "borderColor",
     "fillColor",
+    "rotate",
   ],
   table: [
     "type",
@@ -767,7 +778,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "stripeColor",
     "style",
   ],
-  image: ["type", "id", "name", "x", "y", "pages", "w", "h", "src"],
+  image: ["type", "id", "name", "x", "y", "pages", "w", "h", "src", "rotate"],
   flex: [
     "type",
     "id",
@@ -798,6 +809,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "lineHeight",
     "color",
     "style",
+    "rotate",
   ],
   barcode: [
     "type",
@@ -810,6 +822,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "h",
     "symbology",
     "value",
+    "rotate",
   ],
 };
 const COLUMN_ALLOWED_KEYS = ["key", "label", "width", "align"];
@@ -1042,6 +1055,11 @@ function nameAttr(value: Record<string, unknown>): { name?: string } {
   return value.name !== undefined ? { name: value.name as string } : {};
 }
 
+/** rotate は任意属性のため、指定時のみキーを持つオブジェクトを返す（0 埋めしない） */
+function rotateAttr(value: Record<string, unknown>): { rotate?: number } {
+  return value.rotate !== undefined ? { rotate: value.rotate as number } : {};
+}
+
 function normalizeElement(
   value: Record<string, unknown>,
   page: IrPage,
@@ -1076,6 +1094,7 @@ function normalizeElement(
         lineHeight: (value.lineHeight as number | undefined) ?? 1.25,
         ...("color" in value ? { color: value.color as string } : {}),
         ...styleAttr(value),
+        ...rotateAttr(value),
       };
     case "line":
       return {
@@ -1088,6 +1107,7 @@ function normalizeElement(
           ? { strokeStyle: value.strokeStyle as IrStrokeStyle }
           : {}),
         ...styleAttr(value),
+        ...rotateAttr(value),
       };
     case "rect":
       return {
@@ -1108,6 +1128,7 @@ function normalizeElement(
           ? { cornerRadius: value.cornerRadius as number }
           : {}),
         ...styleAttr(value),
+        ...rotateAttr(value),
       };
     case "ellipse":
       return {
@@ -1121,6 +1142,7 @@ function normalizeElement(
         ...("fillColor" in value
           ? { fillColor: value.fillColor as string }
           : {}),
+        ...rotateAttr(value),
       };
     case "table": {
       const y = value.y as number;
@@ -1179,6 +1201,7 @@ function normalizeElement(
         w: value.w as number,
         h: value.h as number,
         src: value.src as string,
+        ...rotateAttr(value),
       };
     case "flex": {
       const direction = value.direction as IrFlexDirection;
@@ -1214,6 +1237,7 @@ function normalizeElement(
         lineHeight: (value.lineHeight as number | undefined) ?? 1.25,
         ...("color" in value ? { color: value.color as string } : {}),
         ...styleAttr(value),
+        ...rotateAttr(value),
       };
     case "barcode":
       return {
@@ -1222,6 +1246,7 @@ function normalizeElement(
         h: value.h as number,
         symbology: value.symbology as IrBarcodeSymbology,
         value: value.value as string,
+        ...rotateAttr(value),
       };
   }
 }

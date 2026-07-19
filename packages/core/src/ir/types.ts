@@ -75,6 +75,8 @@ interface IrPositioned {
   readonly x: number;
   readonly y: number;
   readonly pages: IrPages;
+  /** Clockwise rotation, in degrees, about the element's bounding-box center (a line's segment midpoint). Defaults to 0. */
+  readonly rotate?: number;
 }
 
 /** A text box element. `text` may contain `{key}` interpolation tokens and, at top level only, `{#id}` footnote marks. */

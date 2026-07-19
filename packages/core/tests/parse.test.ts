@@ -1016,6 +1016,75 @@ describe("parseIr", () => {
     });
   });
 
+  describe("rotate (common optional attribute)", () => {
+    const rotatableRules: readonly [number, IrRuleId][] = [
+      [0, "S08t"],
+      [1, "S08l"],
+      [2, "S08r"],
+      [3, "S08e"],
+      [5, "S08i"],
+      [7, "S08p"],
+      [8, "S08c"],
+    ];
+
+    it("accepts a number rotate on every rotatable element type", () => {
+      const doc = baseDoc();
+      for (const [index] of rotatableRules) {
+        doc.elements[index].rotate = -45.5;
+      }
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      for (const [index] of rotatableRules) {
+        expect(result.document.elements[index]).toMatchObject({
+          rotate: -45.5,
+        });
+      }
+    });
+
+    it.each(rotatableRules)(
+      "rejects a non-number rotate on elements[%i] with %s",
+      (index, rule) => {
+        const doc = baseDoc();
+        doc.elements[index].rotate = "45";
+        expectRule(parse(doc), rule, `elements[${index}].rotate`);
+      },
+    );
+
+    it("rejects rotate on a table with S09", () => {
+      const doc = baseDoc();
+      doc.elements[4].rotate = 45;
+      expectRule(parse(doc), "S09", "elements[4].rotate");
+    });
+
+    it("rejects rotate on a flex with S09", () => {
+      const doc = baseDoc();
+      doc.elements[6].rotate = 45;
+      expectRule(parse(doc), "S09", "elements[6].rotate");
+    });
+
+    it("accepts rotate on a flex child and keeps it through normalization", () => {
+      const doc = baseDoc();
+      doc.elements[6].children[0].rotate = 90;
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const flex = result.document.elements[6];
+      expect(flex?.type === "flex" && flex.children[0]).toMatchObject({
+        rotate: 90,
+      });
+    });
+
+    it("does not add a rotate attribute when omitted", () => {
+      const result = parse(baseDoc());
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      for (const el of result.document.elements) {
+        expect(el).not.toHaveProperty("rotate");
+      }
+    });
+  });
+
   describe("footnotes (S02, F01)", () => {
     function withFootnotes(footnotes: Raw): Raw {
       const doc = baseDoc();

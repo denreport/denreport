@@ -8,6 +8,7 @@ import {
   PAGE_DIMENSION_MAX,
   PAGE_DIMENSION_MIN,
   PT_TO_MM,
+  ROTATE_MAX,
   STYLE_NAME_MAX_LENGTH,
 } from "./constants";
 import type { IrError, IrRuleId } from "./errors";
@@ -79,6 +80,7 @@ export function validateIr(document: IrDocument): readonly IrError[] {
     ...checkM16(walked),
     ...checkM17(walked),
     ...checkM18(walked),
+    ...checkM19(walked),
     ...checkF02(document),
     ...checkF03(document),
     ...checkF04(document, walked),
@@ -897,6 +899,31 @@ function checkM18(walked: readonly WalkedElement[]): IrError[] {
           "M18",
           `${path}.name`,
           `name は${ELEMENT_NAME_MAX_LENGTH}文字以下である必要があります`,
+        ),
+      );
+    }
+  }
+  return errors;
+}
+
+function checkM19(walked: readonly WalkedElement[]): IrError[] {
+  const errors: IrError[] = [];
+  for (const { path, element } of walked) {
+    if (element.type === "table" || element.type === "flex") continue;
+    const rotate = element.rotate;
+    if (rotate === undefined) continue;
+    if (
+      !(
+        Number.isFinite(rotate) &&
+        rotate >= -ROTATE_MAX &&
+        rotate <= ROTATE_MAX
+      )
+    ) {
+      errors.push(
+        err(
+          "M19",
+          `${path}.rotate`,
+          `rotate は −${ROTATE_MAX} 以上 ${ROTATE_MAX} 以下の有限の number である必要があります`,
         ),
       );
     }
