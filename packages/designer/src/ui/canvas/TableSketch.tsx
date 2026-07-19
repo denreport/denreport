@@ -1,5 +1,5 @@
-import type { IrTableElement } from "@denreport/core";
-import { subtractSkips } from "@denreport/core";
+import type { CharWidthEm, IrTableElement } from "@denreport/core";
+import { layoutTextLines, subtractSkips } from "@denreport/core";
 import type { CSSProperties, ReactNode } from "react";
 import type { MmBox } from "../../state/geometry";
 import type { TableCellSource } from "../../state/table-cells";
@@ -16,6 +16,7 @@ export function TableSketch(props: {
   readonly element: IrTableElement;
   readonly box: MmBox;
   readonly cells?: TableCellSource | undefined;
+  readonly charWidths?: CharWidthEm | null | undefined;
 }): ReactNode {
   const table = props.element;
   const rows = Math.max(
@@ -118,8 +119,10 @@ export function TableSketch(props: {
     readonly align: string;
     readonly text: string;
     readonly overridden: boolean;
+    readonly charSpacePt: number;
   }[] = [];
   const cells = props.cells;
+  const charWidths = props.charWidths;
   if (cells !== undefined) {
     for (let q = 0; q < rows; q += 1) {
       table.columns.forEach((col, i) => {
@@ -128,15 +131,31 @@ export function TableSketch(props: {
         const spanWidth =
           rect === undefined ? col.width : xOf(i + rect.colSpan) - xOf(i);
         const view = cellView(cells, q, col.key);
+        const cellW = Math.max(0, spanWidth - 2 * CELL_PADDING_X);
+        let charSpacePt = 0;
+        if (col.align === "justify" && charWidths != null && view.text !== "") {
+          const lines = layoutTextLines(
+            {
+              content: view.text,
+              widthMm: cellW,
+              fontSize: table.fontSize,
+              align: "justify",
+            },
+            charWidths,
+          );
+          // 明細セルは常に1行の模式描画。折り返しが必要な長さ（実測幅≧実効幅）では仕様上も字間0
+          charSpacePt = lines.length === 1 ? (lines[0]?.charSpacePt ?? 0) : 0;
+        }
         dataCells.push({
           row: q,
           col: i,
           x: xOf(i) + CELL_PADDING_X,
-          w: Math.max(0, spanWidth - 2 * CELL_PADDING_X),
+          w: cellW,
           ty: table.headerHeight + q * table.rowHeight + CELL_TEXT_OFFSET_Y,
           align: col.align,
           text: view.text,
           overridden: view.overridden,
+          charSpacePt,
         });
       });
     }
@@ -218,6 +237,7 @@ export function TableSketch(props: {
               "--cw": cell.w,
               "--ty": cell.ty,
               "--fs": table.fontSize,
+              ...(cell.charSpacePt !== 0 ? { "--cs": cell.charSpacePt } : {}),
             } as CSSProperties
           }
         >

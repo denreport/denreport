@@ -1,4 +1,4 @@
-import type { IrTableElement } from "@denreport/core";
+import type { CharWidthEm, IrTableElement } from "@denreport/core";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
@@ -49,11 +49,17 @@ function renderSketch(
   element: IrTableElement,
   box: MmBox,
   cells?: TableCellSource,
+  charWidths?: CharWidthEm | null,
 ): void {
   act(() => {
     root.render(
       <div>
-        <TableSketch element={element} box={box} cells={cells} />
+        <TableSketch
+          element={element}
+          box={box}
+          cells={cells}
+          charWidths={charWidths}
+        />
       </div>,
     );
   });
@@ -245,5 +251,84 @@ describe("TableSketch — 外枠", () => {
           : "hline",
     );
     expect(classes).toEqual(["stripe", "frame", "hline", "hline"]);
+  });
+});
+
+describe("TableSketch — 明細セルの均等割付", () => {
+  const CONST_WIDTHS: CharWidthEm = () => 0.1;
+  const PT_TO_MM = 25.4 / 72;
+
+  function widthMmFor(widthPt: number): number {
+    return widthPt * PT_TO_MM;
+  }
+
+  it("1行に収まる justify セルは --cs に charSpacePt を持つ", () => {
+    const cellW = widthMmFor(4);
+    const el = table({
+      columns: [{ key: "a", label: "A", width: cellW + 3, align: "justify" }],
+      fontSize: 10,
+    });
+    renderSketch(
+      el,
+      { x: 0, y: 0, w: cellW + 3, h: 10 + 10 },
+      { rows: [{ a: "abc" }], overrides: new Map() },
+      CONST_WIDTHS,
+    );
+    const cell = container.querySelector(".apx-tbl-td") as HTMLElement;
+    const expectedCharSpacePt = (4 - 3) / (3 - 1);
+    expect(Number(cell.style.getPropertyValue("--cs"))).toBeCloseTo(
+      expectedCharSpacePt,
+      6,
+    );
+  });
+
+  it("折り返しが必要な長さの justify セルは --cs を出さない（字間0）", () => {
+    const cellW = widthMmFor(3.2);
+    const el = table({
+      columns: [{ key: "a", label: "A", width: cellW + 3, align: "justify" }],
+      fontSize: 10,
+    });
+    renderSketch(
+      el,
+      { x: 0, y: 0, w: cellW + 3, h: 10 + 10 },
+      { rows: [{ a: "abcdef" }], overrides: new Map() },
+      CONST_WIDTHS,
+    );
+    const cell = container.querySelector(".apx-tbl-td") as HTMLElement;
+    expect(cell.style.getPropertyValue("--cs")).toBe("");
+  });
+
+  it("align: left の列は charWidths があっても --cs を出さない", () => {
+    const cellW = widthMmFor(4);
+    const el = table({
+      columns: [{ key: "a", label: "A", width: cellW + 3, align: "left" }],
+      fontSize: 10,
+    });
+    renderSketch(
+      el,
+      { x: 0, y: 0, w: cellW + 3, h: 10 + 10 },
+      { rows: [{ a: "abc" }], overrides: new Map() },
+      CONST_WIDTHS,
+    );
+    const cell = container.querySelector(".apx-tbl-td") as HTMLElement;
+    expect(cell.style.getPropertyValue("--cs")).toBe("");
+  });
+
+  it("charWidths 未指定の justify 列は従来どおり --cs を出さない", () => {
+    const cellW = widthMmFor(4);
+    const el = table({
+      columns: [{ key: "a", label: "A", width: cellW + 3, align: "justify" }],
+      fontSize: 10,
+    });
+    renderSketch(
+      el,
+      { x: 0, y: 0, w: cellW + 3, h: 10 + 10 },
+      {
+        rows: [{ a: "abc" }],
+        overrides: new Map(),
+      },
+    );
+    const cell = container.querySelector(".apx-tbl-td") as HTMLElement;
+    expect(cell.style.getPropertyValue("--cs")).toBe("");
   });
 });

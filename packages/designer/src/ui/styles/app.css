@@ -1008,6 +1008,7 @@
   line-height: 1.25;
   overflow: hidden;
   white-space: nowrap;
+  letter-spacing: calc(var(--cs, 0) * var(--pt));
 }
 
 .apx-tbl-td.is-override {
