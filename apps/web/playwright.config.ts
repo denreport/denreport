@@ -6,6 +6,7 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:4173",
     trace: "on-first-retry",
+    locale: "ja-JP",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   // 実バンドルに対して検証する（dev サーバでは資材解決の確認にならない）
