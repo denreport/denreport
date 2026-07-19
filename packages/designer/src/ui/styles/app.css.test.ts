@@ -52,3 +52,24 @@ describe("app.css の枠線幅 0（枠なし）はクランプしない", () => 
     },
   );
 });
+
+// 「書き出し」等の主要アクションは CTA 専用色 + 視覚的重み（太字・シャドウ）で
+// secondary ボタンと差別化する
+describe("app.css の primary ボタンは CTA 専用トークンで視覚的重みを持つ", () => {
+  it(".apx-btn-primary は --color-cta 系トークンを使う", () => {
+    const body = ruleBody(".apx-btn-primary");
+    expect(body).toMatch(/background:\s*var\(--color-cta\);/);
+    expect(body).toMatch(/color:\s*var\(--color-on-cta\);/);
+    expect(body).toMatch(/font-weight:\s*600;/);
+    expect(body).toMatch(/box-shadow:\s*var\(--shadow-raised\);/);
+  });
+
+  it(".apx-btn-primary:hover / :active は CTA の hover / active トークンを使う", () => {
+    expect(ruleBody(".apx-btn-primary:hover")).toMatch(
+      /background:\s*var\(--color-cta-hover\);/,
+    );
+    expect(ruleBody(".apx-btn-primary:active")).toMatch(
+      /background:\s*var\(--color-cta-active\);/,
+    );
+  });
+});

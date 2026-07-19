@@ -69,16 +69,18 @@
 }
 
 .apx-btn-primary {
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  background: var(--color-cta);
+  color: var(--color-on-cta);
+  font-weight: 600;
+  box-shadow: var(--shadow-raised);
 }
 
 .apx-btn-primary:hover {
-  background: var(--color-accent-hover);
+  background: var(--color-cta-hover);
 }
 
 .apx-btn-primary:active {
-  background: var(--color-accent-active);
+  background: var(--color-cta-active);
 }
 
 .apx-btn-secondary {

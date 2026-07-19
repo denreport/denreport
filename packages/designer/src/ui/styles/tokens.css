@@ -65,6 +65,12 @@
   --color-accent-active: #1d4368;
   --color-on-accent: #ffffff;
   --color-accent-subtle-bg: rgba(42, 91, 140, 0.1);
+  /* --color-accent はフォーカスリング・選択枠等 UI 全体で共用のため、
+     主要アクションボタン専用に彩度・明度を上げた色を分離する */
+  --color-cta: #175fd3;
+  --color-cta-hover: #1453b8;
+  --color-cta-active: #11479c;
+  --color-on-cta: #ffffff;
   --color-danger: #b42318;
   --color-danger-bg: rgba(180, 35, 24, 0.08);
   --color-warning: #8a5c00;
@@ -123,6 +129,10 @@
   --color-accent-active: #6e99c9;
   --color-on-accent: #16202c;
   --color-accent-subtle-bg: rgba(127, 168, 212, 0.14);
+  --color-cta: #5aa0f6;
+  --color-cta-hover: #77b1f8;
+  --color-cta-active: #3d90f5;
+  --color-on-cta: #16202c;
   --color-danger: #f08578;
   --color-danger-bg: rgba(240, 133, 120, 0.12);
   --color-warning: #d9a73e;
