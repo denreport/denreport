@@ -3,6 +3,11 @@ import type { ReactNode } from "react";
 import { useId, useState } from "react";
 import { errorMessageFor } from "../../state/error-index";
 import { resolveFont } from "../../state/fonts";
+import {
+  type PaperPresetId,
+  paperPresetIdForSize,
+  paperPresetsForLanguage,
+} from "../../state/paper-presets";
 import { setDocType, setFontName, setPage } from "../../state/properties";
 import type { EditorStore } from "../../state/store";
 import { FontSelectorDialog } from "../fonts/FontSelectorDialog";
@@ -10,7 +15,10 @@ import { EMBEDDED_FONT_NAME } from "../fonts/font-registration";
 import { isLocalFontAccessSupported } from "../fonts/local-fonts";
 import { useEditorState } from "../useEditorState";
 import { FootnotesSection } from "./FootnotesSection";
-import { NumberField, TextField } from "./fields";
+import { NumberField, SelectField, TextField } from "./fields";
+
+/** どのプリセットとも寸法が一致しないときの select 表示値 */
+const CUSTOM_PAPER_PRESET = "custom";
 
 export function DocumentProperties(props: {
   readonly store: EditorStore;
@@ -33,6 +41,13 @@ export function DocumentProperties(props: {
     state.fontRegistry,
     EMBEDDED_FONT_NAME,
   );
+  const paperPresets = paperPresetsForLanguage(navigator.language);
+  const paperPresetId =
+    paperPresetIdForSize(
+      paperPresets,
+      state.document.page.width,
+      state.document.page.height,
+    ) ?? CUSTOM_PAPER_PRESET;
 
   const commitDoc = (op: (document: IrDocument) => IrDocument): void => {
     const document = store.getState().document;
@@ -49,6 +64,26 @@ export function DocumentProperties(props: {
       </div>
       <section className="apx-sect">
         <div className="apx-sect-h">用紙</div>
+        <SelectField<PaperPresetId | typeof CUSTOM_PAPER_PRESET>
+          label="サイズ"
+          value={paperPresetId}
+          options={[
+            ...paperPresets.map((preset) => ({
+              value: preset.id,
+              label: preset.label,
+            })),
+            { value: CUSTOM_PAPER_PRESET, label: "カスタム" },
+          ]}
+          onCommit={(id) => {
+            const preset = paperPresets.find((p) => p.id === id);
+            if (preset === undefined) {
+              return;
+            }
+            commitDoc((document) =>
+              setPage(document, { width: preset.width, height: preset.height }),
+            );
+          }}
+        />
         <NumberField
           label="幅"
           value={state.document.page.width}

@@ -371,6 +371,71 @@ describe("PropertiesPanel の振り分け", () => {
   });
 });
 
+describe("用紙サイズプリセット", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function stubLanguage(language: string): void {
+    vi.spyOn(window.navigator, "language", "get").mockReturnValue(language);
+  }
+
+  it("英語圏 UI では A3/A4/A5/B5(ISO)/Letter/Legal を選択肢に出し、A4 の白紙初期値を選択済みにする", () => {
+    stubLanguage("en-US");
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    const select = requireSelectByLabel("サイズ");
+    expect(
+      [...select.querySelectorAll("option")].map((o) => o.textContent),
+    ).toEqual(["A3", "A4", "A5", "B5", "Letter", "Legal", "カスタム"]);
+    expect(select.value).toBe("a4");
+  });
+
+  it("日本語 UI では A3/A4/A5/B4(JIS)/B5(JIS)/はがき/レターを選択肢に出す", () => {
+    stubLanguage("ja-JP");
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    const select = requireSelectByLabel("サイズ");
+    expect(
+      [...select.querySelectorAll("option")].map((o) => o.textContent),
+    ).toEqual(["A3", "A4", "A5", "B4", "B5", "はがき", "レター", "カスタム"]);
+  });
+
+  it("プリセットを選ぶと幅・高さが一括で commit される", () => {
+    stubLanguage("ja-JP");
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    setSelectValue(requireSelectByLabel("サイズ"), "b5jis");
+    expect(store.getState().document.page).toEqual({ width: 182, height: 257 });
+    expect(inputByLabel("幅").value).toBe("182.0");
+    expect(inputByLabel("高さ").value).toBe("257.0");
+  });
+
+  it("どのプリセットとも一致しない寸法では「カスタム」を選択済みにする", () => {
+    stubLanguage("ja-JP");
+    const store = makeStore();
+    act(() => {
+      store.commit({
+        ...store.getState().document,
+        page: { width: 200, height: 300 },
+      });
+    });
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    expect(requireSelectByLabel("サイズ").value).toBe("custom");
+  });
+
+  it("幅・高さ欄を手動編集してプリセットに一致させると select 表示が追従する", () => {
+    stubLanguage("ja-JP");
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    setValue(inputByLabel("幅"), "148");
+    blur(inputByLabel("幅"));
+    setValue(inputByLabel("高さ"), "210");
+    blur(inputByLabel("高さ"));
+    expect(requireSelectByLabel("サイズ").value).toBe("a5");
+  });
+});
+
 describe("スタイルセクション", () => {
   it("スタイル対象の型（text）でのみ select を表示し、対象外（image）では表示しない", () => {
     const store = makeStoreWithStyle();
