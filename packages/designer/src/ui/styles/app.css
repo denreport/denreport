@@ -751,13 +751,13 @@
 
 .apx-el-line-h {
   height: 0;
-  border-top: calc(var(--t, 0.3) * var(--mm)) var(--ls, solid)
+  border-top: max(1px, calc(var(--t, 0.3) * var(--mm))) var(--ls, solid)
     var(--lc, var(--paper-text));
 }
 
 .apx-el-line-v {
   width: 0;
-  border-left: calc(var(--t, 0.3) * var(--mm)) var(--ls, solid)
+  border-left: max(1px, calc(var(--t, 0.3) * var(--mm))) var(--ls, solid)
     var(--lc, var(--paper-text));
 }
 
@@ -769,7 +769,7 @@
 }
 
 .apx-el-rect {
-  border-width: calc(var(--bw, 0.3) * var(--mm));
+  border-width: max(1px, calc(var(--bw, 0.3) * var(--mm)));
   border-style: var(--ls, solid);
   border-color: var(--bc, var(--paper-text));
   background-color: var(--fc, transparent);
@@ -777,7 +777,7 @@
 }
 
 .apx-el-ellipse {
-  border-width: calc(var(--bw, 0.3) * var(--mm));
+  border-width: max(1px, calc(var(--bw, 0.3) * var(--mm)));
   border-style: solid;
   border-color: var(--bc, var(--paper-text));
   background-color: var(--fc, transparent);
@@ -948,7 +948,7 @@
   position: absolute;
   left: 0;
   right: 0;
-  height: calc(0.25 * var(--mm));
+  height: max(1px, calc(0.25 * var(--mm)));
   top: calc(var(--ly) * var(--mm));
   background: var(--paper-text);
 }
@@ -957,7 +957,7 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  width: calc(0.25 * var(--mm));
+  width: max(1px, calc(0.25 * var(--mm)));
   left: calc(var(--lx) * var(--mm));
   background: var(--paper-text);
 }
