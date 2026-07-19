@@ -83,7 +83,7 @@ function makeDocument(
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: fontName },
+    font: { regular: fontName },
     elements,
   };
 }

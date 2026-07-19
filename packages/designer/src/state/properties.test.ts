@@ -17,7 +17,8 @@ import {
   setDocType,
   setFlexDirection,
   setFlexMainSize,
-  setFontName,
+  setFontRegular,
+  setFontSlot,
   setImageSrc,
   setPage,
   setTableCellOverride,
@@ -114,7 +115,7 @@ const IMAGE: IrImageElement = {
 const BASE: IrDocument = {
   version: "1.0",
   page: { width: 210, height: 297 },
-  font: { name: "NotoSansJP" },
+  font: { regular: "NotoSansJP" },
   elements: [TEXT, FLEX, TABLE, IMAGE],
 };
 
@@ -188,7 +189,8 @@ describe("replaceElement", () => {
     setTableCellOverride(BASE, "tbl1", 0, "col1", "固定値");
     setImageSrc(BASE, "img1", "data:image/png;base64,BB==");
     setPage(BASE, { width: 297, height: 420 });
-    setFontName(BASE, "IPAexGothic");
+    setFontRegular(BASE, "IPAexGothic");
+    setFontSlot(BASE, "bold", "IPAexGothicBold");
     expect(BASE).toEqual(snapshot);
   });
 });
@@ -426,11 +428,30 @@ describe("文書設定", () => {
     expectValidIr(doc);
   });
 
-  it("setFontName は font を置換し、同値なら同一参照", () => {
-    const doc = setFontName(BASE, "IPAexGothic");
-    expect(doc.font.name).toBe("IPAexGothic");
-    expect(setFontName(BASE, "NotoSansJP")).toBe(BASE);
+  it("setFontRegular は regular を置換し、同値なら同一参照", () => {
+    const doc = setFontRegular(BASE, "IPAexGothic");
+    expect(doc.font.regular).toBe("IPAexGothic");
+    expect(setFontRegular(BASE, "NotoSansJP")).toBe(BASE);
     expectValidIr(doc);
+  });
+
+  it("setFontSlot はスロットを設定し、他スロットを保持する", () => {
+    const doc = setFontSlot(BASE, "bold", "NotoSansJPBold");
+    expect(doc.font).toEqual({
+      regular: "NotoSansJP",
+      bold: "NotoSansJPBold",
+    });
+    expect(setFontSlot(doc, "bold", "NotoSansJPBold")).toBe(doc);
+    expectValidIr(doc);
+  });
+
+  it("setFontSlot(undefined) はスロット属性を除去し、未設定なら同一参照", () => {
+    const withBold = setFontSlot(BASE, "bold", "NotoSansJPBold");
+    const cleared = setFontSlot(withBold, "bold", undefined);
+    expect(cleared.font).toEqual({ regular: "NotoSansJP" });
+    expect(cleared.font).not.toHaveProperty("bold");
+    expect(setFontSlot(BASE, "italic", undefined)).toBe(BASE);
+    expectValidIr(cleared);
   });
 
   it("setDocType(true) は docType を付与し、既に付与済みなら同一参照", () => {

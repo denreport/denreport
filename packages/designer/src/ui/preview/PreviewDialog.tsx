@@ -1,7 +1,14 @@
-import { readCharWidths } from "@denreport/targets";
+import type { IrFontSlot } from "@denreport/core";
+import {
+  EMBEDDED_BOLD_FONT_NAME,
+  EMBEDDED_BOLD_FONT_URL,
+  EMBEDDED_FONT_URL,
+  readCharWidths,
+} from "@denreport/targets";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { resolveFont } from "../../state/fonts";
+import type { FontResolution } from "../../state/fonts";
+import { resolveFontSet } from "../../state/fonts";
 import { buildPreview, generateSampleData } from "../../state/preview";
 import {
   activeSampleJson,
@@ -13,18 +20,64 @@ import {
   updateActiveJson,
 } from "../../state/sample-scenarios";
 import type { EditorStore } from "../../state/store";
+import { FONT_SLOT_LABELS } from "../fonts/FontSelectorDialog";
 import { EMBEDDED_FONT_NAME } from "../fonts/font-registration";
 import { useEditorState } from "../useEditorState";
 import { PreviewPage } from "./PreviewPage";
-import type { PreviewFont } from "./preview-font";
+import type { PreviewFont, PreviewFontSet } from "./preview-font";
 import { loadPreviewFont, registerPreviewFace } from "./preview-font";
 import { SampleDataEditor } from "./SampleDataEditor";
 import { ScenarioBar } from "./ScenarioBar";
 
 type FontState =
   | { readonly kind: "loading" }
-  | { readonly kind: "ready"; readonly font: PreviewFont }
+  | { readonly kind: "ready"; readonly fonts: PreviewFontSet }
   | { readonly kind: "failed" };
+
+const EMBEDDED_NAMES: ReadonlySet<string> = new Set([
+  EMBEDDED_FONT_NAME,
+  EMBEDDED_BOLD_FONT_NAME,
+]);
+
+// ホストページの同名フォントと衝突しないよう、論理フォント名ではなく apx- 接頭辞の一意名で登録する
+const EMBEDDED_PREVIEW_FONTS: Readonly<
+  Record<string, { readonly url: URL; readonly family: string }>
+> = {
+  [EMBEDDED_FONT_NAME]: {
+    url: EMBEDDED_FONT_URL,
+    family: "apx-embedded-notosansjp",
+  },
+  [EMBEDDED_BOLD_FONT_NAME]: {
+    url: EMBEDDED_BOLD_FONT_URL,
+    family: "apx-embedded-notosansjp-bold",
+  },
+};
+
+async function loadSlotPreviewFont(
+  doc: Document,
+  resolution: FontResolution,
+): Promise<PreviewFont> {
+  if (resolution.kind === "registered") {
+    const font = resolution.font;
+    const charWidths = readCharWidths(font.data);
+    if (charWidths === null) {
+      throw new Error("フォントの字幅を読み取れません");
+    }
+    const family = await registerPreviewFace(doc, font.name, font.data);
+    return { family, ascentPerEm: font.ascentPerEm, charWidths };
+  }
+  const embedded =
+    resolution.kind === "embedded"
+      ? EMBEDDED_PREVIEW_FONTS[resolution.name]
+      : undefined;
+  // missing（および未知の同梱名）は同梱 regular で代替表示する
+  const fallback = EMBEDDED_PREVIEW_FONTS[EMBEDDED_FONT_NAME] as {
+    readonly url: URL;
+    readonly family: string;
+  };
+  const target = embedded ?? fallback;
+  return loadPreviewFont(doc, target.url, target.family);
+}
 
 function parseErrorOf(sampleData: string): string | undefined {
   if (sampleData.trim() === "") {
@@ -52,13 +105,18 @@ export function PreviewDialog(props: {
   const [confirmingGenerate, setConfirmingGenerate] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
 
-  const resolution = resolveFont(
-    state.document.font.name,
+  const resolutions = resolveFontSet(
+    state.document.font,
     state.fontRegistry,
-    EMBEDDED_FONT_NAME,
+    EMBEDDED_NAMES,
   );
-  const resolutionKey =
-    resolution.kind === "registered" ? resolution.font.name : resolution.kind;
+  const resolutionKey = [...resolutions.entries()]
+    .map(([slot, resolution]) =>
+      resolution.kind === "registered"
+        ? `${slot}:registered:${resolution.font.name}`
+        : `${slot}:${resolution.kind}:${resolution.name}`,
+    )
+    .join(",");
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: resolutionKey が解決結果の変化を代表する
   useEffect(() => {
@@ -67,42 +125,43 @@ export function PreviewDialog(props: {
       return;
     }
     let cancelled = false;
-    if (resolution.kind === "registered") {
-      const font = resolution.font;
-      const charWidths = readCharWidths(font.data);
-      if (charWidths === null) {
-        setFontState({ kind: "failed" });
-      } else {
-        registerPreviewFace(doc, font.name, font.data).then(
-          (family) => {
-            if (!cancelled) {
-              setFontState({
-                kind: "ready",
-                font: { family, ascentPerEm: font.ascentPerEm, charWidths },
-              });
-            }
+    const entries = [...resolutions.entries()];
+    Promise.all(
+      entries.map(([slot, resolution]) =>
+        loadSlotPreviewFont(doc, resolution).then(
+          (font) => [slot, font] as const,
+        ),
+      ),
+    ).then(
+      (loaded) => {
+        if (cancelled) {
+          return;
+        }
+        const bySlot = new Map<IrFontSlot, PreviewFont>(loaded);
+        const regular = bySlot.get("regular");
+        if (regular === undefined) {
+          setFontState({ kind: "failed" });
+          return;
+        }
+        const bold = bySlot.get("bold");
+        const italic = bySlot.get("italic");
+        const boldItalic = bySlot.get("boldItalic");
+        setFontState({
+          kind: "ready",
+          fonts: {
+            regular,
+            ...(bold !== undefined ? { bold } : {}),
+            ...(italic !== undefined ? { italic } : {}),
+            ...(boldItalic !== undefined ? { boldItalic } : {}),
           },
-          () => {
-            if (!cancelled) {
-              setFontState({ kind: "failed" });
-            }
-          },
-        );
-      }
-    } else {
-      loadPreviewFont(doc).then(
-        (font) => {
-          if (!cancelled) {
-            setFontState({ kind: "ready", font });
-          }
-        },
-        () => {
-          if (!cancelled) {
-            setFontState({ kind: "failed" });
-          }
-        },
-      );
-    }
+        });
+      },
+      () => {
+        if (!cancelled) {
+          setFontState({ kind: "failed" });
+        }
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -123,10 +182,12 @@ export function PreviewDialog(props: {
       "同梱フォントを読み込めなかったため、システムフォントで表示しています",
     );
   }
-  if (resolution.kind === "missing") {
-    bannerMessages.push(
-      `フォント「${resolution.name}」の実データが未選択のため、同梱フォントで表示しています。文書設定の「PC のフォントから選択」で選び直せます`,
-    );
+  for (const [slot, resolution] of resolutions) {
+    if (resolution.kind === "missing") {
+      bannerMessages.push(
+        `${FONT_SLOT_LABELS[slot]}フォント「${resolution.name}」の実データが未選択のため、同梱フォントで表示しています。文書設定の「PC のフォントから選択」で選び直せます`,
+      );
+    }
   }
   if (preview?.ok === true) {
     bannerMessages.push(...preview.warnings.map((warning) => warning.message));
@@ -227,7 +288,7 @@ export function PreviewDialog(props: {
                   <PreviewPage
                     elements={elements}
                     page={preview.document.page}
-                    font={fontState.kind === "ready" ? fontState.font : null}
+                    fonts={fontState.kind === "ready" ? fontState.fonts : null}
                   />
                 </div>
               </figure>

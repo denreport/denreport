@@ -1,3 +1,4 @@
+import { EMBEDDED_FONT_URL } from "@denreport/targets";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadPreviewFont, registerPreviewFace } from "./preview-font";
 
@@ -89,7 +90,11 @@ describe("loadPreviewFont", () => {
     stubOkFetch(sfntWith(1000, 1160));
     const { doc, fonts } = makeDoc();
 
-    const font = await loadPreviewFont(doc);
+    const font = await loadPreviewFont(
+      doc,
+      EMBEDDED_FONT_URL,
+      "apx-embedded-notosansjp",
+    );
     expect(font.family).toBe("apx-embedded-notosansjp");
     expect(font.ascentPerEm).toBeCloseTo(1.16, 6);
     expect(fonts.size).toBe(1);
@@ -100,8 +105,12 @@ describe("loadPreviewFont", () => {
     stubOkFetch(sfntWith(1000, 1160));
     const { doc, fonts } = makeDoc();
 
-    await loadPreviewFont(doc);
-    const second = await loadPreviewFont(doc);
+    await loadPreviewFont(doc, EMBEDDED_FONT_URL, "apx-embedded-notosansjp");
+    const second = await loadPreviewFont(
+      doc,
+      EMBEDDED_FONT_URL,
+      "apx-embedded-notosansjp",
+    );
     expect(fonts.size).toBe(1);
     expect(second.ascentPerEm).toBeCloseTo(1.16, 6);
   });
@@ -112,7 +121,13 @@ describe("loadPreviewFont", () => {
       vi.fn(() => Promise.reject(new Error("ネットワーク不通"))),
     );
     vi.stubGlobal("FontFace", FakeFontFace);
-    await expect(loadPreviewFont(makeDoc().doc)).rejects.toThrow();
+    await expect(
+      loadPreviewFont(
+        makeDoc().doc,
+        EMBEDDED_FONT_URL,
+        "apx-embedded-notosansjp",
+      ),
+    ).rejects.toThrow();
   });
 
   it("HTTP エラー応答で reject する", async () => {
@@ -123,13 +138,21 @@ describe("loadPreviewFont", () => {
       }),
     );
     vi.stubGlobal("FontFace", FakeFontFace);
-    await expect(loadPreviewFont(makeDoc().doc)).rejects.toThrow("404");
+    await expect(
+      loadPreviewFont(
+        makeDoc().doc,
+        EMBEDDED_FONT_URL,
+        "apx-embedded-notosansjp",
+      ),
+    ).rejects.toThrow("404");
   });
 
   it("計量を読み取れないバイト列で reject し、登録もしない", async () => {
     stubOkFetch(new ArrayBuffer(4));
     const { doc, fonts } = makeDoc();
-    await expect(loadPreviewFont(doc)).rejects.toThrow();
+    await expect(
+      loadPreviewFont(doc, EMBEDDED_FONT_URL, "apx-embedded-notosansjp"),
+    ).rejects.toThrow();
     expect(fonts.size).toBe(0);
   });
 });

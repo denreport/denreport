@@ -91,6 +91,65 @@ export function TextProperties(props: ElementFormProps): ReactNode {
             commitReplace(store, el.id, { ...el, lineHeight })
           }
         />
+        <div className="apx-frow">
+          <span className="apx-frow-label">装飾</span>
+          <fieldset className="apx-seg" aria-label="装飾">
+            <button
+              type="button"
+              aria-pressed={el.fontWeight === "bold"}
+              className={el.fontWeight === "bold" ? "is-active" : undefined}
+              onClick={() =>
+                commitReplace(
+                  store,
+                  el.id,
+                  withOptionalAttr(
+                    el,
+                    "fontWeight",
+                    el.fontWeight === "bold" ? undefined : "bold",
+                  ),
+                )
+              }
+            >
+              太字
+            </button>
+            <button
+              type="button"
+              aria-pressed={el.fontStyle === "italic"}
+              className={el.fontStyle === "italic" ? "is-active" : undefined}
+              onClick={() =>
+                commitReplace(
+                  store,
+                  el.id,
+                  withOptionalAttr(
+                    el,
+                    "fontStyle",
+                    el.fontStyle === "italic" ? undefined : "italic",
+                  ),
+                )
+              }
+            >
+              斜体
+            </button>
+            <button
+              type="button"
+              aria-pressed={el.underline === true}
+              className={el.underline === true ? "is-active" : undefined}
+              onClick={() =>
+                commitReplace(
+                  store,
+                  el.id,
+                  withOptionalAttr(
+                    el,
+                    "underline",
+                    el.underline === true ? undefined : true,
+                  ),
+                )
+              }
+            >
+              下線
+            </button>
+          </fieldset>
+        </div>
         <ColorField
           label="文字色"
           value={el.color ?? null}

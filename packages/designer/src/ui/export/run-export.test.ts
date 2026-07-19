@@ -15,6 +15,7 @@ import {
 const EMBEDDED_FONT = new Uint8Array(
   readFileSync(EMBEDDED_FONT_URL.pathname.replace(/^\/@fs/, "")),
 );
+const FONT_SET = { regular: EMBEDDED_FONT };
 
 // OTTO ヘッダ + CFF テーブルだけの合成フォント。形式判定はディレクトリしか読まない
 function syntheticCff(): Uint8Array {
@@ -30,7 +31,7 @@ function docOf(...elements: IrDocument["elements"]): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -134,13 +135,13 @@ describe("buildPdfmeArtifact", () => {
   it("生成 JSON は exportPdfme の template / inputs と同値の単一ファイルになる", async () => {
     const doc = docOf(textBound("title", "title"));
     const data = { title: "請求書" };
-    const result = buildPdfmeArtifact(doc, data, EMBEDDED_FONT);
+    const result = buildPdfmeArtifact(doc, data, FONT_SET);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
     expect(result.file.filename).toBe("report-pdfme.json");
     expect(result.file.blob.type).toBe("application/json");
 
-    const direct = exportPdfme(doc, data, EMBEDDED_FONT);
+    const direct = exportPdfme(doc, data, FONT_SET);
     if (!direct.ok) throw new Error("exportPdfme の成功を期待");
     expect(JSON.parse(await result.file.blob.text())).toEqual({
       template: direct.template,
@@ -152,7 +153,7 @@ describe("buildPdfmeArtifact", () => {
     const result = buildPdfmeArtifact(
       docOf(textBound("title", "title")),
       { title: 123 },
-      EMBEDDED_FONT,
+      FONT_SET,
     );
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");
@@ -163,7 +164,7 @@ describe("buildPdfmeArtifact", () => {
     const result = buildPdfmeArtifact(
       docOf(textBound("title", "title")),
       {},
-      EMBEDDED_FONT,
+      FONT_SET,
     );
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
@@ -171,7 +172,7 @@ describe("buildPdfmeArtifact", () => {
   });
 
   it("CFF フォントでは fontIssues を透過して生成物を返さない", () => {
-    const result = buildPdfmeArtifact(docOf(), {}, syntheticCff());
+    const result = buildPdfmeArtifact(docOf(), {}, { regular: syntheticCff() });
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");
     expect(result.fontIssues.length).toBeGreaterThan(0);
@@ -183,7 +184,7 @@ describe("buildPdfmeArtifact", () => {
     const result = buildPdfmeArtifact(
       docOf(textBound("title", "title")),
       { title: "請求書" },
-      EMBEDDED_FONT,
+      FONT_SET,
     );
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
@@ -195,21 +196,21 @@ describe("buildPdfmeArtifact", () => {
     const result = buildPdfmeArtifact(
       docOf(textBound("title", "title")),
       { title: "請求書" },
-      EMBEDDED_FONT,
+      FONT_SET,
       false,
     );
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
     const parsed = JSON.parse(await result.file.blob.text());
     expect(Object.keys(parsed).sort()).toEqual(["font", "inputs", "template"]);
-    expect(parsed.font).toEqual({ name: "NotoSansJP", subset: false });
+    expect(parsed.font).toEqual({ names: ["NotoSansJP"], subset: false });
   });
 });
 
 describe("buildPdfmeTemplateArtifact", () => {
   it("bind 由来キーは空文字列、静的 text は従来どおりの値になる", async () => {
     const doc = docOf(textBound("title", "title"), staticText("note", "備考"));
-    const result = buildPdfmeTemplateArtifact(doc, EMBEDDED_FONT);
+    const result = buildPdfmeTemplateArtifact(doc, FONT_SET);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
 
@@ -225,11 +226,11 @@ describe("buildPdfmeTemplateArtifact", () => {
 
   it("exportPdfme(document, emptyDataFor(document)) と同値の生成物になる", async () => {
     const doc = docOf(textBound("title", "title"));
-    const result = buildPdfmeTemplateArtifact(doc, EMBEDDED_FONT);
+    const result = buildPdfmeTemplateArtifact(doc, FONT_SET);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
 
-    const direct = exportPdfme(doc, emptyDataFor(doc), EMBEDDED_FONT);
+    const direct = exportPdfme(doc, emptyDataFor(doc), FONT_SET);
     if (!direct.ok) throw new Error("exportPdfme の成功を期待");
     expect(JSON.parse(await result.file.blob.text())).toEqual({
       template: direct.template,
@@ -239,18 +240,18 @@ describe("buildPdfmeTemplateArtifact", () => {
 
   it("fontSubset: false では font ブロックが加わる", async () => {
     const doc = docOf(textBound("title", "title"));
-    const result = buildPdfmeTemplateArtifact(doc, EMBEDDED_FONT, false);
+    const result = buildPdfmeTemplateArtifact(doc, FONT_SET, false);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
     const parsed = JSON.parse(await result.file.blob.text());
     expect(Object.keys(parsed).sort()).toEqual(["font", "inputs", "template"]);
-    expect(parsed.font).toEqual({ name: "NotoSansJP", subset: false });
+    expect(parsed.font).toEqual({ names: ["NotoSansJP"], subset: false });
   });
 });
 
 describe("buildReportlabArtifact", () => {
   it("zip 内に report.py と fontFile.filename の2エントリを持つ", async () => {
-    const result = buildReportlabArtifact(docOf(), {}, EMBEDDED_FONT);
+    const result = buildReportlabArtifact(docOf(), {}, FONT_SET);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
     expect(result.file.filename).toBe("report-reportlab.zip");
@@ -264,12 +265,18 @@ describe("buildReportlabArtifact", () => {
       Buffer.from(entries[1]?.data ?? []).equals(Buffer.from(EMBEDDED_FONT)),
     ).toBe(true);
     expect(new TextDecoder().decode(entries[0]?.data)).toContain(
-      'FONT_FILE = "NotoSansJP.ttf"',
+      '"NotoSansJP": ("NotoSansJP.ttf", ',
     );
   });
 
   it("CFF フォントでは fontIssues を透過して生成物を返さない", () => {
-    const result = buildReportlabArtifact(docOf(), {}, syntheticCff());
+    const result = buildReportlabArtifact(
+      docOf(),
+      {},
+      {
+        regular: syntheticCff(),
+      },
+    );
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");
     expect(result.fontIssues.length).toBeGreaterThan(0);
@@ -281,7 +288,7 @@ describe("buildReportlabArtifact", () => {
     const result = buildReportlabArtifact(
       docOf(textBound("title", "title")),
       { title: 123 },
-      syntheticCff(),
+      { regular: syntheticCff() },
     );
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");
@@ -293,7 +300,7 @@ describe("buildReportlabArtifact", () => {
     const result = buildReportlabArtifact(
       docOf(textBound("title", "title")),
       {},
-      EMBEDDED_FONT,
+      FONT_SET,
     );
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
@@ -305,7 +312,7 @@ describe("buildReportlabTemplateArtifact", () => {
   it("zip 内に report.py と fontFile.filename の2エントリを持ち、雛形の build シグネチャを含む", async () => {
     const result = buildReportlabTemplateArtifact(
       docOf(textBound("title", "title")),
-      EMBEDDED_FONT,
+      FONT_SET,
     );
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
@@ -320,7 +327,9 @@ describe("buildReportlabTemplateArtifact", () => {
   });
 
   it("CFF フォントでは fontIssues を透過して生成物を返さない（errors は常に空）", () => {
-    const result = buildReportlabTemplateArtifact(docOf(), syntheticCff());
+    const result = buildReportlabTemplateArtifact(docOf(), {
+      regular: syntheticCff(),
+    });
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");
     expect(result.fontIssues.length).toBeGreaterThan(0);

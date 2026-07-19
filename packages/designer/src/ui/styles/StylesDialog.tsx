@@ -24,6 +24,9 @@ const STYLE_ATTR_KEYS: readonly StyleAttrKey[] = [
   "fontSize",
   "align",
   "lineHeight",
+  "fontWeight",
+  "fontStyle",
+  "underline",
   "borderWidth",
   "thickness",
 ];
@@ -32,6 +35,9 @@ const ATTR_LABELS: Readonly<Record<StyleAttrKey, string>> = {
   fontSize: "文字サイズ",
   align: "整列",
   lineHeight: "行間",
+  fontWeight: "太字",
+  fontStyle: "斜体",
+  underline: "下線",
   borderWidth: "枠線幅",
   thickness: "太さ",
 };
@@ -40,6 +46,9 @@ const ATTR_DEFAULTS: IrStyleAttrs = {
   fontSize: 10,
   align: "left",
   lineHeight: 1.25,
+  fontWeight: "bold",
+  fontStyle: "italic",
+  underline: true,
   borderWidth: 0.3,
   thickness: 0.3,
 };
@@ -60,6 +69,15 @@ function attrSummary(attrs: IrStyleAttrs): string {
     parts.push(ALIGN_OPTIONS.find((o) => o.value === attrs.align)?.label ?? "");
   }
   if (attrs.lineHeight !== undefined) parts.push(`行間${attrs.lineHeight}`);
+  if (attrs.fontWeight !== undefined) {
+    parts.push(attrs.fontWeight === "bold" ? "太字" : "標準太さ");
+  }
+  if (attrs.fontStyle !== undefined) {
+    parts.push(attrs.fontStyle === "italic" ? "斜体" : "正体");
+  }
+  if (attrs.underline !== undefined) {
+    parts.push(attrs.underline ? "下線" : "下線なし");
+  }
   if (attrs.borderWidth !== undefined) parts.push(`枠線${attrs.borderWidth}mm`);
   if (attrs.thickness !== undefined) parts.push(`太さ${attrs.thickness}mm`);
   return parts.length > 0 ? parts.join(" / ") : "（属性なし）";
@@ -138,21 +156,70 @@ function StyleCard(props: {
                 onCommit={(align) => setAttrs({ ...style.attrs, align })}
               />
             )}
-            {included && key !== "align" && (
-              <NumberField
-                label={ATTR_LABELS[key]}
-                value={style.attrs[key] ?? ATTR_DEFAULTS[key] ?? 0}
-                unit={
-                  key === "fontSize"
-                    ? "pt"
-                    : key === "lineHeight"
-                      ? undefined
-                      : "mm"
+            {included && key === "fontWeight" && (
+              <SegmentField
+                label={ATTR_LABELS.fontWeight}
+                value={style.attrs.fontWeight ?? "bold"}
+                options={[
+                  { value: "normal", label: "標準" },
+                  { value: "bold", label: "太字" },
+                ]}
+                onCommit={(fontWeight) =>
+                  setAttrs({ ...style.attrs, fontWeight })
                 }
-                precision={key === "lineHeight" ? 0.01 : 0.1}
-                onCommit={(value) => setAttrs({ ...style.attrs, [key]: value })}
               />
             )}
+            {included && key === "fontStyle" && (
+              <SegmentField
+                label={ATTR_LABELS.fontStyle}
+                value={style.attrs.fontStyle ?? "italic"}
+                options={[
+                  { value: "normal", label: "正体" },
+                  { value: "italic", label: "斜体" },
+                ]}
+                onCommit={(fontStyle) =>
+                  setAttrs({ ...style.attrs, fontStyle })
+                }
+              />
+            )}
+            {included && key === "underline" && (
+              <SegmentField
+                label={ATTR_LABELS.underline}
+                value={(style.attrs.underline ?? true) ? "on" : "off"}
+                options={[
+                  { value: "on", label: "あり" },
+                  { value: "off", label: "なし" },
+                ]}
+                onCommit={(value) =>
+                  setAttrs({ ...style.attrs, underline: value === "on" })
+                }
+              />
+            )}
+            {included &&
+              key !== "align" &&
+              key !== "fontWeight" &&
+              key !== "fontStyle" &&
+              key !== "underline" && (
+                <NumberField
+                  label={ATTR_LABELS[key]}
+                  value={
+                    (style.attrs[key] as number | undefined) ??
+                    (ATTR_DEFAULTS[key] as number | undefined) ??
+                    0
+                  }
+                  unit={
+                    key === "fontSize"
+                      ? "pt"
+                      : key === "lineHeight"
+                        ? undefined
+                        : "mm"
+                  }
+                  precision={key === "lineHeight" ? 0.01 : 0.1}
+                  onCommit={(value) =>
+                    setAttrs({ ...style.attrs, [key]: value })
+                  }
+                />
+              )}
           </div>
         );
       })}

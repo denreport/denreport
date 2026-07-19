@@ -31,7 +31,7 @@ export interface DesignerChrome {
 }
 
 export interface DesignerOptions {
-  /** IR v1 の JSON 文字列。省略時は白紙文書（A4 縦・font "NotoSansJP"・elements: []） */
+  /** IR v1 の JSON 文字列。省略時は白紙文書（A4 縦・同梱フォント組・elements: []） */
   readonly initialIr?: string;
   /** サンプルデータのシナリオ一式の直列化文字列（getSampleData の返り値。封筒形式）
       またはレガシー生 JSON。省略時は既定1件（空 json）。
@@ -50,7 +50,7 @@ export type LoadIrResult =
 const BLANK_DOCUMENT: IrDocument = {
   version: IR_VERSION,
   page: { width: 210, height: 297 },
-  font: { name: "NotoSansJP" },
+  font: { regular: "NotoSansJP", bold: "NotoSansJPBold" },
   elements: [],
 };
 

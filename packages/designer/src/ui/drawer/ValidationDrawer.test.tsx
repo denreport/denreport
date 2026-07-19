@@ -18,7 +18,7 @@ function makeDocument(
   return {
     version: "1.0",
     page,
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }

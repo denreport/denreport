@@ -1,17 +1,18 @@
 import type { CharWidthEm } from "@denreport/core";
-import {
-  EMBEDDED_FONT_URL,
-  readAscentPerEm,
-  readCharWidths,
-} from "@denreport/targets";
-
-// ホストページの同名フォントと衝突しないよう、論理フォント名ではなく apx- 接頭辞の一意名で登録する
-const PREVIEW_FONT_FAMILY = "apx-embedded-notosansjp";
+import { readAscentPerEm, readCharWidths } from "@denreport/targets";
 
 export interface PreviewFont {
   readonly family: string;
   readonly ascentPerEm: number;
   readonly charWidths: CharWidthEm;
+}
+
+/** 文書のフォント組をスロット別の PreviewFont に解決したもの。regular は必須 */
+export interface PreviewFontSet {
+  readonly regular: PreviewFont;
+  readonly bold?: PreviewFont;
+  readonly italic?: PreviewFont;
+  readonly boldItalic?: PreviewFont;
 }
 
 function hasRegistered(doc: Document, family: string): boolean {
@@ -24,11 +25,16 @@ function hasRegistered(doc: Document, family: string): boolean {
   return registered;
 }
 
-/** EMBEDDED_FONT_URL を fetch し、FontFace を doc.fonts に登録して計量とともに返す。
+/** 同梱フォントを url から fetch し、FontFace を family（ホストページと衝突しない
+    apx- 接頭辞の一意名を呼び出し側が渡す）で doc.fonts に登録して計量とともに返す。
     同一 doc に登録済みなら再登録しない（複数インスタンス・再オープンの重複防止）。
     失敗（fetch 不能・計量読取不能）は reject し、呼び出し側がフォールバック表示する */
-export async function loadPreviewFont(doc: Document): Promise<PreviewFont> {
-  const response = await fetch(EMBEDDED_FONT_URL);
+export async function loadPreviewFont(
+  doc: Document,
+  url: URL,
+  family: string,
+): Promise<PreviewFont> {
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`同梱フォントを取得できません (HTTP ${response.status})`);
   }
@@ -42,12 +48,12 @@ export async function loadPreviewFont(doc: Document): Promise<PreviewFont> {
   if (charWidths === null) {
     throw new Error("同梱フォントの字幅を読み取れません");
   }
-  if (!hasRegistered(doc, PREVIEW_FONT_FAMILY)) {
-    const face = new FontFace(PREVIEW_FONT_FAMILY, buffer);
+  if (!hasRegistered(doc, family)) {
+    const face = new FontFace(family, buffer);
     await face.load();
     doc.fonts.add(face);
   }
-  return { family: PREVIEW_FONT_FAMILY, ascentPerEm, charWidths };
+  return { family, ascentPerEm, charWidths };
 }
 
 function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {

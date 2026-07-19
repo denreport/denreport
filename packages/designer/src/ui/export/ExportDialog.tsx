@@ -1,5 +1,7 @@
-import type { CompatTargetId, IrError } from "@denreport/core";
+import type { CompatTargetId, IrError, IrFontSlot } from "@denreport/core";
 import { COMPAT_MATRICES, checkCompat } from "@denreport/core";
+import type { FontSetData } from "@denreport/targets";
+import { EMBEDDED_BOLD_FONT_URL, EMBEDDED_FONT_URL } from "@denreport/targets";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { triggerDownload } from "../../api/download";
@@ -7,12 +9,17 @@ import {
   EXPORT_TARGET_IDS,
   groupCompatFindings,
 } from "../../state/export-warnings";
-import { resolveFont } from "../../state/fonts";
+import type { FontResolution } from "../../state/fonts";
+import { resolveFontSet } from "../../state/fonts";
 import { layoutDocument, visibleInContext } from "../../state/geometry";
 import { activeSampleJson } from "../../state/sample-scenarios";
 import type { EditorStore } from "../../state/store";
 import { Dialog } from "../dialog/Dialog";
-import { EMBEDDED_FONT_NAME } from "../fonts/font-registration";
+import { FONT_SLOT_LABELS } from "../fonts/FontSelectorDialog";
+import {
+  EMBEDDED_BOLD_FONT_NAME,
+  EMBEDDED_FONT_NAME,
+} from "../fonts/font-registration";
 import { useEditorState } from "../useEditorState";
 import { fetchEmbeddedFontData } from "./export-font";
 import type { ExportFile, FontIssue } from "./run-export";
@@ -36,7 +43,35 @@ type RunState =
     }
   | { readonly kind: "export-warning"; readonly warnings: readonly IrError[] }
   | { readonly kind: "font-fetch-error" }
-  | { readonly kind: "font-missing"; readonly name: string };
+  | {
+      readonly kind: "font-missing";
+      readonly slot: IrFontSlot;
+      readonly name: string;
+    };
+
+const EMBEDDED_NAMES: ReadonlySet<string> = new Set([
+  EMBEDDED_FONT_NAME,
+  EMBEDDED_BOLD_FONT_NAME,
+]);
+
+const EMBEDDED_URLS: Readonly<Record<string, URL>> = {
+  [EMBEDDED_FONT_NAME]: EMBEDDED_FONT_URL,
+  [EMBEDDED_BOLD_FONT_NAME]: EMBEDDED_BOLD_FONT_URL,
+};
+
+/** 解決済みスロットの実データを取得する。missing は呼び出し側が先に弾いている前提 */
+async function fontDataFor(resolution: FontResolution): Promise<Uint8Array> {
+  if (resolution.kind === "registered") {
+    return resolution.font.data;
+  }
+  if (resolution.kind === "embedded") {
+    const url = EMBEDDED_URLS[resolution.name];
+    if (url !== undefined) {
+      return fetchEmbeddedFontData(url);
+    }
+  }
+  throw new Error("フォントの実データを解決できません");
+}
 
 const RUN_IDLE: RunState = { kind: "idle" };
 
@@ -113,24 +148,24 @@ export function ExportDialog(props: {
       return;
     }
 
-    const runWithFontData = (fontData: Uint8Array): void => {
+    const runWithFonts = (fonts: FontSetData): void => {
       const built =
         target === "pdfme"
           ? parsed.mode === "template"
             ? buildPdfmeTemplateArtifact(
                 current.document,
-                fontData,
+                fonts,
                 !fullEmbedFont,
               )
             : buildPdfmeArtifact(
                 current.document,
                 parsed.data,
-                fontData,
+                fonts,
                 !fullEmbedFont,
               )
           : parsed.mode === "template"
-            ? buildReportlabTemplateArtifact(current.document, fontData)
-            : buildReportlabArtifact(current.document, parsed.data, fontData);
+            ? buildReportlabTemplateArtifact(current.document, fonts)
+            : buildReportlabArtifact(current.document, parsed.data, fonts);
       if (!built.ok) {
         setRun({
           kind: "export-error",
@@ -142,23 +177,46 @@ export function ExportDialog(props: {
       finishExport(doc, built.file, built.warnings);
     };
 
-    const resolution = resolveFont(
-      current.document.font.name,
+    const resolutions = resolveFontSet(
+      current.document.font,
       current.fontRegistry,
-      EMBEDDED_FONT_NAME,
+      EMBEDDED_NAMES,
     );
-    if (resolution.kind === "missing") {
-      setRun({ kind: "font-missing", name: resolution.name });
-      return;
-    }
-    if (resolution.kind === "registered") {
-      runWithFontData(resolution.font.data);
+    const missing = [...resolutions.entries()].find(
+      ([, resolution]) => resolution.kind === "missing",
+    );
+    if (missing !== undefined && missing[1].kind === "missing") {
+      setRun({ kind: "font-missing", slot: missing[0], name: missing[1].name });
       return;
     }
     setRun({ kind: "running" });
-    fetchEmbeddedFontData().then(runWithFontData, () => {
-      setRun({ kind: "font-fetch-error" });
-    });
+    const entries = [...resolutions.entries()];
+    Promise.all(
+      entries.map(([slot, resolution]) =>
+        fontDataFor(resolution).then((data) => [slot, data] as const),
+      ),
+    ).then(
+      (loaded) => {
+        const bySlot = new Map<IrFontSlot, Uint8Array>(loaded);
+        const regular = bySlot.get("regular");
+        if (regular === undefined) {
+          setRun({ kind: "font-fetch-error" });
+          return;
+        }
+        const bold = bySlot.get("bold");
+        const italic = bySlot.get("italic");
+        const boldItalic = bySlot.get("boldItalic");
+        runWithFonts({
+          regular,
+          ...(bold !== undefined ? { bold } : {}),
+          ...(italic !== undefined ? { italic } : {}),
+          ...(boldItalic !== undefined ? { boldItalic } : {}),
+        });
+      },
+      () => {
+        setRun({ kind: "font-fetch-error" });
+      },
+    );
   };
 
   return (
@@ -274,7 +332,7 @@ export function ExportDialog(props: {
       {run.kind === "font-missing" && (
         <div className="apx-export-error" role="alert">
           <p>
-            フォント「{run.name}
+            {FONT_SLOT_LABELS[run.slot]}フォント「{run.name}
             」の実データがありません。文書設定の「PC
             のフォントから選択」で選び直してください。
           </p>

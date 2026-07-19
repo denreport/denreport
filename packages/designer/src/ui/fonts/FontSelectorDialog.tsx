@@ -1,10 +1,15 @@
+import type { IrFontSlot } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import type { RegisteredFont } from "../../state/fonts";
 import { sanitizeFontName } from "../../state/fonts";
 import { Dialog } from "../dialog/Dialog";
 import type { FontIssue } from "./font-registration";
-import { buildRegisteredFont, EMBEDDED_FONT_NAME } from "./font-registration";
+import {
+  buildRegisteredFont,
+  EMBEDDED_BOLD_FONT_NAME,
+  EMBEDDED_FONT_NAME,
+} from "./font-registration";
 import type { LocalFontCandidate } from "./local-fonts";
 import { listLocalFonts } from "./local-fonts";
 
@@ -31,23 +36,42 @@ const REASON_MESSAGES: Readonly<
   error: "フォント一覧を取得できませんでした。",
 };
 
-/** Dialog 部品（ui/dialog/Dialog.tsx）に載せる選択ダイアログ。
+/** スロットに同梱フォントがある場合のみ、その論理名（「同梱フォントに戻す」行の表示対象） */
+const EMBEDDED_NAME_BY_SLOT: Readonly<Partial<Record<IrFontSlot, string>>> = {
+  regular: EMBEDDED_FONT_NAME,
+  bold: EMBEDDED_BOLD_FONT_NAME,
+};
+
+export const FONT_SLOT_LABELS: Readonly<Record<IrFontSlot, string>> = {
+  regular: "標準",
+  bold: "太字",
+  italic: "斜体",
+  boldItalic: "太字斜体",
+};
+
+/** Dialog 部品（ui/dialog/Dialog.tsx）に載せる、対象スロットのフォント選択ダイアログ。
     一覧取得はマウント時に listLocalFonts（開くボタンのクリックがユーザー操作起点）。
     確定時に loadData → buildRegisteredFont を実行し、非 TTF は issues をダイアログ内に表示して閉じない */
 export function FontSelectorDialog(props: {
-  /** 現在の font.name（一覧内の該当行の選択状態表示に使う） */
-  readonly currentName: string;
-  /** 検証済みフォントで確定（呼び出し側が registerFont + setFontName の commit を行う） */
+  /** 選択対象のスロット（同梱行の有無・「未設定に戻す」行の有無を決める） */
+  readonly slot: IrFontSlot;
+  /** スロットの現在の論理名（一覧内の該当行の選択状態表示に使う）。未設定スロットは undefined */
+  readonly currentName: string | undefined;
+  /** 検証済みフォントで確定（呼び出し側が registerFont + スロット setter の commit を行う） */
   readonly onSelect: (font: RegisteredFont) => void;
-  /** 「同梱フォントに戻す」（呼び出し側が setFontName(EMBEDDED_FONT_NAME) を commit する） */
-  readonly onSelectEmbedded: () => void;
+  /** 同梱フォントで確定。スロットに同梱フォントがある場合のみ行を表示する */
+  readonly onSelectEmbedded: (name: string) => void;
+  /** スロットを未設定に戻す。regular 以外のみ行を表示する */
+  readonly onClear: () => void;
   readonly onClose: () => void;
 }): ReactNode {
-  const { currentName, onSelect, onSelectEmbedded, onClose } = props;
+  const { slot, currentName, onSelect, onSelectEmbedded, onClear, onClose } =
+    props;
   const [list, setList] = useState<ListState>({ kind: "loading" });
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<LocalFontCandidate | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState>({ kind: "idle" });
+  const embeddedName = EMBEDDED_NAME_BY_SLOT[slot];
 
   const load = (): void => {
     setList({ kind: "loading" });
@@ -108,7 +132,7 @@ export function FontSelectorDialog(props: {
 
   return (
     <Dialog
-      title="PC のフォントから選択"
+      title={`${FONT_SLOT_LABELS[slot]}のフォントを選択`}
       onClose={onClose}
       footer={
         <>
@@ -133,6 +157,38 @@ export function FontSelectorDialog(props: {
         </>
       }
     >
+      <ul className="apx-font-list">
+        {embeddedName !== undefined && (
+          <li>
+            <button
+              type="button"
+              aria-pressed={selected === null && currentName === embeddedName}
+              className="apx-font-row"
+              onClick={() => {
+                setSelected(null);
+                onSelectEmbedded(embeddedName);
+              }}
+            >
+              同梱フォント（{embeddedName}）に戻す
+            </button>
+          </li>
+        )}
+        {slot !== "regular" && (
+          <li>
+            <button
+              type="button"
+              aria-pressed={selected === null && currentName === undefined}
+              className="apx-font-row"
+              onClick={() => {
+                setSelected(null);
+                onClear();
+              }}
+            >
+              未設定に戻す（標準フォントで代替）
+            </button>
+          </li>
+        )}
+      </ul>
       {list.kind === "loading" && <p>フォント一覧を取得しています…</p>}
       {list.kind === "failed" && (
         <div className="apx-font-notice" role="alert">
@@ -159,21 +215,6 @@ export function FontSelectorDialog(props: {
             onChange={(e) => setQuery(e.currentTarget.value)}
           />
           <ul className="apx-font-list">
-            <li>
-              <button
-                type="button"
-                aria-pressed={
-                  selected === null && currentName === EMBEDDED_FONT_NAME
-                }
-                className="apx-font-row"
-                onClick={() => {
-                  setSelected(null);
-                  onSelectEmbedded();
-                }}
-              >
-                同梱フォント（{EMBEDDED_FONT_NAME}）に戻す
-              </button>
-            </li>
             {filtered.map((font) => {
               const isCurrent =
                 selected !== null

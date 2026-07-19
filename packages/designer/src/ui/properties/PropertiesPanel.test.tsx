@@ -142,7 +142,7 @@ function makeStore(): EditorStore {
   const document: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: ELEMENTS,
   };
   return new EditorStore(document);
@@ -152,7 +152,7 @@ function makeStoreWithStyle(): EditorStore {
   const document: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     styles: [{ name: "見出し", attrs: { fontSize: 20, align: "center" } }],
     elements: ELEMENTS,
   };
@@ -349,7 +349,8 @@ describe("PropertiesPanel の振り分け", () => {
   it("適格請求書チェックのラベルは「チェック」部分が単語内分断されないよう nowrap で囲む", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
-    const label = container.querySelector(".apx-frow-label");
+    const labels = [...container.querySelectorAll(".apx-frow-label")];
+    const label = labels.find((el) => el.textContent === "記載事項チェック");
     expect(label?.textContent).toBe("記載事項チェック");
     expect(label?.querySelector(".apx-nowrap")?.textContent).toBe("チェック");
   });
@@ -1118,12 +1119,12 @@ describe("PC のフォントから選択", () => {
     vi.unstubAllGlobals();
   });
 
-  it("ボタンでダイアログが開き、選択確定で font.name が commit されレジストリに登録される", async () => {
+  it("ボタンでダイアログが開き、選択確定で font.regular が commit されレジストリに登録される", async () => {
     stubQueryLocalFonts();
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
 
-    click(buttonByText("PC のフォントから選択…"));
+    click(buttonByText("標準のフォントを選択…"));
     await vi.waitFor(() => {
       expect(container.querySelector(".apx-dialog")).not.toBeNull();
     });
@@ -1144,7 +1145,7 @@ describe("PC のフォントから選択", () => {
     click(buttonByText("このフォントを使う"));
 
     await vi.waitFor(() => {
-      expect(store.getState().document.font.name).toBe("LocalFont");
+      expect(store.getState().document.font.regular).toBe("LocalFont");
     });
     expect(store.getState().dirty).toBe(true);
     expect(store.getState().fontRegistry.get("LocalFont")?.displayName).toBe(
@@ -1155,13 +1156,13 @@ describe("PC のフォントから選択", () => {
     act(() => {
       store.undo();
     });
-    expect(store.getState().document.font.name).toBe("NotoSansJP");
+    expect(store.getState().document.font.regular).toBe("NotoSansJP");
     expect(store.getState().fontRegistry.get("LocalFont")).toBeDefined();
 
     act(() => {
       store.redo();
     });
-    expect(store.getState().document.font.name).toBe("LocalFont");
+    expect(store.getState().document.font.regular).toBe("LocalFont");
     expect(inputByLabel("フォント名").value).toBe("LocalFont");
   });
 
@@ -1179,7 +1180,7 @@ describe("PC のフォントから選択", () => {
     act(() => {
       store.commit({
         ...store.getState().document,
-        font: { name: "GoneFont" },
+        font: { regular: "GoneFont" },
       });
     });
     render(<PropertiesPanel store={store} interaction={IDLE} />);

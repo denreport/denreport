@@ -199,7 +199,11 @@ export function styleFromElement(
   }
   const attrs: Record<string, unknown> = {};
   for (const key of keys) {
-    attrs[key] = (element as Record<string, unknown>)[key];
+    // fontWeight 等の任意属性は未指定要素から undefined を写さない（attrs は指定時のみキーを持つ）
+    const value = (element as Record<string, unknown>)[key];
+    if (value !== undefined) {
+      attrs[key] = value;
+    }
   }
   return { name, attrs };
 }

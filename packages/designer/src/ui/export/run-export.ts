@@ -1,6 +1,10 @@
 import type { IrData, IrDocument, IrError } from "@denreport/core";
 import { emptyDataFor } from "@denreport/core";
-import type { ExportReportlabResult, FontIssue } from "@denreport/targets";
+import type {
+  ExportReportlabResult,
+  FontIssue,
+  FontSetData,
+} from "@denreport/targets";
 import {
   exportPdfme,
   exportReportlab,
@@ -65,16 +69,33 @@ export type BuildPdfmeArtifactResult =
       readonly fontIssues: readonly FontIssue[];
     };
 
+/** 文書の宣言スロットの論理名（出現順・重複なし） */
+function declaredFontNames(document: IrDocument): readonly string[] {
+  const names: string[] = [];
+  for (const name of [
+    document.font.regular,
+    document.font.bold,
+    document.font.italic,
+    document.font.boldItalic,
+  ]) {
+    if (name !== undefined && !names.includes(name)) {
+      names.push(name);
+    }
+  }
+  return names;
+}
+
 /** exportPdfme を呼び、{ template, inputs } を1つの JSON（2スペースインデント）にした
     ExportFile を返す。C 群エラー・FontIssue は透過、欠落キーの警告も透過。
-    fontSubset が false のときのみ、利用側へ全体埋め込みを伝える font ブロックを JSON に含める */
+    fontSubset が false のときのみ、利用側へ全体埋め込みを伝える font ブロック
+    （宣言スロットの全論理名）を JSON に含める */
 export function buildPdfmeArtifact(
   document: IrDocument,
   data: IrData,
-  fontData: Uint8Array,
+  fonts: FontSetData,
   fontSubset?: boolean,
 ): BuildPdfmeArtifactResult {
-  const result = exportPdfme(document, data, fontData);
+  const result = exportPdfme(document, data, fonts);
   if (!result.ok) {
     return { ok: false, errors: result.errors, fontIssues: result.fontIssues };
   }
@@ -83,7 +104,7 @@ export function buildPdfmeArtifact(
       ? {
           template: result.template,
           inputs: result.inputs,
-          font: { name: document.font.name, subset: false },
+          font: { names: declaredFontNames(document), subset: false },
         }
       : { template: result.template, inputs: result.inputs };
   const json = JSON.stringify(envelope, null, 2);
@@ -101,13 +122,13 @@ export function buildPdfmeArtifact(
     合成し、既存の buildPdfmeArtifact にそのまま通す */
 export function buildPdfmeTemplateArtifact(
   document: IrDocument,
-  fontData: Uint8Array,
+  fonts: FontSetData,
   fontSubset?: boolean,
 ): BuildPdfmeArtifactResult {
   return buildPdfmeArtifact(
     document,
     emptyDataFor(document),
-    fontData,
+    fonts,
     fontSubset,
   );
 }
@@ -135,7 +156,10 @@ function bundleReportlabResult(
       name: REPORTLAB_CODE_FILE_NAME,
       data: new TextEncoder().encode(result.code),
     },
-    { name: result.fontFile.filename, data: result.fontFile.data },
+    ...result.fontFiles.map((fontFile) => ({
+      name: fontFile.filename,
+      data: fontFile.data,
+    })),
   ]);
   return {
     ok: true,
@@ -147,22 +171,22 @@ function bundleReportlabResult(
   };
 }
 
-/** exportReportlab を呼び、code（REPORTLAB_CODE_FILE_NAME）と fontFile（fontFile.filename）を
+/** exportReportlab を呼び、code（REPORTLAB_CODE_FILE_NAME）と fontFiles（宣言スロット分）を
     buildZip で束ねた ExportFile を返す。C 群エラー・FontIssue は透過（両方同時にあり得る）。
     欠落キーの警告も透過（雛形系ビルダーは常に空） */
 export function buildReportlabArtifact(
   document: IrDocument,
   data: IrData,
-  fontData: Uint8Array,
+  fonts: FontSetData,
 ): BuildReportlabArtifactResult {
-  return bundleReportlabResult(exportReportlab(document, data, fontData));
+  return bundleReportlabResult(exportReportlab(document, data, fonts));
 }
 
 /** サンプルデータ未入力時の ReportLab 書き出し。exportReportlabTemplate を同じ zip 構成で包む。
     errors は常に空（データ検証は生成コードの実行時に移る） */
 export function buildReportlabTemplateArtifact(
   document: IrDocument,
-  fontData: Uint8Array,
+  fonts: FontSetData,
 ): BuildReportlabArtifactResult {
-  return bundleReportlabResult(exportReportlabTemplate(document, fontData));
+  return bundleReportlabResult(exportReportlabTemplate(document, fonts));
 }

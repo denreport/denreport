@@ -9,7 +9,7 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PT_TO_MM, textBaselinesMm } from "../../state/preview";
 import { PreviewPage } from "./PreviewPage";
-import type { PreviewFont } from "./preview-font";
+import type { PreviewFont, PreviewFontSet } from "./preview-font";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -41,9 +41,12 @@ function textEl(
     align: "left",
     lineHeight: 1.25,
     color: "#000000",
+    fontWeight: "normal",
+    fontStyle: "normal",
+    underline: false,
     rotate: 0,
     ...overrides,
-  };
+  } as LoweredTextElement;
 }
 
 let container: HTMLElement;
@@ -64,10 +67,10 @@ afterEach(() => {
 
 function render(
   elements: readonly LoweredElement[],
-  font: PreviewFont | null = FONT,
+  fonts: PreviewFontSet | null = { regular: FONT },
 ): void {
   act(() => {
-    root.render(<PreviewPage elements={elements} page={PAGE} font={font} />);
+    root.render(<PreviewPage elements={elements} page={PAGE} fonts={fonts} />);
   });
 }
 
@@ -103,6 +106,39 @@ describe("PreviewPage", () => {
       6,
     );
     expect((texts[0] as Element).getAttribute("font-family")).toBe(FONT.family);
+  });
+
+  it("bold 要素は bold スロットの family / 計量で描画し、未定義スロットは regular に劣化する", () => {
+    const boldFont: PreviewFont = {
+      family: "apx-embedded-notosansjp-bold",
+      ascentPerEm: 0.9,
+      charWidths: () => 0.2,
+    };
+    const el = textEl({ fontWeight: "bold" });
+    render([el], { regular: FONT, bold: boldFont });
+    const text = container.querySelector("text");
+    expect((text as Element).getAttribute("font-family")).toBe(boldFont.family);
+    const expected = textBaselinesMm(el, boldFont.ascentPerEm, ["甲"]);
+    expect(attrOf(text as Element, "y")).toBeCloseTo(
+      expected[0]?.baselineY ?? Number.NaN,
+      6,
+    );
+
+    render([textEl({ fontStyle: "italic" })], {
+      regular: FONT,
+      bold: boldFont,
+    });
+    const italicFallback = container.querySelector("text");
+    expect((italicFallback as Element).getAttribute("font-family")).toBe(
+      FONT.family,
+    );
+  });
+
+  it("underline の text は text-decoration underline を持ち、非下線は持たない", () => {
+    render([textEl({ underline: true }), textEl({ underline: false })]);
+    const texts = [...container.querySelectorAll("text")];
+    expect(texts[0]?.getAttribute("text-decoration")).toBe("underline");
+    expect(texts[1]?.getAttribute("text-decoration")).toBeNull();
   });
 
   it("text の color が fill に写る", () => {

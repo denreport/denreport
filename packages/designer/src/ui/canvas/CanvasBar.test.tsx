@@ -14,7 +14,7 @@ function makeStore(page: IrDocument["page"]): EditorStore {
   const document: IrDocument = {
     version: "1.0",
     page,
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [],
   };
   return new EditorStore(document);

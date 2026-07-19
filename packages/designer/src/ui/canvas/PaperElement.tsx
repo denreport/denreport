@@ -118,7 +118,15 @@ export function PaperElement(props: {
       break;
   }
 
-  const style = { ...vars, lineHeight } as CSSProperties;
+  // キャンバスは実フォントを使わない模式表示のため、太字・斜体は合成でよい
+  const textStyle: Record<string, string> = {};
+  if (el.type === "text") {
+    if (el.fontWeight === "bold") textStyle.fontWeight = "bold";
+    if (el.fontStyle === "italic") textStyle.fontStyle = "italic";
+    if (el.underline === true) textStyle.textDecoration = "underline";
+  }
+
+  const style = { ...vars, lineHeight, ...textStyle } as CSSProperties;
 
   return (
     <div className={classes.join(" ")} style={style} data-apx-id={view.id}>

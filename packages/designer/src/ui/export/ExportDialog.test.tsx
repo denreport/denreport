@@ -150,7 +150,7 @@ function docOf(...elements: IrDocument["elements"]): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -416,7 +416,7 @@ describe("書き出しの実行", () => {
   it("registered 解決では fetch なしに選択バイト列で書き出し、zip 内フォント名が <name>.ttf になる", async () => {
     const { store } = await mount({
       ...docOf(staticText("t1")),
-      font: { name: "MyLocalFont" },
+      font: { regular: "MyLocalFont" },
     });
     store.registerFont({
       name: "MyLocalFont",
@@ -438,8 +438,55 @@ describe("書き出しの実行", () => {
     expect(zipText).toContain("MyLocalFont.ttf");
   });
 
+  it("bold スロットが registered なら zip に2つのフォントファイルが入る", async () => {
+    const { store } = await mount({
+      ...docOf(staticText("t1")),
+      font: { regular: "MyLocalFont", bold: "MyLocalBold" },
+    });
+    store.registerFont({
+      name: "MyLocalFont",
+      displayName: "My Local Font",
+      data: syntheticTtf(),
+      ascentPerEm: 0.8,
+    });
+    store.registerFont({
+      name: "MyLocalBold",
+      displayName: "My Local Bold",
+      data: syntheticTtf(),
+      ascentPerEm: 0.8,
+    });
+    await selectReportlab();
+    click(buttonByText("書き出す"));
+    await vi.waitFor(() => {
+      expect(vi.mocked(triggerDownload)).toHaveBeenCalledOnce();
+    });
+    const blob = vi.mocked(triggerDownload).mock.calls.at(0)?.[2];
+    if (blob === undefined) throw new Error("ダウンロードされていない");
+    const zipBytes = new Uint8Array(await blob.arrayBuffer());
+    const zipText = new TextDecoder("latin1").decode(zipBytes);
+    expect(zipText).toContain("MyLocalFont.ttf");
+    expect(zipText).toContain("MyLocalBold.ttf");
+  });
+
+  it("bold スロットの missing はスロット名付きエラーになり、ダウンロードしない", async () => {
+    await mount({
+      ...docOf(staticText("t1")),
+      font: { regular: "NotoSansJP", bold: "GoneBold" },
+    });
+    await selectReportlab();
+    click(buttonByText("書き出す"));
+    await vi.waitFor(() => {
+      const error = container.querySelector(".apx-export-error");
+      expect(error).not.toBeNull();
+      expect(error?.textContent).toContain(
+        "太字フォント「GoneBold」の実データがありません",
+      );
+    });
+    expect(vi.mocked(triggerDownload)).not.toHaveBeenCalled();
+  });
+
   it("missing 解決ではダウンロードせず font-missing エラーを表示する", async () => {
-    await mount({ ...docOf(staticText("t1")), font: { name: "GoneFont" } });
+    await mount({ ...docOf(staticText("t1")), font: { regular: "GoneFont" } });
     await selectReportlab();
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
@@ -539,7 +586,7 @@ describe("フォント全体埋め込み切替", () => {
     expect(Object.keys(parsed).sort()).toEqual(["inputs", "template"]);
   });
 
-  it("チェックすると書き出した JSON に font: { name, subset: false } を含む", async () => {
+  it("チェックすると書き出した JSON に font: { names, subset: false } を含む", async () => {
     await mount(docOf(staticText("t1")));
     const checkbox = container.querySelector<HTMLInputElement>(
       'input[type="checkbox"]',
@@ -553,7 +600,7 @@ describe("フォント全体埋め込み切替", () => {
     const blob = vi.mocked(triggerDownload).mock.calls.at(0)?.[2];
     if (blob === undefined) throw new Error("ダウンロードされていない");
     const parsed = JSON.parse(await blob.text());
-    expect(parsed.font).toEqual({ name: "NotoSansJP", subset: false });
+    expect(parsed.font).toEqual({ names: ["NotoSansJP"], subset: false });
   });
 });
 

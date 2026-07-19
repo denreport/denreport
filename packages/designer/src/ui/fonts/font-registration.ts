@@ -7,7 +7,10 @@ import {
 import type { RegisteredFont } from "../../state/fonts";
 import { sanitizeFontName } from "../../state/fonts";
 
-export { EMBEDDED_FONT_NAME } from "@denreport/targets";
+export {
+  EMBEDDED_BOLD_FONT_NAME,
+  EMBEDDED_FONT_NAME,
+} from "@denreport/targets";
 export type { FontIssue };
 
 export type BuildRegisteredFontResult =

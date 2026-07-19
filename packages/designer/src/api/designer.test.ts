@@ -18,7 +18,7 @@ import { Designer } from "./designer";
 const VALID_IR = JSON.stringify({
   version: "1.0",
   page: { width: 210, height: 297 },
-  font: { name: "NotoSansJP" },
+  font: { regular: "NotoSansJP" },
   elements: [
     {
       type: "text",
@@ -35,7 +35,7 @@ const VALID_IR = JSON.stringify({
 const ROUND_TRIP_IR = JSON.stringify({
   version: "1.0",
   page: { width: 210, height: 297 },
-  font: { name: "NotoSansJP" },
+  font: { regular: "NotoSansJP" },
   elements: [
     {
       type: "text",
@@ -273,7 +273,10 @@ describe("IR の入出力", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.document.page).toEqual({ width: 210, height: 297 });
-      expect(result.document.font.name).toBe("NotoSansJP");
+      expect(result.document.font).toEqual({
+        regular: "NotoSansJP",
+        bold: "NotoSansJPBold",
+      });
       expect(result.document.elements).toEqual([]);
     }
   });

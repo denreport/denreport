@@ -1,9 +1,11 @@
-// IR の font.name 識別子パターン（core の IDENTIFIER_PATTERN・IDENTIFIER_MAX_LENGTH と同一）を
-// ここでも満たす必要があるが、この層は core にも依存しないため定数は複製する。
+import type { IrFont, IrFontSlot } from "@denreport/core";
+
+// IR の font 論理名の識別子パターン（core の IDENTIFIER_PATTERN・IDENTIFIER_MAX_LENGTH と同一）を
+// ここでも満たす必要があるが、定数は core から公開されていないため複製する。
 const IDENTIFIER_MAX_LENGTH = 64;
 
 export interface RegisteredFont {
-  /** IR 識別子（font.name との突き合わせキー。sanitizeFontName の出力） */
+  /** IR 識別子（font の論理名との突き合わせキー。sanitizeFontName の出力） */
   readonly name: string;
   /** UI 表示用の元の名前（FontData.fullName） */
   readonly displayName: string;
@@ -26,23 +28,45 @@ export function sanitizeFontName(raw: string): string {
 }
 
 export type FontResolution =
-  | { readonly kind: "embedded" }
+  | { readonly kind: "embedded"; readonly name: string }
   | { readonly kind: "registered"; readonly font: RegisteredFont }
   | { readonly kind: "missing"; readonly name: string };
 
-/** font.name → 実データの解決規則の唯一の定義点。優先順: レジストリ → 同梱名 → missing。
-    embeddedName は呼び出し側（ui 層）が EMBEDDED_FONT_NAME を渡す（state は targets 非依存のため） */
+/** 論理名 → 実データの解決規則の唯一の定義点。優先順: レジストリ → 同梱名 → missing。
+    embeddedNames は呼び出し側（ui 層）が EMBEDDED_*_FONT_NAME を渡す（state は targets 非依存のため） */
 export function resolveFont(
   name: string,
   registry: ReadonlyMap<string, RegisteredFont>,
-  embeddedName: string,
+  embeddedNames: ReadonlySet<string>,
 ): FontResolution {
   const font = registry.get(name);
   if (font !== undefined) {
     return { kind: "registered", font };
   }
-  if (name === embeddedName) {
-    return { kind: "embedded" };
+  if (embeddedNames.has(name)) {
+    return { kind: "embedded", name };
   }
   return { kind: "missing", name };
+}
+
+const FONT_SLOTS: readonly IrFontSlot[] = [
+  "regular",
+  "bold",
+  "italic",
+  "boldItalic",
+];
+
+/** 文書の宣言スロットを一括解決する（未宣言スロットはエントリなし） */
+export function resolveFontSet(
+  font: IrFont,
+  registry: ReadonlyMap<string, RegisteredFont>,
+  embeddedNames: ReadonlySet<string>,
+): ReadonlyMap<IrFontSlot, FontResolution> {
+  const resolutions = new Map<IrFontSlot, FontResolution>();
+  for (const slot of FONT_SLOTS) {
+    const name = font[slot];
+    if (name === undefined) continue;
+    resolutions.set(slot, resolveFont(name, registry, embeddedNames));
+  }
+  return resolutions;
 }

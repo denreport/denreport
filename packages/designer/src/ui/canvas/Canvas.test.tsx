@@ -32,7 +32,7 @@ function makeStore(): EditorStore {
   const document: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [textElement("a")],
   };
   const store = new EditorStore(document);
@@ -61,7 +61,7 @@ function makeTableStore(sampleData: string): EditorStore {
   const document: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [tableElement("tbl1")],
   };
   return new EditorStore(document, sampleData);

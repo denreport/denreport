@@ -149,7 +149,7 @@ function makeLayout(pageContext: PageContext = "first") {
   const document: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: ELEMENTS,
   };
   return layoutDocument(document, pageContext);
@@ -425,7 +425,7 @@ describe("段階的選択（resolveClickTarget）とダブルクリックの整�
     const document = {
       version: "1.0" as const,
       page: { width: 210, height: 297 },
-      font: { name: "NotoSansJP" },
+      font: { regular: "NotoSansJP" },
       elements: ELEMENTS,
     };
     const state: EditorState = {

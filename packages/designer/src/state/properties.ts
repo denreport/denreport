@@ -4,6 +4,7 @@ import type {
   IrElement,
   IrFlexChild,
   IrFlexDirection,
+  IrFontSlot,
   IrPage,
   IrTableCellOverride,
   IrTableElement,
@@ -242,10 +243,26 @@ export function setPage(document: IrDocument, page: IrPage): IrDocument {
     : { ...document, page };
 }
 
-export function setFontName(document: IrDocument, name: string): IrDocument {
-  return document.font.name === name
+export function setFontRegular(document: IrDocument, name: string): IrDocument {
+  return document.font.regular === name
     ? document
-    : { ...document, font: { name } };
+    : { ...document, font: { ...document.font, regular: name } };
+}
+
+/** regular 以外のスロットの論理名を設定する。undefined でスロット解除（属性除去） */
+export function setFontSlot(
+  document: IrDocument,
+  slot: Exclude<IrFontSlot, "regular">,
+  name: string | undefined,
+): IrDocument {
+  if (document.font[slot] === name) {
+    return document;
+  }
+  if (name === undefined) {
+    const { [slot]: _removed, ...rest } = document.font;
+    return { ...document, font: rest };
+  }
+  return { ...document, font: { ...document.font, [slot]: name } };
 }
 
 export function setDocType(document: IrDocument, enabled: boolean): IrDocument {

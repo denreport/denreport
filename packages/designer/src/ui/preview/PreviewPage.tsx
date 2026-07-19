@@ -1,20 +1,46 @@
 import type {
   CharWidthEm,
   IrAlign,
+  IrFont,
   IrPage,
   IrStrokeStyle,
   LoweredElement,
   LoweredTextElement,
 } from "@denreport/core";
-import { layoutTextLines, STROKE_DASH_MM } from "@denreport/core";
+import {
+  layoutTextLines,
+  resolveFontSlot,
+  STROKE_DASH_MM,
+} from "@denreport/core";
 import type { ReactNode } from "react";
 import { PT_TO_MM, textBaselinesMm } from "../../state/preview";
-import type { PreviewFont } from "./preview-font";
+import type { PreviewFont, PreviewFontSet } from "./preview-font";
 
 // フォント読込前・失敗時のシステムフォント代替描画に使う概算値。実測値は PreviewFont が与える
 const FALLBACK_ASCENT_PER_EM = 0.88;
 // 実測の字幅がないときは折り返しを起こさない（誤った位置で折り返すより従来どおりはみ出す方を選ぶ）
 const FALLBACK_CHAR_WIDTH_EM: CharWidthEm = () => 0;
+
+const FALLBACK_PREVIEW_FONT: PreviewFont = {
+  family: "",
+  ascentPerEm: FALLBACK_ASCENT_PER_EM,
+  charWidths: FALLBACK_CHAR_WIDTH_EM,
+};
+
+/** core の劣化規則をそのまま使うため、定義済みスロットだけを持つ擬似 IrFont に写して解決する */
+function previewFontFor(
+  fonts: PreviewFontSet,
+  el: LoweredTextElement,
+): PreviewFont {
+  const pseudoFont: IrFont = {
+    regular: "regular",
+    ...(fonts.bold !== undefined ? { bold: "bold" } : {}),
+    ...(fonts.italic !== undefined ? { italic: "italic" } : {}),
+    ...(fonts.boldItalic !== undefined ? { boldItalic: "boldItalic" } : {}),
+  };
+  const slot = resolveFontSlot(pseudoFont, el.fontWeight, el.fontStyle);
+  return fonts[slot] ?? fonts.regular;
+}
 
 const TEXT_ANCHORS: Readonly<Record<IrAlign, "start" | "middle" | "end">> = {
   left: "start",
@@ -115,14 +141,10 @@ function qrFinderSquares(box: {
   ));
 }
 
-function renderElement(
-  el: LoweredElement,
-  ascentPerEm: number,
-  charWidthEm: CharWidthEm,
-  family: string | undefined,
-): ReactNode {
+function renderElement(el: LoweredElement, fonts: PreviewFontSet): ReactNode {
   switch (el.type) {
     case "text": {
+      const font = previewFontFor(fonts, el);
       const x = anchorX(el);
       const laidOut = layoutTextLines(
         {
@@ -131,11 +153,11 @@ function renderElement(
           fontSize: el.fontSize,
           align: el.align,
         },
-        charWidthEm,
+        font.charWidths,
       );
       const baselines = textBaselinesMm(
         el,
-        ascentPerEm,
+        font.ascentPerEm,
         laidOut.map((line) => line.text),
       );
       return baselines.map((line, lineIndex) => (
@@ -146,10 +168,11 @@ function renderElement(
           y={line.baselineY}
           fontSize={el.fontSize * PT_TO_MM}
           textAnchor={TEXT_ANCHORS[el.align]}
-          fontFamily={family}
+          fontFamily={font.family === "" ? undefined : font.family}
           letterSpacing={
             (laidOut[lineIndex]?.charSpacePt ?? 0) * PT_TO_MM || undefined
           }
+          textDecoration={el.underline ? "underline" : undefined}
           fill={el.color}
         >
           {line.text}
@@ -242,11 +265,10 @@ function renderElement(
 export function PreviewPage(props: {
   readonly elements: readonly LoweredElement[];
   readonly page: IrPage;
-  readonly font: PreviewFont | null;
+  readonly fonts: PreviewFontSet | null;
 }): ReactNode {
-  const { elements, page, font } = props;
-  const ascentPerEm = font?.ascentPerEm ?? FALLBACK_ASCENT_PER_EM;
-  const charWidthEm = font?.charWidths ?? FALLBACK_CHAR_WIDTH_EM;
+  const { elements, page, fonts } = props;
+  const fontSet = fonts ?? { regular: FALLBACK_PREVIEW_FONT };
   return (
     <svg
       className="apx-preview-svg"
@@ -257,7 +279,7 @@ export function PreviewPage(props: {
       {elements.map((el, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: 展開結果は毎回全再導出され、配列位置が唯一の識別子
         <g key={index} transform={rotationTransform(el)}>
-          {renderElement(el, ascentPerEm, charWidthEm, font?.family)}
+          {renderElement(el, fontSet)}
         </g>
       ))}
     </svg>
