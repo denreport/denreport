@@ -895,6 +895,18 @@ describe("validateIr", () => {
       expectRule(errors, "M16", "elements[7].borderColor");
       expectRule(errors, "M16", "elements[3].stripeColor");
     });
+
+    it("rejects an invalid text color and pageNumber color", () => {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) => {
+        if (el.id === "t1") return { ...el, color: "blue" };
+        if (el.id === "pn1") return { ...el, color: "#abc" };
+        return el;
+      });
+      const errors = validateIr(withElements(doc, elements));
+      expectRule(errors, "M16", "elements[0].color");
+      expectRule(errors, "M16", "elements[6].color");
+    });
   });
 
   describe("M15", () => {

@@ -40,6 +40,7 @@ function textEl(
     fontSize: 10,
     align: "left",
     lineHeight: 1.25,
+    color: "#000000",
     ...overrides,
   };
 }
@@ -101,6 +102,13 @@ describe("PreviewPage", () => {
       6,
     );
     expect((texts[0] as Element).getAttribute("font-family")).toBe(FONT.family);
+  });
+
+  it("text の color が fill に写る", () => {
+    const el = textEl({ color: "#ff0000" });
+    render([el]);
+    const text = container.querySelector("text");
+    expect((text as Element).getAttribute("fill")).toBe("#ff0000");
   });
 
   it("align 4値が x と text-anchor に写像される", () => {

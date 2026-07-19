@@ -37,8 +37,9 @@ def _register_font():
     pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
     return FONT_NAME
 
-def _text(c, font, x, y, w, size, align, line_height, lines):
+def _text(c, font, x, y, w, size, align, line_height, color, lines):
     c.setFont(font, size)
+    c.setFillColorRGB(*color)
     for i, line in enumerate(lines):
         baseline = PAGE_HEIGHT - y * mm - (FONT_ASCENT_EM + (line_height - 1) / 2 + i * line_height) * size
         if align == "justify":
@@ -159,34 +160,34 @@ def _table_items(c, font, rows, chunk_index, row_offset, chunk_size):
     for q in range(chunk_size):
         _line(c, 15, y0 + 9 + q * 9, 140, y0 + 9 + q * 9, 0.25, (0, 0, 0), None)
     _line(c, 105, y0, 105, y0 + 9 + chunk_size * 9, 0.25, (0, 0, 0), None)
-    _text(c, font, 16.5, y0 + 1.8, 87, 10, "center", 1.25, ["品目"])
-    _text(c, font, 106.5, y0 + 1.8, 32, 10, "center", 1.25, ["金額(税抜)"])
+    _text(c, font, 16.5, y0 + 1.8, 87, 10, "center", 1.25, (0, 0, 0), ["品目"])
+    _text(c, font, 106.5, y0 + 1.8, 32, 10, "center", 1.25, (0, 0, 0), ["金額(税抜)"])
     for q in range(chunk_size):
         t = row_offset + q
         if t >= len(rows):
             continue
-        _text(c, font, 16.5, y0 + 9 + q * 9 + 2, 87, 10, "left", 1.25, _wrap(font, 10, 87, rows[t]["name"]))
-        _text(c, font, 106.5, y0 + 9 + q * 9 + 2, 32, 10, "right", 1.25, _wrap(font, 10, 32, rows[t]["amount"]))
+        _text(c, font, 16.5, y0 + 9 + q * 9 + 2, 87, 10, "left", 1.25, (0, 0, 0), _wrap(font, 10, 87, rows[t]["name"]))
+        _text(c, font, 106.5, y0 + 9 + q * 9 + 2, 32, 10, "right", 1.25, (0, 0, 0), _wrap(font, 10, 32, rows[t]["amount"]))
 
 def _draw_page(c, font, data, page, page_count, tables):
     if page == 1:
-        _text(c, font, 0, 18, 210, 22, "center", 1.25, _wrap(font, 22, 210, _interpolate(data, "{title}")))
+        _text(c, font, 0, 18, 210, 22, "center", 1.25, (0, 0, 0), _wrap(font, 22, 210, _interpolate(data, "{title}")))
     if page == 1:
         _image(c, 15, 15, 20, 20, "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
     if page == 1:
-        _text(c, font, 130, 41.25, 60, 11, "left", 1.25, ["株式会社サンプル"])
+        _text(c, font, 130, 41.25, 60, 11, "left", 1.25, (0, 0, 0), ["株式会社サンプル"])
     if page == 1:
-        _text(c, font, 130, 48.75, 60, 9, "left", 1.25, _wrap(font, 9, 60, _interpolate(data, "{issuerAddr}")))
+        _text(c, font, 130, 48.75, 60, 9, "left", 1.25, (0, 0, 0), _wrap(font, 9, 60, _interpolate(data, "{issuerAddr}")))
     if page == 1:
         _line(c, 15, 49, 105, 49, 0.4, (0, 0, 0), None)
     rows, chunks = tables["items"]
     if page <= len(chunks):
         _table_items(c, font, rows, page - 1, sum(chunks[:page - 1]), chunks[page - 1])
     if page == page_count:
-        _text(c, font, 110, 250, 40, 12, "left", 1.25, ["合計(税込)"])
+        _text(c, font, 110, 250, 40, 12, "left", 1.25, (0, 0, 0), ["合計(税込)"])
     if page == page_count:
         _rect(c, 108, 247, 89, 12, 0.5, (0, 0, 0), None, None, 0)
-    _text(c, font, 0, 285, 210, 9, "center", 1.25, _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))
+    _text(c, font, 0, 285, 210, 9, "center", 1.25, (0, 0, 0), _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))
 
 def build(output_path, data=None):
     data = {} if data is None else data

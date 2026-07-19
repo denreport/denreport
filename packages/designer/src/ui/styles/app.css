@@ -739,6 +739,7 @@
 .apx-el-text,
 .apx-el-pageNumber {
   font-size: calc(var(--fs, 10) * var(--pt));
+  color: var(--tc, var(--paper-text));
   white-space: pre-wrap;
   overflow: hidden;
 }

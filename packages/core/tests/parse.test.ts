@@ -1349,6 +1349,56 @@ describe("parseIr", () => {
       });
     });
 
+    it("does not add a color attribute to text/pageNumber when omitted, and preserves it when present", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "text",
+          id: "t1",
+          x: 0,
+          y: 0,
+          w: 40,
+          h: 8,
+          text: "無色",
+        },
+        {
+          type: "text",
+          id: "t2",
+          x: 0,
+          y: 0,
+          w: 40,
+          h: 8,
+          text: "赤",
+          color: "#ff0000",
+        },
+        {
+          type: "pageNumber",
+          id: "p1",
+          x: 0,
+          y: 0,
+          w: 40,
+          h: 8,
+        },
+        {
+          type: "pageNumber",
+          id: "p2",
+          x: 0,
+          y: 0,
+          w: 40,
+          h: 8,
+          color: "#00ff00",
+        },
+      ];
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const [t1, t2, p1, p2] = result.document.elements;
+      expect(t1).not.toHaveProperty("color");
+      expect(t2).toMatchObject({ color: "#ff0000" });
+      expect(p1).not.toHaveProperty("color");
+      expect(p2).toMatchObject({ color: "#00ff00" });
+    });
+
     it("does not add a stripeColor attribute when omitted, and preserves it when present", () => {
       const doc = baseDoc();
       doc.elements = [

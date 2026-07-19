@@ -85,6 +85,7 @@ export type IrTextElement = IrElementCommon &
     readonly fontSize: number;
     readonly align: IrAlign;
     readonly lineHeight: number;
+    readonly color?: string;
     readonly style?: string;
   };
 
@@ -200,6 +201,7 @@ export interface IrPageNumberElement extends IrElementCommon, IrPositioned {
   readonly fontSize: number;
   readonly align: IrAlign;
   readonly lineHeight: number;
+  readonly color?: string;
   readonly style?: string;
 }
 

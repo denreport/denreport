@@ -27,8 +27,9 @@ export const REGISTER_FONT_FN = [
 ].join("\n");
 
 export const TEXT_FN = [
-  "def _text(c, font, x, y, w, size, align, line_height, lines):",
+  "def _text(c, font, x, y, w, size, align, line_height, color, lines):",
   "    c.setFont(font, size)",
+  "    c.setFillColorRGB(*color)",
   "    for i, line in enumerate(lines):",
   "        baseline = PAGE_HEIGHT - y * mm - (FONT_ASCENT_EM + (line_height - 1) / 2 + i * line_height) * size",
   '        if align == "justify":',
@@ -154,7 +155,7 @@ export function statementFor(
   switch (element.type) {
     case "text": {
       const lines = layoutLines(element).map(pyString).join(", ");
-      return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, [${lines}])`;
+      return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${pyRgb(element.color)}, [${lines}])`;
     }
     case "line": {
       const [x2, y2] =

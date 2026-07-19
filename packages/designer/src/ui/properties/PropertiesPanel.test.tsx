@@ -770,6 +770,25 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     tbl1 = elementById(store, "tbl1");
     expect("stripeColor" in tbl1).toBe(false);
   });
+
+  it("text / pageNumber の文字色の commit と、既定値への復帰による属性除去", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+
+    select(store, ["t1"]);
+    setValue(inputByLabel("文字色"), "#ff0000");
+    expect(elementById(store, "t1")).toMatchObject({ color: "#ff0000" });
+    setValue(inputByLabel("文字色"), "#000000");
+    const t1 = elementById(store, "t1");
+    expect("color" in t1 && t1.color !== undefined).toBe(false);
+
+    select(store, ["p1"]);
+    setValue(inputByLabel("文字色"), "#00ff00");
+    expect(elementById(store, "p1")).toMatchObject({ color: "#00ff00" });
+    setValue(inputByLabel("文字色"), "#000000");
+    const p1 = elementById(store, "p1");
+    expect("color" in p1 && p1.color !== undefined).toBe(false);
+  });
 });
 
 describe("maxY ガイド線の表示条件", () => {

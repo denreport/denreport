@@ -3,6 +3,7 @@ import type {
   IrLineElement,
   IrRectElement,
   IrStrokeStyle,
+  IrTextElement,
 } from "./types";
 
 /**
@@ -79,5 +80,19 @@ export function resolveEllipseStyle(
     fillColor: el.fillColor ?? null,
     borderStyle: DEFAULT_STROKE_STYLE,
     cornerRadius: 0,
+  };
+}
+
+/** A text or pageNumber element's color with IR's optional field resolved to a concrete default. */
+export interface ResolvedTextStyle {
+  readonly color: string;
+}
+
+/** Resolves a text or pageNumber element's optional `color` to a concrete default (black). */
+export function resolveTextStyle(
+  el: Pick<IrTextElement, "color">,
+): ResolvedTextStyle {
+  return {
+    color: el.color ?? DEFAULT_COLOR,
   };
 }

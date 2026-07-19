@@ -202,3 +202,58 @@ describe("PaperElement — line の色・線種", () => {
     expect(el().style.getPropertyValue("--ls")).toBe("dashed");
   });
 });
+
+describe("PaperElement — text / pageNumber の文字色", () => {
+  it("color の指定なしでは --tc を出さない", () => {
+    renderEl({
+      type: "text",
+      id: "t1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      text: "本文",
+      fontSize: 10,
+      align: "left",
+      lineHeight: 1.25,
+    });
+    expect(el().style.getPropertyValue("--tc")).toBe("");
+  });
+
+  it("text の color が --tc に写る", () => {
+    renderEl({
+      type: "text",
+      id: "t1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      text: "本文",
+      fontSize: 10,
+      align: "left",
+      lineHeight: 1.25,
+      color: "#ff0000",
+    });
+    expect(el().style.getPropertyValue("--tc")).toBe("#ff0000");
+  });
+
+  it("pageNumber の color が --tc に写る", () => {
+    renderEl({
+      type: "pageNumber",
+      id: "p1",
+      x: 0,
+      y: 0,
+      pages: "all",
+      w: 40,
+      h: 20,
+      format: "{n} / {N}",
+      fontSize: 10,
+      align: "left",
+      lineHeight: 1.25,
+      color: "#112233",
+    });
+    expect(el().style.getPropertyValue("--tc")).toBe("#112233");
+  });
+});

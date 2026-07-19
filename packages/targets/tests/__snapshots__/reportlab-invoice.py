@@ -33,8 +33,9 @@ def _register_font():
     pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
     return FONT_NAME
 
-def _text(c, font, x, y, w, size, align, line_height, lines):
+def _text(c, font, x, y, w, size, align, line_height, color, lines):
     c.setFont(font, size)
+    c.setFillColorRGB(*color)
     for i, line in enumerate(lines):
         baseline = PAGE_HEIGHT - y * mm - (FONT_ASCENT_EM + (line_height - 1) / 2 + i * line_height) * size
         if align == "justify":
@@ -83,25 +84,25 @@ def _image(c, x, y, w, h, data):
     c.drawImage(image, x * mm, PAGE_HEIGHT - (y + h) * mm, w * mm, h * mm)
 
 def _page_1(c, font):
-    _text(c, font, 0, 18, 210, 22, "center", 1.25, ["請求書"])
+    _text(c, font, 0, 18, 210, 22, "center", 1.25, (0, 0, 0), ["請求書"])
     _image(c, 15, 15, 20, 20, "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
-    _text(c, font, 130, 41.25, 60, 11, "left", 1.25, ["株式会社サンプル"])
-    _text(c, font, 130, 48.75, 60, 9, "left", 1.25, ["東京都千代田区1-1-1"])
+    _text(c, font, 130, 41.25, 60, 11, "left", 1.25, (0, 0, 0), ["株式会社サンプル"])
+    _text(c, font, 130, 48.75, 60, 9, "left", 1.25, (0, 0, 0), ["東京都千代田区1-1-1"])
     _line(c, 15, 49, 105, 49, 0.4, (0, 0, 0), None)
     _rect(c, 15, 90, 125, 36, 0.4, (0, 0, 0), None, None, 0)
     _line(c, 15, 99, 140, 99, 0.25, (0, 0, 0), None)
     _line(c, 15, 108, 140, 108, 0.25, (0, 0, 0), None)
     _line(c, 15, 117, 140, 117, 0.25, (0, 0, 0), None)
     _line(c, 105, 90, 105, 126, 0.25, (0, 0, 0), None)
-    _text(c, font, 16.5, 91.8, 87, 10, "center", 1.25, ["品目"])
-    _text(c, font, 106.5, 91.8, 32, 10, "center", 1.25, ["金額(税抜)"])
-    _text(c, font, 16.5, 101, 87, 10, "left", 1.25, ["商品A"])
-    _text(c, font, 106.5, 101, 32, 10, "right", 1.25, ["10,000"])
-    _text(c, font, 16.5, 110, 87, 10, "left", 1.25, ["商品B"])
-    _text(c, font, 106.5, 110, 32, 10, "right", 1.25, ["20,000"])
-    _text(c, font, 110, 270, 40, 12, "left", 1.25, ["合計(税込)"])
+    _text(c, font, 16.5, 91.8, 87, 10, "center", 1.25, (0, 0, 0), ["品目"])
+    _text(c, font, 106.5, 91.8, 32, 10, "center", 1.25, (0, 0, 0), ["金額(税抜)"])
+    _text(c, font, 16.5, 101, 87, 10, "left", 1.25, (0, 0, 0), ["商品A"])
+    _text(c, font, 106.5, 101, 32, 10, "right", 1.25, (0, 0, 0), ["10,000"])
+    _text(c, font, 16.5, 110, 87, 10, "left", 1.25, (0, 0, 0), ["商品B"])
+    _text(c, font, 106.5, 110, 32, 10, "right", 1.25, (0, 0, 0), ["20,000"])
+    _text(c, font, 110, 270, 40, 12, "left", 1.25, (0, 0, 0), ["合計(税込)"])
     _rect(c, 108, 267, 89, 12, 0.5, (0, 0, 0), None, None, 0)
-    _text(c, font, 0, 285, 210, 9, "center", 1.25, ["1 / 1"])
+    _text(c, font, 0, 285, 210, 9, "center", 1.25, (0, 0, 0), ["1 / 1"])
 
 def build(output_path):
     font = _register_font()

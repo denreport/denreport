@@ -97,10 +97,10 @@ describe("exportReportlabTemplate — static document", () => {
     if (!dataResult.ok || !templateResult.ok)
       throw new Error("expected success");
     expect(templateResult.code).toContain(
-      '_text(c, font, 5, 5, 50, 10, "left", 1.2, ["静的"])',
+      '_text(c, font, 5, 5, 50, 10, "left", 1.2, (0, 0, 0), ["静的"])',
     );
     expect(dataResult.code).toContain(
-      '_text(c, font, 5, 5, 50, 10, "left", 1.2, ["静的"])',
+      '_text(c, font, 5, 5, 50, 10, "left", 1.2, (0, 0, 0), ["静的"])',
     );
     expect(templateResult.code).toContain(
       "_rect(c, 0, 20, 10, 10, 0.3, (0, 0, 0), None, None, 0)",
@@ -200,7 +200,7 @@ describe("exportReportlabTemplate — bound document", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 100, 12, "left", 1.2, _wrap(font, 12, 100, _interpolate(data, "{title}")))',
+      '_text(c, font, 0, 0, 100, 12, "left", 1.2, (0, 0, 0), _wrap(font, 12, 100, _interpolate(data, "{title}")))',
     );
   });
 
@@ -247,7 +247,7 @@ describe("exportReportlabTemplate — bound document", () => {
     expect(result.code).toContain("if page >= 2:");
     // "all" (title のトークン) は無条件 — ガードなしで直接呼ばれる
     expect(result.code).toContain(
-      '    _text(c, font, 0, 0, 100, 12, "left", 1.2, _wrap(font, 12, 100, _interpolate(data, "{title}")))',
+      '    _text(c, font, 0, 0, 100, 12, "left", 1.2, (0, 0, 0), _wrap(font, 12, 100, _interpolate(data, "{title}")))',
     );
   });
 });
@@ -417,7 +417,7 @@ describe("exportReportlabTemplate — static text with {key} tokens", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 100, 12, "left", 1.2, _wrap(font, 12, 100, _interpolate(data, "合計: {total} 円")))',
+      '_text(c, font, 0, 0, 100, 12, "left", 1.2, (0, 0, 0), _wrap(font, 12, 100, _interpolate(data, "合計: {total} 円")))',
     );
     expect(result.code).not.toContain('["合計: {total} 円"]');
   });
@@ -500,7 +500,66 @@ describe("exportReportlabTemplate — _wrap inclusion", () => {
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain("def _wrap(font, size, w, text):");
     expect(result.code).toContain(
-      '_text(c, font, 0, 285, 210, 9, "center", 1.25, _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))',
+      '_text(c, font, 0, 285, 210, 9, "center", 1.25, (0, 0, 0), _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))',
+    );
+  });
+
+  it("maps explicit text and pageNumber color through, including the {key} token branch", () => {
+    const doc = docOf(
+      {
+        type: "text",
+        id: "static",
+        x: 0,
+        y: 0,
+        pages: "all",
+        w: 50,
+        h: 10,
+        text: "赤字",
+        fontSize: 10,
+        align: "left",
+        lineHeight: 1.25,
+        color: "#ff0000",
+      },
+      {
+        type: "text",
+        id: "token",
+        x: 0,
+        y: 10,
+        pages: "all",
+        w: 50,
+        h: 10,
+        text: "{note}",
+        fontSize: 10,
+        align: "left",
+        lineHeight: 1.25,
+        color: "#00ff00",
+      },
+      {
+        type: "pageNumber",
+        id: "p1",
+        x: 0,
+        y: 285,
+        pages: "all",
+        w: 210,
+        h: 6,
+        format: "{n} / {N}",
+        fontSize: 9,
+        align: "center",
+        lineHeight: 1.25,
+        color: "#0000ff",
+      },
+    );
+    const result = exportReportlabTemplate(doc, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      '_text(c, font, 0, 0, 50, 10, "left", 1.25, (1, 0, 0), ["赤字"])',
+    );
+    expect(result.code).toContain(
+      '_text(c, font, 0, 10, 50, 10, "left", 1.25, (0, 1, 0), _wrap(font, 10, 50, _interpolate(data, "{note}")))',
+    );
+    expect(result.code).toContain(
+      '_text(c, font, 0, 285, 210, 9, "center", 1.25, (0, 0, 1), _wrap(font, 9, 210, _page_label("{n} / {N}", page, page_count)))',
     );
   });
 
@@ -689,7 +748,7 @@ describe("exportReportlabTemplate — footnotes", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 100, 12, "left", 1.2, ["税抜*1価格"])',
+      '_text(c, font, 0, 0, 100, 12, "left", 1.2, (0, 0, 0), ["税抜*1価格"])',
     );
     expect(result.code).toContain("*1 本体価格は税抜表示です");
     expect(result.code).not.toContain("{#");
@@ -728,7 +787,7 @@ describe("exportReportlabTemplate — footnotes", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toMatch(
-      /if page == page_count:\n {8}_text\(c, font, 15, [-\d.]+, 180, 8, "left", 1\.25, \["\*1 本文"\]\)/,
+      /if page == page_count:\n {8}_text\(c, font, 15, [-\d.]+, 180, 8, "left", 1\.25, \(0, 0, 0\), \["\*1 本文"\]\)/,
     );
   });
 });

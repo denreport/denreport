@@ -66,6 +66,7 @@ const textEl: LoweredTextElement = {
   fontSize: 10,
   align: "left",
   lineHeight: 1.25,
+  color: "#000000",
 };
 
 describe("expandStrokes — pass-through", () => {

@@ -17,6 +17,7 @@ import {
   resolveEllipseStyle,
   resolveLineStyle,
   resolveRectStyle,
+  resolveTextStyle,
 } from "./style";
 import type {
   IrAlign,
@@ -49,6 +50,7 @@ export interface LoweredTextElement {
   readonly fontSize: number;
   readonly align: IrAlign;
   readonly lineHeight: number;
+  readonly color: string;
 }
 
 /**
@@ -350,6 +352,7 @@ function lowerTableChunk(
       fontSize: table.fontSize,
       align: "center",
       lineHeight: 1.25,
+      color: TABLE_LINE_COLOR,
     });
   });
   for (let q = 0; q < chunkSize; q++) {
@@ -372,6 +375,7 @@ function lowerTableChunk(
         fontSize: table.fontSize,
         align: column.align,
         lineHeight: 1.25,
+        color: TABLE_LINE_COLOR,
       });
     });
   }
@@ -464,7 +468,8 @@ export function lowerIr(document: IrDocument, data: IrData): LowerIrResult {
         });
         break;
       }
-      case "pageNumber":
+      case "pageNumber": {
+        const style = resolveTextStyle(element);
         for (const p of pagesFor(element.pages, pageCount)) {
           pages[p - 1]?.push({
             type: "text",
@@ -477,9 +482,11 @@ export function lowerIr(document: IrDocument, data: IrData): LowerIrResult {
             fontSize: element.fontSize,
             align: element.align,
             lineHeight: element.lineHeight,
+            color: style.color,
           });
         }
         break;
+      }
       case "text":
       case "line":
       case "rect":
@@ -512,7 +519,8 @@ function lowerPlacedElement(
   data: IrData,
 ): LoweredElement {
   switch (element.type) {
-    case "text":
+    case "text": {
+      const style = resolveTextStyle(element);
       return {
         type: "text",
         sourceId: element.id,
@@ -524,7 +532,9 @@ function lowerPlacedElement(
         fontSize: element.fontSize,
         align: element.align,
         lineHeight: element.lineHeight,
+        color: style.color,
       };
+    }
     case "line": {
       const style = resolveLineStyle(element);
       return {

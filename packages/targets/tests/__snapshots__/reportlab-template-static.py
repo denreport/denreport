@@ -33,8 +33,9 @@ def _register_font():
     pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
     return FONT_NAME
 
-def _text(c, font, x, y, w, size, align, line_height, lines):
+def _text(c, font, x, y, w, size, align, line_height, color, lines):
     c.setFont(font, size)
+    c.setFillColorRGB(*color)
     for i, line in enumerate(lines):
         baseline = PAGE_HEIGHT - y * mm - (FONT_ASCENT_EM + (line_height - 1) / 2 + i * line_height) * size
         if align == "justify":
@@ -63,7 +64,7 @@ def _line(c, x1, y1, x2, y2, thickness, color, dash):
     c.restoreState()
 
 def _draw_page(c, font, data, page, page_count):
-    _text(c, font, 0, 18, 210, 22, "center", 1.25, ["見本"])
+    _text(c, font, 0, 18, 210, 22, "center", 1.25, (0, 0, 0), ["見本"])
     _line(c, 15, 32, 195, 32, 0.4, (0, 0, 0), None)
 
 def build(output_path, data=None):

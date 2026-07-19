@@ -915,6 +915,46 @@ describe("lowerIr — pageNumber", () => {
   });
 });
 
+describe("lowerIr — text/pageNumber color", () => {
+  it("defaults text and pageNumber color to black", () => {
+    const doc = docOf(staticText(), pageNumber());
+    const result = lowerIr(doc, {});
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const [text, pn] = result.document.pages[0] ?? [];
+    expect(text).toMatchObject({ color: "#000000" });
+    expect(pn).toMatchObject({ color: "#000000" });
+  });
+
+  it("resolves explicit text and pageNumber color", () => {
+    const doc = docOf(
+      staticText({ color: "#ff0000" }),
+      pageNumber({ color: "#00ff00" }),
+    );
+    const result = lowerIr(doc, {});
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const [text, pn] = result.document.pages[0] ?? [];
+    expect(text).toMatchObject({ color: "#ff0000" });
+    expect(pn).toMatchObject({ color: "#00ff00" });
+  });
+
+  it("keeps table header/cell text black regardless of surrounding elements", () => {
+    const doc = docOf(table({ maxY: 100 }));
+    const result = lowerIr(doc, { items: rowsOf(1) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const texts = (result.document.pages[0] ?? []).filter(
+      (el): el is Extract<LoweredElement, { type: "text" }> =>
+        el.type === "text",
+    );
+    expect(texts.length).toBeGreaterThan(0);
+    for (const text of texts) {
+      expect(text.color).toBe("#000000");
+    }
+  });
+});
+
 describe("lowerIr — invariants", () => {
   it("keeps pageCount consistent with pages.length", () => {
     const doc = docOf(staticText());

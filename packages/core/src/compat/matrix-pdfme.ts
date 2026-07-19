@@ -9,6 +9,9 @@ export const pdfmeCompatMatrix = {
         level: "approximated",
         note: "折り返し・行頭禁則・均等割付はコンパイラ計算で両ターゲット一致。縦方向のはみ出し時の挙動のみ IR が規定せず、pdfme の描画に従う",
       },
+      attributes: {
+        color: { level: "supported" },
+      },
     },
     line: {
       element: { level: "supported" },
@@ -66,6 +69,9 @@ export const pdfmeCompatMatrix = {
       element: {
         level: "approximated",
         note: "確定文字列に展開されるため対応。文字列の描画（折り返し・行頭禁則・均等割付は対応、縦方向のはみ出しのみ近似）は text と同じ扱い",
+      },
+      attributes: {
+        color: { level: "supported" },
       },
     },
     barcode: {

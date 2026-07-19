@@ -826,6 +826,10 @@ function checkM16(walked: readonly WalkedElement[]): IrError[] {
   const errors: IrError[] = [];
   for (const { path, element } of walked) {
     switch (element.type) {
+      case "text":
+      case "pageNumber":
+        checkColorField(errors, path, "color", element.color);
+        break;
       case "line":
         checkColorField(errors, path, "color", element.color);
         break;

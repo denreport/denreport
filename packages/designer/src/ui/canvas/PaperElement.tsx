@@ -90,6 +90,7 @@ export function PaperElement(props: {
     case "pageNumber":
       vars["--fs"] = el.fontSize;
       lineHeight = el.lineHeight;
+      if (el.color !== undefined) vars["--tc"] = el.color;
       break;
     case "line":
       vars["--t"] = el.thickness;

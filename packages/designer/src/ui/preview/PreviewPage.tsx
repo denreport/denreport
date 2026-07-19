@@ -138,7 +138,7 @@ function renderElement(
           letterSpacing={
             (laidOut[lineIndex]?.charSpacePt ?? 0) * PT_TO_MM || undefined
           }
-          fill="currentColor"
+          fill={el.color}
         >
           {line.text}
         </text>

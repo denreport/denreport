@@ -2,8 +2,8 @@ import type { ReactNode } from "react";
 import { errorMessageFor } from "../../state/error-index";
 import { ALIGN_OPTIONS } from "./align-options";
 import type { ElementFormProps } from "./ElementProperties";
-import { commitReplace } from "./ElementProperties";
-import { NumberField, SegmentField, TextField } from "./fields";
+import { commitReplace, withOptionalAttr } from "./ElementProperties";
+import { ColorField, NumberField, SegmentField, TextField } from "./fields";
 
 export function PageNumberProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;
@@ -89,6 +89,21 @@ export function PageNumberProperties(props: ElementFormProps): ReactNode {
           error={errorMessageFor(errors, "lineHeight")}
           onCommit={(lineHeight) =>
             commitReplace(store, el.id, { ...el, lineHeight })
+          }
+        />
+        <ColorField
+          label="文字色"
+          value={el.color ?? null}
+          onCommit={(color) =>
+            commitReplace(
+              store,
+              el.id,
+              withOptionalAttr(
+                el,
+                "color",
+                color === null || color === "#000000" ? undefined : color,
+              ),
+            )
           }
         />
       </section>

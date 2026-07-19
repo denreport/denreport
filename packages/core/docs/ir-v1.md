@@ -106,6 +106,7 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 | `fontSize` | number | 任意 | `10` | pt。mm ではない点に注意（2節） |
 | `align` | `"left" \| "center" \| "right" \| "justify"` | 任意 | `"left"` | 水平揃え。`"justify"` は均等割付（2.2節） |
 | `lineHeight` | number | 任意 | `1.25` | 行送り倍率 |
+| `color` | string | 任意 | `"#000000"` | 文字色（`#rrggbb`） |
 | `style` | string | 任意 | — | 名前付きスタイル（3.9節）への参照 |
 
 折り返し・行頭禁則は2.1節、均等割付は2.2節の規範に従う。領域からの縦方向のはみ出し時の
@@ -222,6 +223,7 @@ grow / stretch / wrap / padding / space-between 等の均等配置は非対応�
 | `fontSize` | number | 任意 | `10` | pt |
 | `align` | `"left" \| "center" \| "right" \| "justify"` | 任意 | `"left"` | 水平揃え。`"justify"` は均等割付（2.2節） |
 | `lineHeight` | number | 任意 | `1.25` | 行送り倍率 |
+| `color` | string | 任意 | `"#000000"` | 文字色（`#rrggbb`） |
 | `style` | string | 任意 | — | 名前付きスタイル（3.9節）への参照 |
 
 `pages` のデフォルトが `"all"` である点だけ他要素と異なる。全ページフッタは
@@ -631,6 +633,7 @@ export interface IrPageNumberElement {
   readonly w: number; readonly h: number;
   readonly format: string;
   readonly fontSize: number; readonly align: IrAlign; readonly lineHeight: number;
+  readonly color?: string;
 }
 export interface IrFootnoteNote { readonly id: string; readonly text: string }
 export interface IrFootnotes {

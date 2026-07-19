@@ -28,6 +28,7 @@ export interface PdfmeTextSchema extends PdfmeSchemaBase {
   readonly type: "text";
   readonly fontSize: number;
   readonly fontName: string;
+  readonly fontColor: string;
   readonly alignment: "left" | "center" | "right";
   readonly verticalAlignment: "top";
   readonly lineHeight: number;

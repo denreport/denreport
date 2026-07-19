@@ -3,6 +3,7 @@ import {
   resolveEllipseStyle,
   resolveLineStyle,
   resolveRectStyle,
+  resolveTextStyle,
   STROKE_DASH_MM,
 } from "../src/ir/style";
 
@@ -66,6 +67,18 @@ describe("resolveEllipseStyle", () => {
       fillColor: "#dddddd",
       borderStyle: "solid",
       cornerRadius: 0,
+    });
+  });
+});
+
+describe("resolveTextStyle", () => {
+  it("defaults to black when color is absent", () => {
+    expect(resolveTextStyle({})).toEqual({ color: "#000000" });
+  });
+
+  it("passes an explicit color through unchanged", () => {
+    expect(resolveTextStyle({ color: "#ff00aa" })).toEqual({
+      color: "#ff00aa",
     });
   });
 });

@@ -39,11 +39,16 @@ export type {
 export { lowerIr } from "./ir/lower";
 export type { ParseIrResult } from "./ir/parse";
 export { parseIr } from "./ir/parse";
-export type { ResolvedShapeStyle, ResolvedStroke } from "./ir/style";
+export type {
+  ResolvedShapeStyle,
+  ResolvedStroke,
+  ResolvedTextStyle,
+} from "./ir/style";
 export {
   resolveEllipseStyle,
   resolveLineStyle,
   resolveRectStyle,
+  resolveTextStyle,
   STROKE_DASH_MM,
 } from "./ir/style";
 export { applicableStyleAttrs, STYLEABLE_ATTRS } from "./ir/styles";

@@ -21,6 +21,7 @@ import {
   resolveFootnotes,
   resolveLineStyle,
   resolveRectStyle,
+  resolveTextStyle,
   TABLE_CELL_PADDING_X,
   TABLE_CELL_TEXT_OFFSET_Y,
   TABLE_FRAME_WIDTH,
@@ -232,7 +233,7 @@ function buildTableFunction(
       .map(pyString)
       .join(", ");
     lines.push(
-      `    _text(c, font, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(TABLE_HEADER_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.fontSize)}, "center", 1.25, [${headerLines}])`,
+      `    _text(c, font, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(TABLE_HEADER_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.fontSize)}, "center", 1.25, ${TABLE_BLACK_RGB}, [${headerLines}])`,
     );
   });
   lines.push(
@@ -247,7 +248,7 @@ function buildTableFunction(
       : `rows[t][${pyString(column.key)}]`;
     const cellWidth = column.width - 2 * TABLE_CELL_PADDING_X;
     lines.push(
-      `        _text(c, font, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)} + ${pyNumber(TABLE_CELL_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.fontSize)}, ${pyString(column.align)}, 1.25, _wrap(font, ${pyNumber(table.fontSize)}, ${pyNumber(cellWidth)}, ${cellAccess}))`,
+      `        _text(c, font, ${pyNumber(xOf(table, i) + TABLE_CELL_PADDING_X)}, y0 + ${pyNumber(table.headerHeight)} + q * ${pyNumber(table.rowHeight)} + ${pyNumber(TABLE_CELL_TEXT_OFFSET_Y)}, ${pyNumber(cellWidth)}, ${pyNumber(table.fontSize)}, ${pyString(column.align)}, 1.25, ${TABLE_BLACK_RGB}, _wrap(font, ${pyNumber(table.fontSize)}, ${pyNumber(cellWidth)}, ${cellAccess}))`,
     );
   });
   return lines.join("\n");
@@ -278,6 +279,7 @@ function staticTextStatement(
   layoutLines: (el: LoweredTextElement) => readonly string[],
 ): string {
   const text = element.text;
+  const color = resolveTextStyle(element).color;
   if (textTemplateKeys(text).length === 0) {
     return statementFor(
       {
@@ -291,15 +293,17 @@ function staticTextStatement(
         fontSize: element.fontSize,
         align: element.align,
         lineHeight: element.lineHeight,
+        color,
       },
       layoutLines,
     );
   }
-  return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, _wrap(font, ${pyNumber(element.fontSize)}, ${pyNumber(element.w)}, _interpolate(data, ${pyString(text)})))`;
+  return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${pyRgb(color)}, _wrap(font, ${pyNumber(element.fontSize)}, ${pyNumber(element.w)}, _interpolate(data, ${pyString(text)})))`;
 }
 
 function pageNumberStatement(element: IrPageNumberElement): string {
-  return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, _wrap(font, ${pyNumber(element.fontSize)}, ${pyNumber(element.w)}, _page_label(${pyString(element.format)}, page, page_count)))`;
+  const color = pyRgb(resolveTextStyle(element).color);
+  return `_text(c, font, ${pyNumber(element.x)}, ${pyNumber(element.y)}, ${pyNumber(element.w)}, ${pyNumber(element.fontSize)}, ${pyString(element.align)}, ${pyNumber(element.lineHeight)}, ${color}, _wrap(font, ${pyNumber(element.fontSize)}, ${pyNumber(element.w)}, _page_label(${pyString(element.format)}, page, page_count)))`;
 }
 
 function barcodeStatement(

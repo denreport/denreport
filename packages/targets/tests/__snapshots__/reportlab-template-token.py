@@ -34,8 +34,9 @@ def _register_font():
     pdfmetrics.registerFont(TTFont(FONT_NAME, font_path))
     return FONT_NAME
 
-def _text(c, font, x, y, w, size, align, line_height, lines):
+def _text(c, font, x, y, w, size, align, line_height, color, lines):
     c.setFont(font, size)
+    c.setFillColorRGB(*color)
     for i, line in enumerate(lines):
         baseline = PAGE_HEIGHT - y * mm - (FONT_ASCENT_EM + (line_height - 1) / 2 + i * line_height) * size
         if align == "justify":
@@ -87,9 +88,9 @@ def _wrap(font, size, w, text):
 
 def _draw_page(c, font, data, page, page_count):
     if page == 1:
-        _text(c, font, 0, 0, 100, 12, "left", 1.2, _wrap(font, 12, 100, _interpolate(data, "{customerName}")))
+        _text(c, font, 0, 0, 100, 12, "left", 1.2, (0, 0, 0), _wrap(font, 12, 100, _interpolate(data, "{customerName}")))
     if page == 1:
-        _text(c, font, 0, 10, 100, 12, "left", 1.2, _wrap(font, 12, 100, _interpolate(data, "合計: {total} 円")))
+        _text(c, font, 0, 10, 100, 12, "left", 1.2, (0, 0, 0), _wrap(font, 12, 100, _interpolate(data, "合計: {total} 円")))
 
 def build(output_path, data=None):
     data = {} if data is None else data

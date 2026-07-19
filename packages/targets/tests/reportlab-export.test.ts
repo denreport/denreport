@@ -82,7 +82,30 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 10, 20, 100, 22, "center", 1.5, ["請求書"])',
+      '_text(c, font, 10, 20, 100, 22, "center", 1.5, (0, 0, 0), ["請求書"])',
+    );
+  });
+
+  it("maps an explicit text color through", () => {
+    const doc = docOf({
+      type: "text",
+      id: "title",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 50,
+      h: 10,
+      text: "赤字",
+      fontSize: 10,
+      align: "left",
+      lineHeight: 1.25,
+      color: "#ff0000",
+    });
+    const result = exportReportlab(doc, {}, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      '_text(c, font, 0, 0, 50, 10, "left", 1.25, (1, 0, 0), ["赤字"])',
     );
   });
 
@@ -653,7 +676,7 @@ describe("exportReportlab — warnings passthrough", () => {
       { rule: "C01", path: "elements[0].text", message: expect.any(String) },
     ]);
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 50, 10, "left", 1.25, [""])',
+      '_text(c, font, 0, 0, 50, 10, "left", 1.25, (0, 0, 0), [""])',
     );
   });
 
@@ -757,7 +780,7 @@ describe("exportReportlab — text wrapping and justify", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      `_text(c, font, 10, 20, ${w}, 1, "left", 1.25, ["abc", "def"])`,
+      `_text(c, font, 10, 20, ${w}, 1, "left", 1.25, (0, 0, 0), ["abc", "def"])`,
     );
   });
 
@@ -768,7 +791,7 @@ describe("exportReportlab — text wrapping and justify", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      `_text(c, font, 10, 20, ${w}, 1, "justify", 1.25, ["abc", "def"])`,
+      `_text(c, font, 10, 20, ${w}, 1, "justify", 1.25, (0, 0, 0), ["abc", "def"])`,
     );
   });
 });

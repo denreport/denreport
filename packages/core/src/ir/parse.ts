@@ -457,6 +457,7 @@ function checkS08Text(
   checkOptionalType(errors, value, "fontSize", path, "S08t", "number");
   checkOptionalType(errors, value, "align", path, "S08t", "string");
   checkOptionalType(errors, value, "lineHeight", path, "S08t", "number");
+  checkOptionalType(errors, value, "color", path, "S08t", "string");
   checkOptionalType(errors, value, "style", path, "S08t", "string");
   return errors;
 }
@@ -619,6 +620,7 @@ function checkS08PageNumber(
   checkOptionalType(errors, value, "fontSize", path, "S08p", "number");
   checkOptionalType(errors, value, "align", path, "S08p", "string");
   checkOptionalType(errors, value, "lineHeight", path, "S08p", "number");
+  checkOptionalType(errors, value, "color", path, "S08p", "string");
   checkOptionalType(errors, value, "style", path, "S08p", "string");
   return errors;
 }
@@ -649,6 +651,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "fontSize",
     "align",
     "lineHeight",
+    "color",
     "style",
   ],
   line: [
@@ -735,6 +738,7 @@ const ALLOWED_KEYS: Record<ElementType, readonly string[]> = {
     "fontSize",
     "align",
     "lineHeight",
+    "color",
     "style",
   ],
   barcode: ["type", "id", "x", "y", "pages", "w", "h", "symbology", "value"],
@@ -979,6 +983,7 @@ function normalizeElement(
         fontSize: (value.fontSize as number | undefined) ?? 10,
         align: (value.align as IrAlign | undefined) ?? "left",
         lineHeight: (value.lineHeight as number | undefined) ?? 1.25,
+        ...("color" in value ? { color: value.color as string } : {}),
         ...styleAttr(value),
       };
     case "line":
@@ -1103,6 +1108,7 @@ function normalizeElement(
         fontSize: (value.fontSize as number | undefined) ?? 10,
         align: (value.align as IrAlign | undefined) ?? "left",
         lineHeight: (value.lineHeight as number | undefined) ?? 1.25,
+        ...("color" in value ? { color: value.color as string } : {}),
         ...styleAttr(value),
       };
     case "barcode":

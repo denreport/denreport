@@ -331,6 +331,7 @@ describe("textBaselinesMm", () => {
     fontSize: 10,
     align: "left",
     lineHeight: 1.25,
+    color: "#000000",
   };
 
   it("PT_TO_MM は 1pt = 0.352778mm の換算値", () => {

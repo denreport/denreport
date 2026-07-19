@@ -74,6 +74,7 @@ describe("exportPdfme — mapping rules", () => {
       height: 12,
       fontSize: 22,
       fontName: "NotoSansJP",
+      fontColor: "#000000",
       alignment: "center",
       verticalAlignment: "top",
       lineHeight: 1.5,
@@ -81,6 +82,28 @@ describe("exportPdfme — mapping rules", () => {
     expect("content" in schema).toBe(false);
     expect("readOnly" in schema).toBe(false);
     expect(result.inputs[0][schema.name]).toBe("請求書");
+  });
+
+  it("maps an explicit text color through", () => {
+    const doc = docOf({
+      type: "text",
+      id: "title",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 50,
+      h: 10,
+      text: "赤字",
+      fontSize: 10,
+      align: "left",
+      lineHeight: 1.25,
+      color: "#ff0000",
+    });
+    const result = exportPdfme(doc, {}, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const schema = result.template.schemas[0]?.[0] as PdfmeTextSchema;
+    expect(schema.fontColor).toBe("#ff0000");
   });
 
   it("expands {key} tokens in text.text into the inputs value", () => {
@@ -584,6 +607,7 @@ describe("exportPdfme — text wrapping and justify", () => {
       name: "p1_t1_0",
       position: { x: 10, y: 20 },
       width: expectedWidth,
+      fontColor: "#000000",
       alignment: "left",
       characterSpacing: expectedSpace,
     });
