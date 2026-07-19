@@ -1,19 +1,24 @@
 import type { IrStrokeStyle } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId } from "react";
+import { useMessages } from "../../i18n/context";
+import type { Messages } from "../../i18n/messages";
 import { useDraftValue } from "./useDraftValue";
 
+export type StrokeStyleLabels = Messages["properties"]["fields"]["strokeStyle"];
+
 /** line.strokeStyle・rect.borderStyle 共通の選択肢（表示順は実線→点線→破線→一点鎖線→二点鎖線） */
-export const STROKE_STYLE_OPTIONS: readonly {
-  readonly value: IrStrokeStyle;
-  readonly label: string;
-}[] = [
-  { value: "solid", label: "実線" },
-  { value: "dotted", label: "点線" },
-  { value: "dashed", label: "破線" },
-  { value: "dashdot", label: "一点鎖線" },
-  { value: "dashdotdot", label: "二点鎖線" },
-];
+export function strokeStyleOptions(
+  labels: StrokeStyleLabels,
+): readonly { readonly value: IrStrokeStyle; readonly label: string }[] {
+  return [
+    { value: "solid", label: labels.solid },
+    { value: "dotted", label: labels.dotted },
+    { value: "dashed", label: labels.dashed },
+    { value: "dashdot", label: labels.dashdot },
+    { value: "dashdotdot", label: labels.dashdotdot },
+  ];
+}
 
 export interface NumberFieldProps {
   readonly label: string;
@@ -41,6 +46,7 @@ function quantize(value: number, precision: number): number {
 
 export function NumberField(props: NumberFieldProps): ReactNode {
   const { label, value, unit, precision, onCommit, error } = props;
+  const m = useMessages();
   const handlers = useDraftValue(
     value === null ? "" : value.toFixed(decimalsOf(precision)),
     (raw) => {
@@ -67,7 +73,7 @@ export function NumberField(props: NumberFieldProps): ReactNode {
           id={id}
           className="apx-num"
           inputMode="decimal"
-          placeholder={value === null ? "混在" : undefined}
+          placeholder={value === null ? m.properties.fields.mixed : undefined}
           value={handlers.draft}
           onChange={(e) => handlers.onChange(e.currentTarget.value)}
           onBlur={handlers.onBlur}
@@ -200,7 +206,8 @@ export function ColorField(props: {
   readonly onCommit: (value: string | null) => void;
 }): ReactNode {
   const { label, value, allowNone = false, onCommit } = props;
-  const noneLabel = props.noneLabel ?? "なし";
+  const m = useMessages();
+  const noneLabel = props.noneLabel ?? m.properties.fields.none;
   const id = useId();
   const isNone = value === null;
   const swatch = value ?? "#000000";

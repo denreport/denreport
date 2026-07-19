@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorMessageFor } from "../../state/error-index";
-import { ALIGN_OPTIONS } from "./align-options";
+import { alignOptions } from "./align-options";
 import type { ElementFormProps } from "./ElementProperties";
 import { commitReplace, withOptionalAttr } from "./ElementProperties";
 import { ColorField, NumberField, SegmentField, TextField } from "./fields";
@@ -8,6 +9,7 @@ import { ColorField, NumberField, SegmentField, TextField } from "./fields";
 export function PageNumberProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;
   const el = view.element;
+  const m = useMessages();
   if (el.type !== "pageNumber") {
     return null;
   }
@@ -16,17 +18,17 @@ export function PageNumberProperties(props: ElementFormProps): ReactNode {
   return (
     <>
       <section className="apx-sect">
-        <div className="apx-sect-h">書式</div>
+        <div className="apx-sect-h">{m.properties.pageNumber.format}</div>
         <TextField
-          label="書式"
+          label={m.properties.pageNumber.format}
           value={el.format}
           mono
-          hint="{n} = 現在ページ、{N} = 総ページ数"
+          hint={m.properties.pageNumber.formatHint}
           onCommit={(format) => commitReplace(store, el.id, { ...el, format })}
         />
       </section>
       <section className="apx-sect">
-        <div className="apx-sect-h">配置</div>
+        <div className="apx-sect-h">{m.properties.placement}</div>
         {"x" in el && (
           <>
             <NumberField
@@ -65,9 +67,9 @@ export function PageNumberProperties(props: ElementFormProps): ReactNode {
         />
       </section>
       <section className="apx-sect">
-        <div className="apx-sect-h">文字</div>
+        <div className="apx-sect-h">{m.properties.character.section}</div>
         <NumberField
-          label="文字サイズ"
+          label={m.properties.character.fontSize}
           value={el.fontSize}
           unit="pt"
           precision={0.1}
@@ -77,13 +79,13 @@ export function PageNumberProperties(props: ElementFormProps): ReactNode {
           }
         />
         <SegmentField
-          label="整列"
+          label={m.properties.character.align}
           value={el.align}
-          options={ALIGN_OPTIONS}
+          options={alignOptions(m.properties.align)}
           onCommit={(align) => commitReplace(store, el.id, { ...el, align })}
         />
         <NumberField
-          label="行間"
+          label={m.properties.character.lineHeight}
           value={el.lineHeight}
           precision={0.01}
           error={errorMessageFor(errors, "lineHeight")}
@@ -92,7 +94,7 @@ export function PageNumberProperties(props: ElementFormProps): ReactNode {
           }
         />
         <ColorField
-          label="文字色"
+          label={m.properties.character.color}
           value={el.color ?? null}
           onCommit={(color) =>
             commitReplace(

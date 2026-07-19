@@ -7,6 +7,7 @@ import type {
 import { applicableStyleAttrs } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
+import { ja } from "../../i18n/messages/ja";
 import { layoutDocument } from "../../state/geometry";
 import type { EditorStore } from "../../state/store";
 import {
@@ -16,9 +17,12 @@ import {
   upsertStyle,
 } from "../../state/styles";
 import { Dialog } from "../dialog/Dialog";
-import { ALIGN_OPTIONS } from "../properties/align-options";
+import { alignOptions } from "../properties/align-options";
 import { NumberField, SegmentField, TextField } from "../properties/fields";
 import { useEditorState } from "../useEditorState";
+
+// このダイアログは useMessages 未導入のため、整列ラベルは ja 固定で解決する
+const ALIGN_OPTIONS = alignOptions(ja.properties.align);
 
 const STYLE_ATTR_KEYS: readonly StyleAttrKey[] = [
   "fontSize",

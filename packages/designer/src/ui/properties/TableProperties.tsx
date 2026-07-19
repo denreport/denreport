@@ -1,6 +1,7 @@
 import { TABLE_FRAME_WIDTH, TABLE_GRID_WIDTH } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId } from "react";
+import { ja } from "../../i18n/messages/ja";
 import { collectBindKeys, sampleDataKeys } from "../../state/bind-keys";
 import { STRIPE_DEFAULT_COLOR } from "../../state/constants";
 import { errorMessageFor } from "../../state/error-index";
@@ -14,9 +15,14 @@ import {
   ColorField,
   NumberField,
   SelectField,
-  STROKE_STYLE_OPTIONS,
+  strokeStyleOptions,
   TextField,
 } from "./fields";
+
+// このファイルは useMessages 未導入のため、線種ラベルは ja 固定で解決する
+const STROKE_STYLE_OPTIONS = strokeStyleOptions(
+  ja.properties.fields.strokeStyle,
+);
 
 export function TableProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;
