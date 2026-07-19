@@ -54,8 +54,7 @@ export const workspaceEn = {
   statusBar: {
     selectionLabel: "Selection: ",
     selectionType: (typeLabel: string): string => ` (${typeLabel})`,
-    selectionMultiple: (count: number): string =>
-      `Selection: ${count} selected`,
+    selectionMultiple: (count: number): string => `Selection: ${count} items`,
     unsaved: "Unsaved changes",
     saved: "Saved",
   },
