@@ -16,6 +16,7 @@ import {
 import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
 import { effectiveFontOf, resolveFontSetData } from "../fonts/set";
 import type { FontIssue } from "../fonts/validate";
+import type { MessageLocale } from "../i18n/messages";
 import { expandStrokes, rotatePointCw } from "./dash";
 import type {
   PdfmeBarcodeSchema,
@@ -215,14 +216,17 @@ function toSchema(
  * wrapping and justification — each element measures with the font of its
  * resolved slot. Every slot in `fonts` must be a valid TTF (see validateFont)
  * with readable metrics; otherwise export fails with fontIssues explaining
- * why.
+ * why, in `options.locale` (default "ja").
  */
 export function exportPdfme(
   document: IrDocument,
   data: IrData,
   fonts: FontSetData,
+  options?: { readonly locale?: MessageLocale },
 ): ExportPdfmeResult {
-  const fontSet = resolveFontSetData(fonts);
+  const fontSet = resolveFontSetData(fonts, {
+    locale: options?.locale ?? "ja",
+  });
   const result = lowerIr(document, data);
   if (!fontSet.ok || !result.ok) {
     return {

@@ -35,6 +35,11 @@ import {
 } from "@denreport/core";
 import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
 import { effectiveFontOf, resolveFontSetData } from "../fonts/set";
+import {
+  getMessages,
+  type MessageLocale,
+  type Messages,
+} from "../i18n/messages";
 import { pyBool, pyNumber, pyRgb, pyString } from "./python";
 import type { ReportlabFontEntry } from "./snippets";
 import {
@@ -50,9 +55,9 @@ import {
   MAIN_BLOCK,
   pyDash,
   RECT_FN,
-  REGISTER_FONTS_FN,
   REPORTLAB_BARCODE_NAMES,
   ROW_EDGE_FN,
+  registerFontsFn,
   statementFor,
   TEXT_FN,
 } from "./snippets";
@@ -60,15 +65,17 @@ import type { ExportReportlabResult } from "./types";
 
 const TABLE_BLACK_RGB = pyRgb("#000000");
 
-const BIND_STR_FN = [
-  "def _bind_str(data, key):",
-  "    if key not in data:",
-  "        sys.exit(f'データにキー \"{key}\" がありません')",
-  "    value = data[key]",
-  "    if not isinstance(value, str):",
-  "        sys.exit(f'キー \"{key}\" の値が string ではありません')",
-  "    return value",
-].join("\n");
+function bindStrFn(messages: Messages): string {
+  return [
+    "def _bind_str(data, key):",
+    "    if key not in data:",
+    `        sys.exit(f'${messages.reportlab.bindStrMissingKey}')`,
+    "    value = data[key]",
+    "    if not isinstance(value, str):",
+    `        sys.exit(f'${messages.reportlab.bindStrNotString}')`,
+    "    return value",
+  ].join("\n");
+}
 
 // ir/interpolate.ts の走査パターンと同一（二重実装のため同期が必要）
 const INTERPOLATE_FN = [
@@ -99,26 +106,28 @@ const WRAP_FN = [
   "    return lines",
 ].join("\n");
 
-const BIND_ROWS_FN = [
-  "def _bind_rows(data, key, column_keys):",
-  "    if key not in data:",
-  "        sys.exit(f'データにキー \"{key}\" がありません')",
-  "    raw = data[key]",
-  "    if not isinstance(raw, list):",
-  "        sys.exit(f'キー \"{key}\" の値が配列ではありません')",
-  "    rows = []",
-  "    for t, raw_row in enumerate(raw):",
-  "        if not isinstance(raw_row, dict):",
-  '            sys.exit(f"{t}行目がオブジェクトではありません")',
-  "        row = {}",
-  "        for column_key in column_keys:",
-  "            value = raw_row.get(column_key)",
-  "            if not isinstance(value, str):",
-  "                sys.exit(f'{t}行目のキー \"{column_key}\" の値が string ではありません')",
-  "            row[column_key] = value",
-  "        rows.append(row)",
-  "    return rows",
-].join("\n");
+function bindRowsFn(messages: Messages): string {
+  return [
+    "def _bind_rows(data, key, column_keys):",
+    "    if key not in data:",
+    `        sys.exit(f'${messages.reportlab.bindStrMissingKey}')`,
+    "    raw = data[key]",
+    "    if not isinstance(raw, list):",
+    `        sys.exit(f'${messages.reportlab.bindRowsNotArray}')`,
+    "    rows = []",
+    "    for t, raw_row in enumerate(raw):",
+    "        if not isinstance(raw_row, dict):",
+    `            sys.exit(f"${messages.reportlab.bindRowsRowNotObject}")`,
+    "        row = {}",
+    "        for column_key in column_keys:",
+    "            value = raw_row.get(column_key)",
+    "            if not isinstance(value, str):",
+    `                sys.exit(f'${messages.reportlab.bindRowsCellNotString}')`,
+    "            row[column_key] = value",
+    "        rows.append(row)",
+    "    return rows",
+  ].join("\n");
+}
 
 const APPLY_CELL_OVERRIDES_FN = [
   "def _apply_cell_overrides(rows, min_rows, overrides):",
@@ -133,43 +142,45 @@ const APPLY_CELL_OVERRIDES_FN = [
   "    return rows",
 ].join("\n");
 
-const CHUNK_SIZES_FN = [
-  "def _chunk_sizes(row_count, min_rows, k_first, k_cont):",
-  "    m = max(row_count, min_rows)",
-  "    if m <= k_first:",
-  "        return [min(m, k_first)]",
-  "    if k_cont < 1:",
-  '        sys.exit("表が継続ページに1行も入りません")',
-  "    chunk_sizes = [k_first]",
-  "    remaining = m - k_first",
-  "    while remaining > 0:",
-  "        size = min(remaining, k_cont)",
-  "        chunk_sizes.append(size)",
-  "        remaining -= size",
-  "    return chunk_sizes",
-].join("\n");
+function chunkSizesFn(messages: Messages): string {
+  return [
+    "def _chunk_sizes(row_count, min_rows, k_first, k_cont):",
+    "    m = max(row_count, min_rows)",
+    "    if m <= k_first:",
+    "        return [min(m, k_first)]",
+    "    if k_cont < 1:",
+    `        sys.exit("${messages.reportlab.chunkSizesNoRoomInContinuation}")`,
+    "    chunk_sizes = [k_first]",
+    "    remaining = m - k_first",
+    "    while remaining > 0:",
+    "        size = min(remaining, k_cont)",
+    "        chunk_sizes.append(size)",
+    "        remaining -= size",
+    "    return chunk_sizes",
+  ].join("\n");
+}
 
 const PAGE_LABEL_FN = [
   "def _page_label(fmt, page, page_count):",
   '    return fmt.replace("{n}", str(page)).replace("{N}", str(page_count))',
 ].join("\n");
 
-function buildHeader(hasImage: boolean): string {
+function buildHeader(messages: Messages, hasImage: boolean): string {
   const requirement = hasImage
-    ? "実行要件: Python 3, reportlab, Pillow（画像の描画に使用）"
-    : "実行要件: Python 3, reportlab";
+    ? messages.reportlab.header.requirementWithImage
+    : messages.reportlab.header.requirement;
   return [
-    '"""生成物であり、手編集を想定しない。',
+    `"""${messages.reportlab.header.notice}`,
     "",
     requirement,
     "",
-    "フォント: 書き出し時に併せて出力されるフォントファイル（FONTS の各ファイル）を",
-    "このファイルと同じディレクトリに置くこと。見つからない場合はエラー終了する。",
+    messages.reportlab.header.fontNoticeLine1,
+    messages.reportlab.header.fontNoticeLine2,
     "",
-    "使い方: python <このファイル> [出力.pdf]（省略時 output.pdf。データなしで実行され、",
-    "差し込みキーがある場合はエラー終了する）",
-    'プログラムから: from report import build; build("出力.pdf", data)',
-    "data は差し込み値の辞書。text 内の {key} トークンのキー → 文字列、table の bind キー → 行辞書のリスト。",
+    messages.reportlab.header.templateUsageLine1,
+    messages.reportlab.header.templateUsageLine2,
+    messages.reportlab.header.templateProgrammatic,
+    messages.reportlab.header.templateDataDescription,
     '"""',
   ].join("\n");
 }
@@ -625,7 +636,10 @@ function buildDrawPage(
   return `def _draw_page(${params}):\n${body.length === 0 ? "    pass" : body.join("\n")}`;
 }
 
-function buildBuildFunction(tables: readonly IrTableElement[]): string {
+function buildBuildFunction(
+  tables: readonly IrTableElement[],
+  messages: Messages,
+): string {
   const lines = [
     "def build(output_path, data=None):",
     "    data = {} if data is None else data",
@@ -683,12 +697,12 @@ function buildBuildFunction(tables: readonly IrTableElement[]): string {
         .join(", ");
       lines.push(
         `    if [${multiPage}].count(True) >= 2:`,
-        '        sys.exit("2ページ以上に展開される表が複数あります")',
+        `        sys.exit("${messages.reportlab.multipleMultiPageTables}")`,
       );
     }
     lines.push(
       "    if page_count > PAGE_COUNT_MAX:",
-      '        sys.exit(f"展開後の総ページ数 {page_count} が上限 {PAGE_COUNT_MAX} を超えています")',
+      `        sys.exit(f"${messages.reportlab.pageCountExceeded}")`,
     );
   } else {
     lines.push("    page_count = 1");
@@ -709,6 +723,7 @@ function buildTemplateSource(
   font: IrFont,
   slots: ReadonlyMap<IrFontSlot, ResolvedSlotFont>,
   entries: readonly ReportlabFontEntry[],
+  messages: Messages,
 ): string {
   const resolved = resolveFootnotes(document);
   const placed = resolveFlex(resolved);
@@ -743,17 +758,17 @@ function buildTemplateSource(
   const needsWrapFn = hasTokenText || hasTables || hasPageNumber;
 
   const helperFns = [
-    REGISTER_FONTS_FN,
+    registerFontsFn(messages),
     ...(needsText ? [TEXT_FN] : []),
     ...(needsLine ? [LINE_FN] : []),
     ...(needsRect ? [RECT_FN] : []),
     ...(needsEllipse ? [ELLIPSE_FN] : []),
     ...(hasImage ? [IMAGE_FN] : []),
     ...(hasBarcode ? [BARCODE_FN] : []),
-    ...(hasTokenText ? [BIND_STR_FN] : []),
+    ...(hasTokenText ? [bindStrFn(messages)] : []),
     ...(hasTokenText ? [INTERPOLATE_FN] : []),
     ...(needsWrapFn ? [WRAP_FN] : []),
-    ...(hasTables ? [BIND_ROWS_FN, CHUNK_SIZES_FN] : []),
+    ...(hasTables ? [bindRowsFn(messages), chunkSizesFn(messages)] : []),
     ...(hasMerges ? [CHUNK_MERGES_FN, KEPT_SEGMENTS_FN, ROW_EDGE_FN] : []),
     ...(hasCellOverrides ? [APPLY_CELL_OVERRIDES_FN] : []),
     ...(hasPageNumber ? [PAGE_LABEL_FN] : []),
@@ -789,7 +804,7 @@ function buildTemplateSource(
     );
 
   const sections = [
-    buildHeader(hasImage),
+    buildHeader(messages, hasImage),
     buildImports(hasImage, hasTokenText, hasBarcode),
     buildConstants(resolved, entries),
     helperFns.join("\n\n"),
@@ -799,7 +814,7 @@ function buildTemplateSource(
         : buildTableFunction(table, font.regular, wrapText),
     ),
     buildDrawPage(placed, hasTables, layoutLines, font),
-    buildBuildFunction(tables),
+    buildBuildFunction(tables, messages),
     MAIN_BLOCK,
   ];
 
@@ -813,13 +828,16 @@ function buildTemplateSource(
  * render many different data sets. Data-related failures therefore cannot
  * occur here (`errors` is always empty on failure); every slot in `fonts`
  * must still be a valid TTF with readable metrics, otherwise export fails
- * with fontIssues explaining why.
+ * with fontIssues explaining why. `options.locale` (default "ja") selects
+ * the language of the generated script's comments and error messages.
  */
 export function exportReportlabTemplate(
   document: IrDocument,
   fonts: FontSetData,
+  options?: { readonly locale?: MessageLocale },
 ): ExportReportlabResult {
-  const fontSet = resolveFontSetData(fonts);
+  const locale = options?.locale ?? "ja";
+  const fontSet = resolveFontSetData(fonts, { locale });
   if (!fontSet.ok) {
     return { ok: false, errors: [], fontIssues: fontSet.issues };
   }
@@ -827,7 +845,13 @@ export function exportReportlabTemplate(
   const entries = fontEntriesFor(font, fonts, fontSet.slots);
   return {
     ok: true,
-    code: buildTemplateSource(document, font, fontSet.slots, entries),
+    code: buildTemplateSource(
+      document,
+      font,
+      fontSet.slots,
+      entries,
+      getMessages(locale),
+    ),
     fontFiles: entries.map((entry) => ({
       filename: entry.filename,
       data: entry.data,

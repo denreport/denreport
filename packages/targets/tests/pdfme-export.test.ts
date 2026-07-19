@@ -17,6 +17,7 @@ import {
   buildHeadTable,
   buildSfnt,
   buildUniformWidthTtf,
+  syntheticCff,
   syntheticTtf,
 } from "./helpers/sfnt";
 
@@ -739,6 +740,29 @@ describe("exportPdfme — font width gate", () => {
     if (result.ok) throw new Error("expected failure");
     expect(result.errors).toEqual([]);
     expect(result.fontIssues).toHaveLength(1);
+  });
+});
+
+describe("exportPdfme — locale", () => {
+  it("defaults to Japanese fontIssues messages", () => {
+    const result = exportPdfme(docOf(), {}, { regular: syntheticCff() });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.fontIssues[0]?.message).toContain("TTF");
+  });
+
+  it('returns English fontIssues messages for locale "en"', () => {
+    const result = exportPdfme(
+      docOf(),
+      {},
+      { regular: syntheticCff() },
+      { locale: "en" },
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.fontIssues[0]?.message).toBe(
+      "CFF (OTF) outline fonts cannot be used for export. Use a TrueType-outline TTF font instead.",
+    );
   });
 });
 

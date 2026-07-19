@@ -56,3 +56,13 @@ describe("resolveFontSetData", () => {
     expect(regularIssue?.message).toContain("計量");
   });
 });
+
+describe("resolveFontSetData — locale", () => {
+  it('returns English messages for locale "en"', () => {
+    const noMetrics = buildSfnt(0x00010000, ["glyf", "head", "loca"]);
+    const result = resolveFontSetData({ regular: noMetrics }, { locale: "en" });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.issues[0]?.message).toContain("metrics");
+  });
+});

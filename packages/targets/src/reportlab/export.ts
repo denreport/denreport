@@ -10,6 +10,11 @@ import type {
 import { layoutTextLines, lowerIr, resolveFontSlot } from "@denreport/core";
 import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
 import { effectiveFontOf, resolveFontSetData } from "../fonts/set";
+import {
+  getMessages,
+  type MessageLocale,
+  type Messages,
+} from "../i18n/messages";
 import { pyNumber } from "./python";
 import type { ReportlabFontEntry } from "./snippets";
 import {
@@ -22,7 +27,7 @@ import {
   LINE_FN,
   MAIN_BLOCK,
   RECT_FN,
-  REGISTER_FONTS_FN,
+  registerFontsFn,
   statementFor,
   TEXT_FN,
 } from "./snippets";
@@ -38,19 +43,19 @@ function usedTypes(
   return types;
 }
 
-function buildHeader(hasImage: boolean): string {
+function buildHeader(messages: Messages, hasImage: boolean): string {
   const requirement = hasImage
-    ? "実行要件: Python 3, reportlab, Pillow（画像の描画に使用）"
-    : "実行要件: Python 3, reportlab";
+    ? messages.reportlab.header.requirementWithImage
+    : messages.reportlab.header.requirement;
   return [
-    '"""生成物であり、手編集を想定しない。',
+    `"""${messages.reportlab.header.notice}`,
     "",
     requirement,
     "",
-    "フォント: 書き出し時に併せて出力されるフォントファイル（FONTS の各ファイル）を",
-    "このファイルと同じディレクトリに置くこと。見つからない場合はエラー終了する。",
+    messages.reportlab.header.fontNoticeLine1,
+    messages.reportlab.header.fontNoticeLine2,
     "",
-    "使い方: python <このファイル> [出力.pdf]（省略時 output.pdf）",
+    messages.reportlab.header.usage,
     '"""',
   ].join("\n");
 }
@@ -101,13 +106,14 @@ function buildSource(
   font: IrFont,
   slots: ReadonlyMap<IrFontSlot, ResolvedSlotFont>,
   entries: readonly ReportlabFontEntry[],
+  messages: Messages,
 ): string {
   const types = usedTypes(lowered.pages);
   const hasImage = types.has("image");
   const hasBarcode = types.has("barcode");
 
   const helperFns = [
-    REGISTER_FONTS_FN,
+    registerFontsFn(messages),
     ...(types.has("text") ? [TEXT_FN] : []),
     ...(types.has("line") ? [LINE_FN] : []),
     ...(types.has("rect") ? [RECT_FN] : []),
@@ -134,7 +140,7 @@ function buildSource(
   );
 
   const sections = [
-    buildHeader(hasImage),
+    buildHeader(messages, hasImage),
     buildImports(hasImage, false, hasBarcode),
     buildConstants(lowered, entries),
     helperFns.join("\n\n"),
@@ -152,14 +158,18 @@ function buildSource(
  * references (one per declared slot). Every slot in `fonts` must be a valid
  * TTF with readable metrics; otherwise export fails with fontIssues
  * explaining why. Assumes `document` is the output of parseIr and already
- * passed validateIr, matching lowerIr's precondition.
+ * passed validateIr, matching lowerIr's precondition. `options.locale`
+ * (default "ja") selects the language of the generated script's comments
+ * and error messages.
  */
 export function exportReportlab(
   document: IrDocument,
   data: IrData,
   fonts: FontSetData,
+  options?: { readonly locale?: MessageLocale },
 ): ExportReportlabResult {
-  const fontSet = resolveFontSetData(fonts);
+  const locale = options?.locale ?? "ja";
+  const fontSet = resolveFontSetData(fonts, { locale });
   const result = lowerIr(document, data);
   if (!fontSet.ok || !result.ok) {
     return {
@@ -172,7 +182,13 @@ export function exportReportlab(
   const entries = fontEntriesFor(font, fonts, fontSet.slots);
   return {
     ok: true,
-    code: buildSource(result.document, font, fontSet.slots, entries),
+    code: buildSource(
+      result.document,
+      font,
+      fontSet.slots,
+      entries,
+      getMessages(locale),
+    ),
     fontFiles: entries.map((entry) => ({
       filename: entry.filename,
       data: entry.data,

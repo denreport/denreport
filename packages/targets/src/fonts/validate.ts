@@ -1,4 +1,5 @@
 import type { IrFontSlot } from "@denreport/core";
+import { getMessages, type MessageLocale } from "../i18n/messages";
 import type { FontFormat } from "./format";
 import { detectFontFormat } from "./format";
 
@@ -13,25 +14,18 @@ export interface FontIssue {
   readonly slot?: IrFontSlot;
 }
 
-const REJECTION_MESSAGES: Readonly<Record<Exclude<FontFormat, "ttf">, string>> =
-  {
-    cff: "CFF（OTF）アウトラインのフォントは書き出しに使用できません。TrueType アウトラインの TTF フォントを使用してください。",
-    collection:
-      "フォントコレクション（TTC/OTC）は書き出しに使用できません。単一フォントの TTF フォントを使用してください。",
-    woff: "WOFF 形式のフォントは書き出しに使用できません。圧縮されていない TTF フォントを使用してください。",
-    woff2:
-      "WOFF2 形式のフォントは書き出しに使用できません。圧縮されていない TTF フォントを使用してください。",
-    unknown:
-      "フォント形式を判定できませんでした。TrueType アウトラインの TTF フォントを使用してください。",
-  };
-
 /**
  * Checks that `data` is a TrueType-outline font, the only format the export
  * targets support. Returns an empty array when valid, or a single-element
- * array describing why otherwise.
+ * array describing why otherwise. `options.locale` (default "ja") selects
+ * the message language.
  */
-export function validateFont(data: Uint8Array): readonly FontIssue[] {
+export function validateFont(
+  data: Uint8Array,
+  options?: { readonly locale?: MessageLocale },
+): readonly FontIssue[] {
   const format = detectFontFormat(data);
   if (format === "ttf") return [];
-  return [{ format, message: REJECTION_MESSAGES[format] }];
+  const messages = getMessages(options?.locale ?? "ja");
+  return [{ format, message: messages.fontIssue.rejection[format] }];
 }

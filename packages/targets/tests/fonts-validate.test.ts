@@ -20,3 +20,19 @@ describe("validateFont", () => {
     expect(issues[0]?.message).toContain("TTF");
   });
 });
+
+describe("validateFont — locale", () => {
+  it("defaults to Japanese when locale is omitted", () => {
+    const issues = validateFont(buildSfnt("OTTO", ["CFF "]));
+    expect(issues[0]?.message).toContain("TTF");
+  });
+
+  it('returns English messages for locale "en"', () => {
+    const issues = validateFont(buildSfnt("OTTO", ["CFF "]), {
+      locale: "en",
+    });
+    expect(issues[0]?.message).toBe(
+      "CFF (OTF) outline fonts cannot be used for export. Use a TrueType-outline TTF font instead.",
+    );
+  });
+});

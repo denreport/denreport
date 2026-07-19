@@ -958,3 +958,37 @@ describe("exportReportlab — font slots and underline", () => {
     expect(result.fontIssues[0]?.slot).toBe("bold");
   });
 });
+
+describe("exportReportlab — locale", () => {
+  it("defaults to Japanese header and font-registration text", () => {
+    const result = exportReportlab(docOf(), {}, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain("生成物であり、手編集を想定しない。");
+    expect(result.code).toContain("フォントファイルが見つかりません");
+  });
+
+  it('emits English header and font-registration text for locale "en"', () => {
+    const result = exportReportlab(docOf(), {}, FONT, { locale: "en" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      "Generated file; not intended for manual editing.",
+    );
+    expect(result.code).toContain("Font file not found:");
+  });
+
+  it('returns English fontIssues messages for locale "en"', () => {
+    const result = exportReportlab(
+      docOf(),
+      {},
+      { regular: syntheticCff() },
+      {
+        locale: "en",
+      },
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.fontIssues[0]?.message).toContain("TTF font");
+  });
+});
