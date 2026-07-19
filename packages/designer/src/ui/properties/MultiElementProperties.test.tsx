@@ -261,6 +261,22 @@ function blur(el: HTMLElement): void {
   });
 }
 
+function click(el: Element): void {
+  act(() => {
+    el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+  });
+}
+
+function buttonByText(text: string): HTMLButtonElement {
+  const button = [...container.querySelectorAll("button")].find(
+    (b) => b.textContent === text,
+  );
+  if (button === undefined) {
+    throw new Error(`ボタンがない: ${text}`);
+  }
+  return button;
+}
+
 function elementById(store: EditorStore, id: string): IrElement | IrFlexChild {
   function visit(
     el: IrElement | IrFlexChild,
@@ -351,5 +367,13 @@ describe("MultiElementProperties", () => {
     blur(fontSizeInput);
     expect(store.getState().dirty).toBe(false);
     expect(store.getState().document).toBe(document);
+  });
+
+  it("整列に「均等」を選べ、選択全要素に一括適用される", () => {
+    const store = makeStore();
+    renderSelection(store, ["t1", "t2"]);
+    click(buttonByText("均等"));
+    expect(elementById(store, "t1")).toMatchObject({ align: "justify" });
+    expect(elementById(store, "t2")).toMatchObject({ align: "justify" });
   });
 });

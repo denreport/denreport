@@ -7,6 +7,7 @@ import type {
   IrPages,
 } from "@denreport/core";
 import type { PlacedElementView } from "../../state/geometry";
+import { ALIGN_OPTIONS } from "./align-options";
 
 type AnyElement = IrElement | IrFlexChild;
 
@@ -50,15 +51,6 @@ const PAGES_OPTIONS: readonly {
   { value: "rest", label: "継続" },
   { value: "last", label: "最終" },
   { value: "all", label: "全" },
-];
-
-const ALIGN_OPTIONS: readonly {
-  readonly value: IrAlign;
-  readonly label: string;
-}[] = [
-  { value: "left", label: "左" },
-  { value: "center", label: "中央" },
-  { value: "right", label: "右" },
 ];
 
 // pages/x/y は IrPositioned 由来の属性なので "in" 判定だけで table・flex 子要素を自然に除外できる

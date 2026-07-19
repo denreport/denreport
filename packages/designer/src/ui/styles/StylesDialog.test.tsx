@@ -222,6 +222,18 @@ describe("属性編集", () => {
       { name: "見出し", attrs: { fontSize: 14, lineHeight: 1.25 } },
     ]);
   });
+
+  it("整列に「均等」を選べ、要約にも反映される", () => {
+    const store = makeStore({
+      styles: [{ name: "見出し", attrs: { fontSize: 14, align: "left" } }],
+    });
+    render(store);
+    click(buttonByText("均等"));
+    expect(store.getState().document.styles).toEqual([
+      { name: "見出し", attrs: { fontSize: 14, align: "justify" } },
+    ]);
+    expect(container.textContent).toContain("均等");
+  });
 });
 
 describe("名称変更・削除", () => {

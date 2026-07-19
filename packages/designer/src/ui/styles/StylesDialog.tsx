@@ -1,5 +1,4 @@
 import type {
-  IrAlign,
   IrDocument,
   IrNamedStyle,
   IrStyleAttrs,
@@ -17,6 +16,7 @@ import {
   upsertStyle,
 } from "../../state/styles";
 import { Dialog } from "../dialog/Dialog";
+import { ALIGN_OPTIONS } from "../properties/align-options";
 import { NumberField, SegmentField, TextField } from "../properties/fields";
 import { useEditorState } from "../useEditorState";
 
@@ -52,15 +52,6 @@ const ATTR_DEFAULTS: IrStyleAttrs = {
   borderWidth: 0.3,
   thickness: 0.3,
 };
-
-const ALIGN_OPTIONS: readonly {
-  readonly value: IrAlign;
-  readonly label: string;
-}[] = [
-  { value: "left", label: "左" },
-  { value: "center", label: "中央" },
-  { value: "right", label: "右" },
-];
 
 function attrSummary(attrs: IrStyleAttrs): string {
   const parts: string[] = [];
