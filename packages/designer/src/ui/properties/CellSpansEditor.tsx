@@ -1,5 +1,6 @@
 import type { IrDocument, IrTableCellSpan } from "@denreport/core";
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorMessageFor } from "../../state/error-index";
 import {
   addTableCellSpan,
@@ -56,6 +57,8 @@ function spanErrorFor(
 
 export function CellSpansEditor(props: ElementFormProps): ReactNode {
   const { store, view, errors } = props;
+  const m = useMessages();
+  const c = m.propertiesBulk.cellSpans;
   const el = view.element;
   if (el.type !== "table") {
     return null;
@@ -75,7 +78,8 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
   return (
     <section className="apx-sect">
       <div className="apx-sect-h">
-        セル結合<span className="apx-mono">{spans.length}</span>
+        {c.heading}
+        <span className="apx-mono">{spans.length}</span>
       </div>
       {spans.map((span, i) => {
         const error = spanErrorFor(errors, i);
@@ -86,7 +90,7 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
             <div className="apx-col-row">
               <span className="apx-field">
                 <select
-                  aria-label={`結合${i + 1} の対象`}
+                  aria-label={c.targetLabel(i + 1)}
                   value={isHeader ? "header" : "body"}
                   onChange={(e) =>
                     commitPatch(i, {
@@ -94,13 +98,13 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
                     })
                   }
                 >
-                  <option value="body">明細行</option>
-                  <option value="header">ヘッダ行</option>
+                  <option value="body">{c.body}</option>
+                  <option value="header">{c.header}</option>
                 </select>
               </span>
               {!isHeader && (
                 <IntCell
-                  ariaLabel={`結合${i + 1} の行番号`}
+                  ariaLabel={c.rowLabel(i + 1)}
                   value={typeof span.row === "number" ? span.row : 0}
                   min={0}
                   invalid={error !== undefined}
@@ -110,7 +114,7 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
               <button
                 type="button"
                 className="apx-col-btn apx-col-del"
-                aria-label={`結合${i + 1} を削除`}
+                aria-label={c.deleteLabel(i + 1)}
                 onClick={() =>
                   commitDoc((doc) => removeTableCellSpan(doc, el.id, i))
                 }
@@ -121,7 +125,7 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
             <div className="apx-col-row">
               <span className="apx-field">
                 <select
-                  aria-label={`結合${i + 1} の列`}
+                  aria-label={c.columnLabel(i + 1)}
                   className="apx-mono"
                   value={span.key}
                   onChange={(e) =>
@@ -140,7 +144,7 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
               </span>
               {!isHeader && (
                 <IntCell
-                  ariaLabel={`結合${i + 1} の行数`}
+                  ariaLabel={c.rowSpanLabel(i + 1)}
                   value={span.rowSpan ?? 1}
                   min={1}
                   invalid={error !== undefined}
@@ -148,7 +152,7 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
                 />
               )}
               <IntCell
-                ariaLabel={`結合${i + 1} の列数`}
+                ariaLabel={c.colSpanLabel(i + 1)}
                 value={span.colSpan ?? 1}
                 min={1}
                 invalid={error !== undefined}
@@ -164,11 +168,9 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
         className="apx-add-col"
         onClick={() => commitDoc((doc) => addTableCellSpan(doc, el.id))}
       >
-        ＋ 結合を追加
+        {c.addSpan}
       </button>
-      <p className="apx-sect-note">
-        行番号は明細の通し行番号（0始まり）。ヘッダ行は列数（右方向）のみ結合できます。
-      </p>
+      <p className="apx-sect-note">{c.note}</p>
     </section>
   );
 }

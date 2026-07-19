@@ -1,16 +1,21 @@
 import type { IrElement, IrFlexChild } from "@denreport/core";
 import type { ReactNode } from "react";
+import { useMemo } from "react";
+import { useMessages } from "../../i18n/context";
 import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
 import type { PlacedElementView } from "../../state/geometry";
 import { updateElements } from "../../state/properties";
 import type { EditorStore } from "../../state/store";
 import type { BulkDescriptor } from "./bulk-descriptors";
-import { applicableDescriptors, bulkValueFor } from "./bulk-descriptors";
+import {
+  applicableDescriptors,
+  BULK_SECTION_ORDER,
+  buildBulkDescriptors,
+  bulkValueFor,
+} from "./bulk-descriptors";
 import { NumberField, SegmentField } from "./fields";
 
 type AnyElement = IrElement | IrFlexChild;
-
-const SECTIONS = ["配置", "形状", "文字"] as const;
 
 function commitBulk(
   store: EditorStore,
@@ -70,9 +75,14 @@ export function MultiElementProperties(props: {
   readonly views: readonly PlacedElementView[];
 }): ReactNode {
   const { store, views } = props;
+  const m = useMessages();
+  const allDescriptors = useMemo(
+    () => buildBulkDescriptors(m.propertiesBulk),
+    [m],
+  );
   const ids = views.map((view) => view.id);
   const elements = views.map((view) => view.element);
-  const descriptors = applicableDescriptors(views);
+  const descriptors = applicableDescriptors(views, allDescriptors);
   const types = new Set(views.map((view) => view.element.type));
   const uniformType = types.size === 1 ? [...types][0] : undefined;
 
@@ -84,16 +94,20 @@ export function MultiElementProperties(props: {
             {ELEMENT_TYPE_LABEL[uniformType]}
           </span>
         )}
-        <span className="apx-props-id">{views.length} 個の要素を選択中</span>
+        <span className="apx-props-id">
+          {m.propertiesBulk.selectedCount(views.length)}
+        </span>
       </div>
-      {SECTIONS.map((section) => {
+      {BULK_SECTION_ORDER.map((section) => {
         const inSection = descriptors.filter((d) => d.section === section);
         if (inSection.length === 0) {
           return null;
         }
         return (
           <section className="apx-sect" key={section}>
-            <div className="apx-sect-h">{section}</div>
+            <div className="apx-sect-h">
+              {m.propertiesBulk.sections[section]}
+            </div>
             {inSection.map((descriptor) => (
               <Field
                 key={descriptor.key}
