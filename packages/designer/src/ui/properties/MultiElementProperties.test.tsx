@@ -9,14 +9,19 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
+import { ja } from "../../i18n/messages/ja";
 import { layoutDocument } from "../../state/geometry";
 import { EditorStore } from "../../state/store";
 import {
   applicableDescriptors,
-  BULK_DESCRIPTORS,
+  buildBulkDescriptors,
   bulkValueFor,
 } from "./bulk-descriptors";
 import { MultiElementProperties } from "./MultiElementProperties";
+
+const BULK_DESCRIPTORS = buildBulkDescriptors(ja);
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -138,9 +143,10 @@ function viewsOf(store: EditorStore, ids: readonly string[]) {
 describe("applicableDescriptors", () => {
   it("text 2件では位置・文字系ディスクリプタが揃う", () => {
     const store = makeStore();
-    const keys = applicableDescriptors(viewsOf(store, ["t1", "t2"])).map(
-      (d) => d.key,
-    );
+    const keys = applicableDescriptors(
+      viewsOf(store, ["t1", "t2"]),
+      BULK_DESCRIPTORS,
+    ).map((d) => d.key);
     expect(keys).toEqual([
       "pages",
       "x",
@@ -155,33 +161,37 @@ describe("applicableDescriptors", () => {
 
   it("text + rect では pages/x/y/w/h のみに絞られる", () => {
     const store = makeStore();
-    const keys = applicableDescriptors(viewsOf(store, ["t1", "r1"])).map(
-      (d) => d.key,
-    );
+    const keys = applicableDescriptors(
+      viewsOf(store, ["t1", "r1"]),
+      BULK_DESCRIPTORS,
+    ).map((d) => d.key);
     expect(keys).toEqual(["pages", "x", "y", "w", "h"]);
   });
 
   it("text + table では x/y と fontSize に絞られる", () => {
     const store = makeStore();
-    const keys = applicableDescriptors(viewsOf(store, ["t1", "tbl1"])).map(
-      (d) => d.key,
-    );
+    const keys = applicableDescriptors(
+      viewsOf(store, ["t1", "tbl1"]),
+      BULK_DESCRIPTORS,
+    ).map((d) => d.key);
     expect(keys).toEqual(["x", "y", "fontSize"]);
   });
 
   it("line + table では table が pages を持たないため x/y のみに絞られる", () => {
     const store = makeStore();
-    const keys = applicableDescriptors(viewsOf(store, ["l1", "tbl1"])).map(
-      (d) => d.key,
-    );
+    const keys = applicableDescriptors(
+      viewsOf(store, ["l1", "tbl1"]),
+      BULK_DESCRIPTORS,
+    ).map((d) => d.key);
     expect(keys).toEqual(["x", "y"]);
   });
 
   it("flex 子要素を含む選択では pages/x/y が消える", () => {
     const store = makeStore();
-    const keys = applicableDescriptors(viewsOf(store, ["c1", "t1"])).map(
-      (d) => d.key,
-    );
+    const keys = applicableDescriptors(
+      viewsOf(store, ["c1", "t1"]),
+      BULK_DESCRIPTORS,
+    ).map((d) => d.key);
     expect(keys).toEqual(["w", "h", "fontSize", "align", "lineHeight"]);
   });
 });
@@ -375,5 +385,22 @@ describe("MultiElementProperties", () => {
     click(buttonByText("均等"));
     expect(elementById(store, "t1")).toMatchObject({ align: "justify" });
     expect(elementById(store, "t2")).toMatchObject({ align: "justify" });
+  });
+
+  it("en Provider ではセクション見出しと件数表示が英語になる", () => {
+    const store = makeStore();
+    render(
+      <MessagesContext.Provider value={en}>
+        <MultiElementProperties
+          store={store}
+          views={viewsOf(store, ["t1", "t2"])}
+        />
+      </MessagesContext.Provider>,
+    );
+    const headings = [...container.querySelectorAll(".apx-sect-h")].map(
+      (h) => h.textContent,
+    );
+    expect(headings).toEqual(["Placement", "Text"]);
+    expect(container.textContent).toContain("2 elements selected");
   });
 });

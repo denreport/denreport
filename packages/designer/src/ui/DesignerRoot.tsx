@@ -2,7 +2,7 @@ import type { IrElementType } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { DesignerChrome } from "../api/designer";
-import { MessagesContext } from "../i18n/context";
+import { LocaleContext, MessagesContext } from "../i18n/context";
 import type { Locale } from "../i18n/locale";
 import { getMessages } from "../i18n/messages";
 import { createCenteredElement } from "../state/defaults";
@@ -101,59 +101,64 @@ export function DesignerRoot(props: {
   );
   return (
     <MessagesContext.Provider value={messages}>
-      {/* biome-ignore lint/a11y/noStaticElementInteractions: キー操作はルートで束ね、フォーム要素は無視する */}
-      <div
-        className={
-          "apx-layout" +
-          (sidebarOpen ? "" : " is-left-closed") +
-          (propsOpen ? "" : " is-right-closed")
-        }
-        ref={layoutRef}
-        tabIndex={-1}
-        onKeyDown={onKeyDown}
-      >
-        <Toolbar
-          store={store}
-          chrome={chrome}
-          onPreview={onPreview}
-          onExport={onExport}
-          onManageStyles={onManageStyles}
-          onShowShortcuts={() => setShortcutsOpen(true)}
-          sidebarOpen={sidebarOpen}
-          propsOpen={propsOpen}
-          onToggleSidebar={onToggleSidebar}
-          onToggleProps={onToggleProps}
-        />
-        <Sidebar
-          store={store}
-          beginPlacement={interaction.beginPlacement}
-          onQuickAdd={onQuickAdd}
-          onReveal={onReveal}
-        />
-        <main className="apx-canvas-area">
-          <CanvasBar store={store} />
-          <Canvas
+      <LocaleContext.Provider value={locale}>
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: キー操作はルートで束ね、フォーム要素は無視する */}
+        <div
+          className={
+            "apx-layout" +
+            (sidebarOpen ? "" : " is-left-closed") +
+            (propsOpen ? "" : " is-right-closed")
+          }
+          ref={layoutRef}
+          tabIndex={-1}
+          onKeyDown={onKeyDown}
+        >
+          <Toolbar
             store={store}
-            interaction={interaction}
-            revealRef={revealRef}
+            chrome={chrome}
+            onPreview={onPreview}
+            onExport={onExport}
+            onManageStyles={onManageStyles}
+            onShowShortcuts={() => setShortcutsOpen(true)}
+            sidebarOpen={sidebarOpen}
+            propsOpen={propsOpen}
+            onToggleSidebar={onToggleSidebar}
+            onToggleProps={onToggleProps}
           />
-          <ValidationDrawer store={store} onReveal={onReveal} />
-          <StatusBar store={store} cursorMm={interaction.cursorMm} />
-        </main>
-        <PropertiesPanel store={store} interaction={interaction.interaction} />
-        {previewOpen && (
-          <PreviewDialog store={store} onClose={onClosePreview} />
-        )}
-        {exportOpen && (
-          <ExportDialog
+          <Sidebar
             store={store}
-            onClose={onCloseExport}
+            beginPlacement={interaction.beginPlacement}
+            onQuickAdd={onQuickAdd}
             onReveal={onReveal}
           />
-        )}
-        {stylesOpen && <StylesDialog store={store} onClose={onCloseStyles} />}
-        {shortcutsOpen && <ShortcutsDialog onClose={onCloseShortcuts} />}
-      </div>
+          <main className="apx-canvas-area">
+            <CanvasBar store={store} />
+            <Canvas
+              store={store}
+              interaction={interaction}
+              revealRef={revealRef}
+            />
+            <ValidationDrawer store={store} onReveal={onReveal} />
+            <StatusBar store={store} cursorMm={interaction.cursorMm} />
+          </main>
+          <PropertiesPanel
+            store={store}
+            interaction={interaction.interaction}
+          />
+          {previewOpen && (
+            <PreviewDialog store={store} onClose={onClosePreview} />
+          )}
+          {exportOpen && (
+            <ExportDialog
+              store={store}
+              onClose={onCloseExport}
+              onReveal={onReveal}
+            />
+          )}
+          {stylesOpen && <StylesDialog store={store} onClose={onCloseStyles} />}
+          {shortcutsOpen && <ShortcutsDialog onClose={onCloseShortcuts} />}
+        </div>
+      </LocaleContext.Provider>
     </MessagesContext.Provider>
   );
 }

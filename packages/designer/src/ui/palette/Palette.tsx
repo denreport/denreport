@@ -22,8 +22,8 @@ export function Palette(props: {
 }): ReactNode {
   const m = useMessages();
   return (
-    <nav className="apx-palette" aria-label="要素パレット">
-      <div className="apx-panel-caption">要素</div>
+    <nav className="apx-palette" aria-label={m.palette.ariaLabel}>
+      <div className="apx-panel-caption">{m.palette.caption}</div>
       <ul className="apx-pal-list">
         {PALETTE_ORDER.map((type) => {
           return (
@@ -43,7 +43,7 @@ export function Palette(props: {
           );
         })}
       </ul>
-      <div className="apx-pal-hint">クリックで中央に追加 / ドラッグで配置</div>
+      <div className="apx-pal-hint">{m.palette.hint}</div>
     </nav>
   );
 }

@@ -1,11 +1,17 @@
-import type { CompatTargetId, Designer } from "@denreport/designer";
+import type {
+  CompatTargetId,
+  Designer,
+  DesignerLocale,
+} from "@denreport/designer";
 
 export const IR_STORAGE_KEY = "denreport-designer.ir";
 export const SAMPLE_DATA_STORAGE_KEY = "denreport-designer.sample-data";
 export const EXPORT_TARGET_STORAGE_KEY = "denreport-designer.export-target";
+export const LOCALE_STORAGE_KEY = "denreport-designer.locale";
 export const AUTOSAVE_DEBOUNCE_MS = 500;
 
 const VALID_EXPORT_TARGETS: readonly CompatTargetId[] = ["pdfme", "reportlab"];
+const VALID_LOCALES: readonly DesignerLocale[] = ["ja", "en"];
 
 /** 起動時の IR 復元。値なし → "blank"、成功 → "restored"、破損・バージョン不一致 → "invalid"。
     "invalid" でも保存値は消さない（次の自動保存で上書きされるまで救出の機会を残す） */
@@ -29,6 +35,12 @@ export function restoreExportTarget(
   return VALID_EXPORT_TARGETS.find((id) => id === stored);
 }
 
+/** 起動時の言語復元。値なし・不正値は undefined を返し、Designer 既定（"auto"）へのフォールバックに委ねる */
+export function restoreLocale(storage: Storage): DesignerLocale | undefined {
+  const stored = storage.getItem(LOCALE_STORAGE_KEY);
+  return VALID_LOCALES.find((locale) => locale === stored);
+}
+
 /** 変更通知を 500ms トレーリングデバウンスで localStorage へ書く自動保存の配線。
     setItem の失敗（QuotaExceededError 等）は onError に渡し、編集は妨げない。
     返り値はリスナー・タイマー・pagehide ハンドラを外す解除関数 */
@@ -38,9 +50,11 @@ export function attachAutosave(
     | "onChange"
     | "onSampleDataChange"
     | "onExportTargetChange"
+    | "onLocaleChange"
     | "saveIr"
     | "getSampleData"
     | "getExportTarget"
+    | "getLocale"
   >,
   storage: Storage,
   win: Window,
@@ -65,6 +79,11 @@ export function attachAutosave(
       key: EXPORT_TARGET_STORAGE_KEY,
       read: () => designer.getExportTarget(),
       listen: (listener) => designer.onExportTargetChange(listener),
+    },
+    {
+      key: LOCALE_STORAGE_KEY,
+      read: () => designer.getLocale(),
+      listen: (listener) => designer.onLocaleChange(listener),
     },
   ];
 

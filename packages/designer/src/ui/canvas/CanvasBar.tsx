@@ -10,15 +10,6 @@ import { useEditorState } from "../useEditorState";
 import { AlignmentButtons } from "./AlignmentButtons";
 import { zoomStepIn, zoomStepOut } from "./zoom";
 
-const CONTEXTS: readonly {
-  readonly value: PageContext;
-  readonly label: string;
-}[] = [
-  { value: "first", label: "1ページ目" },
-  { value: "rest", label: "継続ページ" },
-  { value: "last", label: "最終ページ" },
-];
-
 export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
   const { store } = props;
   const m = useMessages();
@@ -28,11 +19,19 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
   const higher = zoomStepIn(view.zoom);
   const page = state.document.page;
   const envelopeEnabled = page.width === 210 && page.height === 297;
+  const contexts: readonly {
+    readonly value: PageContext;
+    readonly label: string;
+  }[] = [
+    { value: "first", label: m.canvas.pageContextFirst },
+    { value: "rest", label: m.canvas.pageContextRest },
+    { value: "last", label: m.canvas.pageContextLast },
+  ];
   return (
     <div className="apx-canvasbar">
-      <span className="apx-canvasbar-label">編集ページ</span>
-      <fieldset className="apx-seg" aria-label="ページ文脈">
-        {CONTEXTS.map((c) => (
+      <span className="apx-canvasbar-label">{m.canvas.editPage}</span>
+      <fieldset className="apx-seg" aria-label={m.canvas.pageContext}>
+        {contexts.map((c) => (
           <button
             key={c.value}
             type="button"
@@ -51,7 +50,7 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
         aria-pressed={view.snapEnabled}
         onClick={() => store.setView({ snapEnabled: !view.snapEnabled })}
       >
-        スナップ
+        {m.canvas.snap}
       </button>
       <button
         type="button"
@@ -59,11 +58,11 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
         aria-pressed={view.gridVisible}
         onClick={() => store.setView({ gridVisible: !view.gridVisible })}
       >
-        グリッド
+        {m.canvas.grid}
       </button>
       <span className="apx-field">
         <select
-          aria-label="封筒窓ガイド"
+          aria-label={m.canvas.envelopeGuide}
           disabled={!envelopeEnabled}
           value={state.envelopePresetId ?? ""}
           onChange={(e) =>
@@ -74,7 +73,7 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
             )
           }
         >
-          <option value="">封筒窓: なし</option>
+          <option value="">{m.canvas.envelopeNone}</option>
           {ENVELOPE_PRESETS.map((preset) => (
             <option key={preset.id} value={preset.id}>
               {m.envelopePresets[preset.id]}
@@ -86,7 +85,7 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
       <button
         type="button"
         className="apx-tbtn"
-        aria-label="縮小"
+        aria-label={m.canvas.zoomOut}
         disabled={lower === null}
         onClick={() => lower !== null && store.setView({ zoom: lower })}
       >
@@ -98,7 +97,7 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
       <button
         type="button"
         className="apx-tbtn"
-        aria-label="拡大"
+        aria-label={m.canvas.zoomIn}
         disabled={higher === null}
         onClick={() => higher !== null && store.setView({ zoom: higher })}
       >

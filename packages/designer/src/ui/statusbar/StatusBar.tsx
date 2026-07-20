@@ -28,8 +28,9 @@ export function StatusBar(props: {
     if (view !== undefined) {
       selectionSummary = (
         <span>
-          選択: <span className="apx-mono">{view.id}</span>（
-          {m.elementTypes[view.element.type]}）{" "}
+          {m.statusBar.selectionLabel}
+          <span className="apx-mono">{view.id}</span>
+          {m.statusBar.selectionType(m.elementTypes[view.element.type])}{" "}
           <span className="apx-mono">
             {fmt(view.box.x)}, {fmt(view.box.y)} / {fmt(view.box.w)}×
             {fmt(view.box.h)} mm
@@ -38,7 +39,9 @@ export function StatusBar(props: {
       );
     }
   } else if (state.selection.length > 1) {
-    selectionSummary = <span>選択: {state.selection.length}個</span>;
+    selectionSummary = (
+      <span>{m.statusBar.selectionMultiple(state.selection.length)}</span>
+    );
   }
 
   return (
@@ -51,7 +54,7 @@ export function StatusBar(props: {
       {selectionSummary}
       <span className="apx-statusbar-spacer" />
       <span className="apx-statusbar-saved">
-        {state.dirty ? "未保存の変更あり" : "保存済み"}
+        {state.dirty ? m.statusBar.unsaved : m.statusBar.saved}
       </span>
       <span className="apx-mono apx-statusbar-version">
         IR v{state.document.version}

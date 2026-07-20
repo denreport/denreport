@@ -10,6 +10,8 @@ import {
   exportReportlab,
   exportReportlabTemplate,
 } from "@denreport/targets";
+import type { Locale } from "../../i18n/locale";
+import type { Messages } from "../../i18n/messages";
 import { buildZip } from "./zip";
 
 export type { FontIssue };
@@ -19,7 +21,7 @@ export const PDFME_EXPORT_FILE_NAME = "report-pdfme.json";
 export const REPORTLAB_EXPORT_FILE_NAME = "report-reportlab.zip";
 export const REPORTLAB_CODE_FILE_NAME = "report.py";
 
-const DATA_EDIT_GUIDE = "プレビューのサンプルデータ欄で入力・生成できます。";
+export type ExportMessages = Messages["export"];
 
 export type ParseExportDataResult =
   | { readonly ok: true; readonly mode: "data"; readonly data: IrData }
@@ -30,7 +32,10 @@ export type ParseExportDataResult =
     空文字列（trim 後）は雛形モード。非空は厳格パースし、JSON.parse 不能 /
     トップレベルが非オブジェクト（配列・null 含む）はエラー。
     message は利用者向け文言（プレビューのサンプルデータ欄への誘導を含む） */
-export function parseExportData(json: string): ParseExportDataResult {
+export function parseExportData(
+  json: string,
+  m: ExportMessages,
+): ParseExportDataResult {
   if (json.trim() === "") {
     return { ok: true, mode: "template" };
   }
@@ -38,16 +43,10 @@ export function parseExportData(json: string): ParseExportDataResult {
   try {
     parsed = JSON.parse(json);
   } catch {
-    return {
-      ok: false,
-      message: `サンプルデータを JSON として解釈できません。${DATA_EDIT_GUIDE}`,
-    };
+    return { ok: false, message: m.jsonParseError };
   }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    return {
-      ok: false,
-      message: `サンプルデータのトップレベルがオブジェクトではありません。${DATA_EDIT_GUIDE}`,
-    };
+    return { ok: false, message: m.notObjectError };
   }
   return { ok: true, mode: "data", data: parsed as IrData };
 }
@@ -93,9 +92,10 @@ export function buildPdfmeArtifact(
   document: IrDocument,
   data: IrData,
   fonts: FontSetData,
+  locale: Locale,
   fontSubset?: boolean,
 ): BuildPdfmeArtifactResult {
-  const result = exportPdfme(document, data, fonts);
+  const result = exportPdfme(document, data, fonts, { locale });
   if (!result.ok) {
     return { ok: false, errors: result.errors, fontIssues: result.fontIssues };
   }
@@ -123,12 +123,14 @@ export function buildPdfmeArtifact(
 export function buildPdfmeTemplateArtifact(
   document: IrDocument,
   fonts: FontSetData,
+  locale: Locale,
   fontSubset?: boolean,
 ): BuildPdfmeArtifactResult {
   return buildPdfmeArtifact(
     document,
     emptyDataFor(document),
     fonts,
+    locale,
     fontSubset,
   );
 }
@@ -178,8 +180,11 @@ export function buildReportlabArtifact(
   document: IrDocument,
   data: IrData,
   fonts: FontSetData,
+  locale: Locale,
 ): BuildReportlabArtifactResult {
-  return bundleReportlabResult(exportReportlab(document, data, fonts));
+  return bundleReportlabResult(
+    exportReportlab(document, data, fonts, { locale }),
+  );
 }
 
 /** サンプルデータ未入力時の ReportLab 書き出し。exportReportlabTemplate を同じ zip 構成で包む。
@@ -187,6 +192,9 @@ export function buildReportlabArtifact(
 export function buildReportlabTemplateArtifact(
   document: IrDocument,
   fonts: FontSetData,
+  locale: Locale,
 ): BuildReportlabArtifactResult {
-  return bundleReportlabResult(exportReportlabTemplate(document, fonts));
+  return bundleReportlabResult(
+    exportReportlabTemplate(document, fonts, { locale }),
+  );
 }

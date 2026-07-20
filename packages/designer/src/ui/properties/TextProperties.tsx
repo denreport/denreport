@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorMessageFor } from "../../state/error-index";
-import { ALIGN_OPTIONS } from "./align-options";
+import { alignOptions } from "./align-options";
 import type { ElementFormProps } from "./ElementProperties";
 import { commitReplace, withOptionalAttr } from "./ElementProperties";
 import { ColorField, NumberField, SegmentField, TextAreaField } from "./fields";
@@ -8,6 +9,7 @@ import { ColorField, NumberField, SegmentField, TextAreaField } from "./fields";
 export function TextProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;
   const el = view.element;
+  const m = useMessages();
   if (el.type !== "text") {
     return null;
   }
@@ -16,17 +18,17 @@ export function TextProperties(props: ElementFormProps): ReactNode {
   return (
     <>
       <section className="apx-sect">
-        <div className="apx-sect-h">内容</div>
+        <div className="apx-sect-h">{m.properties.text.content}</div>
         <TextAreaField
-          label="テキスト"
+          label={m.properties.text.text}
           value={el.text}
-          hint="{#id} で脚注を参照（文書設定の脚注セクションで定義。番号は出現順）"
+          hint={m.properties.text.textHint}
           error={errorMessageFor(errors, "text")}
           onCommit={(text) => commitReplace(store, el.id, { ...el, text })}
         />
       </section>
       <section className="apx-sect">
-        <div className="apx-sect-h">配置</div>
+        <div className="apx-sect-h">{m.properties.placement}</div>
         {"x" in el && (
           <>
             <NumberField
@@ -65,9 +67,9 @@ export function TextProperties(props: ElementFormProps): ReactNode {
         />
       </section>
       <section className="apx-sect">
-        <div className="apx-sect-h">文字</div>
+        <div className="apx-sect-h">{m.properties.character.section}</div>
         <NumberField
-          label="文字サイズ"
+          label={m.properties.character.fontSize}
           value={el.fontSize}
           unit="pt"
           precision={0.1}
@@ -77,13 +79,13 @@ export function TextProperties(props: ElementFormProps): ReactNode {
           }
         />
         <SegmentField
-          label="整列"
+          label={m.properties.character.align}
           value={el.align}
-          options={ALIGN_OPTIONS}
+          options={alignOptions(m.properties.align)}
           onCommit={(align) => commitReplace(store, el.id, { ...el, align })}
         />
         <NumberField
-          label="行間"
+          label={m.properties.character.lineHeight}
           value={el.lineHeight}
           precision={0.01}
           error={errorMessageFor(errors, "lineHeight")}
@@ -92,8 +94,11 @@ export function TextProperties(props: ElementFormProps): ReactNode {
           }
         />
         <div className="apx-frow">
-          <span className="apx-frow-label">装飾</span>
-          <fieldset className="apx-seg" aria-label="装飾">
+          <span className="apx-frow-label">{m.properties.text.decoration}</span>
+          <fieldset
+            className="apx-seg"
+            aria-label={m.properties.text.decoration}
+          >
             <button
               type="button"
               aria-pressed={el.fontWeight === "bold"}
@@ -110,7 +115,7 @@ export function TextProperties(props: ElementFormProps): ReactNode {
                 )
               }
             >
-              太字
+              {m.properties.text.bold}
             </button>
             <button
               type="button"
@@ -128,7 +133,7 @@ export function TextProperties(props: ElementFormProps): ReactNode {
                 )
               }
             >
-              斜体
+              {m.properties.text.italic}
             </button>
             <button
               type="button"
@@ -146,12 +151,12 @@ export function TextProperties(props: ElementFormProps): ReactNode {
                 )
               }
             >
-              下線
+              {m.properties.text.underline}
             </button>
           </fieldset>
         </div>
         <ColorField
-          label="文字色"
+          label={m.properties.character.color}
           value={el.color ?? null}
           onCommit={(color) =>
             commitReplace(

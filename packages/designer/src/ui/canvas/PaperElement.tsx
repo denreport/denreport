@@ -31,6 +31,7 @@ function cssLineStyle(
 function elementContent(
   el: IrElement | IrFlexChild,
   metrics: FontMetricsSet | null,
+  imagePlaceholderLabel: string,
 ): ReactNode {
   switch (el.type) {
     case "text":
@@ -64,7 +65,9 @@ function elementContent(
       );
     case "image":
       if (el.src === IMAGE_PLACEHOLDER_SRC) {
-        return <span className="apx-image-placeholder">画像未設定</span>;
+        return (
+          <span className="apx-image-placeholder">{imagePlaceholderLabel}</span>
+        );
       }
       return (
         <img className="apx-el-img" src={el.src} alt="" draggable={false} />
@@ -189,7 +192,7 @@ export function PaperElement(props: {
           charWidths={props.metrics?.regular ?? null}
         />
       ) : (
-        elementContent(el, props.metrics ?? null)
+        elementContent(el, props.metrics ?? null, m.canvas.imagePlaceholder)
       )}
     </div>
   );

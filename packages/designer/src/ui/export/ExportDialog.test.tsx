@@ -3,6 +3,8 @@ import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { triggerDownload } from "../../api/download";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { EditorStore } from "../../state/store";
 import { ExportDialog } from "./ExportDialog";
 import { fetchEmbeddedFontData } from "./export-font";
@@ -656,5 +658,26 @@ describe("欠落キー警告", () => {
     await vi.waitFor(() => {
       expect(container.querySelector('[role="status"]')).toBeNull();
     });
+  });
+});
+
+describe("en の MessagesContext", () => {
+  it("文言が英語で描画される", async () => {
+    const store = new EditorStore(docOf());
+    root.render(
+      <MessagesContext.Provider value={en}>
+        <ExportDialog store={store} onClose={() => {}} onReveal={() => {}} />
+      </MessagesContext.Provider>,
+    );
+    await vi.waitFor(() => {
+      if (container.querySelector(".apx-dialog") === null) {
+        throw new Error("ダイアログが未描画");
+      }
+    });
+    expect(container.textContent).toContain("Export");
+    expect(buttonByText("Close")).not.toBeNull();
+    expect(container.textContent).toContain(
+      "All elements can be exported for the selected target.",
+    );
   });
 });

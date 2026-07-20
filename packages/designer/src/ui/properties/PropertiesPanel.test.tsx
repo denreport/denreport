@@ -390,10 +390,10 @@ describe("用紙サイズプリセット", () => {
         <PropertiesPanel store={store} interaction={IDLE} />
       </MessagesContext.Provider>,
     );
-    const select = requireSelectByLabel("サイズ");
+    const select = requireSelectByLabel(en.propertiesBulk.document.size);
     expect(
       [...select.querySelectorAll("option")].map((o) => o.textContent),
-    ).toEqual(["A3", "A4", "A5", "B5", "Letter", "Legal", "カスタム"]);
+    ).toEqual(["A3", "A4", "A5", "B5", "Letter", "Legal", "Custom"]);
     expect(select.value).toBe("a4");
   });
 
@@ -1192,5 +1192,50 @@ describe("PC のフォントから選択", () => {
     expect(container.textContent).toContain(
       "実データ未選択（同梱フォントで代替されます）",
     );
+  });
+});
+
+describe("en ロケール表示", () => {
+  it("要素別パネルが英語の MessagesContext で描画される", () => {
+    const store = makeStore();
+    render(
+      <MessagesContext.Provider value={en}>
+        <PropertiesPanel store={store} interaction={IDLE} />
+      </MessagesContext.Provider>,
+    );
+
+    select(store, ["t1"]);
+    expect(container.textContent).toContain("Content");
+    expect(container.textContent).toContain("Placement");
+    expect(container.textContent).toContain("Decoration");
+    expect(inputByLabel("Name").value).toBe("");
+    expect(inputByLabel("Rotate").value).toBe("0.0");
+
+    select(store, ["l1"]);
+    expect(container.textContent).toContain("Shape");
+
+    select(store, ["f1"]);
+    expect(container.textContent).toContain("Layout");
+    expect(container.textContent).toContain("Set explicitly");
+
+    select(store, ["bc1"]);
+    expect(container.textContent).toContain("Barcode");
+    expect(container.textContent).toContain("Symbology");
+  });
+
+  it("文書設定パネルのフォントスロット名が英語で描画される", () => {
+    const store = makeStore();
+    render(
+      <MessagesContext.Provider value={en}>
+        <PropertiesPanel store={store} interaction={IDLE} />
+      </MessagesContext.Provider>,
+    );
+
+    expect(container.textContent).toContain("Document settings");
+    expect(container.textContent).toContain("Regular:");
+    expect(container.textContent).toContain("Bold:");
+    expect(container.textContent).toContain("Italic:");
+    expect(container.textContent).not.toContain("標準");
+    expect(container.textContent).not.toContain("太字");
   });
 });

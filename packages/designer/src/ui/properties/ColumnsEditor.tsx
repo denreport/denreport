@@ -8,7 +8,7 @@ import {
   removeTableColumn,
   updateTableColumn,
 } from "../../state/properties";
-import { ALIGN_OPTIONS } from "./align-options";
+import { alignOptions } from "./align-options";
 import type { ElementFormProps } from "./ElementProperties";
 import { useDraftValue } from "./useDraftValue";
 
@@ -81,6 +81,8 @@ function WidthCell(props: {
 export function ColumnsEditor(props: ElementFormProps): ReactNode {
   const { store, view, errors } = props;
   const m = useMessages();
+  const c = m.propertiesBulk.columns;
+  const alignOpts = alignOptions(m.properties.align);
   const el = view.element;
   if (el.type !== "table") {
     return null;
@@ -97,7 +99,8 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
   return (
     <section className="apx-sect">
       <div className="apx-sect-h">
-        列<span className="apx-mono">{el.columns.length}</span>
+        {c.heading}
+        <span className="apx-mono">{el.columns.length}</span>
       </div>
       {el.columns.map((col, i) => {
         const keyError = errorMessageFor(errors, `columns[${i}].key`);
@@ -107,7 +110,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
           <div key={i} className="apx-col-card">
             <div className="apx-col-row">
               <TextCell
-                ariaLabel={`列${i + 1} の key`}
+                ariaLabel={c.keyLabel(i + 1)}
                 value={col.key}
                 mono
                 invalid={keyError !== undefined}
@@ -118,7 +121,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
               <button
                 type="button"
                 className="apx-col-btn"
-                aria-label={`列${i + 1} を上へ`}
+                aria-label={c.moveUpLabel(i + 1)}
                 disabled={i === 0}
                 onClick={() =>
                   commitDoc((doc) => moveTableColumn(doc, el.id, i, -1))
@@ -129,7 +132,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
               <button
                 type="button"
                 className="apx-col-btn"
-                aria-label={`列${i + 1} を下へ`}
+                aria-label={c.moveDownLabel(i + 1)}
                 disabled={i === el.columns.length - 1}
                 onClick={() =>
                   commitDoc((doc) => moveTableColumn(doc, el.id, i, 1))
@@ -140,7 +143,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
               <button
                 type="button"
                 className="apx-col-btn apx-col-del"
-                aria-label={`列${i + 1} を削除`}
+                aria-label={c.deleteLabel(i + 1)}
                 disabled={el.columns.length === 1}
                 onClick={() =>
                   commitDoc((doc) => removeTableColumn(doc, el.id, i))
@@ -151,7 +154,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
             </div>
             <div className="apx-col-row">
               <TextCell
-                ariaLabel={`列${i + 1} の見出し`}
+                ariaLabel={c.headingLabel(i + 1)}
                 value={col.label}
                 onCommit={(label) =>
                   commitDoc((doc) =>
@@ -160,7 +163,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
                 }
               />
               <WidthCell
-                ariaLabel={`列${i + 1} の幅`}
+                ariaLabel={c.widthLabel(i + 1)}
                 value={col.width}
                 invalid={widthError !== undefined}
                 onCommit={(width) =>
@@ -171,7 +174,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
               />
               <span className="apx-field apx-col-align">
                 <select
-                  aria-label={`列${i + 1} の整列`}
+                  aria-label={c.alignLabel(i + 1)}
                   value={col.align}
                   onChange={(e) =>
                     commitDoc((doc) =>
@@ -181,7 +184,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
                     )
                   }
                 >
-                  {ALIGN_OPTIONS.map((option) => (
+                  {alignOpts.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -193,7 +196,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
               <label className="apx-check">
                 <input
                   type="checkbox"
-                  aria-label={`列${i + 1} の同一値の連続行を結合`}
+                  aria-label={c.mergeSameValueLabel(i + 1)}
                   checked={col.mergeSameValue === true}
                   onChange={(e) =>
                     commitDoc((doc) =>
@@ -203,7 +206,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
                     )
                   }
                 />
-                同一値の連続行を結合
+                {c.mergeSameValue}
               </label>
             </div>
             {keyError !== undefined && (
@@ -222,7 +225,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
           commitDoc((doc) => addTableColumn(doc, el.id, m.defaults))
         }
       >
-        ＋ 列を追加
+        {c.addColumn}
       </button>
     </section>
   );

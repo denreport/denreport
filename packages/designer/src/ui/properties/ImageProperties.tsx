@@ -1,5 +1,7 @@
 import type { ChangeEvent, ReactNode } from "react";
 import { useId } from "react";
+import { useMessages } from "../../i18n/context";
+import type { Messages } from "../../i18n/messages";
 import { IMAGE_PLACEHOLDER_SRC } from "../../state/constants";
 import { errorMessageFor } from "../../state/error-index";
 import { setImageSrc } from "../../state/properties";
@@ -7,18 +9,22 @@ import type { ElementFormProps } from "./ElementProperties";
 import { commitReplace } from "./ElementProperties";
 import { NumberField } from "./fields";
 
-function srcSummary(src: string): string {
+function srcSummary(
+  src: string,
+  labels: Pick<Messages["properties"]["image"], "unset" | "configured">,
+): string {
   if (src === IMAGE_PLACEHOLDER_SRC) {
-    return "未設定";
+    return labels.unset;
   }
   const semi = src.indexOf(";");
-  return semi > 5 ? src.slice(5, semi) : "設定済み";
+  return semi > 5 ? src.slice(5, semi) : labels.configured;
 }
 
 export function ImageProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;
   const fileId = useId();
   const el = view.element;
+  const m = useMessages();
   if (el.type !== "image") {
     return null;
   }
@@ -48,13 +54,15 @@ export function ImageProperties(props: ElementFormProps): ReactNode {
   return (
     <>
       <section className="apx-sect">
-        <div className="apx-sect-h">画像</div>
+        <div className="apx-sect-h">{m.properties.image.section}</div>
         <div className="apx-frow">
-          <span className="apx-frow-label">現在</span>
-          <span className="apx-field-static">{srcSummary(el.src)}</span>
+          <span className="apx-frow-label">{m.properties.image.current}</span>
+          <span className="apx-field-static">
+            {srcSummary(el.src, m.properties.image)}
+          </span>
         </div>
         <div className="apx-frow">
-          <label htmlFor={fileId}>ファイル</label>
+          <label htmlFor={fileId}>{m.properties.image.file}</label>
           <input
             id={fileId}
             type="file"
@@ -71,7 +79,7 @@ export function ImageProperties(props: ElementFormProps): ReactNode {
         )}
       </section>
       <section className="apx-sect">
-        <div className="apx-sect-h">配置</div>
+        <div className="apx-sect-h">{m.properties.placement}</div>
         {"x" in el && (
           <>
             <NumberField

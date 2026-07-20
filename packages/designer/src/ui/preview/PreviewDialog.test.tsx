@@ -8,6 +8,8 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { generateSampleData } from "../../state/preview";
 import { activeSampleJson } from "../../state/sample-scenarios";
 import { EditorStore } from "../../state/store";
@@ -527,6 +529,49 @@ describe("フォント解決の反映", () => {
     expect(banner?.textContent).toContain(
       "フォント「GoneFont」の実データが未選択のため",
     );
-    expect(banner?.textContent).toContain("PC のフォントから選択");
+    expect(banner?.textContent).toContain("文書設定のフォント欄");
+  });
+});
+
+describe("en の MessagesContext", () => {
+  async function renderEn(): Promise<void> {
+    const store = new EditorStore(
+      makeDocument([itemsTable()]),
+      sampleWithRows(1),
+    );
+    await act(async () => {
+      root.render(
+        <MessagesContext.Provider value={en}>
+          <PreviewDialog store={store} onClose={() => {}} />
+        </MessagesContext.Provider>,
+      );
+    });
+    await act(async () => {});
+  }
+
+  it("文言が英語で描画される", async () => {
+    await renderEn();
+    expect(container.querySelector(".apx-preview-title")?.textContent).toBe(
+      "Preview",
+    );
+    expect(buttonByText("Close")).not.toBeNull();
+  });
+
+  it("シナリオ操作・サンプルデータ欄・ページも英語で描画される", async () => {
+    await renderEn();
+    expect(buttonByText("Add")).not.toBeNull();
+    expect(buttonByText("Duplicate")).not.toBeNull();
+    expect(buttonByText("Delete")).not.toBeNull();
+    expect(buttonByText("Generate from bind keys")).not.toBeNull();
+    expect(
+      container.querySelector('select[aria-label="Sample data scenario"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelector('input[aria-label="Scenario name"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelector(".apx-sample .apx-sect-h")?.textContent,
+    ).toBe("Sample data (JSON)");
+    expect(svgPages()[0]?.getAttribute("aria-label")).toBe("Preview page");
   });
 });

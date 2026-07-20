@@ -1,5 +1,6 @@
-import type { CompatTargetId, IrDocument } from "@denreport/core";
+import type { CompatTargetId, IrDocument, IrError } from "@denreport/core";
 import { checkQualifiedInvoice, validateIr } from "@denreport/core";
+import type { Locale } from "../i18n/locale";
 import { ja } from "../i18n/messages/ja";
 import type { ClipboardState } from "./clipboard";
 import type { DefaultsMessages } from "./defaults";
@@ -28,6 +29,7 @@ export class EditorStore {
   readonly #history = new History();
   readonly #listeners = new Set<() => void>();
   #clipboard: ClipboardState | null = null;
+  #locale: Locale = "ja";
 
   constructor(
     initialDocument: IrDocument,
@@ -40,8 +42,7 @@ export class EditorStore {
       document: initialDocument,
       selection: [],
       view: INITIAL_VIEW,
-      validationErrors: validateIr(initialDocument),
-      validationWarnings: checkQualifiedInvoice(initialDocument),
+      ...this.#validation(initialDocument),
       dirty: false,
       sampleScenarios: parseSampleDataStorage(
         initialSampleData ?? "",
@@ -57,6 +58,30 @@ export class EditorStore {
 
   getState(): EditorState {
     return this.#state;
+  }
+
+  #validation(document: IrDocument): {
+    readonly validationErrors: readonly IrError[];
+    readonly validationWarnings: readonly IrError[];
+  } {
+    const options = { locale: this.#locale };
+    return {
+      validationErrors: validateIr(document, options),
+      validationWarnings: checkQualifiedInvoice(document, options),
+    };
+  }
+
+  /** 検証メッセージの言語を切り替え、現在の文書で検証をやり直す。
+      編集状態ではないため EditorState には持たせず、結果だけを更新する */
+  setLocale(locale: Locale): void {
+    if (locale === this.#locale) {
+      return;
+    }
+    this.#locale = locale;
+    this.#setState({
+      ...this.#state,
+      ...this.#validation(this.#state.document),
+    });
   }
 
   subscribe(listener: () => void): () => void {
@@ -76,8 +101,7 @@ export class EditorStore {
       ...this.#state,
       document,
       selection: selection ?? this.#state.selection,
-      validationErrors: validateIr(document),
-      validationWarnings: checkQualifiedInvoice(document),
+      ...this.#validation(document),
       dirty: true,
     });
   }
@@ -90,8 +114,7 @@ export class EditorStore {
       ...this.#state,
       document,
       selection: [],
-      validationErrors: validateIr(document),
-      validationWarnings: checkQualifiedInvoice(document),
+      ...this.#validation(document),
       dirty: false,
       groups:
         document.groups !== undefined
@@ -192,8 +215,7 @@ export class EditorStore {
       ...this.#state,
       document: entry.document,
       selection: entry.selection,
-      validationErrors: validateIr(entry.document),
-      validationWarnings: checkQualifiedInvoice(entry.document),
+      ...this.#validation(entry.document),
       dirty: true,
     });
   }

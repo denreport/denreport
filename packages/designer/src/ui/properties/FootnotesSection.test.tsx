@@ -4,6 +4,8 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { EditorStore } from "../../state/store";
 import { useEditorState } from "../useEditorState";
 import { FootnotesSection } from "./FootnotesSection";
@@ -248,5 +250,32 @@ describe("脚注定義済みの状態", () => {
 
     click(buttonByText("{#id} をコピー"));
     expect(writeText).toHaveBeenCalledWith("{#fee}");
+  });
+});
+
+describe("en Provider", () => {
+  it("脚注のフィールドラベルと案内文が英語になる", () => {
+    const store = new EditorStore({
+      ...makeDocument(),
+      footnotes: {
+        x: 15,
+        w: 180,
+        bottom: 10,
+        fontSize: 8,
+        lineHeight: 1.25,
+        pages: "all",
+        notes: [],
+      },
+    });
+    act(() => {
+      root.render(
+        <MessagesContext.Provider value={en}>
+          <Wrapper store={store} />
+        </MessagesContext.Provider>,
+      );
+    });
+    expect(container.textContent).toContain("Footnotes");
+    expect(inputByLabel("Width")).toBeDefined();
+    expect(container.textContent).toContain("Numbers are assigned");
   });
 });

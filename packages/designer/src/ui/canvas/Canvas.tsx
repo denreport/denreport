@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useMessages } from "../../i18n/context";
 import { MM_TO_PX } from "../../state/constants";
 import { envelopePresetById } from "../../state/envelope-presets";
 import type { PlacedElementView } from "../../state/geometry";
@@ -194,6 +195,7 @@ export function Canvas(props: {
 }): ReactNode {
   const { store, interaction, revealRef } = props;
   const state = useEditorState(store);
+  const m = useMessages();
   const { document: doc, view } = state;
   const activeJson = activeSampleJson(state.sampleScenarios);
   const metrics = useFontMetrics(doc.font, state.fontRegistry);
@@ -423,7 +425,7 @@ export function Canvas(props: {
             } as CSSProperties
           }
           role="application"
-          aria-label="キャンバス"
+          aria-label={m.canvas.ariaLabel}
           // biome-ignore lint/a11y/noNoninteractiveTabindex: 矢印キー編集のため紙にフォーカスを持たせる
           tabIndex={0}
           {...interaction.paperProps}
@@ -486,9 +488,7 @@ export function Canvas(props: {
           )}
           {doc.elements.length === 0 &&
             interaction.interaction.kind !== "placing" && (
-              <div className="apx-paper-empty-hint">
-                パレットから要素をドラッグして配置
-              </div>
+              <div className="apx-paper-empty-hint">{m.canvas.emptyHint}</div>
             )}
           <GuidesLayer
             guides={guidesOnPage}

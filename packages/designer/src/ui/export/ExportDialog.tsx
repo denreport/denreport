@@ -1,10 +1,11 @@
-import type { CompatTargetId, IrError, IrFontSlot } from "@denreport/core";
+import type { IrError, IrFontSlot } from "@denreport/core";
 import { COMPAT_MATRICES, checkCompat } from "@denreport/core";
 import type { FontSetData } from "@denreport/targets";
 import { EMBEDDED_BOLD_FONT_URL, EMBEDDED_FONT_URL } from "@denreport/targets";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { triggerDownload } from "../../api/download";
+import { useLocale, useMessages } from "../../i18n/context";
 import {
   EXPORT_TARGET_IDS,
   groupCompatFindings,
@@ -15,7 +16,6 @@ import { layoutDocument, visibleInContext } from "../../state/geometry";
 import { activeSampleJson } from "../../state/sample-scenarios";
 import type { EditorStore } from "../../state/store";
 import { Dialog } from "../dialog/Dialog";
-import { FONT_SLOT_LABELS } from "../fonts/FontSelectorDialog";
 import {
   EMBEDDED_BOLD_FONT_NAME,
   EMBEDDED_FONT_NAME,
@@ -75,11 +75,6 @@ async function fontDataFor(resolution: FontResolution): Promise<Uint8Array> {
 
 const RUN_IDLE: RunState = { kind: "idle" };
 
-const TARGET_DESCRIPTIONS: Readonly<Record<CompatTargetId, string>> = {
-  pdfme: "テンプレート+inputs（JSON）",
-  reportlab: "生成コード（.py + フォント、zip）",
-};
-
 export function ExportDialog(props: {
   readonly store: EditorStore;
   readonly onClose: () => void;
@@ -87,6 +82,8 @@ export function ExportDialog(props: {
   readonly onReveal: (id: string) => void;
 }): ReactNode {
   const { store, onClose, onReveal } = props;
+  const m = useMessages();
+  const locale = useLocale();
   const state = useEditorState(store);
   const target = state.selectedExportTarget;
   const [run, setRun] = useState<RunState>(RUN_IDLE);
@@ -94,8 +91,10 @@ export function ExportDialog(props: {
 
   const groups = useMemo(
     () =>
-      groupCompatFindings(checkCompat(state.document, COMPAT_MATRICES[target])),
-    [state.document, target],
+      groupCompatFindings(
+        checkCompat(state.document, COMPAT_MATRICES[target], { locale }),
+      ),
+    [state.document, target, locale],
   );
   const findingTotal = groups.reduce(
     (total, group) => total + group.findingCount,
@@ -142,7 +141,10 @@ export function ExportDialog(props: {
 
   const runExport = (doc: Document): void => {
     const current = store.getState();
-    const parsed = parseExportData(activeSampleJson(current.sampleScenarios));
+    const parsed = parseExportData(
+      activeSampleJson(current.sampleScenarios),
+      m.export,
+    );
     if (!parsed.ok) {
       setRun({ kind: "data-error", message: parsed.message });
       return;
@@ -155,17 +157,24 @@ export function ExportDialog(props: {
             ? buildPdfmeTemplateArtifact(
                 current.document,
                 fonts,
+                locale,
                 !fullEmbedFont,
               )
             : buildPdfmeArtifact(
                 current.document,
                 parsed.data,
                 fonts,
+                locale,
                 !fullEmbedFont,
               )
           : parsed.mode === "template"
-            ? buildReportlabTemplateArtifact(current.document, fonts)
-            : buildReportlabArtifact(current.document, parsed.data, fonts);
+            ? buildReportlabTemplateArtifact(current.document, fonts, locale)
+            : buildReportlabArtifact(
+                current.document,
+                parsed.data,
+                fonts,
+                locale,
+              );
       if (!built.ok) {
         setRun({
           kind: "export-error",
@@ -221,22 +230,22 @@ export function ExportDialog(props: {
 
   return (
     <Dialog
-      title="書き出し"
+      title={m.export.title}
       onClose={onClose}
       wide
       footer={
         <>
           <span className="apx-dialog-note">
             {validationErrorCount > 0
-              ? `検証エラーが ${validationErrorCount} 件あるため実行できません。`
-              : "警告は書き出しを妨げません。検証エラーがある場合は実行できません。"}
+              ? m.export.blockedByErrors(validationErrorCount)
+              : m.export.warningsNote}
           </span>
           <button
             type="button"
             className="apx-btn apx-btn-secondary"
             onClick={onClose}
           >
-            閉じる
+            {m.export.close}
           </button>
           <button
             type="button"
@@ -244,7 +253,7 @@ export function ExportDialog(props: {
             disabled={validationErrorCount > 0 || running}
             onClick={(event) => runExport(event.currentTarget.ownerDocument)}
           >
-            書き出す
+            {m.export.run}
           </button>
         </>
       }
@@ -266,7 +275,9 @@ export function ExportDialog(props: {
               <span className="apx-tcard-name">
                 {COMPAT_MATRICES[id].displayName}
               </span>
-              <span className="apx-tcard-sub">{TARGET_DESCRIPTIONS[id]}</span>
+              <span className="apx-tcard-sub">
+                {m.export.targetDescriptions[id]}
+              </span>
             </span>
           </button>
         ))}
@@ -279,26 +290,20 @@ export function ExportDialog(props: {
               checked={fullEmbedFont}
               onChange={(e) => setFullEmbedFont(e.currentTarget.checked)}
             />
-            フォントをまるごと埋め込む（サブセット化しない）
+            {m.export.fullEmbedFont}
           </label>
-          <p className="apx-dialog-note">
-            pdfme
-            は既定で使用文字のみを埋め込みますが、一部の日本語フォントで文字化けする場合が
-            あります。文字化けする場合はオンにしてください。
-          </p>
+          <p className="apx-dialog-note">{m.export.fullEmbedFontNote}</p>
         </>
       )}
       <div className="apx-export-warns">
         <p className="apx-export-warns-h">
-          互換性警告
+          {m.export.compatWarnings}
           {findingTotal > 0 && (
             <span className="apx-badge apx-badge-warn">{findingTotal}</span>
           )}
         </p>
         {groups.length === 0 ? (
-          <p className="apx-export-ok">
-            ✓ 選択中のターゲットですべての要素を書き出せます。
-          </p>
+          <p className="apx-export-ok">{m.export.compatOk}</p>
         ) : (
           groups.map((group) => (
             <WarningGroupCard
@@ -310,38 +315,30 @@ export function ExportDialog(props: {
         )}
       </div>
       {isTemplateMode && (
-        <p className="apx-dialog-note">
-          サンプルデータが未入力のため、雛形として書き出します。pdfme
-          は差し込み値が空の テンプレート、ReportLab は build(出力パス, data)
-          にデータを渡す形式になります。
-        </p>
+        <p className="apx-dialog-note">{m.export.templateModeNote}</p>
       )}
-      {running && <p className="apx-export-running">書き出しています…</p>}
+      {running && <p className="apx-export-running">{m.export.running}</p>}
       {run.kind === "data-error" && (
         <div className="apx-export-error" role="alert">
           <p>{run.message}</p>
-          <p className="apx-dialog-note">生成物は作成されていません。</p>
+          <p className="apx-dialog-note">{m.export.noArtifact}</p>
         </div>
       )}
       {run.kind === "font-fetch-error" && (
         <div className="apx-export-error" role="alert">
-          <p>同梱フォントを取得できませんでした。もう一度お試しください。</p>
-          <p className="apx-dialog-note">生成物は作成されていません。</p>
+          <p>{m.export.fontFetchFailed}</p>
+          <p className="apx-dialog-note">{m.export.noArtifact}</p>
         </div>
       )}
       {run.kind === "font-missing" && (
         <div className="apx-export-error" role="alert">
-          <p>
-            {FONT_SLOT_LABELS[run.slot]}フォント「{run.name}
-            」の実データがありません。文書設定の「PC
-            のフォントから選択」で選び直してください。
-          </p>
-          <p className="apx-dialog-note">生成物は作成されていません。</p>
+          <p>{m.export.fontMissing(m.fonts.slotLabels[run.slot], run.name)}</p>
+          <p className="apx-dialog-note">{m.export.noArtifact}</p>
         </div>
       )}
       {run.kind === "export-error" && (
         <div className="apx-export-error" role="alert">
-          <p>書き出せませんでした。</p>
+          <p>{m.export.failed}</p>
           {run.errors.length > 0 && (
             <ul className="apx-dialog-errors">
               {run.errors.map((error, i) => (
@@ -365,15 +362,12 @@ export function ExportDialog(props: {
               ))}
             </ul>
           )}
-          <p className="apx-dialog-note">生成物は作成されていません。</p>
+          <p className="apx-dialog-note">{m.export.noArtifact}</p>
         </div>
       )}
       {run.kind === "export-warning" && (
         <div role="status">
-          <p className="apx-dialog-note">
-            生成物は作成されています。次のキーがサンプルデータに無かったため、
-            テキストは空文字列・表は空行（minRows 分）で出力しました。
-          </p>
+          <p className="apx-dialog-note">{m.export.warningsProduced}</p>
           <ul className="apx-dialog-errors">
             {run.warnings.map((warning, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: 同一 rule / path の警告が並び得るため index で識別する

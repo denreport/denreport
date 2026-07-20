@@ -1,5 +1,6 @@
 import type { IrDocument, IrError, IrPages } from "@denreport/core";
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorMessageFor } from "../../state/error-index";
 import {
   addFootnoteNote,
@@ -10,16 +11,6 @@ import {
 } from "../../state/footnotes";
 import type { EditorStore } from "../../state/store";
 import { NumberField, SegmentField, TextAreaField, TextField } from "./fields";
-
-const PAGES_OPTIONS: readonly {
-  readonly value: IrPages;
-  readonly label: string;
-}[] = [
-  { value: "first", label: "1ページ目" },
-  { value: "rest", label: "継続" },
-  { value: "last", label: "最終" },
-  { value: "all", label: "全" },
-];
 
 /** 権限拒否・非対応ブラウザでも操作を継続できるよう、失敗は無視する */
 function copyToClipboard(text: string): void {
@@ -33,6 +24,14 @@ export function FootnotesSection(props: {
 }): ReactNode {
   const { store, document, errors } = props;
   const { footnotes } = document;
+  const m = useMessages();
+  const f = m.propertiesBulk.footnotes;
+  const pagesOptions: readonly { value: IrPages; label: string }[] = [
+    { value: "first", label: m.propertiesBulk.pagesOptions.first },
+    { value: "rest", label: m.propertiesBulk.pagesOptions.rest },
+    { value: "last", label: m.propertiesBulk.pagesOptions.last },
+    { value: "all", label: m.propertiesBulk.pagesOptions.all },
+  ];
 
   const commitDoc = (op: (document: IrDocument) => IrDocument): void => {
     const current = store.getState().document;
@@ -45,7 +44,7 @@ export function FootnotesSection(props: {
   if (footnotes === undefined) {
     return (
       <section className="apx-sect">
-        <div className="apx-sect-h">脚注</div>
+        <div className="apx-sect-h">{f.heading}</div>
         <button
           type="button"
           className="apx-btn apx-btn-secondary"
@@ -53,7 +52,7 @@ export function FootnotesSection(props: {
             commitDoc((doc) => setFootnotes(doc, defaultFootnotes(doc.page)))
           }
         >
-          脚注を使う
+          {f.use}
         </button>
       </section>
     );
@@ -61,9 +60,9 @@ export function FootnotesSection(props: {
 
   return (
     <section className="apx-sect">
-      <div className="apx-sect-h">脚注</div>
+      <div className="apx-sect-h">{f.heading}</div>
       <NumberField
-        label="x"
+        label={f.x}
         value={footnotes.x}
         unit="mm"
         precision={0.1}
@@ -73,7 +72,7 @@ export function FootnotesSection(props: {
         }
       />
       <NumberField
-        label="幅"
+        label={f.width}
         value={footnotes.w}
         unit="mm"
         precision={0.1}
@@ -83,7 +82,7 @@ export function FootnotesSection(props: {
         }
       />
       <NumberField
-        label="下端からの距離"
+        label={f.bottom}
         value={footnotes.bottom}
         unit="mm"
         precision={0.1}
@@ -93,7 +92,7 @@ export function FootnotesSection(props: {
         }
       />
       <NumberField
-        label="文字サイズ"
+        label={f.fontSize}
         value={footnotes.fontSize}
         unit="pt"
         precision={0.1}
@@ -103,7 +102,7 @@ export function FootnotesSection(props: {
         }
       />
       <NumberField
-        label="行間"
+        label={f.lineHeight}
         value={footnotes.lineHeight}
         precision={0.01}
         error={errorMessageFor(errors, "lineHeight")}
@@ -112,20 +111,17 @@ export function FootnotesSection(props: {
         }
       />
       <SegmentField
-        label="ページ"
+        label={f.pages}
         value={footnotes.pages}
-        options={PAGES_OPTIONS}
+        options={pagesOptions}
         onCommit={(pages) =>
           commitDoc((doc) => setFootnotes(doc, { ...footnotes, pages }))
         }
       />
-      <p className="apx-sect-note">
-        テキスト要素の本文に {"{#id}"}
-        と書くと、対応する id
-        の注記をここに表示します。番号はマークの出現順に自動採番されます。
-      </p>
+      <p className="apx-sect-note">{f.hint}</p>
       <div className="apx-sect-h">
-        注記<span className="apx-mono">{footnotes.notes.length}</span>
+        {f.notesHeading}
+        <span className="apx-mono">{footnotes.notes.length}</span>
       </div>
       {footnotes.notes.map((note, i) => {
         const textError = errorMessageFor(errors, `notes[${i}].text`);
@@ -133,18 +129,18 @@ export function FootnotesSection(props: {
           // biome-ignore lint/suspicious/noArrayIndexKey: 注記に安定 id がなく、id 編集中の重複は編集の常態のため index で識別する
           <div key={i} className="apx-col-card">
             <div className="apx-sect-h">
-              注記{i + 1}
+              {f.noteHeading(i + 1)}
               <button
                 type="button"
                 className="apx-col-btn apx-col-del"
-                aria-label={`注記${i + 1}を削除`}
+                aria-label={f.deleteNoteLabel(i + 1)}
                 onClick={() => commitDoc((doc) => removeFootnoteNote(doc, i))}
               >
                 ×
               </button>
             </div>
             <TextField
-              label="id"
+              label={f.id}
               value={note.id}
               mono
               error={errorMessageFor(errors, `notes[${i}].id`)}
@@ -158,18 +154,18 @@ export function FootnotesSection(props: {
                 className="apx-copy-btn"
                 onClick={() => copyToClipboard(note.id)}
               >
-                id をコピー
+                {f.copyId}
               </button>
               <button
                 type="button"
                 className="apx-copy-btn"
                 onClick={() => copyToClipboard(`{#${note.id}}`)}
               >
-                {"{#id} をコピー"}
+                {f.copyIdMark}
               </button>
             </div>
             <TextAreaField
-              label="本文"
+              label={f.body}
               value={note.text}
               onCommit={(text) =>
                 commitDoc((doc) => updateFootnoteNote(doc, i, { text }))
@@ -186,14 +182,14 @@ export function FootnotesSection(props: {
         className="apx-add-col"
         onClick={() => commitDoc((doc) => addFootnoteNote(doc))}
       >
-        ＋ 注記を追加
+        {f.addNote}
       </button>
       <button
         type="button"
         className="apx-btn apx-btn-secondary"
         onClick={() => commitDoc((doc) => setFootnotes(doc, undefined))}
       >
-        脚注を削除
+        {f.remove}
       </button>
     </section>
   );

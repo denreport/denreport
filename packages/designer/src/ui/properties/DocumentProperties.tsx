@@ -2,6 +2,7 @@ import type { IrDocument, IrFontSlot } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
 import { useMessages } from "../../i18n/context";
+import type { Messages } from "../../i18n/messages";
 import { errorMessageFor } from "../../state/error-index";
 import type { FontResolution } from "../../state/fonts";
 import { resolveFontSet } from "../../state/fonts";
@@ -17,10 +18,7 @@ import {
   setPage,
 } from "../../state/properties";
 import type { EditorStore } from "../../state/store";
-import {
-  FONT_SLOT_LABELS,
-  FontSelectorDialog,
-} from "../fonts/FontSelectorDialog";
+import { FontSelectorDialog } from "../fonts/FontSelectorDialog";
 import {
   EMBEDDED_BOLD_FONT_NAME,
   EMBEDDED_FONT_NAME,
@@ -45,17 +43,20 @@ const EMBEDDED_NAMES: ReadonlySet<string> = new Set([
   EMBEDDED_BOLD_FONT_NAME,
 ]);
 
-function resolutionNote(resolution: FontResolution | undefined): string {
+function resolutionNote(
+  resolution: FontResolution | undefined,
+  d: Messages["propertiesBulk"]["document"],
+): string {
   if (resolution === undefined) {
-    return "未設定（標準フォントで代替されます）";
+    return d.unsetFallback;
   }
   switch (resolution.kind) {
     case "registered":
-      return `実データ: ${resolution.font.displayName}`;
+      return d.resolutionRegistered(resolution.font.displayName);
     case "embedded":
-      return "実データ: 同梱フォント";
+      return d.resolutionEmbedded;
     case "missing":
-      return "実データ未選択（同梱フォントで代替されます）";
+      return d.resolutionMissing;
   }
 }
 
@@ -65,6 +66,7 @@ export function DocumentProperties(props: {
   const { store } = props;
   const m = useMessages();
   const state = useEditorState(store);
+  const d = m.propertiesBulk.document;
   const [fontDialogSlot, setFontDialogSlot] = useState<IrFontSlot | null>(null);
   const docTypeCheckId = useId();
   const pageErrors = state.validationErrors.filter((error) =>
@@ -100,19 +102,19 @@ export function DocumentProperties(props: {
   return (
     <>
       <div className="apx-props-head">
-        <span className="apx-props-id">文書設定</span>
+        <span className="apx-props-id">{d.heading}</span>
       </div>
       <section className="apx-sect">
-        <div className="apx-sect-h">用紙</div>
+        <div className="apx-sect-h">{d.paperSection}</div>
         <SelectField<PaperPresetId | typeof CUSTOM_PAPER_PRESET>
-          label="サイズ"
+          label={d.size}
           value={paperPresetId}
           options={[
             ...paperPresets.map((preset) => ({
               value: preset.id,
               label: m.paperPresets[preset.id],
             })),
-            { value: CUSTOM_PAPER_PRESET, label: "カスタム" },
+            { value: CUSTOM_PAPER_PRESET, label: d.custom },
           ]}
           onCommit={(id) => {
             const preset = paperPresets.find((p) => p.id === id);
@@ -125,7 +127,7 @@ export function DocumentProperties(props: {
           }}
         />
         <NumberField
-          label="幅"
+          label={d.width}
           value={state.document.page.width}
           unit="mm"
           precision={0.1}
@@ -137,7 +139,7 @@ export function DocumentProperties(props: {
           }
         />
         <NumberField
-          label="高さ"
+          label={d.height}
           value={state.document.page.height}
           unit="mm"
           precision={0.1}
@@ -150,9 +152,9 @@ export function DocumentProperties(props: {
         />
       </section>
       <section className="apx-sect">
-        <div className="apx-sect-h">フォント</div>
+        <div className="apx-sect-h">{d.fontSection}</div>
         <TextField
-          label="フォント名"
+          label={d.fontName}
           value={state.document.font.regular}
           mono
           error={fontError}
@@ -173,9 +175,9 @@ export function DocumentProperties(props: {
               {slot !== "regular" && (
                 <div className="apx-frow">
                   <span className="apx-frow-label">
-                    {FONT_SLOT_LABELS[slot]}
+                    {m.fonts.slotLabels[slot]}
                   </span>
-                  <span className="apx-field">{name ?? "未設定"}</span>
+                  <span className="apx-field">{name ?? d.unset}</span>
                 </div>
               )}
               {slotError !== undefined && (
@@ -184,10 +186,10 @@ export function DocumentProperties(props: {
                 </p>
               )}
               <p className="apx-sect-note">
-                {FONT_SLOT_LABELS[slot]}:{" "}
+                {m.fonts.slotLabels[slot]}:{" "}
                 {slot === "regular" || name !== undefined
-                  ? resolutionNote(resolutions.get(slot))
-                  : "未設定（標準フォントで代替されます）"}
+                  ? resolutionNote(resolutions.get(slot), d)
+                  : d.unsetFallback}
               </p>
               {isLocalFontAccessSupported(window) && (
                 <button
@@ -195,25 +197,22 @@ export function DocumentProperties(props: {
                   className="apx-btn apx-btn-secondary"
                   onClick={() => setFontDialogSlot(slot)}
                 >
-                  {FONT_SLOT_LABELS[slot]}のフォントを選択…
+                  {d.selectFont(m.fonts.slotLabels[slot])}
                 </button>
               )}
             </div>
           );
         })}
         {!isLocalFontAccessSupported(window) && (
-          <p className="apx-sect-note">
-            お使いのブラウザは PC
-            内フォントの一覧取得に対応していません（Chromium
-            系ブラウザで利用できます）。
-          </p>
+          <p className="apx-sect-note">{d.localFontUnsupported}</p>
         )}
       </section>
       <section className="apx-sect">
-        <div className="apx-sect-h">適格請求書</div>
+        <div className="apx-sect-h">{d.qualifiedInvoiceSection}</div>
         <div className="apx-frow">
           <span className="apx-frow-label">
-            記載事項<span className="apx-nowrap">チェック</span>
+            {d.qualifiedInvoiceCheck}
+            <span className="apx-nowrap">{d.checkSuffix}</span>
           </span>
           <label className="apx-check" htmlFor={docTypeCheckId}>
             <input
@@ -226,7 +225,7 @@ export function DocumentProperties(props: {
                 )
               }
             />
-            有効化
+            {d.enable}
           </label>
         </div>
       </section>
@@ -235,7 +234,7 @@ export function DocumentProperties(props: {
         document={state.document}
         errors={footnoteErrors}
       />
-      <p className="apx-props-empty">要素を選択すると属性を編集できます。</p>
+      <p className="apx-props-empty">{d.selectPrompt}</p>
       {fontDialogSlot !== null && (
         <FontSelectorDialog
           slot={fontDialogSlot}

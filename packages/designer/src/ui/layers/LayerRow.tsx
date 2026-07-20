@@ -51,7 +51,7 @@ export function LayerRow(props: {
             type="button"
             className="apx-layer-caret"
             aria-expanded={!isCollapsed}
-            aria-label={isCollapsed ? "展開" : "折りたたむ"}
+            aria-label={isCollapsed ? m.layers.expand : m.layers.collapse}
             onClick={() => onToggle(node.id)}
           >
             {isCollapsed ? "▸" : "▾"}
@@ -79,7 +79,7 @@ export function LayerRow(props: {
         <button
           type="button"
           className="apx-layer-del"
-          aria-label="削除"
+          aria-label={m.layers.delete}
           onClick={() => onDelete(node.id)}
         >
           ×
