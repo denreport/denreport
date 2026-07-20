@@ -59,6 +59,8 @@ const FLEX_CHILD_HANDLES = BOX_HANDLES.filter(
   (h) => h.id === "e" || h.id === "s" || h.id === "se",
 );
 
+const MOVE_BAND_SIDES = ["top", "right", "bottom", "left"] as const;
+
 function toHandles(
   handles: readonly {
     readonly id: HandleId;
@@ -387,6 +389,19 @@ export function SelectionOverlay(props: {
           </div>
         );
       })}
+
+      {single !== undefined &&
+        single.element.type === "table" &&
+        visibleInContext(single.pages, context) &&
+        MOVE_BAND_SIDES.map((side) => (
+          <span
+            key={side}
+            className={`dr-move-band dr-move-band--${side}`}
+            data-dr-move-band="true"
+            data-dr-id={single.id}
+            style={boxVars(single.box)}
+          />
+        ))}
 
       {single !== undefined &&
         visibleInContext(single.pages, context) &&

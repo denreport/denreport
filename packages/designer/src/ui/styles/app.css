@@ -1168,6 +1168,55 @@
   cursor: inherit;
 }
 
+/* Move band: a thin strip along the selected table's edge that lets a drag start a move
+   instead of the cell-range selection that a drag over the table interior starts. Stays
+   entirely inside the table's box (edge to edge - thickness) so it doesn't steal pointer
+   events from an adjacent element placed flush against the table's outside. The thickness
+   is capped at 2mm in table-space so it stays short of a header/row's own center, which
+   would swallow that row's cell-drag (the 4px floor can exceed 2mm only below ~0.27 zoom) */
+.dr-move-band {
+  --band-t: max(4px, calc(2 * var(--mm)));
+  position: absolute;
+  z-index: 1;
+  pointer-events: auto;
+  cursor: move;
+  background: transparent;
+}
+
+.dr-move-band--top,
+.dr-move-band--bottom {
+  left: calc(var(--x) * var(--mm));
+  width: calc(var(--w) * var(--mm));
+  height: var(--band-t);
+}
+
+.dr-move-band--top {
+  top: calc(var(--y) * var(--mm));
+}
+
+.dr-move-band--bottom {
+  top: calc((var(--y) + var(--h)) * var(--mm) - var(--band-t));
+}
+
+.dr-move-band--left,
+.dr-move-band--right {
+  top: calc(var(--y) * var(--mm));
+  height: calc(var(--h) * var(--mm));
+  width: var(--band-t);
+}
+
+.dr-move-band--left {
+  left: calc(var(--x) * var(--mm));
+}
+
+.dr-move-band--right {
+  left: calc((var(--x) + var(--w)) * var(--mm) - var(--band-t));
+}
+
+.dr-viewport.is-pan .dr-move-band {
+  cursor: inherit;
+}
+
 .dr-guide-v {
   position: absolute;
   top: 0;

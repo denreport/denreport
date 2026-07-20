@@ -121,6 +121,9 @@ export function useCellSelection(
       if (target !== null && target.closest("[data-dr-handle]") !== null) {
         return false;
       }
+      if (target !== null && target.closest("[data-dr-move-band]") !== null) {
+        return false;
+      }
       const id =
         target?.closest("[data-dr-id]")?.getAttribute("data-dr-id") ?? null;
       if (id === null || s.selection.length !== 1 || s.selection[0] !== id) {

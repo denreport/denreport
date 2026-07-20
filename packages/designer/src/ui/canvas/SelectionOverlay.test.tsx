@@ -42,6 +42,23 @@ function rectElement(rotate: number | undefined): IrElement {
   };
 }
 
+function tableElement(id: string): IrElement {
+  return {
+    type: "table",
+    id,
+    x: 10,
+    y: 10,
+    bind: "items",
+    columns: [{ key: "name", label: "品目", width: 50, align: "left" }],
+    rowHeight: 8,
+    headerHeight: 8,
+    fontSize: 10,
+    maxY: 100,
+    continuationY: 10,
+    minRows: 2,
+  };
+}
+
 function renderRect(rotate: number | undefined): void {
   const document: IrDocument = {
     version: "1.0",
@@ -248,5 +265,53 @@ describe("SelectionOverlay — ドラッグゴーストが回転に追従する"
     const ghost = dragGhost();
     expect(ghost.classList.contains("dr-drag-ghost--rotated")).toBe(false);
     expect(cssVar(ghost, "--rot")).toBe("");
+  });
+});
+
+describe("SelectionOverlay — 表選択時の移動バンド", () => {
+  it("表を単一選択すると4辺の移動バンドが data-dr-move-band 属性付きで描画される", () => {
+    const document: IrDocument = {
+      version: "1.0",
+      page: { width: 210, height: 297 },
+      font: { regular: "NotoSansJP" },
+      elements: [tableElement("tbl1")],
+    };
+    const store = new EditorStore(document);
+    store.setSelection(["tbl1"]);
+    const state = store.getState();
+    const layout = layoutDocument(document, state.view.pageContext);
+    act(() => {
+      root.render(
+        <SelectionOverlay
+          state={state}
+          layout={layout}
+          interaction={{ kind: "idle" }}
+        />,
+      );
+    });
+
+    const bands = container.querySelectorAll("[data-dr-move-band]");
+    expect(bands.length).toBe(4);
+    for (const band of bands) {
+      expect(band.getAttribute("data-dr-id")).toBe("tbl1");
+      expect(band.classList.contains("dr-move-band")).toBe(true);
+    }
+    const sides = [...bands].map((band) =>
+      [...band.classList].find((c) => c.startsWith("dr-move-band--")),
+    );
+    expect(sides.sort()).toEqual(
+      [
+        "dr-move-band--top",
+        "dr-move-band--right",
+        "dr-move-band--bottom",
+        "dr-move-band--left",
+      ].sort(),
+    );
+  });
+
+  it("非 table 要素を選択しても移動バンドは描画されない", () => {
+    renderRect(undefined);
+
+    expect(container.querySelectorAll("[data-dr-move-band]").length).toBe(0);
   });
 });
