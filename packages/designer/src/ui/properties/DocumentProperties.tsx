@@ -18,10 +18,7 @@ import {
   setPage,
 } from "../../state/properties";
 import type { EditorStore } from "../../state/store";
-import {
-  FONT_SLOT_LABELS,
-  FontSelectorDialog,
-} from "../fonts/FontSelectorDialog";
+import { FontSelectorDialog } from "../fonts/FontSelectorDialog";
 import {
   EMBEDDED_BOLD_FONT_NAME,
   EMBEDDED_FONT_NAME,
@@ -178,7 +175,7 @@ export function DocumentProperties(props: {
               {slot !== "regular" && (
                 <div className="apx-frow">
                   <span className="apx-frow-label">
-                    {FONT_SLOT_LABELS[slot]}
+                    {m.fonts.slotLabels[slot]}
                   </span>
                   <span className="apx-field">{name ?? d.unset}</span>
                 </div>
@@ -189,7 +186,7 @@ export function DocumentProperties(props: {
                 </p>
               )}
               <p className="apx-sect-note">
-                {FONT_SLOT_LABELS[slot]}:{" "}
+                {m.fonts.slotLabels[slot]}:{" "}
                 {slot === "regular" || name !== undefined
                   ? resolutionNote(resolutions.get(slot), d)
                   : d.unsetFallback}
@@ -200,7 +197,7 @@ export function DocumentProperties(props: {
                   className="apx-btn apx-btn-secondary"
                   onClick={() => setFontDialogSlot(slot)}
                 >
-                  {d.selectFont(FONT_SLOT_LABELS[slot])}
+                  {d.selectFont(m.fonts.slotLabels[slot])}
                 </button>
               )}
             </div>

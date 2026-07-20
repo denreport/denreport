@@ -4,6 +4,7 @@ import {
   readAscentPerEm,
   validateFont,
 } from "@denreport/targets";
+import type { Messages } from "../../i18n/messages";
 import type { RegisteredFont } from "../../state/fonts";
 import { sanitizeFontName } from "../../state/fonts";
 
@@ -12,6 +13,8 @@ export {
   EMBEDDED_FONT_NAME,
 } from "@denreport/targets";
 export type { FontIssue };
+
+export type FontsMessages = Messages["fonts"];
 
 export type BuildRegisteredFontResult =
   | { readonly ok: true; readonly font: RegisteredFont }
@@ -23,6 +26,7 @@ export type BuildRegisteredFontResult =
 export function buildRegisteredFont(
   data: Uint8Array,
   candidate: { readonly fullName: string },
+  m: FontsMessages,
 ): BuildRegisteredFontResult {
   const issues = validateFont(data);
   if (issues.length > 0) {
@@ -35,8 +39,7 @@ export function buildRegisteredFont(
       issues: [
         {
           format: detectFontFormat(data),
-          message:
-            "フォントの計量（head / hhea テーブル）を読み取れないため、テキストのベースライン位置を確定できません。別の TTF フォントを使用してください。",
+          message: m.metricsUnreadable,
         },
       ],
     };

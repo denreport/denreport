@@ -3,6 +3,7 @@ import type { IrDocument } from "@denreport/core";
 import { emptyDataFor } from "@denreport/core";
 import { EMBEDDED_FONT_URL, exportPdfme } from "@denreport/targets";
 import { describe, expect, it } from "vitest";
+import { ja } from "../../i18n/messages/ja";
 import {
   buildPdfmeArtifact,
   buildPdfmeTemplateArtifact,
@@ -98,13 +99,13 @@ function listZipEntries(bytes: Uint8Array): ZipListing[] {
 describe("parseExportData", () => {
   it("空文字列（空白のみ含む）は雛形モードになる", () => {
     for (const json of ["", "  \n"]) {
-      const result = parseExportData(json);
+      const result = parseExportData(json, ja.export);
       expect(result).toEqual({ ok: true, mode: "template" });
     }
   });
 
   it("JSON.parse 不能はパースエラーになり、プレビューへ誘導する", () => {
-    const result = parseExportData('{"a":');
+    const result = parseExportData('{"a":', ja.export);
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");
     expect(result.message).toContain("JSON として解釈できません");
@@ -113,7 +114,7 @@ describe("parseExportData", () => {
 
   it("トップレベルが非オブジェクト（配列・null・数値）はエラーになる", () => {
     for (const json of ["[]", "null", "1", '"a"']) {
-      const result = parseExportData(json);
+      const result = parseExportData(json, ja.export);
       expect(result.ok).toBe(false);
       if (result.ok) throw new Error("失敗を期待");
       expect(result.message).toContain("オブジェクトではありません");
@@ -122,7 +123,7 @@ describe("parseExportData", () => {
   });
 
   it("トップレベルがオブジェクトならデータモードで返す", () => {
-    const result = parseExportData('{"title": "請求書"}');
+    const result = parseExportData('{"title": "請求書"}', ja.export);
     expect(result).toEqual({
       ok: true,
       mode: "data",

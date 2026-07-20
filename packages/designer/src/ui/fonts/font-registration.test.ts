@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { EMBEDDED_FONT_URL } from "@denreport/targets";
 import { describe, expect, it } from "vitest";
+import { ja } from "../../i18n/messages/ja";
 import { sanitizeFontName } from "../../state/fonts";
 import { buildRegisteredFont } from "./font-registration";
 
@@ -31,9 +32,11 @@ function ttfMissingMetrics(): Uint8Array {
 
 describe("buildRegisteredFont", () => {
   it("同梱 TTF は ok になり ascentPerEm と sanitizeFontName の名前を持つ", () => {
-    const result = buildRegisteredFont(EMBEDDED_FONT, {
-      fullName: "Noto Sans JP",
-    });
+    const result = buildRegisteredFont(
+      EMBEDDED_FONT,
+      { fullName: "Noto Sans JP" },
+      ja.fonts,
+    );
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
     expect(result.font.name).toBe(sanitizeFontName("Noto Sans JP"));
@@ -43,9 +46,11 @@ describe("buildRegisteredFont", () => {
   });
 
   it("CFF は validate.ts と同じ文言の FontIssue で拒否する", () => {
-    const result = buildRegisteredFont(syntheticCff(), {
-      fullName: "Test CFF",
-    });
+    const result = buildRegisteredFont(
+      syntheticCff(),
+      { fullName: "Test CFF" },
+      ja.fonts,
+    );
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");
     expect(result.issues).toEqual([
@@ -58,9 +63,11 @@ describe("buildRegisteredFont", () => {
   });
 
   it("計量を読み取れない TTF は FontIssue になる", () => {
-    const result = buildRegisteredFont(ttfMissingMetrics(), {
-      fullName: "Broken",
-    });
+    const result = buildRegisteredFont(
+      ttfMissingMetrics(),
+      { fullName: "Broken" },
+      ja.fonts,
+    );
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");
     expect(result.issues[0]?.format).toBe("ttf");

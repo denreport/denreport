@@ -7,6 +7,8 @@ import {
 } from "@denreport/targets";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useMessages } from "../../i18n/context";
+import type { Messages } from "../../i18n/messages";
 import type { FontResolution } from "../../state/fonts";
 import { resolveFontSet } from "../../state/fonts";
 import { buildPreview, generateSampleData } from "../../state/preview";
@@ -20,7 +22,6 @@ import {
   updateActiveJson,
 } from "../../state/sample-scenarios";
 import type { EditorStore } from "../../state/store";
-import { FONT_SLOT_LABELS } from "../fonts/FontSelectorDialog";
 import { EMBEDDED_FONT_NAME } from "../fonts/font-registration";
 import { useEditorState } from "../useEditorState";
 import { PreviewPage } from "./PreviewPage";
@@ -28,6 +29,8 @@ import type { PreviewFont, PreviewFontSet } from "./preview-font";
 import { loadPreviewFont, registerPreviewFace } from "./preview-font";
 import { SampleDataEditor } from "./SampleDataEditor";
 import { ScenarioBar } from "./ScenarioBar";
+
+type PreviewMessages = Messages["preview"];
 
 type FontState =
   | { readonly kind: "loading" }
@@ -79,7 +82,10 @@ async function loadSlotPreviewFont(
   return loadPreviewFont(doc, target.url, target.family);
 }
 
-function parseErrorOf(sampleData: string): string | undefined {
+function parseErrorOf(
+  sampleData: string,
+  m: PreviewMessages,
+): string | undefined {
   if (sampleData.trim() === "") {
     return undefined;
   }
@@ -88,7 +94,7 @@ function parseErrorOf(sampleData: string): string | undefined {
     return undefined;
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    return `JSON として解釈できません: ${detail}`;
+    return m.jsonParseError(detail);
   }
 }
 
@@ -98,6 +104,7 @@ export function PreviewDialog(props: {
   readonly onClose: () => void;
 }): ReactNode {
   const { store, onClose } = props;
+  const m = useMessages();
   const state = useEditorState(store);
   const activeJson = activeSampleJson(state.sampleScenarios);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -178,14 +185,12 @@ export function PreviewDialog(props: {
 
   const bannerMessages: string[] = [];
   if (fontState.kind === "failed") {
-    bannerMessages.push(
-      "同梱フォントを読み込めなかったため、システムフォントで表示しています",
-    );
+    bannerMessages.push(m.preview.fontLoadFailed);
   }
   for (const [slot, resolution] of resolutions) {
     if (resolution.kind === "missing") {
       bannerMessages.push(
-        `${FONT_SLOT_LABELS[slot]}フォント「${resolution.name}」の実データが未選択のため、同梱フォントで表示しています。文書設定の「PC のフォントから選択」で選び直せます`,
+        m.preview.fontMissing(m.fonts.slotLabels[slot], resolution.name),
       );
     }
   }
@@ -223,13 +228,13 @@ export function PreviewDialog(props: {
       className="apx-preview"
       role="dialog"
       aria-modal="true"
-      aria-label="プレビュー"
+      aria-label={m.preview.title}
     >
       <header className="apx-preview-bar">
-        <span className="apx-preview-title">プレビュー</span>
+        <span className="apx-preview-title">{m.preview.title}</span>
         {preview?.ok === true && (
           <span className="apx-preview-count">
-            {preview.document.pageCount} ページ
+            {m.preview.pageCount(preview.document.pageCount)}
           </span>
         )}
         <span className="apx-toolbar-spacer" />
@@ -238,7 +243,7 @@ export function PreviewDialog(props: {
           className="apx-btn apx-btn-secondary"
           onClick={onClose}
         >
-          閉じる
+          {m.preview.close}
         </button>
       </header>
       <div className="apx-preview-body">
@@ -255,13 +260,12 @@ export function PreviewDialog(props: {
           {hasValidationErrors ? (
             <div className="apx-preview-error">
               <p>
-                検証エラーが {state.validationErrors.length}{" "}
-                件あります。検証エラーを解消してください。
+                {m.preview.validationErrorsNote(state.validationErrors.length)}
               </p>
             </div>
           ) : preview !== undefined && !preview.ok ? (
             <div className="apx-preview-error">
-              <p>プレビューを表示できません。</p>
+              <p>{m.preview.cannotDisplay}</p>
               <ul className="apx-dialog-errors">
                 {preview.errors.map((error, i) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: 同一 rule / path のエラーが並び得るため index で識別する
@@ -274,9 +278,7 @@ export function PreviewDialog(props: {
               </ul>
             </div>
           ) : preview !== undefined && fontState.kind === "loading" ? (
-            <div className="apx-preview-loading">
-              フォントを読み込んでいます…
-            </div>
+            <div className="apx-preview-loading">{m.preview.loadingFont}</div>
           ) : preview !== undefined ? (
             preview.document.pages.map((elements, pageIndex) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: ページは展開結果の並びそのもの
@@ -330,7 +332,7 @@ export function PreviewDialog(props: {
               )
             }
             onGenerate={onGenerate}
-            parseError={parseErrorOf(activeJson)}
+            parseError={parseErrorOf(activeJson, m.preview)}
           />
         </aside>
       </div>
@@ -340,11 +342,13 @@ export function PreviewDialog(props: {
             className="apx-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="シナリオの削除"
+            aria-label={m.preview.removeScenario.ariaLabel}
           >
-            <div className="apx-dialog-h">シナリオの削除</div>
+            <div className="apx-dialog-h">
+              {m.preview.removeScenario.heading}
+            </div>
             <div className="apx-dialog-b">
-              <p>現在のシナリオを削除します。続行しますか？</p>
+              <p>{m.preview.removeScenario.body}</p>
             </div>
             <div className="apx-dialog-f">
               <button
@@ -352,14 +356,14 @@ export function PreviewDialog(props: {
                 className="apx-btn apx-btn-secondary"
                 onClick={() => setConfirmingRemove(false)}
               >
-                キャンセル
+                {m.preview.removeScenario.cancel}
               </button>
               <button
                 type="button"
                 className="apx-btn apx-btn-primary"
                 onClick={confirmRemove}
               >
-                削除する
+                {m.preview.removeScenario.confirm}
               </button>
             </div>
           </div>
@@ -371,13 +375,13 @@ export function PreviewDialog(props: {
             className="apx-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="サンプルデータの上書き"
+            aria-label={m.preview.regenerateSample.ariaLabel}
           >
-            <div className="apx-dialog-h">サンプルデータの上書き</div>
+            <div className="apx-dialog-h">
+              {m.preview.regenerateSample.heading}
+            </div>
             <div className="apx-dialog-b">
-              <p>
-                現在のサンプルデータを生成した内容で置き換えます。続行しますか？
-              </p>
+              <p>{m.preview.regenerateSample.body}</p>
             </div>
             <div className="apx-dialog-f">
               <button
@@ -385,14 +389,14 @@ export function PreviewDialog(props: {
                 className="apx-btn apx-btn-secondary"
                 onClick={() => setConfirmingGenerate(false)}
               >
-                キャンセル
+                {m.preview.regenerateSample.cancel}
               </button>
               <button
                 type="button"
                 className="apx-btn apx-btn-primary"
                 onClick={applyGenerated}
               >
-                置き換える
+                {m.preview.regenerateSample.confirm}
               </button>
             </div>
           </div>
