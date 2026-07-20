@@ -90,20 +90,20 @@ function renderRectWithInteraction(
 }
 
 function dragGhost(): HTMLElement {
-  const node = container.querySelector(".apx-drag-ghost");
-  if (node === null) throw new Error(".apx-drag-ghost がない");
+  const node = container.querySelector(".dr-drag-ghost");
+  if (node === null) throw new Error(".dr-drag-ghost がない");
   return node as HTMLElement;
 }
 
 function handle(id: string): HTMLElement {
-  const node = container.querySelector(`.apx-h[data-apx-handle="${id}"]`);
+  const node = container.querySelector(`.dr-h[data-dr-handle="${id}"]`);
   if (node === null) throw new Error(`ハンドル ${id} がない`);
   return node as HTMLElement;
 }
 
 function selBox(): HTMLElement {
-  const node = container.querySelector(".apx-sel-box");
-  if (node === null) throw new Error(".apx-sel-box がない");
+  const node = container.querySelector(".dr-sel-box");
+  if (node === null) throw new Error(".dr-sel-box がない");
   return node as HTMLElement;
 }
 
@@ -188,7 +188,7 @@ describe("SelectionOverlay — 回転に追従する選択枠・ハンドル", (
 });
 
 describe("SelectionOverlay — ドラッグゴーストが回転に追従する", () => {
-  it("moving 中、回転ありの要素は apx-drag-ghost--rotated と --rot を持つ", () => {
+  it("moving 中、回転ありの要素は dr-drag-ghost--rotated と --rot を持つ", () => {
     renderRectWithInteraction(45, {
       kind: "moving",
       ids: ["r1"],
@@ -200,11 +200,11 @@ describe("SelectionOverlay — ドラッグゴーストが回転に追従する"
     });
 
     const ghost = dragGhost();
-    expect(ghost.classList.contains("apx-drag-ghost--rotated")).toBe(true);
+    expect(ghost.classList.contains("dr-drag-ghost--rotated")).toBe(true);
     expect(cssVar(ghost, "--rot")).toBe("45deg");
   });
 
-  it("moving 中、回転なしの要素は apx-drag-ghost--rotated を持たない", () => {
+  it("moving 中、回転なしの要素は dr-drag-ghost--rotated を持たない", () => {
     renderRectWithInteraction(undefined, {
       kind: "moving",
       ids: ["r1"],
@@ -216,11 +216,11 @@ describe("SelectionOverlay — ドラッグゴーストが回転に追従する"
     });
 
     const ghost = dragGhost();
-    expect(ghost.classList.contains("apx-drag-ghost--rotated")).toBe(false);
+    expect(ghost.classList.contains("dr-drag-ghost--rotated")).toBe(false);
     expect(cssVar(ghost, "--rot")).toBe("");
   });
 
-  it("resizing 中、回転ありの要素は apx-drag-ghost--rotated と --rot を持つ", () => {
+  it("resizing 中、回転ありの要素は dr-drag-ghost--rotated と --rot を持つ", () => {
     renderRectWithInteraction(30, {
       kind: "resizing",
       id: "r1",
@@ -231,11 +231,11 @@ describe("SelectionOverlay — ドラッグゴーストが回転に追従する"
     });
 
     const ghost = dragGhost();
-    expect(ghost.classList.contains("apx-drag-ghost--rotated")).toBe(true);
+    expect(ghost.classList.contains("dr-drag-ghost--rotated")).toBe(true);
     expect(cssVar(ghost, "--rot")).toBe("30deg");
   });
 
-  it("resizing 中、回転なしの要素は apx-drag-ghost--rotated を持たない", () => {
+  it("resizing 中、回転なしの要素は dr-drag-ghost--rotated を持たない", () => {
     renderRectWithInteraction(undefined, {
       kind: "resizing",
       id: "r1",
@@ -246,7 +246,7 @@ describe("SelectionOverlay — ドラッグゴーストが回転に追従する"
     });
 
     const ghost = dragGhost();
-    expect(ghost.classList.contains("apx-drag-ghost--rotated")).toBe(false);
+    expect(ghost.classList.contains("dr-drag-ghost--rotated")).toBe(false);
     expect(cssVar(ghost, "--rot")).toBe("");
   });
 });

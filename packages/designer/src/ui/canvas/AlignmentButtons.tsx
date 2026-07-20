@@ -280,7 +280,7 @@ export function AlignmentButtons(props: {
         <button
           key={btn.kind}
           type="button"
-          className="apx-tbtn"
+          className="dr-tbtn"
           aria-label={alignLabel[btn.kind]}
           title={alignLabel[btn.kind]}
           onClick={() => alignSelection(store, btn.kind)}
@@ -292,7 +292,7 @@ export function AlignmentButtons(props: {
         <button
           key={btn.axis}
           type="button"
-          className="apx-tbtn"
+          className="dr-tbtn"
           aria-label={distributeLabel[btn.axis]}
           title={distributeLabel[btn.axis]}
           disabled={!canDistribute}
@@ -301,7 +301,7 @@ export function AlignmentButtons(props: {
           <Icon>{btn.icon}</Icon>
         </button>
       ))}
-      <span className="apx-toolbar-sep" />
+      <span className="dr-toolbar-sep" />
     </>
   );
 }

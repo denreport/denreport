@@ -37,7 +37,7 @@ export function Sidebar(props: {
 
   const measuredPaletteHeight = useCallback((): number => {
     const rect = sidebarRef.current
-      ?.querySelector(".apx-palette")
+      ?.querySelector(".dr-palette")
       ?.getBoundingClientRect();
     return rect?.height ?? MIN_PALETTE_HEIGHT;
   }, []);
@@ -96,11 +96,11 @@ export function Sidebar(props: {
 
   return (
     <div
-      className={`apx-sidebar${paletteHeight !== null ? " has-split" : ""}`}
+      className={`dr-sidebar${paletteHeight !== null ? " has-split" : ""}`}
       ref={sidebarRef}
       style={
         paletteHeight !== null
-          ? ({ "--apx-palette-h": `${paletteHeight}px` } as CSSProperties)
+          ? ({ "--dr-palette-h": `${paletteHeight}px` } as CSSProperties)
           : undefined
       }
     >
@@ -112,7 +112,7 @@ export function Sidebar(props: {
         aria-label={m.sidebar.splitterAriaLabel}
         aria-valuenow={paletteHeight ?? undefined}
         tabIndex={0}
-        className="apx-sidebar-splitter"
+        className="dr-sidebar-splitter"
         onPointerDown={onSplitterPointerDown}
         onPointerMove={onSplitterPointerMove}
         onPointerUp={onSplitterPointerEnd}

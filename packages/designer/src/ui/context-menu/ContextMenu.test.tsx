@@ -41,11 +41,11 @@ async function renderMenu(
     />,
   );
   await vi.waitFor(() => {
-    if (container.querySelector(".apx-context-menu") === null) {
+    if (container.querySelector(".dr-context-menu") === null) {
       throw new Error("メニューが未描画");
     }
   });
-  const menu = container.querySelector<HTMLElement>(".apx-context-menu");
+  const menu = container.querySelector<HTMLElement>(".dr-context-menu");
   if (menu === null) {
     throw new Error("メニューがない");
   }
@@ -53,9 +53,7 @@ async function renderMenu(
 }
 
 function itemButtons(menu: HTMLElement): HTMLButtonElement[] {
-  return [
-    ...menu.querySelectorAll<HTMLButtonElement>(".apx-context-menu-item"),
-  ];
+  return [...menu.querySelectorAll<HTMLButtonElement>(".dr-context-menu-item")];
 }
 
 function pressKey(target: Element, key: string): KeyboardEvent {
@@ -116,7 +114,7 @@ describe("フォーカス管理", () => {
     const spy = vi
       .spyOn(HTMLButtonElement.prototype, "focus")
       .mockImplementation(function (this: HTMLButtonElement, ...args) {
-        const menuEl = this.closest<HTMLElement>(".apx-context-menu");
+        const menuEl = this.closest<HTMLElement>(".dr-context-menu");
         visibilityAtCall.push(menuEl?.style.visibility ?? "");
         return original.apply(this, args);
       });
@@ -199,7 +197,7 @@ describe("キーボード操作", () => {
   it("任意キーの keydown が親（React ツリー上の onKeyDown）へ伝播しない", async () => {
     const parentOnKeyDown = vi.fn();
     root.render(
-      // biome-ignore lint/a11y/noStaticElementInteractions: mimics DesignerRoot's apx-layout (an ancestor with onKeyDown) for verification purposes
+      // biome-ignore lint/a11y/noStaticElementInteractions: mimics DesignerRoot's dr-layout (an ancestor with onKeyDown) for verification purposes
       <div onKeyDown={parentOnKeyDown}>
         <ContextMenu
           x={10}
@@ -211,11 +209,11 @@ describe("キーボード操作", () => {
       </div>,
     );
     await vi.waitFor(() => {
-      if (container.querySelector(".apx-context-menu") === null) {
+      if (container.querySelector(".dr-context-menu") === null) {
         throw new Error("メニューが未描画");
       }
     });
-    const menu = container.querySelector<HTMLElement>(".apx-context-menu");
+    const menu = container.querySelector<HTMLElement>(".dr-context-menu");
     if (menu === null) {
       throw new Error("メニューがない");
     }

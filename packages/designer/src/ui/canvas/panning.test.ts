@@ -60,7 +60,7 @@ describe("isPanKeySource", () => {
 
   it("paper 相当の div では true", () => {
     const paper = document.createElement("div");
-    paper.className = "apx-paper";
+    paper.className = "dr-paper";
     expect(isPanKeySource(paper)).toBe(true);
   });
 

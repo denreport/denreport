@@ -305,10 +305,10 @@ describe("PropertiesPanel の振り分け", () => {
       ];
     for (const [id, type] of cases) {
       select(store, [id]);
-      expect(container.querySelector(".apx-type-badge")?.textContent).toBe(
+      expect(container.querySelector(".dr-type-badge")?.textContent).toBe(
         ja.elementTypes[type],
       );
-      expect(container.querySelector(".apx-props-id")?.textContent).toBe(id);
+      expect(container.querySelector(".dr-props-id")?.textContent).toBe(id);
     }
   });
 
@@ -317,8 +317,8 @@ describe("PropertiesPanel の振り分け", () => {
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["t1", "r1"]);
     expect(container.textContent).toContain("2 個の要素を選択中");
-    expect(container.querySelector(".apx-field")).not.toBeNull();
-    expect(container.querySelector(".apx-type-badge")).toBeNull();
+    expect(container.querySelector(".dr-field")).not.toBeNull();
+    expect(container.querySelector(".dr-type-badge")).toBeNull();
   });
 
   it("選択 id が文書に無い場合は非選択扱い", () => {
@@ -349,17 +349,17 @@ describe("PropertiesPanel の振り分け", () => {
   it("適格請求書チェックのラベルは「チェック」部分が単語内分断されないよう nowrap で囲む", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
-    const labels = [...container.querySelectorAll(".apx-frow-label")];
+    const labels = [...container.querySelectorAll(".dr-frow-label")];
     const label = labels.find((el) => el.textContent === "記載事項チェック");
     expect(label?.textContent).toBe("記載事項チェック");
-    expect(label?.querySelector(".apx-nowrap")?.textContent).toBe("チェック");
+    expect(label?.querySelector(".dr-nowrap")?.textContent).toBe("チェック");
   });
 
   it("flex 子の選択では x / y / ページを出さず、注記を表示する", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["c1"]);
-    expect(container.querySelector(".apx-type-badge")?.textContent).toBe(
+    expect(container.querySelector(".dr-type-badge")?.textContent).toBe(
       ja.elementTypes.text,
     );
     const labels = [...container.querySelectorAll("label")].map(
@@ -641,7 +641,7 @@ describe("代表的な編集経路", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["t1"]);
-    expect(container.querySelector(".apx-fhint")?.textContent).toContain(
+    expect(container.querySelector(".dr-fhint")?.textContent).toContain(
       "{#id}",
     );
   });
@@ -655,8 +655,8 @@ describe("代表的な編集経路", () => {
     setValue(textInput, "見出し{#missing}");
     blur(textInput);
 
-    expect(container.querySelector(".apx-field.is-error")).not.toBeNull();
-    expect(container.querySelector(".apx-ferr")?.textContent).toContain(
+    expect(container.querySelector(".dr-field.is-error")).not.toBeNull();
+    expect(container.querySelector(".dr-ferr")?.textContent).toContain(
       "missing",
     );
   });
@@ -670,7 +670,7 @@ describe("代表的な編集経路", () => {
     setValue(textInput, "子{#note1}");
     blur(textInput);
 
-    expect(container.querySelector(".apx-ferr")?.textContent).toBe(
+    expect(container.querySelector(".dr-ferr")?.textContent).toBe(
       "脚注マークは flex 内の text には書けません",
     );
   });
@@ -687,8 +687,8 @@ describe("代表的な編集経路", () => {
     expect(container.textContent).toContain("Σ列幅 = 120.0 mm");
 
     const widthInput = container
-      .querySelectorAll(".apx-col-card")[2]
-      ?.querySelector(".apx-col-w input");
+      .querySelectorAll(".dr-col-card")[2]
+      ?.querySelector(".dr-col-w input");
     if (!(widthInput instanceof HTMLInputElement)) {
       throw new Error("幅の入力がない");
     }
@@ -1004,8 +1004,8 @@ describe("maxY ガイド線の表示条件", () => {
     const store = makeStore();
     store.setSelection(["tbl1"]);
     renderOverlay(store);
-    expect(container.querySelector(".apx-maxy-line")).not.toBeNull();
-    expect(container.querySelector(".apx-maxy-chip")?.textContent).toBe(
+    expect(container.querySelector(".dr-maxy-line")).not.toBeNull();
+    expect(container.querySelector(".dr-maxy-chip")?.textContent).toBe(
       "maxY 240",
     );
   });
@@ -1014,11 +1014,11 @@ describe("maxY ガイド線の表示条件", () => {
     const store = makeStore();
     store.setSelection(["t1"]);
     renderOverlay(store);
-    expect(container.querySelector(".apx-maxy-line")).toBeNull();
+    expect(container.querySelector(".dr-maxy-line")).toBeNull();
 
     store.setSelection(["tbl1", "t1"]);
     renderOverlay(store);
-    expect(container.querySelector(".apx-maxy-line")).toBeNull();
+    expect(container.querySelector(".dr-maxy-line")).toBeNull();
   });
 });
 
@@ -1131,13 +1131,13 @@ describe("PC のフォントから選択", () => {
 
     click(buttonByText("標準のフォントを選択…"));
     await vi.waitFor(() => {
-      expect(container.querySelector(".apx-dialog")).not.toBeNull();
+      expect(container.querySelector(".dr-dialog")).not.toBeNull();
     });
     await vi.waitFor(() => {
-      expect(container.querySelector(".apx-font-name")).not.toBeNull();
+      expect(container.querySelector(".dr-font-name")).not.toBeNull();
     });
 
-    const fontRow = [...container.querySelectorAll(".apx-font-name")]
+    const fontRow = [...container.querySelectorAll(".dr-font-name")]
       .find((el) => el.textContent === "Local Font")
       ?.closest("button");
     if (!(fontRow instanceof HTMLButtonElement)) {
@@ -1156,7 +1156,7 @@ describe("PC のフォントから選択", () => {
     expect(store.getState().fontRegistry.get("LocalFont")?.displayName).toBe(
       "Local Font",
     );
-    expect(container.querySelector(".apx-dialog")).toBeNull();
+    expect(container.querySelector(".dr-dialog")).toBeNull();
 
     act(() => {
       store.undo();
@@ -1247,7 +1247,7 @@ describe("en ロケール表示", () => {
     );
 
     expect(
-      container.querySelector(".apx-props")?.getAttribute("aria-label"),
+      container.querySelector(".dr-props")?.getAttribute("aria-label"),
     ).toBe("Properties");
   });
 });

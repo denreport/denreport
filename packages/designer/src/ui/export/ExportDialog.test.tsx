@@ -192,7 +192,7 @@ async function mount(
     <ExportDialog store={store} onClose={onClose} onReveal={onReveal} />,
   );
   await vi.waitFor(() => {
-    if (container.querySelector(".apx-dialog") === null) {
+    if (container.querySelector(".dr-dialog") === null) {
       throw new Error("ダイアログが未描画");
     }
   });
@@ -215,8 +215,8 @@ function click(el: Element): void {
 
 function targetCard(name: string): HTMLButtonElement {
   const card = [
-    ...container.querySelectorAll<HTMLButtonElement>(".apx-tcard"),
-  ].find((b) => b.querySelector(".apx-tcard-name")?.textContent === name);
+    ...container.querySelectorAll<HTMLButtonElement>(".dr-tcard"),
+  ].find((b) => b.querySelector(".dr-tcard-name")?.textContent === name);
   if (card === undefined) {
     throw new Error(`ターゲットカードがない: ${name}`);
   }
@@ -234,26 +234,24 @@ describe("警告一覧", () => {
   it("非対応・近似を含む文書で警告カードが level 色・重大度ラベル・平易文・件数バッジつきで表示される", async () => {
     await mount(docOf(staticText("t1"), imageEl("img1")));
 
-    const cards = [...container.querySelectorAll(".apx-warn-card")];
+    const cards = [...container.querySelectorAll(".dr-warn-card")];
     expect(cards.length).toBeGreaterThanOrEqual(2);
     // the unsupported group comes first
     expect(cards[0]?.classList.contains("is-unsupported")).toBe(true);
-    expect(cards[0]?.querySelector(".apx-warn-level")?.textContent).toBe(
+    expect(cards[0]?.querySelector(".dr-warn-level")?.textContent).toBe(
       "非対応",
     );
     expect(cards[0]?.textContent).toContain("画像は書き出せません（テスト用）");
-    expect(cards[0]?.querySelector(".apx-chip")?.textContent).toBe("img1");
+    expect(cards[0]?.querySelector(".dr-chip")?.textContent).toBe("img1");
     expect(cards[1]?.classList.contains("is-approximated")).toBe(true);
-    expect(cards[1]?.querySelector(".apx-warn-level")?.textContent).toBe(
-      "近似",
-    );
+    expect(cards[1]?.querySelector(".dr-warn-level")?.textContent).toBe("近似");
     // the header's count badge is the total finding count
-    expect(container.querySelector(".apx-badge-warn")?.textContent).toBe("2");
+    expect(container.querySelector(".dr-badge-warn")?.textContent).toBe("2");
   });
 
   it("警告ゼロでは案内文言を表示する", async () => {
     await mount(docOf());
-    expect(container.querySelector(".apx-warn-card")).toBeNull();
+    expect(container.querySelector(".dr-warn-card")).toBeNull();
     expect(container.textContent).toContain(
       "✓ 選択中のターゲットですべての要素を書き出せます。",
     );
@@ -262,13 +260,13 @@ describe("警告一覧", () => {
   it("ターゲット切替で一覧が再計算される", async () => {
     await mount(docOf(imageEl("img1")));
     expect(
-      container.querySelector(".apx-warn-card.is-unsupported"),
+      container.querySelector(".dr-warn-card.is-unsupported"),
     ).not.toBeNull();
 
     click(targetCard("ReportLab"));
     await vi.waitFor(() => {
       expect(
-        container.querySelector(".apx-warn-card.is-unsupported"),
+        container.querySelector(".dr-warn-card.is-unsupported"),
       ).toBeNull();
     });
     // for ReportLab, image.src is approximated
@@ -292,7 +290,7 @@ describe("警告一覧", () => {
       EditorStore.prototype.setSelection.call(store, ids);
     });
 
-    const chip = container.querySelector<HTMLButtonElement>(".apx-chip");
+    const chip = container.querySelector<HTMLButtonElement>(".dr-chip");
     expect(chip?.textContent).toBe("t1");
     if (chip) click(chip);
 
@@ -307,16 +305,16 @@ describe("実行可否", () => {
   it("検証エラーがあると主ボタン disabled + フッタ注記", async () => {
     await mount(docOf(staticText("dup"), staticText("dup")));
     expect(buttonByText("書き出す").disabled).toBe(true);
-    expect(container.querySelector(".apx-dialog-f")?.textContent).toContain(
+    expect(container.querySelector(".dr-dialog-f")?.textContent).toContain(
       "検証エラーが 2 件あるため実行できません。",
     );
   });
 
   it("検証エラーがなければ警告があっても実行できる", async () => {
     await mount(docOf(staticText("t1")));
-    expect(container.querySelector(".apx-warn-card")).not.toBeNull();
+    expect(container.querySelector(".dr-warn-card")).not.toBeNull();
     expect(buttonByText("書き出す").disabled).toBe(false);
-    expect(container.querySelector(".apx-dialog-f")?.textContent).toContain(
+    expect(container.querySelector(".dr-dialog-f")?.textContent).toContain(
       "警告は書き出しを妨げません。",
     );
   });
@@ -335,7 +333,7 @@ describe("サンプルデータの厳格パース", () => {
     await mount(docOf(staticText("t1")), json);
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
-      const error = container.querySelector(".apx-export-error");
+      const error = container.querySelector(".dr-export-error");
       expect(error).not.toBeNull();
       expect(error?.textContent).toContain(phrase);
       expect(error?.textContent).toContain("プレビューのサンプルデータ欄");
@@ -350,7 +348,7 @@ describe("実行エラーの表示", () => {
     await mount(docOf(staticText("t1", { text: "{title}" })), '{"title": 123}');
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
-      const error = container.querySelector(".apx-export-error");
+      const error = container.querySelector(".dr-export-error");
       expect(error).not.toBeNull();
       expect(error?.textContent).toContain("C01");
       expect(error?.textContent).toContain("elements[0].text");
@@ -365,7 +363,7 @@ describe("実行エラーの表示", () => {
     await selectReportlab();
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
-      const error = container.querySelector(".apx-export-error");
+      const error = container.querySelector(".dr-export-error");
       expect(error).not.toBeNull();
       expect(error?.textContent).toContain("cff");
       expect(error?.textContent).toContain("CFF（OTF）アウトライン");
@@ -381,7 +379,7 @@ describe("実行エラーの表示", () => {
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
       expect(
-        container.querySelector(".apx-export-error")?.textContent,
+        container.querySelector(".dr-export-error")?.textContent,
       ).toContain("同梱フォントを取得できませんでした");
     });
     expect(vi.mocked(triggerDownload)).not.toHaveBeenCalled();
@@ -478,7 +476,7 @@ describe("書き出しの実行", () => {
     await selectReportlab();
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
-      const error = container.querySelector(".apx-export-error");
+      const error = container.querySelector(".dr-export-error");
       expect(error).not.toBeNull();
       expect(error?.textContent).toContain(
         "太字フォント「GoneBold」の実データがありません",
@@ -492,7 +490,7 @@ describe("書き出しの実行", () => {
     await selectReportlab();
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
-      const error = container.querySelector(".apx-export-error");
+      const error = container.querySelector(".dr-export-error");
       expect(error).not.toBeNull();
       expect(error?.textContent).toContain(
         "フォント「GoneFont」の実データがありません",
@@ -537,7 +535,7 @@ describe("雛形モード", () => {
     });
     const call = vi.mocked(triggerDownload).mock.calls.at(0);
     expect(call?.[1]).toBe("report-pdfme.json");
-    expect(container.querySelector(".apx-export-error")).toBeNull();
+    expect(container.querySelector(".dr-export-error")).toBeNull();
     expect(onClose).toHaveBeenCalledOnce();
   });
 
@@ -551,7 +549,7 @@ describe("雛形モード", () => {
     });
     const call = vi.mocked(triggerDownload).mock.calls.at(0);
     expect(call?.[1]).toBe("report-reportlab.zip");
-    expect(container.querySelector(".apx-export-error")).toBeNull();
+    expect(container.querySelector(".dr-export-error")).toBeNull();
     expect(onClose).toHaveBeenCalledOnce();
   });
 
@@ -670,7 +668,7 @@ describe("en の MessagesContext", () => {
       </MessagesContext.Provider>,
     );
     await vi.waitFor(() => {
-      if (container.querySelector(".apx-dialog") === null) {
+      if (container.querySelector(".dr-dialog") === null) {
         throw new Error("ダイアログが未描画");
       }
     });
@@ -690,14 +688,14 @@ describe("en の MessagesContext", () => {
       </MessagesContext.Provider>,
     );
     await vi.waitFor(() => {
-      if (container.querySelector(".apx-dialog") === null) {
+      if (container.querySelector(".dr-dialog") === null) {
         throw new Error("ダイアログが未描画");
       }
     });
     click(buttonByText("Export"));
     await vi.waitFor(() => {
       expect(
-        container.querySelector(".apx-export-error")?.textContent,
+        container.querySelector(".dr-export-error")?.textContent,
       ).toContain("Couldn't fetch the bundled font. Please try again.");
     });
   });

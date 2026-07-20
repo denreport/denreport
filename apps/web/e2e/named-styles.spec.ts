@@ -16,7 +16,7 @@ function stylesDialog(page: Page) {
 }
 
 async function selectLayer(page: Page, id: string): Promise<void> {
-  await page.locator(`[data-apx-layer-id="${id}"] .apx-layer-main`).click();
+  await page.locator(`[data-dr-layer-id="${id}"] .dr-layer-main`).click();
 }
 
 test("スタイル作成 → 複数要素へ適用 → 定義変更の一括反映 → 保存・再読込後も参照が維持される", async ({
@@ -26,9 +26,9 @@ test("スタイル作成 → 複数要素へ適用 → 定義変更の一括反�
 
   // Place two elements, text1 and text2
   await paletteButton(page).click();
-  await expect(page.locator('.apx-el[data-apx-id="text1"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text1"]')).toBeVisible();
   await paletteButton(page).click();
-  await expect(page.locator('.apx-el[data-apx-id="text2"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text2"]')).toBeVisible();
 
   // Create a style and give it a name
   await page.getByRole("button", { name: "スタイル" }).click();

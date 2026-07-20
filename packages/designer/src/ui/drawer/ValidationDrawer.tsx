@@ -80,11 +80,11 @@ export function ValidationDrawer(props: {
       <li key={i}>
         <button
           type="button"
-          className={`apx-verr${warn ? " apx-verr-warn" : ""}${isSelected ? " is-selected" : ""}`}
+          className={`dr-verr${warn ? " dr-verr-warn" : ""}${isSelected ? " is-selected" : ""}`}
           onClick={() => onRowClick(error)}
         >
-          <span className="apx-verr-rule">{error.rule}</span>
-          <span className="apx-verr-path">{error.path}</span>
+          <span className="dr-verr-rule">{error.rule}</span>
+          <span className="dr-verr-path">{error.path}</span>
           <span>{error.message}</span>
         </button>
       </li>
@@ -92,58 +92,58 @@ export function ValidationDrawer(props: {
   };
 
   return (
-    <div className={`apx-drawer${open ? " is-open" : ""}`}>
+    <div className={`dr-drawer${open ? " is-open" : ""}`}>
       <button
         type="button"
-        className="apx-drawer-bar"
+        className="dr-drawer-bar"
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span className="apx-caret">{open ? "▾" : "▸"}</span>
+        <span className="dr-caret">{open ? "▾" : "▸"}</span>
         <span>{m.drawer.title}</span>
         {errors.length > 0 ? (
-          <span className="apx-badge apx-badge-err">{errors.length}</span>
+          <span className="dr-badge dr-badge-err">{errors.length}</span>
         ) : warnings.length > 0 ? (
-          <span className="apx-badge apx-badge-warn">{warnings.length}</span>
+          <span className="dr-badge dr-badge-warn">{warnings.length}</span>
         ) : compatFindingTotal > 0 ? (
-          <span className="apx-badge apx-badge-warn">{compatFindingTotal}</span>
+          <span className="dr-badge dr-badge-warn">{compatFindingTotal}</span>
         ) : (
-          <span className="apx-badge apx-badge-ok">{m.drawer.ok}</span>
+          <span className="dr-badge dr-badge-ok">{m.drawer.ok}</span>
         )}
       </button>
       {open && (
-        <div className="apx-drawer-body">
+        <div className="dr-drawer-body">
           {errors.length === 0 && warnings.length === 0 ? (
-            <div className="apx-drawer-empty">{m.drawer.empty}</div>
+            <div className="dr-drawer-empty">{m.drawer.empty}</div>
           ) : (
             <>
               {errors.length > 0 && (
-                <ul className="apx-verr-list">
+                <ul className="dr-verr-list">
                   {errors.map((error, i) => renderRow(error, i, false))}
                 </ul>
               )}
               {warnings.length > 0 && (
-                <ul className="apx-verr-list">
+                <ul className="dr-verr-list">
                   {warnings.map((warning, i) => renderRow(warning, i, true))}
                 </ul>
               )}
             </>
           )}
-          <div className="apx-export-warns apx-drawer-compat">
-            <p className="apx-export-warns-h">
+          <div className="dr-export-warns dr-drawer-compat">
+            <p className="dr-export-warns-h">
               <span>
                 {m.drawer.compatTitle(
                   COMPAT_MATRICES[state.selectedExportTarget].displayName,
                 )}
               </span>
               {compatFindingTotal > 0 && (
-                <span className="apx-badge apx-badge-warn">
+                <span className="dr-badge dr-badge-warn">
                   {compatFindingTotal}
                 </span>
               )}
             </p>
             {compatGroups.length === 0 ? (
-              <p className="apx-export-ok">{m.drawer.compatOk}</p>
+              <p className="dr-export-ok">{m.drawer.compatOk}</p>
             ) : (
               compatGroups.map((group) => (
                 <WarningGroupCard

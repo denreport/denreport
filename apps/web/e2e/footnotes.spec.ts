@@ -10,7 +10,7 @@ test("脚注マークを自動採番し、プレビューと ReportLab 書き出
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^テキスト/, { x: 20, y: 20 });
-  const text1 = page.locator('.apx-el[data-apx-id="text1"]');
+  const text1 = page.locator('.dr-el[data-dr-id="text1"]');
   await expect(text1).toBeVisible();
 
   const props = page.getByRole("complementary", { name: "プロパティ" });

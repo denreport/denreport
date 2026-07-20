@@ -93,23 +93,23 @@ describe("loadPreviewFont", () => {
     const font = await loadPreviewFont(
       doc,
       EMBEDDED_FONT_URL,
-      "apx-embedded-notosansjp",
+      "dr-embedded-notosansjp",
     );
-    expect(font.family).toBe("apx-embedded-notosansjp");
+    expect(font.family).toBe("dr-embedded-notosansjp");
     expect(font.ascentPerEm).toBeCloseTo(1.16, 6);
     expect(fonts.size).toBe(1);
-    expect([...fonts][0]?.family).toBe("apx-embedded-notosansjp");
+    expect([...fonts][0]?.family).toBe("dr-embedded-notosansjp");
   });
 
   it("同一 document には再登録しない", async () => {
     stubOkFetch(sfntWith(1000, 1160));
     const { doc, fonts } = makeDoc();
 
-    await loadPreviewFont(doc, EMBEDDED_FONT_URL, "apx-embedded-notosansjp");
+    await loadPreviewFont(doc, EMBEDDED_FONT_URL, "dr-embedded-notosansjp");
     const second = await loadPreviewFont(
       doc,
       EMBEDDED_FONT_URL,
-      "apx-embedded-notosansjp",
+      "dr-embedded-notosansjp",
     );
     expect(fonts.size).toBe(1);
     expect(second.ascentPerEm).toBeCloseTo(1.16, 6);
@@ -125,7 +125,7 @@ describe("loadPreviewFont", () => {
       loadPreviewFont(
         makeDoc().doc,
         EMBEDDED_FONT_URL,
-        "apx-embedded-notosansjp",
+        "dr-embedded-notosansjp",
       ),
     ).rejects.toThrow();
   });
@@ -142,7 +142,7 @@ describe("loadPreviewFont", () => {
       loadPreviewFont(
         makeDoc().doc,
         EMBEDDED_FONT_URL,
-        "apx-embedded-notosansjp",
+        "dr-embedded-notosansjp",
       ),
     ).rejects.toThrow("404");
   });
@@ -151,14 +151,14 @@ describe("loadPreviewFont", () => {
     stubOkFetch(new ArrayBuffer(4));
     const { doc, fonts } = makeDoc();
     await expect(
-      loadPreviewFont(doc, EMBEDDED_FONT_URL, "apx-embedded-notosansjp"),
+      loadPreviewFont(doc, EMBEDDED_FONT_URL, "dr-embedded-notosansjp"),
     ).rejects.toThrow();
     expect(fonts.size).toBe(0);
   });
 });
 
 describe("registerPreviewFace", () => {
-  it("apx-local-<name> の family で FontFace を登録する", async () => {
+  it("dr-local-<name> の family で FontFace を登録する", async () => {
     vi.stubGlobal("FontFace", FakeFontFace);
     const { doc, fonts } = makeDoc();
 
@@ -167,9 +167,9 @@ describe("registerPreviewFace", () => {
       "MyFont",
       new Uint8Array([1, 2, 3]),
     );
-    expect(family).toBe("apx-local-MyFont");
+    expect(family).toBe("dr-local-MyFont");
     expect(fonts.size).toBe(1);
-    expect([...fonts][0]?.family).toBe("apx-local-MyFont");
+    expect([...fonts][0]?.family).toBe("dr-local-MyFont");
   });
 
   it("同一バイト列の再登録では FontFace を差し替えない", async () => {

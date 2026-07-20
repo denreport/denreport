@@ -17,7 +17,7 @@ import type { PreviewFont, PreviewFontSet } from "./preview-font";
 
 const PAGE: IrPage = { width: 210, height: 297 };
 const FONT: PreviewFont = {
-  family: "apx-embedded-notosansjp",
+  family: "dr-embedded-notosansjp",
   ascentPerEm: 1.16,
   charWidths: () => 0.1,
 };
@@ -110,7 +110,7 @@ describe("PreviewPage", () => {
 
   it("bold 要素は bold スロットの family / 計量で描画し、未定義スロットは regular に劣化する", () => {
     const boldFont: PreviewFont = {
-      family: "apx-embedded-notosansjp-bold",
+      family: "dr-embedded-notosansjp-bold",
       ascentPerEm: 0.9,
       charWidths: () => 0.2,
     };

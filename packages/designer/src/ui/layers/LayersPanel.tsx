@@ -113,9 +113,7 @@ export function LayersPanel(props: {
     if (first === undefined) {
       return;
     }
-    const row = bodyRef.current?.querySelector(
-      `[data-apx-layer-id="${first}"]`,
-    );
+    const row = bodyRef.current?.querySelector(`[data-dr-layer-id="${first}"]`);
     // jsdom does not implement scrollIntoView, so only call it on a real DOM
     if (
       row instanceof HTMLElement &&
@@ -126,13 +124,13 @@ export function LayersPanel(props: {
   }, [state.selection, collapsed]);
 
   return (
-    <nav className="apx-layers" aria-label={m.layers.ariaLabel}>
-      <div className="apx-panel-caption">{m.layers.caption}</div>
-      <div className="apx-layers-body" ref={bodyRef}>
+    <nav className="dr-layers" aria-label={m.layers.ariaLabel}>
+      <div className="dr-panel-caption">{m.layers.caption}</div>
+      <div className="dr-layers-body" ref={bodyRef}>
         {tree.length === 0 ? (
-          <div className="apx-layers-empty">{m.layers.empty}</div>
+          <div className="dr-layers-empty">{m.layers.empty}</div>
         ) : (
-          <ul className="apx-layer-list">
+          <ul className="dr-layer-list">
             {tree.map((node) => (
               <LayerRow
                 key={node.id}

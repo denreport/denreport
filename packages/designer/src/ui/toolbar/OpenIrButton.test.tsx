@@ -80,7 +80,7 @@ describe("開くフロー", () => {
     });
     click(openButton());
     expect(picker).toHaveBeenCalledOnce();
-    expect(container.querySelector(".apx-dialog")).toBeNull();
+    expect(container.querySelector(".dr-dialog")).toBeNull();
   });
 
   it("dirty では確認が出て、キャンセルで何も起きない", async () => {
@@ -90,13 +90,13 @@ describe("開くフロー", () => {
 
     click(openButton());
     await vi.waitFor(() => {
-      expect(container.querySelector(".apx-dialog")).not.toBeNull();
+      expect(container.querySelector(".dr-dialog")).not.toBeNull();
     });
     expect(container.textContent).toContain("未保存の変更は失われます");
 
     click(buttonByText("キャンセル"));
     await vi.waitFor(() => {
-      expect(container.querySelector(".apx-dialog")).toBeNull();
+      expect(container.querySelector(".dr-dialog")).toBeNull();
     });
     expect(picker).not.toHaveBeenCalled();
     expect(importIr).not.toHaveBeenCalled();
@@ -111,12 +111,12 @@ describe("開くフロー", () => {
 
     click(openButton());
     await vi.waitFor(() => {
-      expect(container.querySelector(".apx-dialog")).not.toBeNull();
+      expect(container.querySelector(".dr-dialog")).not.toBeNull();
     });
     click(buttonByText("続行"));
     expect(picker).toHaveBeenCalledOnce();
     await vi.waitFor(() => {
-      expect(container.querySelector(".apx-dialog")).toBeNull();
+      expect(container.querySelector(".dr-dialog")).toBeNull();
     });
   });
 
@@ -133,7 +133,7 @@ describe("開くフロー", () => {
 
     selectFile('{"version":"9.0"}');
     await vi.waitFor(() => {
-      const dialog = container.querySelector(".apx-dialog");
+      const dialog = container.querySelector(".dr-dialog");
       expect(dialog).not.toBeNull();
       expect(dialog?.textContent).toContain("S03");
       expect(dialog?.textContent).toContain("version");
@@ -144,7 +144,7 @@ describe("開くフロー", () => {
 
     click(buttonByText("閉じる"));
     await vi.waitFor(() => {
-      expect(container.querySelector(".apx-dialog")).toBeNull();
+      expect(container.querySelector(".dr-dialog")).toBeNull();
     });
   });
 
@@ -156,7 +156,7 @@ describe("開くフロー", () => {
     await vi.waitFor(() => {
       expect(importIr).toHaveBeenCalledExactlyOnceWith('{"version":"1.0"}');
     });
-    expect(container.querySelector(".apx-dialog")).toBeNull();
+    expect(container.querySelector(".dr-dialog")).toBeNull();
   });
 
   it("ファイル読み取り自体の失敗は1行メッセージのダイアログになる", async () => {
@@ -173,7 +173,7 @@ describe("開くフロー", () => {
 
     selectFile("{}");
     await vi.waitFor(() => {
-      const dialog = container.querySelector(".apx-dialog");
+      const dialog = container.querySelector(".dr-dialog");
       expect(dialog?.textContent).toContain("ファイルを読み取れませんでした");
       expect(dialog?.textContent).toContain("文書は変更されていません");
     });

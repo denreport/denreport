@@ -37,8 +37,8 @@ export function TableProperties(props: ElementFormProps): ReactNode {
     liveBox !== null && state.view.pageContext === "first" ? liveBox.y : el.y;
   return (
     <>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.propertiesBulk.sections.placement}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.propertiesBulk.sections.placement}</div>
         <NumberField
           label={m.propertiesBulk.fields.x}
           value={x}
@@ -55,16 +55,16 @@ export function TableProperties(props: ElementFormProps): ReactNode {
           error={errorMessageFor(errors, "y")}
           onCommit={(y) => commitReplace(store, el.id, { ...el, y })}
         />
-        <div className="apx-frow">
-          <span className="apx-frow-label">{t.widthDerived}</span>
-          <span className="apx-field-static">
+        <div className="dr-frow">
+          <span className="dr-frow-label">{t.widthDerived}</span>
+          <span className="dr-field-static">
             {t.widthFormula(totalWidth.toFixed(1))}
           </span>
         </div>
-        <p className="apx-sect-note">{t.pagesNote}</p>
+        <p className="dr-sect-note">{t.pagesNote}</p>
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{t.dataSection}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{t.dataSection}</div>
         <TextField
           label={t.bind}
           value={el.bind}
@@ -79,8 +79,8 @@ export function TableProperties(props: ElementFormProps): ReactNode {
           onCommit={(bind) => commitReplace(store, el.id, { ...el, bind })}
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{t.rowsSection}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{t.rowsSection}</div>
         <NumberField
           label={t.rowHeight}
           value={el.rowHeight}
@@ -121,8 +121,8 @@ export function TableProperties(props: ElementFormProps): ReactNode {
           }
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{t.pageBreakSection}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{t.pageBreakSection}</div>
         <NumberField
           label={t.maxY}
           value={el.maxY}
@@ -141,10 +141,10 @@ export function TableProperties(props: ElementFormProps): ReactNode {
             commitReplace(store, el.id, { ...el, continuationY })
           }
         />
-        <p className="apx-sect-note">{t.continuationNote}</p>
+        <p className="dr-sect-note">{t.continuationNote}</p>
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{t.bordersSection}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{t.bordersSection}</div>
         {/* The default gridWidth (0.25mm) doesn't land on a 0.1mm step, so use a finer step than the other mm fields */}
         <NumberField
           label={t.frameWidth}
@@ -215,11 +215,11 @@ export function TableProperties(props: ElementFormProps): ReactNode {
           }
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{t.stripeSection}</div>
-        <div className="apx-frow">
-          <span className="apx-frow-label">{t.stripeToggle}</span>
-          <label className="apx-check" htmlFor={stripeCheckId}>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{t.stripeSection}</div>
+        <div className="dr-frow">
+          <span className="dr-frow-label">{t.stripeToggle}</span>
+          <label className="dr-check" htmlFor={stripeCheckId}>
             <input
               id={stripeCheckId}
               type="checkbox"

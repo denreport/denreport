@@ -17,9 +17,9 @@ test("パレットのクリックで要素をページ中央に追加し選択�
   await page.goto("/");
   await paletteButton(page).click();
 
-  const element = page.locator('.apx-el[data-apx-id="text1"]');
+  const element = page.locator('.dr-el[data-dr-id="text1"]');
   await expect(element).toBeVisible();
-  await expect(page.locator(".apx-sel-box .apx-el-chip")).toHaveText(
+  await expect(page.locator(".dr-sel-box .dr-el-chip")).toHaveText(
     "テキスト · text1",
   );
 
@@ -45,18 +45,18 @@ test("クリック追加とドラッグ配置は二重発火せずそれぞれ1�
 }) => {
   await page.goto("/");
   await paletteButton(page).click();
-  await expect(page.locator('.apx-el[data-apx-id="text1"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text1"]')).toBeVisible();
 
   await dragFromPalette(page, /^テキスト/, { x: 150, y: 200 });
-  await expect(page.locator('.apx-el[data-apx-id="text2"]')).toBeVisible();
-  await expect(page.locator('.apx-el[data-apx-id="text3"]')).toHaveCount(0);
+  await expect(page.locator('.dr-el[data-dr-id="text2"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text3"]')).toHaveCount(0);
 });
 
 test("クリック追加は1 commit として undo できる", async ({ page }) => {
   await page.goto("/");
   await paletteButton(page).click();
-  await expect(page.locator('.apx-el[data-apx-id="text1"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text1"]')).toBeVisible();
 
   await page.keyboard.press("ControlOrMeta+z");
-  await expect(page.locator('.apx-el[data-apx-id="text1"]')).toHaveCount(0);
+  await expect(page.locator('.dr-el[data-dr-id="text1"]')).toHaveCount(0);
 });

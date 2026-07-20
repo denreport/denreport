@@ -68,7 +68,7 @@ async function renderToolbar(
     />,
   );
   await vi.waitFor(() => {
-    if (container.querySelector(".apx-toolbar") === null) {
+    if (container.querySelector(".dr-toolbar") === null) {
       throw new Error("ツールバーが未描画");
     }
   });
@@ -203,7 +203,7 @@ describe("Toolbar", () => {
 
   it("保存状態インジケータは非 dirty でも常にマウントされる", async () => {
     await renderToolbar(makeChrome());
-    const indicator = container.querySelector(".apx-doc-dirty");
+    const indicator = container.querySelector(".dr-doc-dirty");
     expect(indicator).not.toBeNull();
     expect(indicator?.classList.contains("is-on")).toBe(false);
     expect(indicator?.getAttribute("title")).toBeNull();
@@ -213,27 +213,27 @@ describe("Toolbar", () => {
     const store = await renderToolbar(makeChrome());
     store.commit({ ...store.getState().document, elements: [] });
     await vi.waitFor(() => {
-      const indicator = container.querySelector(".apx-doc-dirty");
+      const indicator = container.querySelector(".dr-doc-dirty");
       expect(indicator?.classList.contains("is-on")).toBe(true);
       expect(indicator?.getAttribute("title")).toBe("未保存の変更あり");
     });
-    expect(container.querySelectorAll(".apx-doc-dirty")).toHaveLength(1);
+    expect(container.querySelectorAll(".dr-doc-dirty")).toHaveLength(1);
 
     store.markSaved();
     await vi.waitFor(() => {
-      const indicator = container.querySelector(".apx-doc-dirty");
+      const indicator = container.querySelector(".dr-doc-dirty");
       expect(indicator?.classList.contains("is-on")).toBe(false);
       expect(indicator?.getAttribute("title")).toBeNull();
     });
-    expect(container.querySelectorAll(".apx-doc-dirty")).toHaveLength(1);
+    expect(container.querySelectorAll(".dr-doc-dirty")).toHaveLength(1);
 
     store.commit({ ...store.getState().document, elements: [] });
     await vi.waitFor(() => {
       expect(
-        container.querySelector(".apx-doc-dirty")?.classList.contains("is-on"),
+        container.querySelector(".dr-doc-dirty")?.classList.contains("is-on"),
       ).toBe(true);
     });
-    expect(container.querySelectorAll(".apx-doc-dirty")).toHaveLength(1);
+    expect(container.querySelectorAll(".dr-doc-dirty")).toHaveLength(1);
   });
 
   it("左右パネルトグルの aria-expanded は props を反映する", async () => {
@@ -335,11 +335,11 @@ describe("Toolbar", () => {
       </MessagesContext.Provider>,
     );
     await vi.waitFor(() => {
-      expect(container.querySelector(".apx-toolbar")).not.toBeNull();
+      expect(container.querySelector(".dr-toolbar")).not.toBeNull();
     });
     expect(buttonByText("Save").disabled).toBe(false);
     expect(buttonByText("Export").disabled).toBe(false);
-    expect(container.querySelector(".apx-brand-name")?.textContent).toBe(
+    expect(container.querySelector(".dr-brand-name")?.textContent).toBe(
       "Report Designer",
     );
   });

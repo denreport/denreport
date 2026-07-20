@@ -17,7 +17,7 @@ export type InlineEditTarget =
       readonly rowIndex: number;
     };
 
-/** Determines the edit target from the double-click's resolved DOM data (data-apx-id / data-apx-col / data-apx-row) */
+/** Determines the edit target from the double-click's resolved DOM data (data-dr-id / data-dr-col / data-dr-row) */
 export function resolveInlineEditTarget(args: {
   readonly layout: readonly PlacedElementView[];
   readonly selection: readonly string[];

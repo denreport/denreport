@@ -66,11 +66,11 @@ export function InlineEditor(props: {
     }
   };
 
-  const classes = ["apx-inline-editor"];
+  const classes = ["dr-inline-editor"];
   if (align === "center") {
-    classes.push("apx-align-center");
+    classes.push("dr-align-center");
   } else if (align === "right") {
-    classes.push("apx-align-right");
+    classes.push("dr-align-right");
   }
 
   const style = {

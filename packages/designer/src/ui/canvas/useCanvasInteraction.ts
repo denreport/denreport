@@ -174,15 +174,14 @@ export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
       }
       e.currentTarget.setPointerCapture(e.pointerId);
       const target = e.target instanceof Element ? e.target : null;
-      const handleEl = target?.closest("[data-apx-handle]") ?? null;
-      const idEl = target?.closest("[data-apx-id]") ?? null;
+      const handleEl = target?.closest("[data-dr-handle]") ?? null;
+      const idEl = target?.closest("[data-dr-id]") ?? null;
       dispatch({
         kind: "pointerDown",
         at,
-        targetId: idEl?.getAttribute("data-apx-id") ?? null,
+        targetId: idEl?.getAttribute("data-dr-id") ?? null,
         handle:
-          (handleEl?.getAttribute("data-apx-handle") as HandleId | null) ??
-          null,
+          (handleEl?.getAttribute("data-dr-handle") as HandleId | null) ?? null,
         shiftKey: e.shiftKey,
       });
     },

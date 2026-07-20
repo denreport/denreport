@@ -31,7 +31,7 @@ export function LayerRow(props: {
   const isCollapsed = isFlex && collapsed.has(node.id);
   const icon = elementTypeIcon(node.element.type, m);
 
-  const classes = ["apx-layer-row"];
+  const classes = ["dr-layer-row"];
   if (selection.has(node.id)) {
     classes.push("is-selected");
   }
@@ -44,12 +44,12 @@ export function LayerRow(props: {
       <div
         className={classes.join(" ")}
         style={{ "--depth": depth } as CSSProperties}
-        data-apx-layer-id={node.id}
+        data-dr-layer-id={node.id}
       >
         {isFlex ? (
           <button
             type="button"
-            className="apx-layer-caret"
+            className="dr-layer-caret"
             aria-expanded={!isCollapsed}
             aria-label={isCollapsed ? m.layers.expand : m.layers.collapse}
             onClick={() => onToggle(node.id)}
@@ -57,18 +57,18 @@ export function LayerRow(props: {
             {isCollapsed ? "▸" : "▾"}
           </button>
         ) : (
-          <span className="apx-layer-caret-spacer" aria-hidden="true" />
+          <span className="dr-layer-caret-spacer" aria-hidden="true" />
         )}
         <button
           type="button"
-          className="apx-layer-main"
+          className="dr-layer-main"
           title={node.id}
           onClick={() => onSelect(node)}
         >
-          <span className="apx-layer-icon" aria-hidden="true">
+          <span className="dr-layer-icon" aria-hidden="true">
             {icon}
           </span>
-          <span className="apx-layer-label">
+          <span className="dr-layer-label">
             {layerLabel(
               node.element,
               m.elementTypes,
@@ -78,7 +78,7 @@ export function LayerRow(props: {
         </button>
         <button
           type="button"
-          className="apx-layer-del"
+          className="dr-layer-del"
           aria-label={m.layers.delete}
           onClick={() => onDelete(node.id)}
         >
@@ -86,7 +86,7 @@ export function LayerRow(props: {
         </button>
       </div>
       {isFlex && !isCollapsed && node.children !== null && (
-        <ul className="apx-layer-children">
+        <ul className="dr-layer-children">
           {node.children.map((child) => (
             <LayerRow
               key={child.id}

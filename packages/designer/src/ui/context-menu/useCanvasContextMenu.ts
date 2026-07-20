@@ -51,7 +51,7 @@ export function useCanvasContextMenu(
       const state = store.getState();
       const el = e.target instanceof Element ? e.target : null;
       const targetId =
-        el?.closest("[data-apx-id]")?.getAttribute("data-apx-id") ?? null;
+        el?.closest("[data-dr-id]")?.getAttribute("data-dr-id") ?? null;
       const target = resolveContextTarget(state.selection, targetId);
       const selection = expandIdsToGroups(
         state.groups,

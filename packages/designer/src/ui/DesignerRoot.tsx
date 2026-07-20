@@ -105,7 +105,7 @@ export function DesignerRoot(props: {
         {/* biome-ignore lint/a11y/noStaticElementInteractions: key handling is bundled at the root; form elements are ignored */}
         <div
           className={
-            "apx-layout" +
+            "dr-layout" +
             (sidebarOpen ? "" : " is-left-closed") +
             (propsOpen ? "" : " is-right-closed")
           }
@@ -131,7 +131,7 @@ export function DesignerRoot(props: {
             onQuickAdd={onQuickAdd}
             onReveal={onReveal}
           />
-          <main className="apx-canvas-area">
+          <main className="dr-canvas-area">
             <CanvasBar store={store} />
             <Canvas
               store={store}

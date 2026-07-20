@@ -43,11 +43,11 @@ export function FootnotesSection(props: {
 
   if (footnotes === undefined) {
     return (
-      <section className="apx-sect">
-        <div className="apx-sect-h">{f.heading}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{f.heading}</div>
         <button
           type="button"
-          className="apx-btn apx-btn-secondary"
+          className="dr-btn dr-btn-secondary"
           onClick={() =>
             commitDoc((doc) => setFootnotes(doc, defaultFootnotes(doc.page)))
           }
@@ -59,8 +59,8 @@ export function FootnotesSection(props: {
   }
 
   return (
-    <section className="apx-sect">
-      <div className="apx-sect-h">{f.heading}</div>
+    <section className="dr-sect">
+      <div className="dr-sect-h">{f.heading}</div>
       <NumberField
         label={f.x}
         value={footnotes.x}
@@ -118,21 +118,21 @@ export function FootnotesSection(props: {
           commitDoc((doc) => setFootnotes(doc, { ...footnotes, pages }))
         }
       />
-      <p className="apx-sect-note">{f.hint}</p>
-      <div className="apx-sect-h">
+      <p className="dr-sect-note">{f.hint}</p>
+      <div className="dr-sect-h">
         {f.notesHeading}
-        <span className="apx-mono">{footnotes.notes.length}</span>
+        <span className="dr-mono">{footnotes.notes.length}</span>
       </div>
       {footnotes.notes.map((note, i) => {
         const textError = errorMessageFor(errors, `notes[${i}].text`);
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: notes have no stable id, and duplicates while editing the id are a normal part of editing, so index is used to identify them
-          <div key={i} className="apx-col-card">
-            <div className="apx-sect-h">
+          <div key={i} className="dr-col-card">
+            <div className="dr-sect-h">
               {f.noteHeading(i + 1)}
               <button
                 type="button"
-                className="apx-col-btn apx-col-del"
+                className="dr-col-btn dr-col-del"
                 aria-label={f.deleteNoteLabel(i + 1)}
                 onClick={() => commitDoc((doc) => removeFootnoteNote(doc, i))}
               >
@@ -148,17 +148,17 @@ export function FootnotesSection(props: {
                 commitDoc((doc) => updateFootnoteNote(doc, i, { id }))
               }
             />
-            <div className="apx-copy-row">
+            <div className="dr-copy-row">
               <button
                 type="button"
-                className="apx-copy-btn"
+                className="dr-copy-btn"
                 onClick={() => copyToClipboard(note.id)}
               >
                 {f.copyId}
               </button>
               <button
                 type="button"
-                className="apx-copy-btn"
+                className="dr-copy-btn"
                 onClick={() => copyToClipboard(`{#${note.id}}`)}
               >
                 {f.copyIdMark}
@@ -172,21 +172,21 @@ export function FootnotesSection(props: {
               }
             />
             {textError !== undefined && (
-              <div className="apx-col-err">{textError}</div>
+              <div className="dr-col-err">{textError}</div>
             )}
           </div>
         );
       })}
       <button
         type="button"
-        className="apx-add-col"
+        className="dr-add-col"
         onClick={() => commitDoc((doc) => addFootnoteNote(doc))}
       >
         {f.addNote}
       </button>
       <button
         type="button"
-        className="apx-btn apx-btn-secondary"
+        className="dr-btn dr-btn-secondary"
         onClick={() => commitDoc((doc) => setFootnotes(doc, undefined))}
       >
         {f.remove}

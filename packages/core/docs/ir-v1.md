@@ -320,7 +320,7 @@ text 要素の `text` のみで、flex 子孫の text・table の `columns[].lab
 `text` を先頭から走査し、`{#id}` の初出順に `1, 2, 3…` を採番する（同じ id の再出現は初出
 番号を再利用する）。各マークを `*n` に置換する。参照された注記を番号昇順に `*n 本文` の行
 として連結し（注記本文内の `\n` はそのまま行になる。2行目以降にプレフィックスは付けない）、
-1つの text 要素として `elements` 末尾に追加する: `{ type: "text", id: "apxFootnotes", x, y,
+1つの text 要素として `elements` 末尾に追加する: `{ type: "text", id: "drFootnotes", x, y,
 pages, w, h, text: 連結結果, fontSize, align: "left", lineHeight }`（`x`/`w`/`pages`/
 `fontSize`/`lineHeight` は `footnotes` の値をそのまま使う）。ブロックの `y` は
 `page.height − bottom − blockHeight` で自動計算し、`blockHeight = 総行数 × fontSize ×

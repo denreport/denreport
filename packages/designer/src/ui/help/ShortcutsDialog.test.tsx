@@ -22,11 +22,11 @@ afterEach(() => {
 async function renderDialog(onClose: () => void): Promise<HTMLElement> {
   root.render(<ShortcutsDialog onClose={onClose} />);
   await vi.waitFor(() => {
-    if (container.querySelector(".apx-dialog") === null) {
+    if (container.querySelector(".dr-dialog") === null) {
       throw new Error("ダイアログが未描画");
     }
   });
-  const dialog = container.querySelector<HTMLElement>(".apx-dialog");
+  const dialog = container.querySelector<HTMLElement>(".dr-dialog");
   if (dialog === null) {
     throw new Error("ダイアログがない");
   }
@@ -80,11 +80,11 @@ describe("ShortcutsDialog", () => {
       </MessagesContext.Provider>,
     );
     await vi.waitFor(() => {
-      if (container.querySelector(".apx-dialog") === null) {
+      if (container.querySelector(".dr-dialog") === null) {
         throw new Error("ダイアログが未描画");
       }
     });
-    const dialog = container.querySelector<HTMLElement>(".apx-dialog");
+    const dialog = container.querySelector<HTMLElement>(".dr-dialog");
     expect(dialog?.getAttribute("aria-label")).toBe("Keyboard shortcuts");
     expect(dialog?.textContent).toContain("Duplicate");
     expect(dialog?.textContent).toContain("Arrow keys");

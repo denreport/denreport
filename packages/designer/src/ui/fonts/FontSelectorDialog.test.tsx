@@ -118,7 +118,7 @@ async function renderDialog(
     />,
   );
   await vi.waitFor(() => {
-    if (container.querySelector(".apx-dialog") === null) {
+    if (container.querySelector(".dr-dialog") === null) {
       throw new Error("ダイアログが未描画");
     }
   });
@@ -137,7 +137,7 @@ function buttonByText(text: string): HTMLButtonElement {
 
 // A font row button has two spans, fullName and a subtext, so textContent doesn't match exactly
 function fontRowButton(fullName: string): HTMLButtonElement {
-  const name = [...container.querySelectorAll(".apx-font-name")].find(
+  const name = [...container.querySelectorAll(".dr-font-name")].find(
     (el) => el.textContent === fullName,
   );
   const button = name?.closest("button");

@@ -68,7 +68,7 @@ export function ShortcutsDialog(props: {
       footer={
         <button
           type="button"
-          className="apx-btn apx-btn-secondary"
+          className="dr-btn dr-btn-secondary"
           onClick={onClose}
         >
           {messages.dialog.close}
@@ -76,13 +76,13 @@ export function ShortcutsDialog(props: {
       }
     >
       {shortcutGroups(m).map((group) => (
-        <section key={group.heading} className="apx-shortcuts-group">
-          <h3 className="apx-shortcuts-h">{group.heading}</h3>
-          <table className="apx-shortcuts-table">
+        <section key={group.heading} className="dr-shortcuts-group">
+          <h3 className="dr-shortcuts-h">{group.heading}</h3>
+          <table className="dr-shortcuts-table">
             <tbody>
               {group.items.map((item) => (
                 <tr key={item.keys}>
-                  <td className="apx-shortcuts-keys">{item.keys}</td>
+                  <td className="dr-shortcuts-keys">{item.keys}</td>
                   <td>{item.description}</td>
                 </tr>
               ))}

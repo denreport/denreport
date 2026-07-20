@@ -43,7 +43,7 @@ async function dragOnCanvas(page: Page, from: Mm, to: Mm): Promise<void> {
 
 /** Returns the element's current rendered center in mm coordinates */
 async function elementCenterMm(page: Page, id: string): Promise<Mm> {
-  const el = await page.locator(`.apx-el[data-apx-id="${id}"]`).boundingBox();
+  const el = await page.locator(`.dr-el[data-dr-id="${id}"]`).boundingBox();
   if (el === null) {
     throw new Error(`${id} が表示されていません`);
   }
@@ -121,20 +121,20 @@ test("要素のグループ化: クリック選択・移動・複製・解除", 
   const props = page.getByRole("complementary", { name: "プロパティ" });
 
   await dragFromPalette(page, TEXT_PALETTE, { x: 60, y: 60 });
-  await expect(page.locator('.apx-el[data-apx-id="text1"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text1"]')).toBeVisible();
   await dragFromPalette(page, TEXT_PALETTE, { x: 120, y: 60 });
-  await expect(page.locator('.apx-el[data-apx-id="text2"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text2"]')).toBeVisible();
 
   await page
-    .locator('.apx-el[data-apx-id="text1"]')
+    .locator('.dr-el[data-dr-id="text1"]')
     .click({ modifiers: ["Shift"] });
-  await expect(props.locator(".apx-props-id")).toHaveText("2 個の要素を選択中");
+  await expect(props.locator(".dr-props-id")).toHaveText("2 個の要素を選択中");
 
   await page.keyboard.press("ControlOrMeta+g");
 
   await clickBackground(page);
-  await page.locator('.apx-el[data-apx-id="text1"]').click();
-  await expect(props.locator(".apx-props-id")).toHaveText("2 個の要素を選択中");
+  await page.locator('.dr-el[data-dr-id="text1"]').click();
+  await expect(props.locator(".dr-props-id")).toHaveText("2 個の要素を選択中");
 
   const before1 = await waitForElementXY(page, "text1");
   const before2 = await waitForElementXY(page, "text2");
@@ -150,18 +150,18 @@ test("要素のグループ化: クリック選択・移動・複製・解除", 
   expect(after1.y - before1.y).toBeCloseTo(after2.y - before2.y, 1);
 
   await page.keyboard.press("ControlOrMeta+d");
-  await expect(page.locator('.apx-el[data-apx-id="text3"]')).toBeVisible();
-  await expect(page.locator('.apx-el[data-apx-id="text4"]')).toBeVisible();
-  await expect(props.locator(".apx-props-id")).toHaveText("2 個の要素を選択中");
+  await expect(page.locator('.dr-el[data-dr-id="text3"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text4"]')).toBeVisible();
+  await expect(props.locator(".dr-props-id")).toHaveText("2 個の要素を選択中");
 
   await clickBackground(page);
-  await page.locator('.apx-el[data-apx-id="text3"]').click();
-  await expect(props.locator(".apx-props-id")).toHaveText("2 個の要素を選択中");
+  await page.locator('.dr-el[data-dr-id="text3"]').click();
+  await expect(props.locator(".dr-props-id")).toHaveText("2 個の要素を選択中");
 
   await page.keyboard.press("ControlOrMeta+Shift+g");
   await clickBackground(page);
-  await page.locator('.apx-el[data-apx-id="text3"]').click();
-  await expect(props.locator(".apx-props-id")).toHaveText("text3");
+  await page.locator('.dr-el[data-dr-id="text3"]').click();
+  await expect(props.locator(".dr-props-id")).toHaveText("text3");
 });
 
 test("要素のグループ化: 保存・リロードを跨いでグループが維持される", async ({
@@ -171,9 +171,9 @@ test("要素のグループ化: 保存・リロードを跨いでグループが
   const props = page.getByRole("complementary", { name: "プロパティ" });
 
   await dragFromPalette(page, TEXT_PALETTE, { x: 60, y: 60 });
-  await expect(page.locator('.apx-el[data-apx-id="text1"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text1"]')).toBeVisible();
   await dragFromPalette(page, TEXT_PALETTE, { x: 120, y: 60 });
-  await expect(page.locator('.apx-el[data-apx-id="text2"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text2"]')).toBeVisible();
 
   // Let the autosave debounce for the element placement finish first. If it hasn't finished,
   // the subsequent timer firing lazily evaluates saveIr(), which would mask a missed
@@ -188,7 +188,7 @@ test("要素のグループ化: 保存・リロードを跨いでグループが
   ).toBe(false);
 
   await page
-    .locator('.apx-el[data-apx-id="text1"]')
+    .locator('.dr-el[data-dr-id="text1"]')
     .click({ modifiers: ["Shift"] });
   await page.keyboard.press("ControlOrMeta+g");
 
@@ -199,6 +199,6 @@ test("要素のグループ化: 保存・リロードを跨いでグループが
   await page.reload();
 
   await clickBackground(page);
-  await page.locator('.apx-el[data-apx-id="text1"]').click();
-  await expect(props.locator(".apx-props-id")).toHaveText("2 個の要素を選択中");
+  await page.locator('.dr-el[data-dr-id="text1"]').click();
+  await expect(props.locator(".dr-props-id")).toHaveText("2 個の要素を選択中");
 });

@@ -17,8 +17,8 @@ export function PageNumberProperties(props: ElementFormProps): ReactNode {
   const h = liveBox === null ? el.h : liveBox.h;
   return (
     <>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.pageNumber.format}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.pageNumber.format}</div>
         <TextField
           label={m.properties.pageNumber.format}
           value={el.format}
@@ -27,8 +27,8 @@ export function PageNumberProperties(props: ElementFormProps): ReactNode {
           onCommit={(format) => commitReplace(store, el.id, { ...el, format })}
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.placement}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.placement}</div>
         {"x" in el && (
           <>
             <NumberField
@@ -66,8 +66,8 @@ export function PageNumberProperties(props: ElementFormProps): ReactNode {
           onCommit={(h) => commitReplace(store, el.id, { ...el, h })}
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.character.section}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.character.section}</div>
         <NumberField
           label={m.properties.character.fontSize}
           value={el.fontSize}

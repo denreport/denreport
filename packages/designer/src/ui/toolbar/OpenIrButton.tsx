@@ -45,7 +45,7 @@ export function OpenIrButton(props: {
     <>
       <button
         type="button"
-        className="apx-btn apx-btn-secondary"
+        className="dr-btn dr-btn-secondary"
         onClick={() => {
           if (dirty) {
             setFlow({ kind: "confirm" });
@@ -78,14 +78,14 @@ export function OpenIrButton(props: {
             <>
               <button
                 type="button"
-                className="apx-btn apx-btn-secondary"
+                className="dr-btn dr-btn-secondary"
                 onClick={() => setFlow(IDLE)}
               >
                 {m.toolbar.openIr.cancel}
               </button>
               <button
                 type="button"
-                className="apx-btn apx-btn-primary"
+                className="dr-btn dr-btn-primary"
                 onClick={pickFile}
               >
                 {m.toolbar.openIr.continue}
@@ -103,7 +103,7 @@ export function OpenIrButton(props: {
           footer={
             <button
               type="button"
-              className="apx-btn apx-btn-secondary"
+              className="dr-btn dr-btn-secondary"
               onClick={() => setFlow(IDLE)}
             >
               {m.toolbar.openIr.close}
@@ -113,18 +113,18 @@ export function OpenIrButton(props: {
           {flow.kind === "read-failed" ? (
             <p>{m.toolbar.openIr.readFailed}</p>
           ) : (
-            <ul className="apx-dialog-errors">
+            <ul className="dr-dialog-errors">
               {flow.errors.map((error, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same rule / path can appear side by side, so identify by index
                 <li key={i}>
-                  <span className="apx-verr-rule">{error.rule}</span>
-                  <span className="apx-verr-path">{error.path}</span>
+                  <span className="dr-verr-rule">{error.rule}</span>
+                  <span className="dr-verr-path">{error.path}</span>
                   <span>{error.message}</span>
                 </li>
               ))}
             </ul>
           )}
-          <p className="apx-dialog-note">{m.toolbar.openIr.unchangedNote}</p>
+          <p className="dr-dialog-note">{m.toolbar.openIr.unchangedNote}</p>
         </Dialog>
       )}
     </>

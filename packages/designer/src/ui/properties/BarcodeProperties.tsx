@@ -28,8 +28,8 @@ export function BarcodeProperties(props: ElementFormProps): ReactNode {
   const h = liveBox === null ? el.h : liveBox.h;
   return (
     <>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.barcode.section}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.barcode.section}</div>
         <SegmentField
           label={m.properties.barcode.symbology}
           value={el.symbology}
@@ -46,8 +46,8 @@ export function BarcodeProperties(props: ElementFormProps): ReactNode {
           onCommit={(value) => commitReplace(store, el.id, { ...el, value })}
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.placement}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.placement}</div>
         {"x" in el && (
           <>
             <NumberField

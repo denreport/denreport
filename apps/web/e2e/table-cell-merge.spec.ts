@@ -10,7 +10,7 @@ async function cellCenter(
   row: "header" | number,
   col: number,
 ): Promise<{ readonly x: number; readonly y: number }> {
-  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  const table = page.locator('.dr-el[data-dr-id="table1"]');
   const tableBox = await table.boundingBox();
   const paper = page.getByRole("application", { name: "キャンバス" });
   const paperBox = await paper.boundingBox();
@@ -46,7 +46,7 @@ test("同一値の連続行の結合がキャンバスとプレビューに反�
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 130, y: 150 });
-  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  const table = page.locator('.dr-el[data-dr-id="table1"]');
   await expect(table).toBeVisible();
 
   await setSampleData(page, {
@@ -58,7 +58,7 @@ test("同一値の連続行の結合がキャンバスとプレビューに反�
   });
 
   const coveredCell = page.locator(
-    '[data-apx-id="table1"] [data-apx-row="1"][data-apx-col="0"]',
+    '[data-dr-id="table1"] [data-dr-row="1"][data-dr-col="0"]',
   );
   await expect(coveredCell).toHaveText("同じ");
 
@@ -68,17 +68,17 @@ test("同一値の連続行の結合がキャンバスとプレビューに反�
   // The covered cell disappears, while the origin cell and the neighboring column remain
   await expect(coveredCell).toHaveCount(0);
   await expect(
-    page.locator('[data-apx-id="table1"] [data-apx-row="0"][data-apx-col="0"]'),
+    page.locator('[data-dr-id="table1"] [data-dr-row="0"][data-dr-col="0"]'),
   ).toHaveText("同じ");
   await expect(
-    page.locator('[data-apx-id="table1"] [data-apx-row="1"][data-apx-col="1"]'),
+    page.locator('[data-dr-id="table1"] [data-dr-row="1"][data-dr-col="1"]'),
   ).toHaveText("B");
 
   const preview = page.getByRole("dialog", { name: "プレビュー" });
   await page.getByRole("button", { name: "プレビュー" }).click();
   await expect(preview).toBeVisible();
-  await expect(preview.locator(".apx-preview-error")).toHaveCount(0);
-  await expect(preview.locator(".apx-preview-count")).toHaveText("1 ページ");
+  await expect(preview.locator(".dr-preview-error")).toHaveCount(0);
+  await expect(preview.locator(".dr-preview-count")).toHaveText("1 ページ");
 });
 
 test("静的な結合をプロパティで作成し、プレビューと書き出しが検証エラーなく通る", async ({
@@ -86,7 +86,7 @@ test("静的な結合をプロパティで作成し、プレビューと書き�
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 130, y: 150 });
-  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  const table = page.locator('.dr-el[data-dr-id="table1"]');
   await expect(table).toBeVisible();
 
   await setSampleData(page, {
@@ -102,19 +102,19 @@ test("静的な結合をプロパティで作成し、プレビューと書き�
 
   // The default merge (column col1, 2 rows vertically starting at row 0) hides the covered cell
   await expect(
-    page.locator('[data-apx-id="table1"] [data-apx-row="1"][data-apx-col="0"]'),
+    page.locator('[data-dr-id="table1"] [data-dr-row="1"][data-dr-col="0"]'),
   ).toHaveCount(0);
   await expect(
-    page.locator('[data-apx-id="table1"] [data-apx-row="0"][data-apx-col="0"]'),
+    page.locator('[data-dr-id="table1"] [data-dr-row="0"][data-dr-col="0"]'),
   ).toHaveText("行A");
   await expect(
-    page.locator('[data-apx-id="table1"] [data-apx-row="1"][data-apx-col="1"]'),
+    page.locator('[data-dr-id="table1"] [data-dr-row="1"][data-dr-col="1"]'),
   ).toHaveText("値B");
 
   const preview = page.getByRole("dialog", { name: "プレビュー" });
   await page.getByRole("button", { name: "プレビュー" }).click();
   await expect(preview).toBeVisible();
-  await expect(preview.locator(".apx-preview-error")).toHaveCount(0);
+  await expect(preview.locator(".dr-preview-error")).toHaveCount(0);
   await preview.getByRole("button", { name: "閉じる" }).click();
   await expect(preview).toBeHidden();
 
@@ -137,7 +137,7 @@ test("セルをドラッグ選択して右クリックで結合し、解除で�
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 130, y: 150 });
-  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  const table = page.locator('.dr-el[data-dr-id="table1"]');
   await expect(table).toBeVisible();
   const beforeDrag = await table.boundingBox();
 
@@ -148,7 +148,7 @@ test("セルをドラッグ選択して右クリックで結合し、解除で�
   await page.mouse.move(end.x, end.y, { steps: 4 });
   await page.mouse.up();
 
-  await expect(page.locator(".apx-cell-sel")).toBeVisible();
+  await expect(page.locator(".dr-cell-sel")).toBeVisible();
   const afterDrag = await table.boundingBox();
   expect(afterDrag).toEqual(beforeDrag);
 
@@ -159,7 +159,7 @@ test("セルをドラッグ選択して右クリックで結合し、解除で�
   await mergeItem.click();
 
   await expect(
-    page.locator('[data-apx-id="table1"] [data-apx-row="1"][data-apx-col="0"]'),
+    page.locator('[data-dr-id="table1"] [data-dr-row="1"][data-dr-col="0"]'),
   ).toHaveCount(0);
   const props = page.getByRole("complementary", { name: "プロパティ" });
   await expect(props.getByLabel("結合1 の行数")).toHaveValue("2");
@@ -173,7 +173,7 @@ test("セルをドラッグ選択して右クリックで結合し、解除で�
     .click();
 
   await expect(
-    page.locator('[data-apx-id="table1"] [data-apx-row="1"][data-apx-col="0"]'),
+    page.locator('[data-dr-id="table1"] [data-dr-row="1"][data-dr-col="0"]'),
   ).toBeVisible();
   await expect(props.getByLabel("結合1 の行数")).toHaveCount(0);
 });
@@ -181,7 +181,7 @@ test("セルをドラッグ選択して右クリックで結合し、解除で�
 test("ヘッダ行は横ドラッグで結合できる", async ({ page }) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 130, y: 150 });
-  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  const table = page.locator('.dr-el[data-dr-id="table1"]');
   await expect(table).toBeVisible();
 
   const start = await cellCenter(page, "header", 0);
@@ -190,7 +190,7 @@ test("ヘッダ行は横ドラッグで結合できる", async ({ page }) => {
   const end = await cellCenter(page, "header", 1);
   await page.mouse.move(end.x, end.y, { steps: 4 });
   await page.mouse.up();
-  await expect(page.locator(".apx-cell-sel")).toBeVisible();
+  await expect(page.locator(".dr-cell-sel")).toBeVisible();
 
   await page.mouse.click(end.x, end.y, { button: "right" });
   await page
@@ -199,19 +199,19 @@ test("ヘッダ行は横ドラッグで結合できる", async ({ page }) => {
     .click();
 
   await expect(
-    page.locator('[data-apx-id="table1"] .apx-tbl-th[data-apx-col="1"]'),
+    page.locator('[data-dr-id="table1"] .dr-tbl-th[data-dr-col="1"]'),
   ).toHaveCount(0);
 
   const preview = page.getByRole("dialog", { name: "プレビュー" });
   await page.getByRole("button", { name: "プレビュー" }).click();
   await expect(preview).toBeVisible();
-  await expect(preview.locator(".apx-preview-error")).toHaveCount(0);
+  await expect(preview.locator(".dr-preview-error")).toHaveCount(0);
 });
 
 test("mergeSameValue 列を含む範囲では結合が無効", async ({ page }) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 130, y: 150 });
-  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  const table = page.locator('.dr-el[data-dr-id="table1"]');
   await expect(table).toBeVisible();
 
   const props = page.getByRole("complementary", { name: "プロパティ" });
@@ -223,7 +223,7 @@ test("mergeSameValue 列を含む範囲では結合が無効", async ({ page }) 
   const end = await cellCenter(page, 1, 0);
   await page.mouse.move(end.x, end.y, { steps: 4 });
   await page.mouse.up();
-  await expect(page.locator(".apx-cell-sel")).toBeVisible();
+  await expect(page.locator(".dr-cell-sel")).toBeVisible();
 
   await page.mouse.click(end.x, end.y, { button: "right" });
   await expect(

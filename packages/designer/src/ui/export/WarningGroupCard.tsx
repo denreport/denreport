@@ -11,25 +11,25 @@ export function WarningGroupCard(props: {
   const { group, onJump } = props;
   const m = useMessages();
   return (
-    <div className={`apx-warn-card is-${group.level}`}>
-      <p className="apx-warn-note">
-        <b className="apx-warn-mark" aria-hidden="true">
+    <div className={`dr-warn-card is-${group.level}`}>
+      <p className="dr-warn-note">
+        <b className="dr-warn-mark" aria-hidden="true">
           !
         </b>
-        <span className="apx-warn-level">
+        <span className="dr-warn-level">
           {m.export.compatLevel[group.level]}
         </span>
         <span>{group.userMessage}</span>
-        <span className="apx-warn-count">
+        <span className="dr-warn-count">
           {m.export.findingCount(group.findingCount)}
         </span>
       </p>
-      <div className="apx-warn-chips">
+      <div className="dr-warn-chips">
         {group.elementIds.map((id) => (
           <button
             key={id}
             type="button"
-            className="apx-chip"
+            className="dr-chip"
             onClick={() => onJump(id)}
           >
             {id}

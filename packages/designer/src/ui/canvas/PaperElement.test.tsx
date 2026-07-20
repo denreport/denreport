@@ -52,8 +52,8 @@ function renderEl(element: IrElement, metrics?: FontMetricsSet | null): void {
 }
 
 function el(): HTMLElement {
-  const node = container.querySelector(".apx-el");
-  if (node === null) throw new Error(".apx-el がない");
+  const node = container.querySelector(".dr-el");
+  if (node === null) throw new Error(".dr-el がない");
   return node as HTMLElement;
 }
 
@@ -141,7 +141,7 @@ describe("PaperElement — rect の CSS 変数", () => {
 });
 
 describe("PaperElement — ellipse", () => {
-  it("apx-el-ellipse クラスと枠線・塗りの CSS 変数を持つ", () => {
+  it("dr-el-ellipse クラスと枠線・塗りの CSS 変数を持つ", () => {
     renderEl({
       type: "ellipse",
       id: "e1",
@@ -154,7 +154,7 @@ describe("PaperElement — ellipse", () => {
       borderColor: "#123456",
       fillColor: "#abcdef",
     });
-    expect(el().classList.contains("apx-el-ellipse")).toBe(true);
+    expect(el().classList.contains("dr-el-ellipse")).toBe(true);
     expect(el().style.getPropertyValue("--bw")).toBe("0.4");
     expect(el().style.getPropertyValue("--bc")).toBe("#123456");
     expect(el().style.getPropertyValue("--fc")).toBe("#abcdef");
@@ -375,11 +375,11 @@ describe("PaperElement — フォント計量の有無による text / pageNumbe
       align: "left",
       lineHeight: 1.25,
     });
-    expect(el().querySelectorAll(".apx-text-line")).toHaveLength(0);
+    expect(el().querySelectorAll(".dr-text-line")).toHaveLength(0);
     expect(el().textContent).toBe("本文");
   });
 
-  it("metrics 指定の text は .apx-text-line で行分割描画する", () => {
+  it("metrics 指定の text は .dr-text-line で行分割描画する", () => {
     renderEl(
       {
         type: "text",
@@ -396,11 +396,11 @@ describe("PaperElement — フォント計量の有無による text / pageNumbe
       },
       METRICS,
     );
-    expect(el().querySelectorAll(".apx-text-line")).toHaveLength(1);
+    expect(el().querySelectorAll(".dr-text-line")).toHaveLength(1);
     expect(el().textContent).toBe("本文");
   });
 
-  it("metrics 指定の pageNumber は .apx-text-line > .apx-bind になる", () => {
+  it("metrics 指定の pageNumber は .dr-text-line > .dr-bind になる", () => {
     renderEl(
       {
         type: "pageNumber",
@@ -417,7 +417,7 @@ describe("PaperElement — フォント計量の有無による text / pageNumbe
       },
       METRICS,
     );
-    const line = el().querySelector(".apx-text-line");
-    expect(line?.querySelector(".apx-bind")?.textContent).toBe("{n} / {N}");
+    const line = el().querySelector(".dr-text-line");
+    expect(line?.querySelector(".dr-bind")?.textContent).toBe("{n} / {N}");
   });
 });

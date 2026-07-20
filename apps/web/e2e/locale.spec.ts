@@ -15,7 +15,7 @@ async function addTextElement(page: Page): Promise<void> {
     .getByRole("navigation", { name: "Element palette" })
     .getByRole("button", { name: "Text" })
     .click();
-  await expect(page.locator('.apx-el[data-apx-id="text1"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text1"]')).toBeVisible();
 }
 
 test("言語切替はリロード後も保持され、title・lang・UI 文言が追随する", async ({
@@ -66,8 +66,8 @@ test("en ではプロパティパネルの要素型名・見出し・欄ラベ�
   await addTextElement(page);
 
   const props = propertiesPanel(page);
-  await expect(props.locator(".apx-type-badge")).toHaveText("Text");
-  await expect(props.locator(".apx-sect-h")).toHaveText([
+  await expect(props.locator(".dr-type-badge")).toHaveText("Text");
+  await expect(props.locator(".dr-sect-h")).toHaveText([
     "Content",
     "Placement",
     "Text",
@@ -140,8 +140,8 @@ test("en では検証ペインの core 由来メッセージが英語になる",
   await xField.fill("300");
   await xField.press("Enter");
 
-  await page.locator(".apx-drawer-bar").click();
-  const row = page.locator(".apx-verr").first();
+  await page.locator(".dr-drawer-bar").click();
+  const row = page.locator(".dr-verr").first();
   await expect(row).toContainText("M02");
   await expect(row).toContainText("要素が用紙の右端を超えています");
 
@@ -156,10 +156,10 @@ test("en では記載事項チェックの警告が英語になる", async ({ pa
   await switchToEnglish(page);
   await propertiesPanel(page).getByLabel("Enable").check();
 
-  await page.locator(".apx-drawer-bar").click();
-  await expect(page.locator(".apx-verr")).toHaveCount(6);
+  await page.locator(".dr-drawer-bar").click();
+  await expect(page.locator(".dr-verr")).toHaveCount(6);
   await expect(
-    page.locator(".apx-verr", { hasText: "Issuer's registration number" }),
+    page.locator(".dr-verr", { hasText: "Issuer's registration number" }),
   ).toHaveCount(1);
 });
 
@@ -168,14 +168,14 @@ test("en では互換警告の userMessage が英語になる", async ({ page })
   await switchToEnglish(page);
   await addTextElement(page);
 
-  await page.locator(".apx-drawer-bar").click();
-  const card = page.locator(".apx-drawer-compat .apx-warn-card");
+  await page.locator(".dr-drawer-bar").click();
+  const card = page.locator(".dr-drawer-compat .dr-warn-card");
   await expect(card).toHaveCount(1);
-  await expect(card.locator(".apx-warn-level")).toHaveText("Approximated");
+  await expect(card.locator(".dr-warn-level")).toHaveText("Approximated");
   await expect(card).toContainText(
     "Text wrapping and alignment are the same regardless of the export target.",
   );
-  await expect(card.locator(".apx-warn-count")).toHaveText("1 location");
+  await expect(card.locator(".dr-warn-count")).toHaveText("1 location");
 });
 
 test("en では復元失敗のホスト通知が英語になる", async ({ page }) => {

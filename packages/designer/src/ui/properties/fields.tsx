@@ -66,12 +66,12 @@ export function NumberField(props: NumberFieldProps): ReactNode {
   );
   const id = useId();
   return (
-    <div className="apx-frow">
+    <div className="dr-frow">
       <label htmlFor={id}>{label}</label>
-      <span className={`apx-field${error !== undefined ? " is-error" : ""}`}>
+      <span className={`dr-field${error !== undefined ? " is-error" : ""}`}>
         <input
           id={id}
-          className="apx-num"
+          className="dr-num"
           inputMode="decimal"
           placeholder={value === null ? m.properties.fields.mixed : undefined}
           value={handlers.draft}
@@ -79,9 +79,9 @@ export function NumberField(props: NumberFieldProps): ReactNode {
           onBlur={handlers.onBlur}
           onKeyDown={handlers.onKeyDown}
         />
-        {unit !== undefined && <span className="apx-unit">{unit}</span>}
+        {unit !== undefined && <span className="dr-unit">{unit}</span>}
       </span>
-      {error !== undefined && <span className="apx-ferr">{error}</span>}
+      {error !== undefined && <span className="dr-ferr">{error}</span>}
     </div>
   );
 }
@@ -105,12 +105,12 @@ export function TextField(props: {
   const id = useId();
   const listId = `${id}-list`;
   return (
-    <div className="apx-frow">
+    <div className="dr-frow">
       <label htmlFor={id}>{label}</label>
-      <span className={`apx-field${error !== undefined ? " is-error" : ""}`}>
+      <span className={`dr-field${error !== undefined ? " is-error" : ""}`}>
         <input
           id={id}
-          className={mono === true ? "apx-mono" : undefined}
+          className={mono === true ? "dr-mono" : undefined}
           value={handlers.draft}
           list={suggestions !== undefined ? listId : undefined}
           onChange={(e) => handlers.onChange(e.currentTarget.value)}
@@ -125,8 +125,8 @@ export function TextField(props: {
           </datalist>
         )}
       </span>
-      {error !== undefined && <span className="apx-ferr">{error}</span>}
-      {hint !== undefined && <span className="apx-fhint">{hint}</span>}
+      {error !== undefined && <span className="dr-ferr">{error}</span>}
+      {hint !== undefined && <span className="dr-fhint">{hint}</span>}
     </div>
   );
 }
@@ -146,10 +146,10 @@ export function TextAreaField(props: {
   });
   const id = useId();
   return (
-    <div className="apx-frow">
+    <div className="dr-frow">
       <label htmlFor={id}>{label}</label>
       <span
-        className={`apx-field apx-field-multi${error !== undefined ? " is-error" : ""}`}
+        className={`dr-field dr-field-multi${error !== undefined ? " is-error" : ""}`}
       >
         <textarea
           id={id}
@@ -160,8 +160,8 @@ export function TextAreaField(props: {
           onKeyDown={handlers.onKeyDown}
         />
       </span>
-      {error !== undefined && <span className="apx-ferr">{error}</span>}
-      {hint !== undefined && <span className="apx-fhint">{hint}</span>}
+      {error !== undefined && <span className="dr-ferr">{error}</span>}
+      {hint !== undefined && <span className="dr-fhint">{hint}</span>}
     </div>
   );
 }
@@ -175,9 +175,9 @@ export function SegmentField<V extends string>(props: {
   readonly onCommit: (value: V) => void;
 }): ReactNode {
   return (
-    <div className="apx-frow">
-      <span className="apx-frow-label">{props.label}</span>
-      <fieldset className="apx-seg" aria-label={props.label}>
+    <div className="dr-frow">
+      <span className="dr-frow-label">{props.label}</span>
+      <fieldset className="dr-seg" aria-label={props.label}>
         {props.options.map((option) => (
           <button
             key={option.value}
@@ -212,19 +212,19 @@ export function ColorField(props: {
   const isNone = value === null;
   const swatch = value ?? "#000000";
   return (
-    <div className="apx-frow">
+    <div className="dr-frow">
       <label htmlFor={id}>{label}</label>
-      <span className="apx-field apx-field-color">
+      <span className="dr-field dr-field-color">
         <input
           id={id}
           type="color"
-          className="apx-color-input"
+          className="dr-color-input"
           value={swatch}
           disabled={allowNone && isNone}
           onChange={(e) => onCommit(e.currentTarget.value)}
         />
         {allowNone && (
-          <label className="apx-color-none">
+          <label className="dr-color-none">
             <input
               type="checkbox"
               checked={isNone}
@@ -250,9 +250,9 @@ export function SelectField<V extends string>(props: {
   const { label, value, options, onCommit } = props;
   const id = useId();
   return (
-    <div className="apx-frow">
+    <div className="dr-frow">
       <label htmlFor={id}>{label}</label>
-      <span className="apx-field">
+      <span className="dr-field">
         <select
           id={id}
           value={value}

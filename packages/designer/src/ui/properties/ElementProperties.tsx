@@ -102,10 +102,10 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
   ];
   return (
     <>
-      <div className="apx-props-head">
-        <div className="apx-props-head-top">
-          <span className="apx-type-badge">{m.elementTypes[el.type]}</span>
-          <span className="apx-props-id">{el.id}</span>
+      <div className="dr-props-head">
+        <div className="dr-props-head-top">
+          <span className="dr-type-badge">{m.elementTypes[el.type]}</span>
+          <span className="dr-props-id">{el.id}</span>
         </div>
         <TextField
           label={m.properties.element.name}
@@ -128,12 +128,12 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
         />
       </div>
       {view.parentFlexId !== null && (
-        <p className="apx-sect apx-sect-note">
+        <p className="dr-sect dr-sect-note">
           {m.properties.element.flexChildNote}
         </p>
       )}
       {view.parentFlexId === null && "pages" in el && (
-        <section className="apx-sect">
+        <section className="dr-sect">
           <SegmentField
             label={m.properties.element.pages}
             value={el.pages}
@@ -143,7 +143,7 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
         </section>
       )}
       {el.type !== "table" && el.type !== "flex" && (
-        <section className="apx-sect">
+        <section className="dr-sect">
           <NumberField
             label={m.properties.element.rotate}
             value={el.rotate ?? 0}
@@ -160,10 +160,10 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
         </section>
       )}
       {applicableStyleAttrs(el.type).length > 0 && (
-        <section className="apx-sect">
-          <div className="apx-frow">
+        <section className="dr-sect">
+          <div className="dr-frow">
             <label htmlFor={styleSelectId}>{m.properties.element.style}</label>
-            <span className="apx-field">
+            <span className="dr-field">
               <select
                 id={styleSelectId}
                 value={styleOf(el) ?? ""}

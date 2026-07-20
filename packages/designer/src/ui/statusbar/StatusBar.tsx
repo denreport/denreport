@@ -29,9 +29,9 @@ export function StatusBar(props: {
       selectionSummary = (
         <span>
           {m.statusBar.selectionLabel}
-          <span className="apx-mono">{view.id}</span>
+          <span className="dr-mono">{view.id}</span>
           {m.statusBar.selectionType(m.elementTypes[view.element.type])}{" "}
-          <span className="apx-mono">
+          <span className="dr-mono">
             {fmt(view.box.x)}, {fmt(view.box.y)} / {fmt(view.box.w)}×
             {fmt(view.box.h)} mm
           </span>
@@ -45,18 +45,18 @@ export function StatusBar(props: {
   }
 
   return (
-    <footer className="apx-statusbar">
-      <span className="apx-mono apx-statusbar-cursor">
+    <footer className="dr-statusbar">
+      <span className="dr-mono dr-statusbar-cursor">
         {props.cursorMm !== null
           ? `x ${fmt(props.cursorMm.x)}  y ${fmt(props.cursorMm.y)}`
           : ""}
       </span>
       {selectionSummary}
-      <span className="apx-statusbar-spacer" />
-      <span className="apx-statusbar-saved">
+      <span className="dr-statusbar-spacer" />
+      <span className="dr-statusbar-saved">
         {state.dirty ? m.statusBar.unsaved : m.statusBar.saved}
       </span>
-      <span className="apx-mono apx-statusbar-version">
+      <span className="dr-mono dr-statusbar-version">
         IR v{state.document.version}
       </span>
     </footer>
