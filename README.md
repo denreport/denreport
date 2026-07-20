@@ -27,7 +27,10 @@ denreport is pre-1.0 and under active development. What exists today:
   (均等割付) alignment.
 - **Qualified invoice field checks**: validation that a document declared as
   a Japanese qualified invoice (適格請求書) has the fields required by law,
-  integrated into the designer's validation panel.
+  integrated into the designer's validation panel. A ready-made template
+  that satisfies every required field ships at
+  [`examples/qualified-invoice.json`](examples/qualified-invoice.json); open
+  it in the designer via the Open button.
 - **An open IR**: a versioned JSON document format ([spec](packages/core/docs/ir-v1.md))
   with a parser and a validator, so a design isn't tied to denreport itself.
 - **Two export targets**: a pdfme template + input JSON, and a
@@ -53,9 +56,11 @@ This is a pnpm monorepo with three packages and one app:
 
 All packages are MIT licensed.
 
-None of these are published to npm yet — publishing is planned but not set up.
-For now, use them by cloning this repository and building from source (see
-Quickstart below), not by installing from a registry.
+None of these are published to npm yet. The build infrastructure for
+distributable packages is in place (see `pnpm run build:packages`), but
+publishing itself hasn't happened. For now, use them by cloning this
+repository and building from source (see Quickstart below), not by
+installing from a registry.
 
 ## License FAQ
 
@@ -74,15 +79,13 @@ denreport claims no rights over them.
 
 One caveat: the ReportLab export is a zip that also contains the font
 *files* (TTF) the script loads. When those are the bundled Noto Sans JP
-fonts, the files themselves stay under the
-[SIL Open Font License 1.1](packages/targets/assets/fonts/OFL.txt). The
-zip itself does not include the license file, so if you pass the zip on to
-someone else, add a copy of
-[`OFL.txt`](packages/targets/assets/fonts/OFL.txt) alongside it — that one
-file carries both the copyright notice and the license text that OFL
-condition 2 requires each copy to keep. Don't sell the font files on
-their own (OFL condition 1). If you registered your own fonts, their
-license terms apply instead.
+fonts, the zip automatically includes a copy of
+[`OFL.txt`](packages/targets/assets/fonts/OFL.txt) at its root — that
+satisfies OFL condition 2, which requires the license text to travel with
+each copy — so you can just pass the zip along as-is. Don't sell the font
+files on their own (OFL condition 1). If you registered your own fonts
+instead, the zip won't include OFL.txt, and that font's license terms
+apply.
 
 **What licenses do the bundled fonts and the export targets use?**
 The bundled fonts are the Regular and Bold weights of Noto Sans JP, under
@@ -158,8 +161,9 @@ reverse proxy (nginx, Caddy, etc.) if you need either.
 
 Beyond the above, we're planning deeper Japanese typesetting features
 (vertical writing, gaiji, and similar), a self-hosted rendering runtime, and
-a curated set of ready-made templates. None of that exists yet, and this
-README will be updated as it ships.
+a broader set of ready-made templates beyond the qualified invoice example
+in [`examples/`](examples). None of that exists yet, and this README will
+be updated as it ships.
 
 ## Contributing
 

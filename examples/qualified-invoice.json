@@ -1,0 +1,202 @@
+{
+  "version": "1.0",
+  "page": { "width": 210, "height": 297 },
+  "font": { "regular": "NotoSansJP" },
+  "docType": "qualifiedInvoice",
+  "elements": [
+    {
+      "type": "text",
+      "id": "title",
+      "text": "適格請求書",
+      "x": 0,
+      "y": 15,
+      "w": 210,
+      "h": 12,
+      "fontSize": 20,
+      "align": "center"
+    },
+    {
+      "type": "image",
+      "id": "logo",
+      "x": 15,
+      "y": 15,
+      "w": 20,
+      "h": 20,
+      "src": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+    },
+    {
+      "type": "flex",
+      "id": "issuerBlock",
+      "x": 130,
+      "y": 18,
+      "direction": "column",
+      "h": 26,
+      "justifyContent": "center",
+      "gap": 1.5,
+      "children": [
+        {
+          "type": "text",
+          "id": "issuerName",
+          "text": "株式会社サンプル",
+          "w": 65,
+          "h": 6,
+          "fontSize": 11
+        },
+        {
+          "type": "text",
+          "id": "issuerAddr",
+          "text": "東京都千代田区1-1-1",
+          "w": 65,
+          "h": 6,
+          "fontSize": 9
+        },
+        {
+          "type": "text",
+          "id": "issuerRegNo",
+          "text": "登録番号：{registrationNumber}",
+          "w": 65,
+          "h": 6,
+          "fontSize": 9
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "customerName",
+      "text": "{customerName} 御中",
+      "x": 15,
+      "y": 42,
+      "w": 90,
+      "h": 8,
+      "fontSize": 12
+    },
+    {
+      "type": "line",
+      "id": "customerUnderline",
+      "orientation": "horizontal",
+      "x": 15,
+      "y": 51,
+      "length": 90,
+      "thickness": 0.4
+    },
+    {
+      "type": "text",
+      "id": "transactionDate",
+      "text": "取引年月日：{transactionDate}",
+      "x": 15,
+      "y": 55,
+      "w": 90,
+      "h": 6,
+      "fontSize": 10
+    },
+    {
+      "type": "table",
+      "id": "items",
+      "bind": "items",
+      "x": 15,
+      "y": 90,
+      "rowHeight": 8,
+      "headerHeight": 8,
+      "fontSize": 9,
+      "maxY": 230,
+      "minRows": 3,
+      "columns": [
+        { "key": "description", "label": "取引内容", "width": 80 },
+        { "key": "quantity", "label": "数量", "width": 20, "align": "right" },
+        { "key": "unitPrice", "label": "単価", "width": 25, "align": "right" },
+        { "key": "taxRate", "label": "税率", "width": 20, "align": "center" },
+        { "key": "amount", "label": "金額", "width": 25, "align": "right" }
+      ]
+    },
+    {
+      "type": "text",
+      "id": "taxSummaryLabel",
+      "text": "税率ごとの内訳",
+      "x": 15,
+      "y": 235,
+      "w": 90,
+      "h": 6,
+      "fontSize": 10
+    },
+    {
+      "type": "text",
+      "id": "taxable10Label",
+      "text": "10%対象 税抜金額：{taxableAmount10}",
+      "x": 15,
+      "y": 241,
+      "w": 90,
+      "h": 6,
+      "fontSize": 9
+    },
+    {
+      "type": "text",
+      "id": "tax10Label",
+      "text": "10%対象 消費税額：{taxAmount10}",
+      "x": 15,
+      "y": 247,
+      "w": 90,
+      "h": 6,
+      "fontSize": 9
+    },
+    {
+      "type": "text",
+      "id": "taxable8Label",
+      "text": "8%対象 税抜金額：{taxableAmount8}",
+      "x": 15,
+      "y": 253,
+      "w": 90,
+      "h": 6,
+      "fontSize": 9
+    },
+    {
+      "type": "text",
+      "id": "tax8Label",
+      "text": "8%対象 消費税額：{taxAmount8}",
+      "x": 15,
+      "y": 259,
+      "w": 90,
+      "h": 6,
+      "fontSize": 9
+    },
+    {
+      "type": "rect",
+      "id": "totalBox",
+      "x": 118,
+      "y": 239,
+      "w": 75,
+      "h": 26,
+      "borderWidth": 0.5
+    },
+    {
+      "type": "text",
+      "id": "totalLabel",
+      "text": "合計（税込）",
+      "x": 120,
+      "y": 241,
+      "w": 71,
+      "h": 8,
+      "fontSize": 12
+    },
+    {
+      "type": "text",
+      "id": "totalAmount",
+      "text": "{totalWithTax}",
+      "x": 120,
+      "y": 251,
+      "w": 71,
+      "h": 10,
+      "fontSize": 14,
+      "align": "right"
+    },
+    {
+      "type": "pageNumber",
+      "id": "pageNo",
+      "x": 0,
+      "y": 285,
+      "w": 210,
+      "h": 6,
+      "fontSize": 9,
+      "align": "center"
+    }
+  ]
+}
