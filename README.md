@@ -74,15 +74,13 @@ denreport claims no rights over them.
 
 One caveat: the ReportLab export is a zip that also contains the font
 *files* (TTF) the script loads. When those are the bundled Noto Sans JP
-fonts, the files themselves stay under the
-[SIL Open Font License 1.1](packages/targets/assets/fonts/OFL.txt). The
-zip itself does not include the license file, so if you pass the zip on to
-someone else, add a copy of
-[`OFL.txt`](packages/targets/assets/fonts/OFL.txt) alongside it — that one
-file carries both the copyright notice and the license text that OFL
-condition 2 requires each copy to keep. Don't sell the font files on
-their own (OFL condition 1). If you registered your own fonts, their
-license terms apply instead.
+fonts, the zip automatically includes a copy of
+[`OFL.txt`](packages/targets/assets/fonts/OFL.txt) at its root — that
+satisfies OFL condition 2, which requires the license text to travel with
+each copy — so you can just pass the zip along as-is. Don't sell the font
+files on their own (OFL condition 1). If you registered your own fonts
+instead, the zip won't include OFL.txt, and that font's license terms
+apply.
 
 **What licenses do the bundled fonts and the export targets use?**
 The bundled fonts are the Regular and Bold weights of Noto Sans JP, under
