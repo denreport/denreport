@@ -4,7 +4,7 @@ import {
   ZOOM_MAX,
   ZOOM_MIN,
   ZOOM_STEPS,
-} from "../../state/constants";
+} from "../../state/constants.js";
 
 function clampZoom(zoom: number): number {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom));

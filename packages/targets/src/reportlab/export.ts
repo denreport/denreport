@@ -8,15 +8,15 @@ import type {
   LoweredTextElement,
 } from "@denreport/core";
 import { layoutTextLines, lowerIr, resolveFontSlot } from "@denreport/core";
-import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
-import { effectiveFontOf, resolveFontSetData } from "../fonts/set";
+import type { FontSetData, ResolvedSlotFont } from "../fonts/set.js";
+import { effectiveFontOf, resolveFontSetData } from "../fonts/set.js";
 import {
   getMessages,
   type MessageLocale,
   type Messages,
-} from "../i18n/messages";
-import { pyNumber } from "./python";
-import type { ReportlabFontEntry } from "./snippets";
+} from "../i18n/messages/index.js";
+import { pyNumber } from "./python.js";
+import type { ReportlabFontEntry } from "./snippets.js";
 import {
   BARCODE_FN,
   buildFontsConstant,
@@ -30,8 +30,8 @@ import {
   registerFontsFn,
   statementFor,
   TEXT_FN,
-} from "./snippets";
-import type { ExportReportlabResult } from "./types";
+} from "./snippets.js";
+import type { ExportReportlabResult } from "./types.js";
 
 function usedTypes(
   pages: readonly (readonly LoweredElement[])[],

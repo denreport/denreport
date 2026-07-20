@@ -7,11 +7,11 @@ import {
 } from "@denreport/targets";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocale, useMessages } from "../../i18n/context";
-import type { Messages } from "../../i18n/messages";
-import type { FontResolution } from "../../state/fonts";
-import { resolveFontSet } from "../../state/fonts";
-import { buildPreview, generateSampleData } from "../../state/preview";
+import { useLocale, useMessages } from "../../i18n/context.js";
+import type { Messages } from "../../i18n/messages/index.js";
+import type { FontResolution } from "../../state/fonts.js";
+import { resolveFontSet } from "../../state/fonts.js";
+import { buildPreview, generateSampleData } from "../../state/preview.js";
 import {
   activeSampleJson,
   addScenario,
@@ -20,15 +20,15 @@ import {
   renameScenario,
   selectScenario,
   updateActiveJson,
-} from "../../state/sample-scenarios";
-import type { EditorStore } from "../../state/store";
-import { EMBEDDED_FONT_NAME } from "../fonts/font-registration";
-import { useEditorState } from "../useEditorState";
-import { PreviewPage } from "./PreviewPage";
-import type { PreviewFont, PreviewFontSet } from "./preview-font";
-import { loadPreviewFont, registerPreviewFace } from "./preview-font";
-import { SampleDataEditor } from "./SampleDataEditor";
-import { ScenarioBar } from "./ScenarioBar";
+} from "../../state/sample-scenarios.js";
+import type { EditorStore } from "../../state/store.js";
+import { EMBEDDED_FONT_NAME } from "../fonts/font-registration.js";
+import { useEditorState } from "../useEditorState.js";
+import { PreviewPage } from "./PreviewPage.js";
+import type { PreviewFont, PreviewFontSet } from "./preview-font.js";
+import { loadPreviewFont, registerPreviewFace } from "./preview-font.js";
+import { SampleDataEditor } from "./SampleDataEditor.js";
+import { ScenarioBar } from "./ScenarioBar.js";
 
 type PreviewMessages = Messages["preview"];
 

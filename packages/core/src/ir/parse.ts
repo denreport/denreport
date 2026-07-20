@@ -2,9 +2,9 @@ import {
   getMessages,
   type MessageLocale,
   type Messages,
-} from "../i18n/messages";
-import { DATA_URI_PATTERN, PAGE_NUMBER_DEFAULT_FORMAT } from "./constants";
-import type { IrError, IrRuleId } from "./errors";
+} from "../i18n/messages/index.js";
+import { DATA_URI_PATTERN, PAGE_NUMBER_DEFAULT_FORMAT } from "./constants.js";
+import type { IrError, IrRuleId } from "./errors.js";
 import type {
   IrAlign,
   IrBarcodeSymbology,
@@ -24,8 +24,8 @@ import type {
   IrPages,
   IrStrokeStyle,
   IrStyleAttrs,
-} from "./types";
-import { IR_VERSION } from "./types";
+} from "./types.js";
+import { IR_VERSION } from "./types.js";
 
 type ParseMessages = Messages["parse"];
 

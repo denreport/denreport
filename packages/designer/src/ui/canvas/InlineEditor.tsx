@@ -1,7 +1,7 @@
 import type { IrAlign } from "@denreport/core";
 import type { CSSProperties, KeyboardEvent, ReactNode } from "react";
 import { useEffect, useRef } from "react";
-import type { MmBox } from "../../state/geometry";
+import type { MmBox } from "../../state/geometry.js";
 
 type FieldElement = HTMLTextAreaElement | HTMLInputElement;
 

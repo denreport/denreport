@@ -1,18 +1,18 @@
 import type { IrElement, IrFlexChild } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { useMessages } from "../../i18n/context";
-import type { PlacedElementView } from "../../state/geometry";
-import { updateElements } from "../../state/properties";
-import type { EditorStore } from "../../state/store";
-import type { BulkDescriptor } from "./bulk-descriptors";
+import { useMessages } from "../../i18n/context.js";
+import type { PlacedElementView } from "../../state/geometry.js";
+import { updateElements } from "../../state/properties.js";
+import type { EditorStore } from "../../state/store.js";
+import type { BulkDescriptor } from "./bulk-descriptors.js";
 import {
   applicableDescriptors,
   BULK_SECTION_ORDER,
   buildBulkDescriptors,
   bulkValueFor,
-} from "./bulk-descriptors";
-import { NumberField, SegmentField } from "./fields";
+} from "./bulk-descriptors.js";
+import { NumberField, SegmentField } from "./fields.js";
 
 type AnyElement = IrElement | IrFlexChild;
 

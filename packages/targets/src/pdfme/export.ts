@@ -13,11 +13,11 @@ import {
   PT_TO_MM,
   resolveFontSlot,
 } from "@denreport/core";
-import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
-import { effectiveFontOf, resolveFontSetData } from "../fonts/set";
-import type { FontIssue } from "../fonts/validate";
-import type { MessageLocale } from "../i18n/messages";
-import { expandStrokes, rotatePointCw } from "./dash";
+import type { FontSetData, ResolvedSlotFont } from "../fonts/set.js";
+import { effectiveFontOf, resolveFontSetData } from "../fonts/set.js";
+import type { FontIssue } from "../fonts/validate.js";
+import type { MessageLocale } from "../i18n/messages/index.js";
+import { expandStrokes, rotatePointCw } from "./dash.js";
 import type {
   PdfmeBarcodeSchema,
   PdfmeEllipseSchema,
@@ -27,7 +27,7 @@ import type {
   PdfmeRectangleSchema,
   PdfmeSchema,
   PdfmeTemplate,
-} from "./types";
+} from "./types.js";
 
 /**
  * Result of exportPdfme. On success, `template` and `inputs` are ready to

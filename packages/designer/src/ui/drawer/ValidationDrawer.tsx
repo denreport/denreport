@@ -2,13 +2,13 @@ import type { IrError } from "@denreport/core";
 import { COMPAT_MATRICES, checkCompat } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
-import { useLocale, useMessages } from "../../i18n/context";
-import { errorElementIds } from "../../state/error-index";
-import { groupCompatFindings } from "../../state/export-warnings";
-import { layoutDocument, visibleInContext } from "../../state/geometry";
-import type { EditorStore } from "../../state/store";
-import { WarningGroupCard } from "../export/WarningGroupCard";
-import { useEditorState } from "../useEditorState";
+import { useLocale, useMessages } from "../../i18n/context.js";
+import { errorElementIds } from "../../state/error-index.js";
+import { groupCompatFindings } from "../../state/export-warnings.js";
+import { layoutDocument, visibleInContext } from "../../state/geometry.js";
+import type { EditorStore } from "../../state/store.js";
+import { WarningGroupCard } from "../export/WarningGroupCard.js";
+import { useEditorState } from "../useEditorState.js";
 
 export function ValidationDrawer(props: {
   readonly store: EditorStore;

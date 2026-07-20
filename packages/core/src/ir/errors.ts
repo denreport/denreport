@@ -1,4 +1,4 @@
-import { getMessages, type MessageLocale } from "../i18n/messages";
+import { getMessages, type MessageLocale } from "../i18n/messages/index.js";
 
 /**
  * Identifier of an IR validation rule. Prefixes group rules by concern: S

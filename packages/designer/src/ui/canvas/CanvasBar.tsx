@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
+import { useMessages } from "../../i18n/context.js";
 import {
   ENVELOPE_PRESETS,
   type EnvelopePresetId,
-} from "../../state/envelope-presets";
-import type { EditorStore } from "../../state/store";
-import type { PageContext } from "../../state/types";
-import { useEditorState } from "../useEditorState";
-import { AlignmentButtons } from "./AlignmentButtons";
-import { zoomStepIn, zoomStepOut } from "./zoom";
+} from "../../state/envelope-presets.js";
+import type { EditorStore } from "../../state/store.js";
+import type { PageContext } from "../../state/types.js";
+import { useEditorState } from "../useEditorState.js";
+import { AlignmentButtons } from "./AlignmentButtons.js";
+import { zoomStepIn, zoomStepOut } from "./zoom.js";
 
 export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
   const { store } = props;

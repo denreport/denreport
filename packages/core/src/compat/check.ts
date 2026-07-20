@@ -1,11 +1,15 @@
-import type { MessageLocale } from "../i18n/messages";
+import type { MessageLocale } from "../i18n/messages/index.js";
 import type {
   IrDocument,
   IrElement,
   IrElementType,
   IrFlexChild,
-} from "../ir/types";
-import type { CompatEntry, CompatTargetId, TargetCompatMatrix } from "./types";
+} from "../ir/types.js";
+import type {
+  CompatEntry,
+  CompatTargetId,
+  TargetCompatMatrix,
+} from "./types.js";
 
 /**
  * A single compatibility issue between an IR document and an export target's

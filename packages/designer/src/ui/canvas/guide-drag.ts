@@ -1,5 +1,5 @@
 import type { IrPage } from "@denreport/core";
-import { roundMm } from "../../state/geometry";
+import { roundMm } from "../../state/geometry.js";
 
 export interface PaperGeometry {
   /** Top-left of the paper in the client coordinate system */

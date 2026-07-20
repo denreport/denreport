@@ -1,4 +1,4 @@
-import type { IrFont, IrFontSlot, IrFontStyle, IrFontWeight } from "./types";
+import type { IrFont, IrFontSlot, IrFontStyle, IrFontWeight } from "./types.js";
 
 /**
  * Resolves a requested (weight, style) pair to a slot defined in `font`.

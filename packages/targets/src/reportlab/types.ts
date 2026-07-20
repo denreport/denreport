@@ -1,5 +1,5 @@
 import type { IrError } from "@denreport/core";
-import type { FontIssue } from "../fonts/validate";
+import type { FontIssue } from "../fonts/validate.js";
 
 /** A font file bundled with a reportlab export, to be placed alongside the generated script (see the script's header comment). */
 export interface ReportlabFontFile {

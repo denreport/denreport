@@ -2,15 +2,15 @@ import {
   getMessages,
   type MessageLocale,
   type Messages,
-} from "../i18n/messages";
-import type { IrError } from "./errors";
-import { textTemplateKeys } from "./interpolate";
+} from "../i18n/messages/index.js";
+import type { IrError } from "./errors.js";
+import { textTemplateKeys } from "./interpolate.js";
 import type {
   IrDocument,
   IrElement,
   IrFlexChild,
   IrTableElement,
-} from "./types";
+} from "./types.js";
 
 type DataMessages = Messages["data"];
 

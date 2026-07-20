@@ -1,4 +1,4 @@
-import type { Messages } from "./index";
+import type { Messages } from "./index.js";
 
 export const en: Messages = {
   fontIssue: {

@@ -1,6 +1,6 @@
 import type { IrFont } from "@denreport/core";
-import type { FontSetData } from "../fonts/set";
-import { FONT_SLOTS } from "../fonts/set";
+import type { FontSetData } from "../fonts/set.js";
+import { FONT_SLOTS } from "../fonts/set.js";
 
 /** A single pdfme font map entry. pdfme requires exactly one fallback entry per map. */
 export interface PdfmeFontEntry {

@@ -8,33 +8,33 @@ import {
 } from "@denreport/targets";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
-import { triggerDownload } from "../../api/download";
-import { useLocale, useMessages } from "../../i18n/context";
+import { triggerDownload } from "../../api/download.js";
+import { useLocale, useMessages } from "../../i18n/context.js";
 import {
   EXPORT_TARGET_IDS,
   groupCompatFindings,
-} from "../../state/export-warnings";
-import type { FontResolution } from "../../state/fonts";
-import { resolveFontSet } from "../../state/fonts";
-import { layoutDocument, visibleInContext } from "../../state/geometry";
-import { activeSampleJson } from "../../state/sample-scenarios";
-import type { EditorStore } from "../../state/store";
-import { Dialog } from "../dialog/Dialog";
+} from "../../state/export-warnings.js";
+import type { FontResolution } from "../../state/fonts.js";
+import { resolveFontSet } from "../../state/fonts.js";
+import { layoutDocument, visibleInContext } from "../../state/geometry.js";
+import { activeSampleJson } from "../../state/sample-scenarios.js";
+import type { EditorStore } from "../../state/store.js";
+import { Dialog } from "../dialog/Dialog.js";
 import {
   EMBEDDED_BOLD_FONT_NAME,
   EMBEDDED_FONT_NAME,
-} from "../fonts/font-registration";
-import { useEditorState } from "../useEditorState";
-import { fetchEmbeddedFontData } from "./export-font";
-import type { ExportFile, FontIssue } from "./run-export";
+} from "../fonts/font-registration.js";
+import { useEditorState } from "../useEditorState.js";
+import { fetchEmbeddedFontData } from "./export-font.js";
+import type { ExportFile, FontIssue } from "./run-export.js";
 import {
   buildPdfmeArtifact,
   buildPdfmeTemplateArtifact,
   buildReportlabArtifact,
   buildReportlabTemplateArtifact,
   parseExportData,
-} from "./run-export";
-import { WarningGroupCard } from "./WarningGroupCard";
+} from "./run-export.js";
+import { WarningGroupCard } from "./WarningGroupCard.js";
 
 type RunState =
   | { readonly kind: "idle" }

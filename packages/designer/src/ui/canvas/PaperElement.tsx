@@ -1,16 +1,16 @@
 import type { IrElement, IrFlexChild, IrStrokeStyle } from "@denreport/core";
 import type { CSSProperties, ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import { IMAGE_PLACEHOLDER_SRC } from "../../state/constants";
-import type { PlacedElementView } from "../../state/geometry";
-import { visibleInContext } from "../../state/geometry";
-import type { TableCellSource } from "../../state/table-cells";
-import type { PageContext } from "../../state/types";
-import type { FontMetricsSet } from "../fonts/font-metrics";
-import { charWidthsFor } from "../fonts/font-metrics";
-import { BarcodeSketch } from "./BarcodeSketch";
-import { TableSketch } from "./TableSketch";
-import { TextSketch } from "./TextSketch";
+import { useMessages } from "../../i18n/context.js";
+import { IMAGE_PLACEHOLDER_SRC } from "../../state/constants.js";
+import type { PlacedElementView } from "../../state/geometry.js";
+import { visibleInContext } from "../../state/geometry.js";
+import type { TableCellSource } from "../../state/table-cells.js";
+import type { PageContext } from "../../state/types.js";
+import type { FontMetricsSet } from "../fonts/font-metrics.js";
+import { charWidthsFor } from "../fonts/font-metrics.js";
+import { BarcodeSketch } from "./BarcodeSketch.js";
+import { TableSketch } from "./TableSketch.js";
+import { TextSketch } from "./TextSketch.js";
 
 // The canvas commits to a schematic display, so dash-dot and dash-dot-dot are approximated as dashed (check the exact stroke style in the preview)
 function cssLineStyle(

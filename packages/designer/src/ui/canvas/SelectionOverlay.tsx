@@ -1,12 +1,12 @@
 import type { IrFlexElement } from "@denreport/core";
 import type { CSSProperties, ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import { errorElementIds } from "../../state/error-index";
-import type { MmBox, PlacedElementView } from "../../state/geometry";
-import { rotationDeg, visibleInContext } from "../../state/geometry";
-import type { EditorState } from "../../state/types";
-import type { HandleId, InteractionState } from "./interaction";
-import { isRotatable } from "./interaction";
+import { useMessages } from "../../i18n/context.js";
+import { errorElementIds } from "../../state/error-index.js";
+import type { MmBox, PlacedElementView } from "../../state/geometry.js";
+import { rotationDeg, visibleInContext } from "../../state/geometry.js";
+import type { EditorState } from "../../state/types.js";
+import type { HandleId, InteractionState } from "./interaction.js";
+import { isRotatable } from "./interaction.js";
 
 function boxVars(box: MmBox): CSSProperties {
   return {

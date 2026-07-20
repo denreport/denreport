@@ -8,15 +8,15 @@ import {
   groupSelection,
   pasteClipboard,
   ungroupSelection,
-} from "../../state/commands";
-import { GRID_STEP_MM } from "../../state/constants";
-import { moveElements, setTableContinuationY } from "../../state/elements";
-import { layoutDocument } from "../../state/geometry";
-import { gridArrowTarget } from "../../state/snapping";
-import type { EditorStore } from "../../state/store";
-import type { EditorState } from "../../state/types";
-import type { InteractionState } from "./interaction";
-import { zoomStepIn, zoomStepOut } from "./zoom";
+} from "../../state/commands.js";
+import { GRID_STEP_MM } from "../../state/constants.js";
+import { moveElements, setTableContinuationY } from "../../state/elements.js";
+import { layoutDocument } from "../../state/geometry.js";
+import { gridArrowTarget } from "../../state/snapping.js";
+import type { EditorStore } from "../../state/store.js";
+import type { EditorState } from "../../state/types.js";
+import type { InteractionState } from "./interaction.js";
+import { zoomStepIn, zoomStepOut } from "./zoom.js";
 
 export interface EditingKeyEvent {
   readonly key: string;

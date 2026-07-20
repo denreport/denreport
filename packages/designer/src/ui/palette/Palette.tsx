@@ -1,8 +1,8 @@
 import type { IrElementType } from "@denreport/core";
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import type { CanvasInteraction } from "../canvas/useCanvasInteraction";
-import { elementTypeIcon } from "../element-meta";
+import { useMessages } from "../../i18n/context.js";
+import type { CanvasInteraction } from "../canvas/useCanvasInteraction.js";
+import { elementTypeIcon } from "../element-meta.js";
 
 const PALETTE_ORDER: readonly IrElementType[] = [
   "text",

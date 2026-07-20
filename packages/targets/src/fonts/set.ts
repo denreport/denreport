@@ -1,10 +1,10 @@
 import type { CharWidthEm, IrFont, IrFontSlot } from "@denreport/core";
-import { getMessages, type MessageLocale } from "../i18n/messages";
-import { detectFontFormat } from "./format";
-import { readAscentPerEm } from "./metrics";
-import type { FontIssue } from "./validate";
-import { validateFont } from "./validate";
-import { readCharWidths } from "./widths";
+import { getMessages, type MessageLocale } from "../i18n/messages/index.js";
+import { detectFontFormat } from "./format.js";
+import { readAscentPerEm } from "./metrics.js";
+import type { FontIssue } from "./validate.js";
+import { validateFont } from "./validate.js";
+import { readCharWidths } from "./widths.js";
 
 /** Font data for a document's font set. Keys are IrFontSlot; `regular` is required. */
 export interface FontSetData {

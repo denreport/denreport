@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import { errorMessageFor } from "../../state/error-index";
-import { alignOptions } from "./align-options";
-import type { ElementFormProps } from "./ElementProperties";
-import { commitReplace, withOptionalAttr } from "./ElementProperties";
-import { ColorField, NumberField, SegmentField, TextField } from "./fields";
+import { useMessages } from "../../i18n/context.js";
+import { errorMessageFor } from "../../state/error-index.js";
+import { alignOptions } from "./align-options.js";
+import type { ElementFormProps } from "./ElementProperties.js";
+import { commitReplace, withOptionalAttr } from "./ElementProperties.js";
+import { ColorField, NumberField, SegmentField, TextField } from "./fields.js";
 
 export function PageNumberProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;

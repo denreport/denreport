@@ -5,9 +5,9 @@ import type {
   IrPages,
   IrTableElement,
 } from "@denreport/core";
-import type { MmBox } from "./geometry";
-import { roundMm } from "./geometry";
-import { updateElementById } from "./tree";
+import type { MmBox } from "./geometry.js";
+import { roundMm } from "./geometry.js";
+import { updateElementById } from "./tree.js";
 
 export function addElement(
   document: IrDocument,

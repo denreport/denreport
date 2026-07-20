@@ -1,7 +1,7 @@
 import type { IrTableElement } from "@denreport/core";
-import type { MmBox } from "../../state/geometry";
-import type { TableCellRect } from "../../state/table-cells";
-import type { MmPoint } from "./interaction";
+import type { MmBox } from "../../state/geometry.js";
+import type { TableCellRect } from "../../state/table-cells.js";
+import type { MmPoint } from "./interaction.js";
 
 export interface CellAddress {
   readonly row: number | "header";

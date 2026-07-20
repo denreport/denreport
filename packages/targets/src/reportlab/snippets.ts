@@ -7,10 +7,10 @@ import type {
   LoweredTextElement,
 } from "@denreport/core";
 import { resolveFontSlot, STROKE_DASH_MM } from "@denreport/core";
-import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
-import { FONT_SLOTS } from "../fonts/set";
-import type { Messages } from "../i18n/messages";
-import { pyBool, pyNumber, pyRgb, pyString } from "./python";
+import type { FontSetData, ResolvedSlotFont } from "../fonts/set.js";
+import { FONT_SLOTS } from "../fonts/set.js";
+import type { Messages } from "../i18n/messages/index.js";
+import { pyBool, pyNumber, pyRgb, pyString } from "./python.js";
 
 // The symbology names for createBarcodeDrawing (as notated by reportlab.graphics.barcode.getCodeNames())
 export const REPORTLAB_BARCODE_NAMES: Readonly<

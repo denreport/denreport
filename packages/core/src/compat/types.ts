@@ -1,5 +1,5 @@
-import type { MessageLocale } from "../i18n/messages";
-import type { IrElement, IrElementType } from "../ir/types";
+import type { MessageLocale } from "../i18n/messages/index.js";
+import type { IrElement, IrElementType } from "../ir/types.js";
 
 /** Support level of an IR element or attribute for a given export target. */
 export type CompatLevel = "supported" | "approximated" | "unsupported";

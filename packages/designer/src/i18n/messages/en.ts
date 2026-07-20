@@ -1,11 +1,11 @@
-import { dialogsExportEn } from "./en/dialogs-export";
-import { dialogsManageEn } from "./en/dialogs-manage";
-import { propertiesEn } from "./en/properties";
-import { propertiesBulkEn } from "./en/properties-bulk";
-import { stateEn } from "./en/state";
-import { toolbarEn } from "./en/toolbar";
-import { workspaceEn } from "./en/workspace";
-import type { Messages } from "./index";
+import { dialogsExportEn } from "./en/dialogs-export.js";
+import { dialogsManageEn } from "./en/dialogs-manage.js";
+import { propertiesEn } from "./en/properties.js";
+import { propertiesBulkEn } from "./en/properties-bulk.js";
+import { stateEn } from "./en/state.js";
+import { toolbarEn } from "./en/toolbar.js";
+import { workspaceEn } from "./en/workspace.js";
+import type { Messages } from "./index.js";
 
 export const en: Messages = {
   ...toolbarEn,

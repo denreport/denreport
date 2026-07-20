@@ -33,15 +33,15 @@ import {
   TABLE_HEADER_TEXT_OFFSET_Y,
   textTemplateKeys,
 } from "@denreport/core";
-import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
-import { effectiveFontOf, resolveFontSetData } from "../fonts/set";
+import type { FontSetData, ResolvedSlotFont } from "../fonts/set.js";
+import { effectiveFontOf, resolveFontSetData } from "../fonts/set.js";
 import {
   getMessages,
   type MessageLocale,
   type Messages,
-} from "../i18n/messages";
-import { pyBool, pyNumber, pyRgb, pyString } from "./python";
-import type { ReportlabFontEntry } from "./snippets";
+} from "../i18n/messages/index.js";
+import { pyBool, pyNumber, pyRgb, pyString } from "./python.js";
+import type { ReportlabFontEntry } from "./snippets.js";
 import {
   BARCODE_FN,
   buildFontsConstant,
@@ -60,8 +60,8 @@ import {
   registerFontsFn,
   statementFor,
   TEXT_FN,
-} from "./snippets";
-import type { ExportReportlabResult } from "./types";
+} from "./snippets.js";
+import type { ExportReportlabResult } from "./types.js";
 
 const TABLE_BLACK_RGB = pyRgb("#000000");
 

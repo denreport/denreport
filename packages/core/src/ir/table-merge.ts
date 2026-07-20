@@ -1,5 +1,5 @@
-import type { IrTableRow } from "./data";
-import type { IrTableElement } from "./types";
+import type { IrTableRow } from "./data.js";
+import type { IrTableElement } from "./types.js";
 
 /**
  * A half-open interval [start, end) to exclude from a grid line. On a

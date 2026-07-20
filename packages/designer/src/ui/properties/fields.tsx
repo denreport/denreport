@@ -1,9 +1,9 @@
 import type { IrStrokeStyle } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId } from "react";
-import { useMessages } from "../../i18n/context";
-import type { Messages } from "../../i18n/messages";
-import { useDraftValue } from "./useDraftValue";
+import { useMessages } from "../../i18n/context.js";
+import type { Messages } from "../../i18n/messages/index.js";
+import { useDraftValue } from "./useDraftValue.js";
 
 export type StrokeStyleLabels = Messages["properties"]["fields"]["strokeStyle"];
 

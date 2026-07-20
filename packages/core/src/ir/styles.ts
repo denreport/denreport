@@ -1,4 +1,4 @@
-import type { IrElementType, StyleAttrKey } from "./types";
+import type { IrElementType, StyleAttrKey } from "./types.js";
 
 /**
  * Style attribute keys a named style (`IrNamedStyle.attrs`) may set for each

@@ -1,4 +1,4 @@
-import type { Messages } from "../i18n/messages";
+import type { Messages } from "../i18n/messages/index.js";
 
 /** Wording used for scenario naming. Functions in the state layer only receive this sub-namespace */
 export type ScenarioMessages = Messages["scenarioNames"];

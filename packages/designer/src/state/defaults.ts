@@ -4,8 +4,8 @@ import type {
   IrElementType,
   IrFlexChild,
 } from "@denreport/core";
-import { IMAGE_PLACEHOLDER_SRC } from "./constants";
-import { roundMm } from "./geometry";
+import { IMAGE_PLACEHOLDER_SRC } from "./constants.js";
+import { roundMm } from "./geometry.js";
 
 // A document's initial content is user data and must not depend on locale
 const DEFAULT_TEXT = "text1";

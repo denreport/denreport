@@ -9,6 +9,7 @@
     "lint": "biome check .",
     "typecheck": "pnpm -r --if-present run typecheck",
     "test": "pnpm -r --if-present run test",
+    "build:packages": "pnpm --filter './packages/*' run build",
     "check": "pnpm run lint && pnpm run typecheck && pnpm run test && bash scripts/check-comment-refs.sh && bash scripts/check-version-sync.sh"
   },
   "devDependencies": {

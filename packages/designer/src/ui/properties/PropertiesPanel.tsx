@@ -1,16 +1,16 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { useMessages } from "../../i18n/context";
-import { errorsByElement } from "../../state/error-index";
-import type { PlacedElementView } from "../../state/geometry";
-import { layoutDocument } from "../../state/geometry";
-import type { EditorStore } from "../../state/store";
-import type { InteractionState } from "../canvas/interaction";
-import { liveBoxFor } from "../canvas/interaction";
-import { useEditorState } from "../useEditorState";
-import { DocumentProperties } from "./DocumentProperties";
-import { ElementProperties } from "./ElementProperties";
-import { MultiElementProperties } from "./MultiElementProperties";
+import { useMessages } from "../../i18n/context.js";
+import { errorsByElement } from "../../state/error-index.js";
+import type { PlacedElementView } from "../../state/geometry.js";
+import { layoutDocument } from "../../state/geometry.js";
+import type { EditorStore } from "../../state/store.js";
+import type { InteractionState } from "../canvas/interaction.js";
+import { liveBoxFor } from "../canvas/interaction.js";
+import { useEditorState } from "../useEditorState.js";
+import { DocumentProperties } from "./DocumentProperties.js";
+import { ElementProperties } from "./ElementProperties.js";
+import { MultiElementProperties } from "./MultiElementProperties.js";
 
 export function PropertiesPanel(props: {
   readonly store: EditorStore;

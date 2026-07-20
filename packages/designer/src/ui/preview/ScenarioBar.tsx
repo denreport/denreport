@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import type { SampleScenarioSet } from "../../state/sample-scenarios";
-import { useDraftValue } from "../properties/useDraftValue";
+import { useMessages } from "../../i18n/context.js";
+import type { SampleScenarioSet } from "../../state/sample-scenarios.js";
+import { useDraftValue } from "../properties/useDraftValue.js";
 
 /** The action row for scenario selection, renaming, and add/duplicate/delete. Display only;
     state-transition decisions (delete confirmation, applying the pure functions) are made by

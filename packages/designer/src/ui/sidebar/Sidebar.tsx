@@ -6,16 +6,16 @@ import type {
   PointerEvent as ReactPointerEvent,
 } from "react";
 import { useCallback, useRef, useState } from "react";
-import { useMessages } from "../../i18n/context";
-import type { EditorStore } from "../../state/store";
-import type { CanvasInteraction } from "../canvas/useCanvasInteraction";
-import { LayersPanel } from "../layers/LayersPanel";
-import { Palette } from "../palette/Palette";
+import { useMessages } from "../../i18n/context.js";
+import type { EditorStore } from "../../state/store.js";
+import type { CanvasInteraction } from "../canvas/useCanvasInteraction.js";
+import { LayersPanel } from "../layers/LayersPanel.js";
+import { Palette } from "../palette/Palette.js";
 import {
   clampPaletteHeight,
   MIN_PALETTE_HEIGHT,
   SPLITTER_KEY_STEP,
-} from "./splitter";
+} from "./splitter.js";
 
 interface DragState {
   readonly startY: number;

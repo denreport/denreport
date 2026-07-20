@@ -1,4 +1,4 @@
-import type { IrRuleId } from "../../ir/errors";
+import type { IrRuleId } from "../../ir/errors.js";
 
 /**
  * Japanese message catalog: the source of truth for every user-visible

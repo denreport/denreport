@@ -1,5 +1,5 @@
-import { IDENTIFIER_MAX_LENGTH } from "./constants";
-import type { IrData } from "./data";
+import { IDENTIFIER_MAX_LENGTH } from "./constants.js";
+import type { IrData } from "./data.js";
 
 // Scans one token as the identifier's first character plus up to (IDENTIFIER_MAX_LENGTH - 1) remaining characters
 const TOKEN_PATTERN = new RegExp(

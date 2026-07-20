@@ -1,6 +1,6 @@
 import type { IrPage } from "@denreport/core";
-import { GRID_STEP_MM } from "./constants";
-import type { MmBox } from "./geometry";
+import { GRID_STEP_MM } from "./constants.js";
+import type { MmBox } from "./geometry.js";
 
 export interface SnapContext {
   readonly page: IrPage;

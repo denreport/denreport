@@ -1,5 +1,5 @@
-import { en } from "./en";
-import { ja } from "./ja";
+import { en } from "./en.js";
+import { ja } from "./ja.js";
 
 /** The message catalog shape, keyed by ja (the source of truth). */
 export type Messages = typeof ja;

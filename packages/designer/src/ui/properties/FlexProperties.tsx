@@ -1,13 +1,13 @@
 import type { IrDocument, IrFlexAlign } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId } from "react";
-import { useMessages } from "../../i18n/context";
-import { errorMessageFor } from "../../state/error-index";
-import { flexMainContentSize } from "../../state/geometry";
-import { setFlexDirection, setFlexMainSize } from "../../state/properties";
-import type { ElementFormProps } from "./ElementProperties";
-import { commitReplace } from "./ElementProperties";
-import { NumberField, SegmentField } from "./fields";
+import { useMessages } from "../../i18n/context.js";
+import { errorMessageFor } from "../../state/error-index.js";
+import { flexMainContentSize } from "../../state/geometry.js";
+import { setFlexDirection, setFlexMainSize } from "../../state/properties.js";
+import type { ElementFormProps } from "./ElementProperties.js";
+import { commitReplace } from "./ElementProperties.js";
+import { NumberField, SegmentField } from "./fields.js";
 
 export function FlexProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;

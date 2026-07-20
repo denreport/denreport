@@ -1,7 +1,7 @@
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useState } from "react";
-import { useMessages } from "../../i18n/context";
-import { clipboardFromSelection } from "../../state/clipboard";
+import { useMessages } from "../../i18n/context.js";
+import { clipboardFromSelection } from "../../state/clipboard.js";
 import {
   canGroupSelection,
   canUngroupSelection,
@@ -12,12 +12,12 @@ import {
   groupSelection,
   pasteClipboard,
   ungroupSelection,
-} from "../../state/commands";
-import { expandIdsToGroups } from "../../state/groups";
-import type { EditorStore } from "../../state/store";
-import type { CellSelectionApi } from "../canvas/useCellSelection";
-import type { CanvasMenuAction, CanvasMenuItem } from "./menu-items";
-import { buildCanvasMenuItems, resolveContextTarget } from "./menu-items";
+} from "../../state/commands.js";
+import { expandIdsToGroups } from "../../state/groups.js";
+import type { EditorStore } from "../../state/store.js";
+import type { CellSelectionApi } from "../canvas/useCellSelection.js";
+import type { CanvasMenuAction, CanvasMenuItem } from "./menu-items.js";
+import { buildCanvasMenuItems, resolveContextTarget } from "./menu-items.js";
 
 export interface ContextMenuState {
   readonly x: number;

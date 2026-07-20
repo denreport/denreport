@@ -1,6 +1,6 @@
 import type { IrElementType } from "@denreport/core";
-import type { EnvelopePresetId } from "../../../state/envelope-presets";
-import type { PaperPresetId } from "../../../state/paper-presets";
+import type { EnvelopePresetId } from "../../../state/envelope-presets.js";
+import type { PaperPresetId } from "../../../state/paper-presets.js";
 
 export const stateJa = {
   elementTypes: {

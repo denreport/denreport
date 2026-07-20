@@ -1,6 +1,6 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { clampMenuPosition } from "../context-menu/position";
+import { clampMenuPosition } from "../context-menu/position.js";
 
 export interface ToolbarMenuItem {
   readonly id: string;

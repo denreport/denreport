@@ -7,7 +7,7 @@ import type {
   IrPages,
   IrTableElement,
 } from "@denreport/core";
-import type { PageContext } from "./types";
+import type { PageContext } from "./types.js";
 
 export interface MmBox {
   readonly x: number;

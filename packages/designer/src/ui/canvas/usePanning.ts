@@ -1,7 +1,7 @@
 import type { PointerEvent as ReactPointerEvent, RefObject } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CanvasMode } from "../../state/types";
-import { isPanKeySource, panScrollTarget } from "./panning";
+import type { CanvasMode } from "../../state/types.js";
+import { isPanKeySource, panScrollTarget } from "./panning.js";
 
 export interface PanningState {
   /** Effective mode is pan (canvasMode === "pan" or Space is held down) */

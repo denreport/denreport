@@ -1,4 +1,4 @@
-import { isFormTarget } from "./useKeyboardEditing";
+import { isFormTarget } from "./useKeyboardEditing.js";
 
 export interface PanOrigin {
   readonly pointerX: number;

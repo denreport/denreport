@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
-import type { Locale } from "./locale";
-import type { Messages } from "./messages";
-import { ja } from "./messages/ja";
+import type { Locale } from "./locale.js";
+import type { Messages } from "./messages/index.js";
+import { ja } from "./messages/ja.js";
 
 /** Defaults to ja. This value exists so existing component tests rendered without a Provider don't break */
 export const MessagesContext = createContext<Messages>(ja);

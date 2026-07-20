@@ -12,9 +12,9 @@ import {
   lowerIr,
   textTemplateKeys,
 } from "@denreport/core";
-import type { Locale } from "../i18n/locale";
-import { getMessages } from "../i18n/messages";
-import { parseSampleJson } from "./sample-data";
+import type { Locale } from "../i18n/locale.js";
+import { getMessages } from "../i18n/messages/index.js";
+import { parseSampleJson } from "./sample-data.js";
 
 /** A record of data completion for preview. source = "json" (unparseable) | "data" (C01/C02 completion) */
 export interface PreviewWarning {

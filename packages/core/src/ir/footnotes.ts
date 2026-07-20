@@ -1,5 +1,5 @@
-import { IDENTIFIER_MAX_LENGTH, PT_TO_MM } from "./constants";
-import type { IrDocument, IrFootnoteNote, IrTextElement } from "./types";
+import { IDENTIFIER_MAX_LENGTH, PT_TO_MM } from "./constants.js";
+import type { IrDocument, IrFootnoteNote, IrTextElement } from "./types.js";
 
 const FOOTNOTE_MARK_PATTERN = new RegExp(
   `\\{#([A-Za-z_][A-Za-z0-9_]{0,${IDENTIFIER_MAX_LENGTH - 1}})\\}`,

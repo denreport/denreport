@@ -7,20 +7,20 @@ import type {
 import { applicableStyleAttrs } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { useMessages } from "../../i18n/context";
-import type { Messages } from "../../i18n/messages";
-import { layoutDocument } from "../../state/geometry";
-import type { EditorStore } from "../../state/store";
+import { useMessages } from "../../i18n/context.js";
+import type { Messages } from "../../i18n/messages/index.js";
+import { layoutDocument } from "../../state/geometry.js";
+import type { EditorStore } from "../../state/store.js";
 import {
   removeStyle,
   renameStyle,
   styleFromElement,
   upsertStyle,
-} from "../../state/styles";
-import { Dialog } from "../dialog/Dialog";
-import { alignOptions } from "../properties/align-options";
-import { NumberField, SegmentField, TextField } from "../properties/fields";
-import { useEditorState } from "../useEditorState";
+} from "../../state/styles.js";
+import { Dialog } from "../dialog/Dialog.js";
+import { alignOptions } from "../properties/align-options.js";
+import { NumberField, SegmentField, TextField } from "../properties/fields.js";
+import { useEditorState } from "../useEditorState.js";
 
 type StylesMessages = Messages["styles"];
 type AlignOptions = ReturnType<typeof alignOptions>;

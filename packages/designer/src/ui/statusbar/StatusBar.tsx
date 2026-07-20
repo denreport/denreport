@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
-import { useMessages } from "../../i18n/context";
-import { layoutDocument } from "../../state/geometry";
-import type { EditorStore } from "../../state/store";
-import type { MmPoint } from "../canvas/interaction";
-import { useEditorState } from "../useEditorState";
+import { useMessages } from "../../i18n/context.js";
+import { layoutDocument } from "../../state/geometry.js";
+import type { EditorStore } from "../../state/store.js";
+import type { MmPoint } from "../canvas/interaction.js";
+import { useEditorState } from "../useEditorState.js";
 
 function fmt(value: number): string {
   return value.toFixed(1);

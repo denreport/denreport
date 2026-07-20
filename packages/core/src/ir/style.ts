@@ -6,7 +6,7 @@ import type {
   IrRectElement,
   IrStrokeStyle,
   IrTextElement,
-} from "./types";
+} from "./types.js";
 
 /**
  * Dash pattern (mm, alternating on/off lengths) for each non-solid stroke

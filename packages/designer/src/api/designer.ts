@@ -3,19 +3,19 @@ import { IR_VERSION, parseIr } from "@denreport/core";
 import { createElement } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
-import type { DesignerLocale, Locale } from "../i18n/locale";
-import { resolveLocale } from "../i18n/locale";
-import { getMessages } from "../i18n/messages";
-import type { ElementGroup } from "../state/groups";
-import { embedGroups } from "../state/groups";
-import type { SampleScenarioSet } from "../state/sample-scenarios";
+import type { DesignerLocale, Locale } from "../i18n/locale.js";
+import { resolveLocale } from "../i18n/locale.js";
+import { getMessages } from "../i18n/messages/index.js";
+import type { ElementGroup } from "../state/groups.js";
+import { embedGroups } from "../state/groups.js";
+import type { SampleScenarioSet } from "../state/sample-scenarios.js";
 import {
   parseSampleDataStorage,
   serializeSampleDataStorage,
-} from "../state/sample-scenarios";
-import { EditorStore } from "../state/store";
-import { DesignerRoot } from "../ui/DesignerRoot";
-import { triggerDownload } from "./download";
+} from "../state/sample-scenarios.js";
+import { EditorStore } from "../state/store.js";
+import { DesignerRoot } from "../ui/DesignerRoot.js";
+import { triggerDownload } from "./download.js";
 
 export type DesignerTheme = "light" | "dark" | "auto";
 export type { DesignerLocale };

@@ -5,7 +5,7 @@ import type {
   TableChunkMerges,
 } from "@denreport/core";
 import { computeChunkMerges } from "@denreport/core";
-import { parseSampleJson } from "./sample-data";
+import { parseSampleJson } from "./sample-data.js";
 
 /** The raw material for one table's cell values. rows are leniently-read rows derived from
     bind (only string values are taken, others ignored); overrides is a row -> (key -> value) index */

@@ -1,7 +1,7 @@
 import type { IrDocument, IrTableElement } from "@denreport/core";
-import type { MmBox, PlacedElementView } from "./geometry";
-import { roundMm } from "./geometry";
-import type { PageContext } from "./types";
+import type { MmBox, PlacedElementView } from "./geometry.js";
+import { roundMm } from "./geometry.js";
+import type { PageContext } from "./types.js";
 
 export type AlignKind =
   | "left"

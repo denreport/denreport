@@ -6,9 +6,9 @@ import type {
   IrOrientation,
   IrPages,
 } from "@denreport/core";
-import type { Messages } from "../../i18n/messages";
-import type { PlacedElementView } from "../../state/geometry";
-import { alignOptions } from "./align-options";
+import type { Messages } from "../../i18n/messages/index.js";
+import type { PlacedElementView } from "../../state/geometry.js";
+import { alignOptions } from "./align-options.js";
 
 type AnyElement = IrElement | IrFlexChild;
 

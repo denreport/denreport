@@ -1,24 +1,24 @@
 import type { IrDocument, IrTableElement } from "@denreport/core";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { MM_TO_PX } from "../../state/constants";
-import type { MmBox, PlacedElementView } from "../../state/geometry";
+import { MM_TO_PX } from "../../state/constants.js";
+import type { MmBox, PlacedElementView } from "../../state/geometry.js";
 import {
   appendTableCellSpan,
   removeTableCellSpansAt,
-} from "../../state/properties";
-import type { EditorStore } from "../../state/store";
-import type { TableCellRect } from "../../state/table-cells";
+} from "../../state/properties.js";
+import type { EditorStore } from "../../state/store.js";
+import type { TableCellRect } from "../../state/table-cells.js";
 import {
   canMergeCellRect,
   cellSpanForRect,
   spanIndicesIntersecting,
-} from "../../state/table-cells";
-import { useEditorState } from "../useEditorState";
-import type { CellAddress } from "./cell-selection";
-import { cellAtPoint, cellRectBox, cellRectFrom } from "./cell-selection";
-import type { MmPoint } from "./interaction";
-import { isFormTarget } from "./useKeyboardEditing";
+} from "../../state/table-cells.js";
+import { useEditorState } from "../useEditorState.js";
+import type { CellAddress } from "./cell-selection.js";
+import { cellAtPoint, cellRectBox, cellRectFrom } from "./cell-selection.js";
+import type { MmPoint } from "./interaction.js";
+import { isFormTarget } from "./useKeyboardEditing.js";
 
 export interface CellSelectionState {
   readonly tableId: string;

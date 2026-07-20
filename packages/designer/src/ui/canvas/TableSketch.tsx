@@ -1,10 +1,10 @@
 import type { CharWidthEm, IrTableElement } from "@denreport/core";
 import { layoutTextLines, subtractSkips } from "@denreport/core";
 import type { CSSProperties, ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import type { MmBox } from "../../state/geometry";
-import type { TableCellSource } from "../../state/table-cells";
-import { cellView, sketchMerges } from "../../state/table-cells";
+import { useMessages } from "../../i18n/context.js";
+import type { MmBox } from "../../state/geometry.js";
+import type { TableCellSource } from "../../state/table-cells.js";
+import { cellView, sketchMerges } from "../../state/table-cells.js";
 
 // Spec constants for ir-v1 tables (cell padding and character offsets are not exposed as attributes)
 const CELL_PADDING_X = 1.5;

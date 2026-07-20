@@ -13,8 +13,8 @@ import {
   readCharWidths,
 } from "@denreport/targets";
 import { useEffect, useState } from "react";
-import type { FontResolution, RegisteredFont } from "../../state/fonts";
-import { resolveFontSet } from "../../state/fonts";
+import type { FontResolution, RegisteredFont } from "../../state/fonts.js";
+import { resolveFontSet } from "../../state/fonts.js";
 
 /** A set of per-slot char-width functions. regular is required */
 export interface FontMetricsSet {
