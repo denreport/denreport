@@ -2,7 +2,7 @@ import type { IrElementType } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useMessages } from "../../i18n/context";
 import type { CanvasInteraction } from "../canvas/useCanvasInteraction";
-import { ELEMENT_TYPE_ICON } from "../element-meta";
+import { elementTypeIcon } from "../element-meta";
 
 const PALETTE_ORDER: readonly IrElementType[] = [
   "text",
@@ -35,7 +35,7 @@ export function Palette(props: {
                 onClick={() => props.onQuickAdd(type)}
               >
                 <span className="apx-pal-icon" aria-hidden="true">
-                  {ELEMENT_TYPE_ICON[type]}
+                  {elementTypeIcon(type, m)}
                 </span>
                 {m.elementTypes[type]}
               </button>

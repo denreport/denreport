@@ -14,6 +14,7 @@ export const stateJa = {
     pageNumber: "ページ番号",
     barcode: "バーコード",
   } satisfies Record<IrElementType, string>,
+  textIconGlyph: "あ",
   paperPresets: {
     a3: "A3",
     a4: "A4",

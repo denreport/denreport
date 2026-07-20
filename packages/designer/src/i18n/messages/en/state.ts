@@ -14,6 +14,7 @@ export const stateEn = {
     pageNumber: "Page number",
     barcode: "Barcode",
   } satisfies Record<IrElementType, string>,
+  textIconGlyph: "A",
   paperPresets: {
     a3: "A3",
     a4: "A4",

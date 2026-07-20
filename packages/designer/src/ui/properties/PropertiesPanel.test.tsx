@@ -1238,4 +1238,16 @@ describe("en ロケール表示", () => {
     expect(container.textContent).not.toContain("標準");
     expect(container.textContent).not.toContain("太字");
   });
+
+  it("パネルの aria-label が英語になる", () => {
+    render(
+      <MessagesContext.Provider value={en}>
+        <PropertiesPanel store={makeStore()} interaction={IDLE} />
+      </MessagesContext.Provider>,
+    );
+
+    expect(
+      container.querySelector(".apx-props")?.getAttribute("aria-label"),
+    ).toBe("Properties");
+  });
 });
