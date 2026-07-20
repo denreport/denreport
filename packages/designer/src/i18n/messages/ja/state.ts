@@ -33,6 +33,12 @@ export const stateJa = {
     "l3-w90h55": "長3・窓 90×55",
     "l3-w100h55": "長3・窓 100×55",
   } satisfies Record<EnvelopePresetId, string>,
+  sampleJson: {
+    notObject:
+      "サンプルデータのトップレベルがオブジェクトではないため、空のデータとして扱います",
+    invalidJson:
+      "サンプルデータを JSON として解釈できないため、空のデータとして扱います",
+  },
   defaults: {
     text: "テキスト",
     columnName: (n: number): string => `列${n}`,

@@ -33,6 +33,12 @@ export const stateEn = {
     "l3-w90h55": "Chou 3 · Window 90×55",
     "l3-w100h55": "Chou 3 · Window 100×55",
   } satisfies Record<EnvelopePresetId, string>,
+  sampleJson: {
+    notObject:
+      "The sample data is not a top-level object, so it is treated as empty data.",
+    invalidJson:
+      "The sample data cannot be parsed as JSON, so it is treated as empty data.",
+  },
   defaults: {
     text: "Text",
     columnName: (n: number): string => `Column ${n}`,

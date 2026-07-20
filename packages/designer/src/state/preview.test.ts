@@ -262,6 +262,31 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
     expect(rowLines(page)).toHaveLength(3);
   });
 
+  it("JSON 警告は locale に追随する", () => {
+    const doc = makeDocument([boundText("t1", "customerName")]);
+    const ja = buildPreview(doc, "{oops", "ja");
+    const en = buildPreview(doc, "{oops", "en");
+    expect(ja.ok).toBe(true);
+    expect(en.ok).toBe(true);
+    if (!ja.ok || !en.ok) return;
+    expect(ja.warnings[0]?.message).toBe(
+      "サンプルデータを JSON として解釈できないため、空のデータとして扱います",
+    );
+    expect(en.warnings[0]?.message).toBe(
+      "The sample data cannot be parsed as JSON, so it is treated as empty data.",
+    );
+  });
+
+  it("トップレベルが非オブジェクトの JSON 警告も locale に追随する", () => {
+    const doc = makeDocument([boundText("t1", "customerName")]);
+    const en = buildPreview(doc, "[1, 2]", "en");
+    expect(en.ok).toBe(true);
+    if (!en.ok) return;
+    expect(en.warnings[0]?.message).toBe(
+      "The sample data is not a top-level object, so it is treated as empty data.",
+    );
+  });
+
   it("空文字列は未入力扱いで、JSON 警告は付かない（補完の警告のみ）", () => {
     const doc = makeDocument([boundText("t1", "customerName")]);
     const result = buildPreview(doc, "", "ja");
