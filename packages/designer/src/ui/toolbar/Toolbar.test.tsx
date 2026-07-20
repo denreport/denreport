@@ -89,6 +89,15 @@ function click(el: Element): void {
   el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 }
 
+// Real browsers dispatch pointerdown and click as separate tasks, letting the
+// pointerdown-triggered state update flush before click runs; a same-tick
+// dispatch (no macrotask between them) doesn't reproduce that ordering
+async function realClick(el: Element): Promise<void> {
+  el.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+}
+
 describe("Toolbar", () => {
   it("保存クリックで chrome.requestSave が1回呼ばれる", async () => {
     const chrome = makeChrome();
@@ -107,6 +116,21 @@ describe("Toolbar", () => {
     });
     const themeItem = buttonByText("テーマを切り替え（現在: ダーク）");
     expect(themeItem.getAttribute("role")).toBe("menuitem");
+  });
+
+  it("開いた状態でトリガーを実クリック（pointerdown→click）すると閉じたまま留まる", async () => {
+    await renderToolbar(makeChrome());
+    const trigger = buttonByText("その他の操作");
+    await realClick(trigger);
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="menu"]')).not.toBeNull();
+    });
+
+    await realClick(trigger);
+    await vi.waitFor(() => {
+      expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    });
+    expect(container.querySelector('[role="menu"]')).toBeNull();
   });
 
   it("テーマ項目のクリックで chrome.toggleTheme が呼ばれ、メニューが閉じる", async () => {

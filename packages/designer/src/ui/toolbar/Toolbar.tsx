@@ -174,6 +174,7 @@ export function Toolbar(props: {
           y={moreMenu.y}
           items={moreMenuItems}
           onClose={closeMoreMenu}
+          anchorEl={moreButtonRef.current}
         />
       )}
       <span className="dr-toolbar-sep" />

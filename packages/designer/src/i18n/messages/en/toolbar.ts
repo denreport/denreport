@@ -11,12 +11,10 @@ export const toolbarEn = {
     selectTitle: "Select (V)",
     pan: "Pan",
     panTitle: "Pan (H)",
-    theme: "Theme",
     themeTitle: (dark: boolean): string =>
       dark
         ? "Switch theme (currently: dark)"
         : "Switch theme (currently: light)",
-    locale: "Language",
     localeTitle: "Switch language (currently: English)",
     shortcuts: "Keyboard shortcuts",
     moreOptions: "More options",

@@ -14,8 +14,10 @@ export function ToolbarMenu(props: {
   readonly y: number;
   readonly items: readonly ToolbarMenuItem[];
   readonly onClose: () => void;
+  /** The button that opens/closes this menu. Its own pointerdown is excluded from outside-click detection so the trigger's click handler stays the sole authority on toggling */
+  readonly anchorEl: HTMLElement | null;
 }): ReactNode {
-  const { x, y, items, onClose } = props;
+  const { x, y, items, onClose, anchorEl } = props;
   const menuRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const [pos, setPos] = useState({ x, y });
@@ -50,10 +52,14 @@ export function ToolbarMenu(props: {
 
   useEffect(() => {
     const onPointerDownOutside = (e: PointerEvent): void => {
-      const menu = menuRef.current;
-      if (menu !== null && !menu.contains(e.target as Node)) {
-        onClose();
+      const target = e.target as Node;
+      if (menuRef.current?.contains(target) === true) {
+        return;
       }
+      if (anchorEl?.contains(target) === true) {
+        return;
+      }
+      onClose();
     };
     const onScroll = (): void => {
       onClose();
@@ -67,7 +73,7 @@ export function ToolbarMenu(props: {
       window.removeEventListener("pointerdown", onPointerDownOutside, true);
       window.removeEventListener("scroll", onScroll, true);
     };
-  }, [onClose]);
+  }, [onClose, anchorEl]);
 
   function currentIndex(): number {
     return itemRefs.current.indexOf(

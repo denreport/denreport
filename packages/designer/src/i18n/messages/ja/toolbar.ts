@@ -11,12 +11,10 @@ export const toolbarJa = {
     selectTitle: "選択 (V)",
     pan: "移動",
     panTitle: "移動 (H)",
-    theme: "テーマ",
     themeTitle: (dark: boolean): string =>
       dark
         ? "テーマを切り替え（現在: ダーク）"
         : "テーマを切り替え（現在: ライト）",
-    locale: "言語",
     localeTitle: "言語を切り替え（現在: 日本語）",
     shortcuts: "ショートカット一覧",
     moreOptions: "その他の操作",

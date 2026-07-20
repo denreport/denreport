@@ -35,8 +35,17 @@ afterEach(() => {
 async function renderMenu(
   items: readonly ToolbarMenuItem[],
   onClose: () => void = () => {},
+  anchorEl: HTMLElement | null = null,
 ): Promise<HTMLElement> {
-  root.render(<ToolbarMenu x={10} y={10} items={items} onClose={onClose} />);
+  root.render(
+    <ToolbarMenu
+      x={10}
+      y={10}
+      items={items}
+      onClose={onClose}
+      anchorEl={anchorEl}
+    />,
+  );
   await vi.waitFor(() => {
     if (container.querySelector(".dr-context-menu") === null) {
       throw new Error("メニューが未描画");
@@ -159,5 +168,17 @@ describe("外側での閉じる操作", () => {
     await renderMenu(makeItems(), onClose);
     document.body.dispatchEvent(new Event("scroll", { bubbles: false }));
     expect(onClose).toHaveBeenCalledOnce();
+  });
+
+  it("anchorEl 上の pointerdown では onClose が呼ばれない（トリガー再クリックでの閉じ直しはトリガー側の click に委ねる）", async () => {
+    const anchor = document.createElement("button");
+    document.body.append(anchor);
+    const onClose = vi.fn();
+    await renderMenu(makeItems(), onClose, anchor);
+
+    anchor.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+    expect(onClose).not.toHaveBeenCalled();
+
+    anchor.remove();
   });
 });

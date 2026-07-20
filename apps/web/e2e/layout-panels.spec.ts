@@ -111,7 +111,7 @@ test("960px でキャンバスバーの封筒窓ガイド select が潰れず表
   if (box === null) {
     throw new Error("封筒窓ガイド select が表示されていません");
   }
-  // Before the min-width fix, this collapsed to a few px wide and the label disappeared entirely
+  // A collapsed field shrinks to a few px wide and the label disappears entirely, so 60px is a safe lower bound
   expect(box.width).toBeGreaterThan(60);
 });
 
@@ -125,6 +125,20 @@ test("その他の操作メニューが開閉できる", async ({ page }) => {
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);
   await expect(trigger).toBeFocused();
+});
+
+test("その他の操作メニューはトリガーの再クリックで閉じる（開き直らない）", async ({
+  page,
+}) => {
+  const trigger = page.getByRole("button", { name: "その他の操作" });
+  const menu = page.getByRole("menu");
+
+  await trigger.click();
+  await expect(menu).toBeVisible();
+
+  await trigger.click();
+  await expect(menu).toHaveCount(0);
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
 });
 
 test("スプリッターをキーボードで操作するとパレット領域の高さが減る", async ({
