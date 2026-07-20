@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useId } from "react";
+import { useMessages } from "../../i18n/context";
 import { useDraftValue } from "../properties/useDraftValue";
 
 /** サンプルデータの JSON 直接編集。blur で確定し（textarea の Enter は改行）、
@@ -11,6 +12,7 @@ export function SampleDataEditor(props: {
   readonly parseError: string | undefined;
 }): ReactNode {
   const { value, onCommit, onGenerate, parseError } = props;
+  const m = useMessages();
   const handlers = useDraftValue(value, (raw) => {
     if (raw !== value) {
       onCommit(raw);
@@ -20,7 +22,7 @@ export function SampleDataEditor(props: {
   return (
     <div className="apx-sample">
       <label className="apx-sect-h" htmlFor={id}>
-        サンプルデータ (JSON)
+        {m.preview.sampleData.label}
       </label>
       <span
         className={`apx-field apx-field-multi apx-sample-field${
@@ -45,7 +47,7 @@ export function SampleDataEditor(props: {
         className="apx-btn apx-btn-secondary"
         onClick={onGenerate}
       >
-        bind キーから生成
+        {m.preview.sampleData.generate}
       </button>
     </div>
   );

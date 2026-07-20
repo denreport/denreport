@@ -13,6 +13,7 @@ import {
   STROKE_DASH_MM,
 } from "@denreport/core";
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { PT_TO_MM, textBaselinesMm } from "../../state/preview";
 import type { PreviewFont, PreviewFontSet } from "./preview-font";
 
@@ -268,13 +269,14 @@ export function PreviewPage(props: {
   readonly fonts: PreviewFontSet | null;
 }): ReactNode {
   const { elements, page, fonts } = props;
+  const m = useMessages();
   const fontSet = fonts ?? { regular: FALLBACK_PREVIEW_FONT };
   return (
     <svg
       className="apx-preview-svg"
       viewBox={`0 0 ${page.width} ${page.height}`}
       role="img"
-      aria-label="プレビューページ"
+      aria-label={m.preview.pageAriaLabel}
     >
       {elements.map((el, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: 展開結果は毎回全再導出され、配列位置が唯一の識別子

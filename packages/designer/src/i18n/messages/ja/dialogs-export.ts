@@ -28,7 +28,7 @@ export const dialogsExportJa = {
     fontFetchFailed:
       "同梱フォントを取得できませんでした。もう一度お試しください。",
     fontMissing: (slotLabel: string, name: string): string =>
-      `${slotLabel}フォント「${name}」の実データがありません。文書設定の「PC のフォントから選択」で選び直してください。`,
+      `${slotLabel}フォント「${name}」の実データがありません。文書設定のフォント欄で選び直してください。`,
     failed: "書き出せませんでした。",
     warningsProduced:
       "生成物は作成されています。次のキーがサンプルデータに無かったため、テキストは空文字列・表は空行（minRows 分）で出力しました。",
@@ -48,9 +48,21 @@ export const dialogsExportJa = {
     fontLoadFailed:
       "同梱フォントを読み込めなかったため、システムフォントで表示しています",
     fontMissing: (slotLabel: string, name: string): string =>
-      `${slotLabel}フォント「${name}」の実データが未選択のため、同梱フォントで表示しています。文書設定の「PC のフォントから選択」で選び直せます`,
+      `${slotLabel}フォント「${name}」の実データが未選択のため、同梱フォントで表示しています。文書設定のフォント欄で選び直せます`,
     jsonParseError: (detail: string): string =>
       `JSON として解釈できません: ${detail}`,
+    pageAriaLabel: "プレビューページ",
+    scenarios: {
+      ariaLabel: "サンプルデータのシナリオ",
+      nameAriaLabel: "シナリオ名",
+      add: "追加",
+      duplicate: "複製",
+      remove: "削除",
+    },
+    sampleData: {
+      label: "サンプルデータ (JSON)",
+      generate: "bind キーから生成",
+    },
     removeScenario: {
       ariaLabel: "シナリオの削除",
       heading: "シナリオの削除",

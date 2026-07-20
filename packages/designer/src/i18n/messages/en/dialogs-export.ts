@@ -27,7 +27,7 @@ export const dialogsExportEn = {
     noArtifact: "No file was created.",
     fontFetchFailed: "Couldn't fetch the bundled font. Please try again.",
     fontMissing: (slotLabel: string, name: string): string =>
-      `The ${slotLabel} font "${name}" has no data. Choose it again in "Select from PC fonts" in the document settings.`,
+      `The ${slotLabel} font "${name}" has no data. Choose it again in the font section of the document settings.`,
     failed: "Couldn't export.",
     warningsProduced:
       "The file was created. The following keys were missing from the sample data, so text was left empty and tables used empty rows (per minRows).",
@@ -48,9 +48,21 @@ export const dialogsExportEn = {
     fontLoadFailed:
       "Couldn't load the bundled font, showing the system font instead",
     fontMissing: (slotLabel: string, name: string): string =>
-      `The ${slotLabel} font "${name}" has no data, so the bundled font is shown instead. You can choose it again in "Select from PC fonts" in the document settings`,
+      `The ${slotLabel} font "${name}" has no data, so the bundled font is shown instead. You can choose it again in the font section of the document settings`,
     jsonParseError: (detail: string): string =>
       `Couldn't parse as JSON: ${detail}`,
+    pageAriaLabel: "Preview page",
+    scenarios: {
+      ariaLabel: "Sample data scenario",
+      nameAriaLabel: "Scenario name",
+      add: "Add",
+      duplicate: "Duplicate",
+      remove: "Delete",
+    },
+    sampleData: {
+      label: "Sample data (JSON)",
+      generate: "Generate from bind keys",
+    },
     removeScenario: {
       ariaLabel: "Delete scenario",
       heading: "Delete scenario",
