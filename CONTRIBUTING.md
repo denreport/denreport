@@ -28,7 +28,7 @@ pnpm --filter @denreport/web dev
 pnpm lint        # biome
 pnpm typecheck   # tsc, per package
 pnpm test        # vitest, per package
-pnpm check       # lint + typecheck + test + comment-reference check
+pnpm check       # lint + typecheck + test + comment-reference check + version-sync check
 ```
 
 Run a single package's tests, e.g. the core package:
@@ -37,11 +37,14 @@ Run a single package's tests, e.g. the core package:
 pnpm --filter @denreport/core test
 ```
 
-CI also runs two additional jobs that are not part of `pnpm check`:
-a ReportLab output-equivalence check and a Playwright end-to-end suite. Both
-require a Python 3.12 environment with `reportlab`, `pillow`, and `pypdf`
-installed (see `.github/workflows/ci.yml` for the exact versions). You don't
-need to run these locally to submit a PR — CI will run them.
+CI also runs three additional jobs that are not part of `pnpm check`:
+`reportlab-exec` (a ReportLab output-equivalence check), `container-smoke`
+(builds the Docker image and hits its `/healthz` endpoint), and `e2e` (a
+Playwright end-to-end suite). `reportlab-exec` and `e2e` require a Python
+3.12 environment with `reportlab`, `pillow`, and `pypdf` installed (see
+`.github/workflows/ci.yml` for the exact versions); `container-smoke` only
+needs Docker. You don't need to run these locally to submit a PR — CI will
+run them.
 
 ## Code comments
 

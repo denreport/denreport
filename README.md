@@ -56,9 +56,11 @@ This is a pnpm monorepo with three packages and one app:
 
 All packages are MIT licensed.
 
-None of these are published to npm yet — publishing is planned but not set up.
-For now, use them by cloning this repository and building from source (see
-Quickstart below), not by installing from a registry.
+None of these are published to npm yet. The build infrastructure for
+distributable packages is in place (see `pnpm run build:packages`), but
+publishing itself hasn't happened. For now, use them by cloning this
+repository and building from source (see Quickstart below), not by
+installing from a registry.
 
 ## License FAQ
 
