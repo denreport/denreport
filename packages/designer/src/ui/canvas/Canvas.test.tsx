@@ -4,7 +4,6 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { ja } from "../../i18n/messages/ja";
 import { EditorStore } from "../../state/store";
 import { Canvas } from "./Canvas";
 import { useCanvasInteraction } from "./useCanvasInteraction";
@@ -87,7 +86,7 @@ function pressEnter(el: HTMLElement): void {
 }
 
 function Host(props: { readonly store: EditorStore }): ReactNode {
-  const interaction = useCanvasInteraction(props.store, ja.defaults);
+  const interaction = useCanvasInteraction(props.store);
   return (
     <Canvas
       store={props.store}

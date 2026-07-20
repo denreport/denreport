@@ -442,7 +442,7 @@ describe("段階的選択（resolveClickTarget）とダブルクリックの整�
       validationErrors: [],
       validationWarnings: [],
       dirty: false,
-      sampleScenarios: defaultScenarioSet("", ja.defaults),
+      sampleScenarios: defaultScenarioSet("", ja.scenarioNames),
       fontRegistry: new Map(),
       customGuides: [],
       envelopePresetId: null,
@@ -453,7 +453,6 @@ describe("段階的選択（resolveClickTarget）とダブルクリックの整�
       state,
       layout: layoutDocument(document, state.view.pageContext),
       toleranceMm: 2,
-      messages: ja.defaults,
     };
   }
 

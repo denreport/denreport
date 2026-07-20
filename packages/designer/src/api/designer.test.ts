@@ -206,7 +206,7 @@ function click(el: Element): void {
 }
 
 function parseSample(json: string): ReturnType<typeof parseSampleDataStorage> {
-  return parseSampleDataStorage(json, ja.defaults);
+  return parseSampleDataStorage(json, ja.scenarioNames);
 }
 
 function makeDirty(designer: Designer): void {
@@ -532,7 +532,7 @@ describe("サンプルデータ API", () => {
 
     const store = storeOf(designer);
     store.setSampleScenarios(
-      addScenario(store.getState().sampleScenarios, ja.defaults),
+      addScenario(store.getState().sampleScenarios, ja.scenarioNames),
     );
     expect(sampleFired).toBe(1);
     expect(parseSample(designer.getSampleData()).items).toHaveLength(2);

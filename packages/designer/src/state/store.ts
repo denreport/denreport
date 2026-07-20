@@ -3,7 +3,6 @@ import { checkQualifiedInvoice, validateIr } from "@denreport/core";
 import type { Locale } from "../i18n/locale";
 import { ja } from "../i18n/messages/ja";
 import type { ClipboardState } from "./clipboard";
-import type { DefaultsMessages } from "./defaults";
 import type { EnvelopePresetId } from "./envelope-presets";
 import type { RegisteredFont } from "./fonts";
 import type { ElementGroup } from "./groups";
@@ -11,7 +10,7 @@ import { livingGroups } from "./groups";
 import type { CustomGuide } from "./guides";
 import type { HistoryEntry } from "./history";
 import { History } from "./history";
-import type { SampleScenarioSet } from "./sample-scenarios";
+import type { SampleScenarioSet, ScenarioMessages } from "./sample-scenarios";
 import { parseSampleDataStorage } from "./sample-scenarios";
 import type { EditorState, EditorViewState } from "./types";
 
@@ -36,7 +35,7 @@ export class EditorStore {
     initialSampleData?: string,
     initialExportTarget?: CompatTargetId,
     // 省略時 ja。呼び出し元の大半（既存テスト等）はロケールを意識しないため既定値を持つ
-    messages: DefaultsMessages = ja.defaults,
+    messages: ScenarioMessages = ja.scenarioNames,
   ) {
     this.#state = {
       document: initialDocument,

@@ -118,7 +118,7 @@ function makeCtx(
     validationErrors: [],
     validationWarnings: [],
     dirty: false,
-    sampleScenarios: defaultScenarioSet("", ja.defaults),
+    sampleScenarios: defaultScenarioSet("", ja.scenarioNames),
     fontRegistry: new Map(),
     customGuides,
     envelopePresetId: null,
@@ -129,7 +129,6 @@ function makeCtx(
     state,
     layout: layoutDocument(document, state.view.pageContext),
     toleranceMm: 2,
-    messages: ja.defaults,
   };
 }
 

@@ -22,19 +22,19 @@ function setOf(
 }
 
 function scenarioSet(json = ""): SampleScenarioSet {
-  return defaultScenarioSet(json, ja.defaults);
+  return defaultScenarioSet(json, ja.scenarioNames);
 }
 
 function add(set: SampleScenarioSet): SampleScenarioSet {
-  return addScenario(set, ja.defaults);
+  return addScenario(set, ja.scenarioNames);
 }
 
 function duplicate(set: SampleScenarioSet): SampleScenarioSet {
-  return duplicateActiveScenario(set, ja.defaults);
+  return duplicateActiveScenario(set, ja.scenarioNames);
 }
 
 function parseStorage(raw: string): SampleScenarioSet {
-  return parseSampleDataStorage(raw, ja.defaults);
+  return parseSampleDataStorage(raw, ja.scenarioNames);
 }
 
 describe("defaultScenarioSet", () => {

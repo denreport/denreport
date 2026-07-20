@@ -72,7 +72,7 @@ export function LayerRow(props: {
             {layerLabel(
               node.element,
               m.elementTypes,
-              m.defaults.imagePlaceholder,
+              m.layers.imagePlaceholder,
             )}
           </span>
         </button>

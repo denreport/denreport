@@ -44,6 +44,7 @@ export const workspaceEn = {
     splitterAriaLabel: "Palette and layers panel height",
   },
   layers: {
+    imagePlaceholder: "No image set",
     ariaLabel: "Layers",
     caption: "Layers",
     empty: "No elements",

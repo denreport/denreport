@@ -40,11 +40,8 @@ export const stateEn = {
     invalidJson:
       "The sample data cannot be parsed as JSON, so it is treated as empty data.",
   },
-  defaults: {
-    text: "Text",
-    columnName: (n: number): string => `Column ${n}`,
-    imagePlaceholder: "No image set",
-    scenarioName: (n: number): string => `Scenario ${n}`,
+  scenarioNames: {
+    nth: (n: number): string => `Scenario ${n}`,
     copyOf: (name: string): string => `${name} copy`,
   },
 };
