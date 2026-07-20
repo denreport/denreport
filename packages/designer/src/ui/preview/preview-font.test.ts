@@ -2,8 +2,8 @@ import { EMBEDDED_FONT_URL } from "@denreport/targets";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadPreviewFont, registerPreviewFace } from "./preview-font";
 
-// readAscentPerEm/readCharWidths が読める最小の sfnt（head.unitsPerEm・hhea.ascender/
-// numberOfHMetrics・hmtx 1本・空の cmap format4 サブテーブルのみ実値）
+// A minimal sfnt that readAscentPerEm/readCharWidths can read (only head.unitsPerEm,
+// hhea.ascender/numberOfHMetrics, one hmtx entry, and an empty cmap format4 subtable have real values)
 function sfntWith(unitsPerEm: number, ascender: number): ArrayBuffer {
   const headOffset = 12 + 4 * 16;
   const headLength = 20;
@@ -12,7 +12,7 @@ function sfntWith(unitsPerEm: number, ascender: number): ArrayBuffer {
   const hmtxOffset = hheaOffset + hheaLength;
   const hmtxLength = 4;
   const cmapOffset = hmtxOffset + hmtxLength;
-  const cmapSubtableLength = 24; // format4、segCount=1（終端セグメントのみ）
+  const cmapSubtableLength = 24; // format4, segCount=1 (terminal segment only)
   const cmapLength = 12 + cmapSubtableLength; // header4 + record8 + subtable
   const buffer = new ArrayBuffer(cmapOffset + cmapLength);
   const view = new DataView(buffer);
@@ -41,11 +41,11 @@ function sfntWith(unitsPerEm: number, ascender: number): ArrayBuffer {
   view.setUint16(cmapOffset + 2, 1); // numTables
   view.setUint16(cmapOffset + 4, 3); // platformId
   view.setUint16(cmapOffset + 6, 1); // encodingId
-  view.setUint32(cmapOffset + 8, 12); // subtable offset（cmap 先頭からの相対位置）
+  view.setUint32(cmapOffset + 8, 12); // subtable offset (relative to the start of cmap)
   const subtableAbs = cmapOffset + 12;
   view.setUint16(subtableAbs, 4); // format
   view.setUint16(subtableAbs + 2, cmapSubtableLength);
-  view.setUint16(subtableAbs + 6, 2); // segCountX2（segCount=1）
+  view.setUint16(subtableAbs + 6, 2); // segCountX2 (segCount=1)
   view.setUint16(subtableAbs + 14, 0xffff); // endCode[0]
   view.setUint16(subtableAbs + 18, 0xffff); // startCode[0]
   view.setInt16(subtableAbs + 20, 1); // idDelta[0]

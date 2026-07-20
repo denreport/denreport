@@ -10,25 +10,26 @@ import { roundMm } from "./geometry";
 import type { ElementGroup } from "./groups";
 import { livingGroups } from "./groups";
 
-/** アプリ内クリップボードの値。elements は格納時点の要素（文書順）。
-    pasteCount はこの内容を貼り付けた回数（オフセット累積用） */
+/** The value held by the in-app clipboard. elements are the elements as of the time they were
+    stored (in document order).
+    pasteCount is how many times this content has been pasted (used for accumulating the offset) */
 export interface ClipboardState {
   readonly elements: readonly IrElement[];
   readonly pasteCount: number;
-  /** elements への添字集合の列。格納時点で同一グループだった要素のまとまり */
+  /** A list of index sets into elements. Each set is a group of elements that were in the same group when stored */
   readonly groupIndexes: readonly (readonly number[])[];
 }
 
 export interface PasteResult {
   readonly document: IrDocument;
-  /** 貼り付けた新要素のトップレベル id（新しい選択にする） */
+  /** Top-level ids of the pasted new elements (to become the new selection) */
   readonly pastedIds: readonly string[];
-  /** pasteCount を +1 した次のクリップボード値 */
+  /** The next clipboard value, with pasteCount incremented by 1 */
   readonly clipboard: ClipboardState;
 }
 
-/** selection のうちトップレベル要素だけを文書順で抜き出して格納値を作る。
-    該当が 0 件なら null（コピー/切り取りは成立しない） */
+/** Extracts only the top-level elements from selection, in document order, to build the
+    stored value. Returns null if there are 0 matches (copy/cut doesn't go through) */
 export function clipboardFromSelection(
   document: IrDocument,
   selection: readonly string[],
@@ -68,7 +69,7 @@ function collectUsedIds(document: IrDocument): Set<string> {
   return ids;
 }
 
-/** used から見た "<type><n>" の最小空き番号を採り、used に加えて返す */
+/** Takes the smallest free "<type><n>" number as seen from used, adds it to used, and returns it */
 function claimId(used: Set<string>, type: IrElementType): string {
   let n = 1;
   while (used.has(`${type}${n}`)) {
@@ -120,8 +121,9 @@ function cloneTopElement(
   }
 }
 
-/** clipboard.elements を id 再採番・オフセット適用のうえ document 末尾に追加する。
-    オフセットは (pasteCount + 1) × PASTE_OFFSET_MM を x/y 両方向に適用 */
+/** Renumbers ids and applies the offset to clipboard.elements, then appends them to the end
+    of document.
+    The offset is (pasteCount + 1) x PASTE_OFFSET_MM, applied in both the x and y directions */
 export function pasteFromClipboard(
   document: IrDocument,
   clipboard: ClipboardState,

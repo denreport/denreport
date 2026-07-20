@@ -21,9 +21,10 @@ export type BuildRegisteredFontResult =
   | { readonly ok: true; readonly font: RegisteredFont }
   | { readonly ok: false; readonly issues: readonly FontIssue[] };
 
-/** バイト列を validateFont に通し（TTF 以外は既存文言の FontIssue で拒否）、
-    readAscentPerEm の計量を読み、sanitizeFontName(fullName) を名前にして RegisteredFont を組む。
-    計量読取不能は書き出し器と同趣旨の FontIssue にする */
+/** Runs the byte array through validateFont (non-TTF is rejected with the existing-wording
+    FontIssue), reads metrics via readAscentPerEm, and assembles a RegisteredFont using
+    sanitizeFontName(fullName) as the name. Unreadable metrics become a FontIssue in the
+    same spirit as the writer's */
 export function buildRegisteredFont(
   data: Uint8Array,
   candidate: { readonly fullName: string },

@@ -47,7 +47,7 @@ export type HandleId =
   | "line-end"
   | "rotate";
 
-/** rotate 属性を持てる（回転ハンドル・回転欄を出せる）要素型か */
+/** Whether the element type can hold a rotate attribute (can show a rotation handle / rotation field) */
 export function isRotatable(type: IrElementType): boolean {
   return type !== "table" && type !== "flex";
 }
@@ -88,14 +88,14 @@ export type InteractionState =
       readonly center: MmPoint;
       readonly baseRotate: number;
       readonly startPointerAngle: number;
-      /** 現在角（Shift 15° スナップ・0.1° 丸め適用後） */
+      /** Current angle (after Shift 15° snapping and 0.1° rounding are applied) */
       readonly rotate: number;
     }
   | {
       readonly kind: "marquee";
       readonly start: MmPoint;
       readonly current: MmPoint;
-      /** 現時点で離した場合に選択される id。pointerUp はこれをそのまま確定する */
+      /** The id that would be selected if released right now. pointerUp commits this as-is */
       readonly previewIds: readonly string[];
     }
   | {
@@ -145,7 +145,7 @@ export interface InteractionContext {
   readonly toleranceMm: number;
 }
 
-/** 確定時のみ返る。document は文書編集純関数の適用結果 */
+/** Only returned on commit. document is the result of applying the document-editing pure functions */
 export interface InteractionEffect {
   readonly document?: IrDocument;
   readonly selection?: readonly string[];
@@ -324,7 +324,7 @@ function commitMove(
   if (pageContext === "first") {
     return moveElements(doc, ids, offset.x, offset.y);
   }
-  // rest / last 文脈では table の縦位置は continuationY が担う
+  // In the rest / last context, a table's vertical position is handled by continuationY
   const tables = doc.elements.filter(
     (el): el is Extract<IrElement, { type: "table" }> =>
       el.type === "table" && ids.includes(el.id),
@@ -402,7 +402,7 @@ function resizingUpdate(
   const sin = Math.sin(rad);
   const rawDx = at.x - start.x;
   const rawDy = at.y - start.y;
-  // ハンドル表示は回転後の位置にあるため、ポインタ差分を要素ローカル系へ逆回転してから辺に適用する
+  // Since the handle is displayed at its post-rotation position, rotate the pointer delta back into the element's local coordinate system before applying it to the edges
   const dx = rot === 0 ? rawDx : rawDx * cos + rawDy * sin;
   const dy = rot === 0 ? rawDy : -rawDx * sin + rawDy * cos;
   const isLine = view.element.type === "line";
@@ -420,14 +420,14 @@ function resizingUpdate(
   box = clampBoxMin(box, edges, minW, minH);
 
   let guides: readonly SnapGuide[] = [];
-  // flex 子は確定時に位置が再解決されるため、トップレベルの箱への位置吸着に意味がない
+  // A flex child's position is re-resolved on commit, so snapping to top-level boxes has no meaning
   if (ctx.state.view.snapEnabled && view.parentFlexId === null) {
     const snap = snapForResize(box, edges, snapContextFor(ctx, new Set([id])));
     box = clampBoxMin(snap.box, edges, minW, minH);
     guides = snap.guides;
   }
-  // 回転はモデル箱の中心周りのため、中心移動 S に (R−I) を掛けた平行移動で
-  // 掴んでいない側の画面位置を固定する（flex 子は x/y を持たないため適用しない）
+  // Since rotation is around the center of the model box, apply a translation equal to the
+  // center movement S multiplied by (R−I) to fix the on-screen position of the ungrabbed side (not applied to flex children, since they have no x/y)
   if (rot !== 0 && view.parentFlexId === null) {
     const sx = box.x + box.w / 2 - (orig.x + orig.w / 2);
     const sy = box.y + box.h / 2 - (orig.y + orig.h / 2);
@@ -447,7 +447,7 @@ function pointerAngleDeg(center: MmPoint, at: MmPoint): number {
   return (Math.atan2(at.y - center.y, at.x - center.x) * 180) / Math.PI;
 }
 
-// M19（±360）に常に収まるよう (-180, 180] へ正規化する
+// Normalize to (-180, 180] so it always stays within M19 (±360)
 function normalizeAngleDeg(deg: number): number {
   let a = deg % 360;
   if (a > 180) a -= 360;
@@ -493,7 +493,7 @@ function marqueeHits(
     .map((view) => view.id);
 }
 
-/** ドラッグ対象でなければ null。moving は offset 込み、resizing は box をそのまま返す */
+/** null if not a drag target. moving includes the offset; resizing returns box as-is */
 export function liveBoxFor(
   interaction: InteractionState,
   view: PlacedElementView,
@@ -515,7 +515,7 @@ export function liveBoxFor(
   return null;
 }
 
-// ---- flex 挿入位置 ----
+// ---- flex insert position ----
 
 function flexChildViews(
   ctx: InteractionContext,
@@ -547,7 +547,7 @@ function insertIndexFor(
   return index;
 }
 
-/** element 自身と、flex なら子孫すべての id。挿入・移動先の判定で自分自身への循環を除くのに使う */
+/** The element's own id, plus, if it's a flex, all descendant ids. Used to exclude cycles back to itself when determining an insert/move destination */
 function idAndDescendants(
   element: IrElement | IrFlexChild,
 ): ReadonlySet<string> {
@@ -571,7 +571,7 @@ interface ReorderTarget {
   readonly insertIndex: number | null;
 }
 
-/** ドラッグ中の flex 子が今どの flex 上にあるか（自分自身とその子孫を除いて）判定する */
+/** Determines which flex the dragged flex child is currently over (excluding itself and its descendants) */
 function reorderTargetFor(
   ctx: InteractionContext,
   childView: PlacedElementView,
@@ -591,7 +591,7 @@ function reorderTargetFor(
   };
 }
 
-/** flex 子の取り出し先 pages はトップレベル祖先の pages を引き継ぐ（見えていたものが見え続けるように） */
+/** The pages a flex child is extracted to inherits the top-level ancestor's pages (so what was visible stays visible) */
 function topLevelAncestorPages(
   ctx: InteractionContext,
   flexId: string,
@@ -603,7 +603,7 @@ function topLevelAncestorPages(
   return current?.pages ?? null;
 }
 
-/** ポインタ下の最も内側の（可視な）flex コンテナ。excludeIds への挿入は循環になるため除く */
+/** The innermost (visible) flex container under the pointer. Excludes excludeIds, since inserting into them would create a cycle */
 function innermostFlexAt(
   ctx: InteractionContext,
   at: MmPoint,
@@ -664,7 +664,7 @@ function placingUpdate(
     w: size.w,
     h: size.h,
   };
-  // table は flex の子になれないため、flex 上でも通常の絶対配置として扱う
+  // A table cannot become a flex child, so even over a flex it is treated as ordinary absolute placement
   if (elementType !== "table") {
     const flexView = innermostFlexAt(ctx, at, new Set());
     if (flexView !== null) {
@@ -711,7 +711,7 @@ function commitPlacing(
   }
   const doc = ctx.state.document;
   if (state.flexId !== null && state.insertIndex !== null) {
-    // flexId は table 以外でのみ設定される
+    // flexId is only set for non-table elements
     const child = toFlexChild(
       createDefaultElement(doc, state.elementType, 0, 0) as Exclude<
         IrElement,
@@ -732,7 +732,7 @@ function commitPlacing(
   return { document: addElement(doc, element), selection: [element.id] };
 }
 
-// ---- クリックの階層解決（段階的選択） ----
+// ---- click hierarchy resolution (progressive selection) ----
 
 function ancestorChain(ctx: InteractionContext, id: string): readonly string[] {
   const chain: string[] = [id];
@@ -744,8 +744,9 @@ function ancestorChain(ctx: InteractionContext, id: string): readonly string[] {
   return chain;
 }
 
-/** DOM ヒット要素の祖先チェーンと現在の選択から、今回のクリックが対象とする要素 id を返す。
-    選択チェーンとの共通接頭辞 + 1 段を対象にすることで、クリックのたびに1段ずつ深くなる */
+/** Returns the element id this click targets, from the DOM hit element's ancestor chain and the
+    current selection. By targeting the common prefix with the selection chain plus one level, it
+    goes one level deeper with each click */
 export function resolveClickTarget(
   ctx: InteractionContext,
   targetId: string,
@@ -811,7 +812,7 @@ function onPointerDown(
     return { state: IDLE, effect: null };
   }
   if (view.parentFlexId !== null) {
-    // flex 子は単一選択のみ（複数選択の意味論が定義できない）
+    // A flex child can only be selected singly (multi-selection semantics are undefined)
     const effect = selection.includes(view.id)
       ? null
       : { selection: [view.id] };
@@ -870,7 +871,7 @@ function onPointerDown(
   };
 }
 
-// ---- pressing からの遷移 ----
+// ---- transitions out of pressing ----
 
 function pressingMove(
   state: Extract<InteractionState, { kind: "pressing" }>,
@@ -933,7 +934,7 @@ function pressingMove(
   return movingUpdate(ids, state.start, at, ctx);
 }
 
-// ---- reducer 本体 ----
+// ---- reducer body ----
 
 export function reduceInteraction(
   state: InteractionState,
@@ -1074,7 +1075,7 @@ export function reduceInteraction(
           };
         }
         case "resizing": {
-          // 元の幾何に戻して離したら commit しない（無変更の履歴・onChange を作らない）
+          // Do not commit if released back at the original geometry (avoid creating a no-op history entry / onChange)
           const view = findView(ctx, state.id);
           if (view !== undefined && sameBoxRounded(state.box, view.box)) {
             return { state: IDLE, effect: null };
@@ -1095,7 +1096,7 @@ export function reduceInteraction(
           return { state: IDLE, effect: commitPlacing(state, ctx) };
         case "reordering": {
           if (state.targetFlexId === null) {
-            // flex 外・紙内ドロップ: トップレベル化。紙外は effect なしでキャンセル
+            // Dropped outside a flex but within the paper: promote to top-level. Outside the paper: cancel with no effect
             if (!inPaper(ctx, event.at)) {
               return { state: IDLE, effect: null };
             }
@@ -1143,7 +1144,7 @@ export function reduceInteraction(
               },
             };
           }
-          // 別 flex への移し替え
+          // Moving to a different flex
           const childView = findView(ctx, state.childId);
           if (childView === undefined) {
             return { state: IDLE, effect: null };

@@ -57,7 +57,7 @@ function tokenText(id: string, text: string): IrTextElement {
   };
 }
 
-// 先頭ページ容量 kFirst = floor((100 - 20 - 8) / 8) = 9、継続ページ容量 kCont = 9
+// First-page capacity kFirst = floor((100 - 20 - 8) / 8) = 9, continuation-page capacity kCont = 9
 function itemsTable(overrides: Partial<IrTableElement> = {}): IrTableElement {
   return {
     type: "table",
@@ -147,7 +147,7 @@ describe("buildPreview: 行数とページ展開", () => {
     expect(result.document.pageCount).toBe(1);
     const page = result.document.pages[0] ?? [];
     expect(rowLines(page)).toHaveLength(3);
-    // ヘッダ2列のみで、セルのテキストはない
+    // Only the 2 header columns; no cell text
     expect(textsBySource(page, "items")).toHaveLength(2);
   });
 
@@ -327,7 +327,7 @@ describe("buildPreview: 補完で解消できないエラー", () => {
   });
 
   it("展開後の総ページ数が上限を超えると C04 で ok: false", () => {
-    // continuationY 83 → 継続ページ容量 1 行。9 + 1001 行で 1002 ページになる
+    // continuationY 83 -> continuation-page capacity is 1 row. 9 + 1001 rows becomes 1002 pages
     const doc = makeDocument([itemsTable({ continuationY: 83 })]);
     const result = buildPreview(doc, sampleWithRows(1010), "ja");
     expect(result.ok).toBe(false);
@@ -374,7 +374,7 @@ describe("textBaselinesMm", () => {
     expect(lines).toHaveLength(2);
     expect(lines[0]?.text).toBe("甲");
     expect(lines[1]?.text).toBe("乙");
-    // (1.16 + 0.125) × 10pt = 12.85pt → 4.5332mm、2行目は +12.5pt
+    // (1.16 + 0.125) x 10pt = 12.85pt -> 4.5332mm, the 2nd line is +12.5pt
     expect(lines[0]?.baselineY).toBeCloseTo(50 + 12.85 * (25.4 / 72), 4);
     expect(lines[1]?.baselineY).toBeCloseTo(50 + 25.35 * (25.4 / 72), 4);
   });

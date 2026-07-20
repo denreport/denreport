@@ -23,11 +23,11 @@ export interface ElementFormProps {
   readonly store: EditorStore;
   readonly view: PlacedElementView;
   readonly errors: readonly IrError[];
-  /** ドラッグ中の要素 1 件のライブ box。ドラッグ対象でなければ null */
+  /** Live box of the one element being dragged. null if nothing is being dragged. */
   readonly liveBox: MmBox | null;
 }
 
-/** 属性1つの確定 = 1 commit。無変化（未知 id 等）では履歴を積まない */
+/** Committing one attribute = one commit. No history entry is added on no-op (unknown id, etc.) */
 export function commitReplace(
   store: EditorStore,
   id: string,
@@ -40,7 +40,7 @@ export function commitReplace(
   }
 }
 
-/** value が undefined（デフォルト値への復帰）なら属性を除去し、そうでなければ設定する */
+/** Removes the attribute if value is undefined (reverting to the default), otherwise sets it */
 export function withOptionalAttr<T extends object, K extends keyof T>(
   base: T,
   key: K,

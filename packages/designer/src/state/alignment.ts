@@ -13,7 +13,7 @@ export type AlignKind =
 
 export type DistributeAxis = "horizontal" | "vertical";
 
-/** 要素 id → 移動量（mm）。動かない要素はエントリを持たない */
+/** Element id -> move amount (mm). Elements that don't move have no entry */
 export type MoveDeltas = ReadonlyMap<
   string,
   { readonly dx: number; readonly dy: number }
@@ -48,7 +48,7 @@ function alignDelta(
   }
 }
 
-/** views は選択中のトップレベル要素の箱（2つ以上）。基準は箱の合併境界 */
+/** views are the boxes of the selected top-level elements (two or more). The reference is the boxes' union boundary */
 export function alignmentDeltas(
   views: readonly PlacedElementView[],
   kind: AlignKind,
@@ -72,7 +72,7 @@ function sizeOf(box: MmBox, axis: DistributeAxis): number {
   return axis === "horizontal" ? box.w : box.h;
 }
 
-/** views は選択中のトップレベル要素の箱（3つ以上）。両端固定・gap 均等 */
+/** views are the boxes of the selected top-level elements (three or more). Both ends stay fixed and gaps are equalized */
 export function distributionDeltas(
   views: readonly PlacedElementView[],
   axis: DistributeAxis,
@@ -110,8 +110,9 @@ export function distributionDeltas(
   return deltas;
 }
 
-/** table の first 文脈は y（未分離の continuationY を追従）、rest/last は continuationY のみを動かす。
-    moveElements / setTableContinuationY と同じ規則 */
+/** For a table, the first context moves y (with an undetached continuationY following along);
+    rest/last move only continuationY.
+    The same rule as moveElements / setTableContinuationY */
 function applyTableDelta(
   el: IrTableElement,
   context: PageContext,
@@ -127,8 +128,8 @@ function applyTableDelta(
   return { ...el, x, continuationY: roundMm(el.continuationY + dy) };
 }
 
-/** deltas を document に適用する。table の縦移動は context に応じて y / continuationY を
-    書き分ける。座標は roundMm で丸める */
+/** Applies deltas to document. For a table's vertical move, y or continuationY is written
+    depending on context. Coordinates are rounded with roundMm */
 export function applyMoveDeltas(
   document: IrDocument,
   context: PageContext,

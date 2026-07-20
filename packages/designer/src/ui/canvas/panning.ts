@@ -7,7 +7,7 @@ export interface PanOrigin {
   readonly scrollTop: number;
 }
 
-/** ポインタ現在位置に対する目標スクロール位置。ポインタの移動方向と逆に scroll が増える */
+/** Target scroll position relative to the pointer's current position. Scroll increases in the direction opposite to the pointer's movement */
 export function panScrollTarget(
   origin: PanOrigin,
   pointerX: number,
@@ -19,7 +19,7 @@ export function panScrollTarget(
   };
 }
 
-/** Space を一時パンとして扱ってよいキー発生源か（フォーム要素・ボタン・ダイアログ内は不可） */
+/** Whether the key event source may treat Space as temporary panning (not allowed inside form elements, buttons, or dialogs) */
 export function isPanKeySource(target: EventTarget | null): boolean {
   if (isFormTarget(target)) {
     return false;

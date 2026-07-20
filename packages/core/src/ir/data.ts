@@ -55,7 +55,7 @@ interface WalkedTextKey {
   readonly key: string;
 }
 
-// text.text・barcode.value 内のトークン（path 末尾 .text/.value、重複キーは1件に集約）を走査する
+// Walks the tokens inside text.text and barcode.value (path suffix .text/.value, duplicate keys collapsed to one)
 function walkTextKeys(document: IrDocument): WalkedTextKey[] {
   const out: WalkedTextKey[] = [];
   function visit(element: IrElement | IrFlexChild, path: string): void {
@@ -102,13 +102,13 @@ function analyzeC01(
 
 interface ParsedTableRows {
   readonly rows: readonly IrTableRow[];
-  /** true は table.bind キー自体がデータに存在しない（警告・空行扱い）。false かつ
-      violations 非空は値・形の不正（ハードエラー） */
+  /** true means the table.bind key itself is absent from the data (treated as a warning / empty rows). false with
+      a non-empty violations means the value/shape is invalid (hard error) */
   readonly missing: boolean;
   readonly violations: readonly string[];
 }
 
-// 出力に現れる行数（max(bind 行数, minRows)）を超える上書きは不活性のまま IR に残す
+// Overrides beyond the row count that appears in the output (max(bind row count, minRows)) stay inert in the IR
 function applyCellOverrides(
   rows: readonly IrTableRow[],
   minRows: number,
@@ -127,7 +127,7 @@ function applyCellOverrides(
   return next;
 }
 
-// C02 検証（violations）と行データ取得（readTableRows）が同じ判定基準を共有するための実装
+// Implementation shared so that C02 validation (violations) and row-data retrieval (readTableRows) use the same criteria
 function parseTableRows(
   table: IrTableElement,
   data: IrData,
@@ -175,9 +175,9 @@ function parseTableRows(
   };
 }
 
-// 型・形が不正な場合のみ undefined を返す。呼び出し側はその表をページ計算から除外する。
-// table.bind キーの欠落は警告扱いのため空配列（= minRows 分の空行）を返す
-// violations の中身は捨てて件数しか使わないため locale は問わない
+// Returns undefined only when the type/shape is invalid; the caller excludes that table from page calculation.
+// A missing table.bind key is treated as a warning, so an empty array (= minRows worth of empty rows) is returned
+// The contents of violations are discarded and only the count is used, so locale doesn't matter
 export function readTableRows(
   table: IrTableElement,
   data: IrData,

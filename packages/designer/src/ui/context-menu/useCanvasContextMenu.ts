@@ -22,15 +22,15 @@ import { buildCanvasMenuItems, resolveContextTarget } from "./menu-items";
 export interface ContextMenuState {
   readonly x: number;
   readonly y: number;
-  /** 開いた時点で確定した項目（クリップボードは通知されないため開時スナップショット） */
+  /** Items fixed at the moment the menu opened (a snapshot at open time, since clipboard changes are not notified) */
   readonly items: readonly CanvasMenuItem[];
 }
 
 export function useCanvasContextMenu(
   store: EditorStore,
-  /** ドラッグ等の操作中は開かない */
+  /** Does not open while an operation such as dragging is in progress */
   interactionActive: boolean,
-  /** 閉じた後のフォーカス戻し先（紙面）を呼び出し元が渡す */
+  /** The caller passes the focus-restore target (the paper) to return to after closing */
   restoreFocus: () => void,
   cell: CellSelectionApi,
 ): {

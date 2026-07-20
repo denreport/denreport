@@ -12,7 +12,7 @@ import { BarcodeSketch } from "./BarcodeSketch";
 import { TableSketch } from "./TableSketch";
 import { TextSketch } from "./TextSketch";
 
-// キャンバスは模式表示に割り切り、二点鎖線・一点鎖線は dashed で近似する（正確な線種はプレビューで確認する）
+// The canvas commits to a schematic display, so dash-dot and dash-dot-dot are approximated as dashed (check the exact stroke style in the preview)
 function cssLineStyle(
   strokeStyle: IrStrokeStyle,
 ): "solid" | "dotted" | "dashed" {
@@ -103,7 +103,7 @@ export function PaperElement(props: {
   if (el.type === "image" && el.src === IMAGE_PLACEHOLDER_SRC) {
     classes.push("is-placeholder");
   }
-  // 枠線幅 0 は「枠なし」の正当な状態であり、下限クランプの対象から外す
+  // A border width of 0 is a legitimate "no border" state, and is excluded from the lower-bound clamp
   if ((el.type === "rect" || el.type === "ellipse") && el.borderWidth === 0) {
     classes.push("is-borderless");
   }
@@ -162,7 +162,7 @@ export function PaperElement(props: {
       break;
   }
 
-  // キャンバスは実フォントを使わない模式表示のため、太字・斜体は合成でよい
+  // The canvas is a schematic display that doesn't use the actual font, so synthesized bold/italic is fine
   const textStyle: Record<string, string> = {};
   if (el.type === "text") {
     if (el.fontWeight === "bold") textStyle.fontWeight = "bold";

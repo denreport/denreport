@@ -6,7 +6,7 @@ import type { ElementFormProps } from "./ElementProperties";
 import { commitReplace } from "./ElementProperties";
 import { NumberField, SegmentField, TextField } from "./fields";
 
-// QR/CODE39/CODE128/EAN13 は規格名そのものであり ja/en 共通
+// QR/CODE39/CODE128/EAN13 are the standard names themselves, shared between ja/en
 const SYMBOLOGY_OPTIONS: readonly {
   readonly value: IrBarcodeSymbology;
   readonly label: string;

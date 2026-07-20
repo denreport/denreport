@@ -20,7 +20,7 @@ function box(x: number, y: number, w: number, h: number): MmBox {
 
 describe("snapForMove", () => {
   it("軸ごとに独立して最近傍の候補へ吸着する", () => {
-    // x は他要素の左端 30 へ（距離 1）、y はグリッド 20 へ（距離 0.5）
+    // x snaps to another element's left edge 30 (distance 1); y snaps to grid 20 (distance 0.5)
     const result = snapForMove(box(29, 20.5, 10, 10), {
       ...ctx(),
       otherBoxes: [box(30, 100, 20, 10)],
@@ -46,7 +46,7 @@ describe("snapForMove", () => {
   });
 
   it("同距離なら要素端がグリッドより優先され、ガイドが返る", () => {
-    // 候補: 他要素の左端 30（グリッド線 30 と同位置・同距離）
+    // Candidate: another element's left edge 30 (same position and distance as grid line 30)
     const result = snapForMove(
       box(29, 150.3, 10, 10),
       ctx({ otherBoxes: [box(30, 200, 10, 10)] }),
@@ -82,7 +82,7 @@ describe("snapForMove", () => {
   });
 
   it("中心も吸着点になる", () => {
-    // 移動中の箱の中心 x=50.6 が他要素の中心 50 へ（距離 0.6）
+    // The moving box's center x=50.6 snaps to another element's center 50 (distance 0.6)
     const result = snapForMove(
       box(45.6, 100.3, 10, 10),
       ctx({ otherBoxes: [box(40, 200, 20, 10)], gridEnabled: false }),
@@ -107,7 +107,7 @@ describe("snapForMove", () => {
   });
 
   it("グリッド有効時もページ中心線への吸着が優先されガイドが出る", () => {
-    // A4 の x=105 は 5mm グリッド線と同位置だが、paper がグリッドより優先される
+    // A4's x=105 is at the same position as a 5mm grid line, but paper takes priority over the grid
     const result = snapForMove(
       box(99.4, 100, 10, 10),
       ctx({ gridEnabled: true }),
@@ -148,7 +148,7 @@ describe("snapForMove のカスタムガイド", () => {
       }),
     );
     expect(result.box.x).toBeCloseTo(30, 10);
-    // 要素端由来のガイドと座標は同じだが、値としては guideLines の候補が採用される
+    // The coordinate is the same as the element-edge-derived guide, but the guideLines candidate is adopted as the value
     expect(result.guides).toEqual([{ axis: "x", positionMm: 30 }]);
   });
 
@@ -172,7 +172,7 @@ describe("snapForResize", () => {
       { right: true },
       ctx({ otherBoxes: [box(30, 100, 10, 10)], gridEnabled: false }),
     );
-    // 右端 29.4 → 30。x は不変、w が伸びる
+    // Right edge 29.4 -> 30. x is unchanged, w extends
     expect(result.box.x).toBe(10);
     expect(result.box.w).toBeCloseTo(20, 10);
     expect(result.guides).toEqual([{ axis: "x", positionMm: 30 }]);

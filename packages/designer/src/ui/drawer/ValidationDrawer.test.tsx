@@ -95,8 +95,8 @@ function openDrawer(): void {
 
 describe("折畳バー", () => {
   it("エラーなしでは ✓ 問題なし を表示する", () => {
-    // text 要素は縦方向はみ出しの挙動注記が常に approximated になるため、
-    // 互換性判定もゼロにするには要素なしの文書を使う
+    // text elements always get an "approximated" note for vertical overflow behavior,
+    // so use a document with no elements to also get zero compat findings
     const store = new EditorStore(makeDocument([]));
     render(<ValidationDrawer store={store} onReveal={() => {}} />);
     expect(container.querySelector(".apx-badge-ok")?.textContent).toContain(

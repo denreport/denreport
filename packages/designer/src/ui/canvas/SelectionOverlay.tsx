@@ -21,8 +21,8 @@ function fmt(value: number): string {
   return value.toFixed(1);
 }
 
-// CSS の rotate() と同じ向き（y 下向きスクリーン座標での時計回り）で
-// 点 p を中心 (cx, cy) 周りに deg 度回した点を返す
+// Returns the point obtained by rotating point p by deg degrees around the center (cx, cy),
+// in the same direction as CSS's rotate() (clockwise in y-down screen coordinates)
 function rotatePointDeg(
   p: { readonly x: number; readonly y: number },
   cx: number,
@@ -52,8 +52,9 @@ const BOX_HANDLES: readonly {
   { id: "w", fx: 0, fy: 0.5 },
 ];
 
-// flex 子は x/y を持たず、n/w 側は「反対側を固定して原点を動かす」操作になり
-// justify/align start の確定位置とゴーストがずれるため、e/s/se のみを出す
+// A flex child has no x/y, and the n/w side would become an operation that "fixes the opposite
+// side and moves the origin", which would make the ghost diverge from the justify/align start
+// committed position, so only e/s/se are shown
 const FLEX_CHILD_HANDLES = BOX_HANDLES.filter(
   (h) => h.id === "e" || h.id === "s" || h.id === "se",
 );
@@ -190,7 +191,7 @@ export function SelectionOverlay(props: {
     .filter((view): view is PlacedElementView => view !== undefined);
   const single = selectedViews.length === 1 ? selectedViews[0] : undefined;
 
-  // エラー要素: path → id を1件ずつ解決して規則 ID チップに使う
+  // Error elements: resolve path → id one at a time for use as a rule ID chip
   const errorRules = new Map<string, string>();
   for (const error of state.validationErrors) {
     for (const id of errorElementIds(state.document, [error])) {
@@ -319,7 +320,7 @@ export function SelectionOverlay(props: {
         }
       : null;
 
-  // 確定選択（state.selection）と重なる id は実線の apx-sel-box に任せ、二重描画しない
+  // Ids that overlap the committed selection (state.selection) are left to the solid apx-sel-box, avoiding double-drawing
   const previewViews =
     interaction.kind === "marquee"
       ? interaction.previewIds
@@ -328,7 +329,7 @@ export function SelectionOverlay(props: {
           .filter((view): view is PlacedElementView => view !== undefined)
       : [];
 
-  // maxY はどの表示にも現れない位置のため、table 単一選択中のみガイド線で可視化する
+  // maxY is a position that doesn't appear in any display, so it's visualized with a guide line only while a single table is selected
   const maxYGuide =
     single !== undefined && single.element.type === "table"
       ? single.element.maxY

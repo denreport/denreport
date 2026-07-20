@@ -374,7 +374,7 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.code).toContain(
       "_rect(c, 0, 0, 89, 12, 0.5, (0, 0, 0), None, None, 0, 90)",
     );
-    // PDF 座標系（y 上向き）では -rot が IR の時計回りに一致する
+    // In the PDF coordinate system (y-up), -rot matches the IR's clockwise direction
     expect(result.code).toContain("c.rotate(-rot)");
   });
 
@@ -909,7 +909,7 @@ describe("exportReportlab — font slots and underline", () => {
   });
 
   it("wraps a bold element with the bold slot's widths", () => {
-    // 幅 6pt の箱: regular（1em/字）なら 1 行、bold（2em/字）なら 3 字で折り返す
+    // A 6pt-wide box: with regular (1em/char) it's 1 line, with bold (2em/char) it wraps at 3 chars
     const result = exportReportlab(
       styledDoc({ fontWeight: "bold" }),
       {},

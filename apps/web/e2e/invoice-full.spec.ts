@@ -7,8 +7,8 @@ import { readStoreZip, type ZipEntryData } from "./helpers/zip";
 
 test.setTimeout(240_000);
 
-// どの要素の最終位置とも重ならない領域。落とした直後の要素だけがここにいるので、
-// 可視化確認のクリックが他要素に奪われない。
+// An area that doesn't overlap with any element's final position. Only the just-dropped
+// element is here, so the visibility-check click isn't stolen by another element.
 const SAFE_SPOT = { x: 150, y: 90 } as const;
 
 const LOGO_PATH = fileURLToPath(
@@ -523,11 +523,11 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
   });
 
   await test.step("要素配置: flex（発行者担当者情報）", async () => {
-    // flex1 の最終位置は安全地点と重なるため、これ以降は安全地点へ落とさない。
+    // flex1's final position overlaps the safe spot, so from here on we don't drop onto the safe spot.
     await dragFromPalette(page, FLEX_PALETTE, SAFE_SPOT);
     const flexEl = page.locator('.apx-el[data-apx-id="flex1"]');
     await expect(flexEl).toBeVisible();
-    // ドロップ直後は flex1 自身が選択されるので、クリック選択を挟まずそのまま x/y を確定する
+    // flex1 itself is already selected right after the drop, so commit x/y directly without an intervening click-select
     await commitField(props.getByLabel("x", { exact: true }), "130");
     await commitField(props.getByLabel("y", { exact: true }), "85");
 
@@ -536,7 +536,7 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
     await text20.click();
     await setStaticText(props, FLEX_CHILD_TEXT.text20);
 
-    // text20 の主軸中心（y89）より下へ落とし、末尾挿入（insertIndex 1）にする
+    // Drop below text20's main-axis center (y89) to get a trailing insert (insertIndex 1)
     await dragFromPalette(page, TEXT_PALETTE, { x: 140, y: 92 });
     const text21 = page.locator('.apx-el[data-apx-id="text21"]');
     await expect(text21).toBeVisible();
@@ -556,8 +556,8 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
   await test.step("プレビュー確認", async () => {
     await expect(preview.getByText("1 ページ", { exact: true })).toBeVisible();
     await expect(preview.locator(".apx-preview-warnings")).toHaveCount(0);
-    // ページ下部の「1 / 1」表記とプレビュー自体のページ番号キャプションが同文字列になるため、
-    // pageNumber1 の展開結果は SVG 内に絞って照合する
+    // The "1 / 1" text at the bottom of the page and the preview's own page-number caption end up
+    // as the same string, so scope the match for pageNumber1's expanded output to inside the SVG
     await expect(
       preview.locator(".apx-preview-svg").getByText("1 / 1", { exact: true }),
     ).toBeVisible();
@@ -603,7 +603,7 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
     expect(rawJson).toContain("□□□□□");
     expect(rawJson).toContain(LOGO_DATA_URI);
 
-    // スキーマ名の生成規則に依存せず、値から名前を逆引きして schema を照合する
+    // Without depending on the schema name generation rule, look up the name from the value and match the schema
     const schemaOfValue = (
       value: string,
     ): {

@@ -456,8 +456,8 @@ describe("段階的選択（resolveClickTarget）とダブルクリックの整�
     };
   }
 
-  // ダブルクリックは2回のクリックの後に発火するため、flex 子への到達には
-  // resolveClickTarget の段階的選択が2クリック分（1段目=flex、2段目=子）進む必要がある
+  // A double-click fires after two clicks, so reaching a flex child requires
+  // resolveClickTarget's progressive selection to advance across two clicks (1st = flex, 2nd = child)
   it("flex 子 text は1クリック目では対象にならず、2クリック目で単独選択に達し対象になる", () => {
     const layout = layoutDocument(ctxFor([]).state.document, "first");
 

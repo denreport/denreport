@@ -48,7 +48,7 @@ test("fixture IR を localStorage から復元し pdfme JSON を書き出す", a
   };
   expect(Object.keys(artifact).sort()).toEqual(["inputs", "template"]);
 
-  // 明細2行 + minRows 3 は1ページに収まる
+  // 2 line-item rows + minRows 3 fits on a single page
   const schemas = artifact.template?.schemas;
   expect(schemas).toHaveLength(1);
   expect(schemas?.[0]?.length).toBeGreaterThan(0);

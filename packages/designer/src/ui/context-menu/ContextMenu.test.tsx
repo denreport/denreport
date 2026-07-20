@@ -199,7 +199,7 @@ describe("キーボード操作", () => {
   it("任意キーの keydown が親（React ツリー上の onKeyDown）へ伝播しない", async () => {
     const parentOnKeyDown = vi.fn();
     root.render(
-      // biome-ignore lint/a11y/noStaticElementInteractions: DesignerRoot の apx-layout（onKeyDown を持つ祖先）を模した検証用
+      // biome-ignore lint/a11y/noStaticElementInteractions: mimics DesignerRoot's apx-layout (an ancestor with onKeyDown) for verification purposes
       <div onKeyDown={parentOnKeyDown}>
         <ContextMenu
           x={10}

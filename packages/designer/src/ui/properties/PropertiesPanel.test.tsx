@@ -384,7 +384,7 @@ describe("用紙サイズプリセット", () => {
   it("英語圏 UI では A3/A4/A5/B5(ISO)/Letter/Legal を選択肢に出し、A4 の白紙初期値を選択済みにする", () => {
     stubLanguage("en-US");
     const store = makeStore();
-    // プリセットの候補セットは navigator.language、ラベルは UI ロケール（ここでは en）に従う
+    // The preset candidate set follows navigator.language; the labels follow the UI locale (here, en)
     render(
       <MessagesContext.Provider value={en}>
         <PropertiesPanel store={store} interaction={IDLE} />
@@ -770,7 +770,7 @@ describe("代表的な編集経路", () => {
       fileInput.dispatchEvent(new Event("change", { bubbles: true }));
     });
 
-    // FileReader の完了前に同じ要素の w を編集する
+    // Edit w on the same element before FileReader completes
     const widthInput = inputByLabel("w");
     setValue(widthInput, "50");
     blur(widthInput);
@@ -870,7 +870,7 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     if (!(fillCheckbox instanceof HTMLInputElement)) {
       throw new Error("塗り「なし」チェックボックスがない");
     }
-    expect(fillCheckbox.checked).toBe(true); // fillColor 未指定 = なし
+    expect(fillCheckbox.checked).toBe(true); // fillColor unspecified = none
     click(fillCheckbox);
     let r1 = elementById(store, "r1");
     expect(r1).toMatchObject({ fillColor: "#000000" });
@@ -911,7 +911,7 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     select(store, ["tbl1"]);
 
     const frameWidthInput = inputByLabel("外枠の太さ");
-    expect(frameWidthInput.value).toBe("0.40"); // TABLE_FRAME_WIDTH 既定値の表示
+    expect(frameWidthInput.value).toBe("0.40"); // Display of the TABLE_FRAME_WIDTH default value
     setValue(frameWidthInput, "1");
     blur(frameWidthInput);
     expect(elementById(store, "tbl1")).toMatchObject({ frameWidth: 1 });
@@ -920,7 +920,7 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     expect(elementById(store, "tbl1")).toMatchObject({ frameStyle: "dashed" });
 
     const gridWidthInput = inputByLabel("内部罫線の太さ");
-    expect(gridWidthInput.value).toBe("0.25"); // TABLE_GRID_WIDTH 既定値の表示
+    expect(gridWidthInput.value).toBe("0.25"); // Display of the TABLE_GRID_WIDTH default value
     setValue(gridWidthInput, "0.6");
     blur(gridWidthInput);
     expect(elementById(store, "tbl1")).toMatchObject({ gridWidth: 0.6 });
@@ -1085,7 +1085,7 @@ describe("ドラッグ中のライブ表示", () => {
   });
 });
 
-// readAscentPerEm が読める最小の TTF（glyf + head.unitsPerEm + hhea.ascender）
+// The minimal TTF that readAscentPerEm can read (glyf + head.unitsPerEm + hhea.ascender)
 function localTtf(): Uint8Array<ArrayBuffer> {
   const headOffset = 12 + 3 * 16;
   const hheaOffset = headOffset + 54;

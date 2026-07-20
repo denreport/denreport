@@ -7,15 +7,16 @@ import type {
 import { computeChunkMerges } from "@denreport/core";
 import { parseSampleJson } from "./sample-data";
 
-/** 1 表分のセル値の素材。rows は bind 由来の寛容読取行（string 値のみ採用、他は無視）、
-    overrides は row → (key → value) の索引 */
+/** The raw material for one table's cell values. rows are leniently-read rows derived from
+    bind (only string values are taken, others ignored); overrides is a row -> (key -> value) index */
 export interface TableCellSource {
   readonly rows: readonly Readonly<Record<string, string>>[];
   readonly overrides: ReadonlyMap<number, ReadonlyMap<string, string>>;
 }
 
-// core の readTableRows は違反があると表ごと undefined を返すため使わない。
-// キャンバスは bind 行の一部の型が不正でも他セルをそのまま表示する寛容読取に留める
+// core's readTableRows returns undefined for the whole table when there's a violation, so it
+// isn't used here. The canvas sticks to a lenient read that still shows other cells even if
+// some bind rows have the wrong type
 function readRows(
   table: IrTableElement,
   data: Record<string, unknown>,
@@ -55,8 +56,9 @@ function overridesOf(
   return byRow;
 }
 
-/** 文書中の全 table について、サンプル JSON から TableCellSource を作る。
-    JSON 不正・bind 欠落・型不正は空行扱い（キャンバスは寛容表示。厳格検証は書き出し側） */
+/** Builds a TableCellSource from the sample JSON for every table in the document.
+    Invalid JSON, missing bind, or wrong type is treated as an empty row (the canvas displays
+    leniently; strict validation is the export side's job) */
 export function tableCellSources(
   document: IrDocument,
   sampleJson: string,
@@ -75,8 +77,8 @@ export function tableCellSources(
   return sources;
 }
 
-/** キャンバス表示（先頭チャンク相当）用の結合ジオメトリ。データ駆動結合は
-    上書き適用後の表示値（cellView と同じ解決）で判定する */
+/** Merge geometry for canvas display (equivalent to the first chunk). Data-driven merges are
+    judged using the display value after overrides are applied (the same resolution as cellView) */
 export function sketchMerges(
   table: IrTableElement,
   source: TableCellSource,
@@ -94,7 +96,7 @@ export function sketchMerges(
   return computeChunkMerges(table, rows, 0, rowCount);
 }
 
-/** セルの表示値。overridden は固定値が効いているか（上書き目印の判定に使う） */
+/** A cell's display value. overridden indicates whether a fixed value is in effect (used to decide the override marker) */
 export function cellView(
   source: TableCellSource,
   row: number,
@@ -107,7 +109,7 @@ export function cellView(
   return { text: source.rows[row]?.[key] ?? "", overridden: false };
 }
 
-/** キャンバスのセル矩形選択（両端 inclusive）。header=true のとき rowStart/rowEnd は 0 固定で無視 */
+/** A canvas cell rectangle selection (both ends inclusive). When header=true, rowStart/rowEnd are fixed at 0 and ignored */
 export interface TableCellRect {
   readonly header: boolean;
   readonly rowStart: number;
@@ -156,7 +158,7 @@ function rectExtent(rect: TableCellRect): SpanExtent {
   };
 }
 
-/** M20 の先回り判定。true のときのみメニュー「セルを結合」を有効にする */
+/** M20's preemptive check. Only enables the "Merge cells" menu item when true */
 export function canMergeCellRect(
   table: IrTableElement,
   rect: TableCellRect,
@@ -187,7 +189,7 @@ export function canMergeCellRect(
   return true;
 }
 
-/** 矩形を IrTableCellSpan に変換。起点列が引けなければ null */
+/** Converts a rectangle to an IrTableCellSpan. Returns null if the origin column can't be resolved */
 export function cellSpanForRect(
   table: IrTableElement,
   rect: TableCellRect,
@@ -206,7 +208,7 @@ export function cellSpanForRect(
   };
 }
 
-/** 矩形と交差する既存結合の index 一覧（解除対象） */
+/** The list of indices of existing merges that intersect the rectangle (candidates for unmerging) */
 export function spanIndicesIntersecting(
   table: IrTableElement,
   rect: TableCellRect,

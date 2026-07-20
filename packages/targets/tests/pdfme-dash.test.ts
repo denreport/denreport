@@ -138,7 +138,7 @@ describe("expandStrokes — line dash expansion", () => {
 
 describe("expandStrokes — rotated dash expansion", () => {
   it("maps rotated dashed line segments' midpoints around the line midpoint", () => {
-    // pattern dashed = [2, 1], length 7 → 非回転の on 区間: [0,2] [3,5] [6,7]、線分中点 (3.5, 0)
+    // pattern dashed = [2, 1], length 7 -> unrotated on-segments: [0,2] [3,5] [6,7], line midpoint (3.5, 0)
     const el = lineOf({
       orientation: "horizontal",
       length: 7,
@@ -146,7 +146,7 @@ describe("expandStrokes — rotated dash expansion", () => {
       rotate: 90,
     });
     const segments = expandStrokes([el]) as LoweredLineElement[];
-    // 90° 時計回りで中点 (cx, 0) → (3.5, cx − 3.5) へ写り、x は length/2 だけ戻す
+    // A 90° clockwise rotation maps midpoint (cx, 0) -> (3.5, cx - 3.5), and x is shifted back by length/2
     expect(segments.map((s) => [s.x, s.y, s.length, s.rotate])).toEqual([
       [2.5, -2.5, 2, 90],
       [2.5, 0.5, 2, 90],
@@ -166,7 +166,7 @@ describe("expandStrokes — rotated dash expansion", () => {
     expect(fill).toMatchObject({ type: "rect", x: 0, y: 0, rotate: 180 });
     const lines = edges as LoweredLineElement[];
     expect(lines.every((l) => l.rotate === 180)).toBe(true);
-    // 180° 回転は中心 (5, 3) の点対称: 上辺の最初の on 区間 [0,2]（中点 (1, 0)）→ 中点 (9, 6)
+    // A 180° rotation is point symmetry about center (5, 3): the top edge's first on-segment [0,2] (midpoint (1, 0)) -> midpoint (9, 6)
     expect(lines[0]).toMatchObject({
       orientation: "horizontal",
       x: 8,
@@ -195,9 +195,9 @@ describe("expandStrokes — rect dash expansion", () => {
     });
     expect(edges.every((e) => e.type === "line")).toBe(true);
     const lines = edges as LoweredLineElement[];
-    // 4辺それぞれ独立に位相リセットされる（辺ごとに新たな dashed 展開）
+    // Each of the 4 edges independently resets its phase (a fresh dashed expansion per edge)
     const totalOnLength = lines.reduce((sum, l) => sum + l.length, 0);
-    // 各辺は独立に位相0から敷かれる: w=10 → on 2+2+2+1=7（上下）、h=6 → on 2+2=4（左右）
+    // Each edge is laid out independently starting from phase 0: w=10 -> on 2+2+2+1=7 (top/bottom), h=6 -> on 2+2=4 (left/right)
     expect(totalOnLength).toBe(7 + 7 + 4 + 4);
   });
 

@@ -16,9 +16,9 @@ import { EditorStore } from "../../state/store";
 import { PreviewDialog } from "./PreviewDialog";
 import { registerPreviewFace } from "./preview-font";
 
-// jsdom は document.fonts / FontFace を実装しないため、実際の登録先である
-// registerPreviewFace は PreviewDialog の配線を検証する対象としてモックする
-// （その登録処理自体は preview-font.test.ts が擬似 doc.fonts で検証済み）
+// jsdom doesn't implement document.fonts / FontFace, so registerPreviewFace — the actual
+// registration target — is mocked here to verify PreviewDialog's wiring
+// (the registration logic itself is already verified in preview-font.test.ts with a fake doc.fonts)
 vi.mock("./preview-font", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./preview-font")>();
   return { ...actual, registerPreviewFace: vi.fn() };
@@ -28,8 +28,8 @@ vi.mock("./preview-font", async (importOriginal) => {
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-// readCharWidths が読める最小の TTF（head.unitsPerEm + hhea.numberOfHMetrics +
-// hmtx 1本 + 空の cmap format4 サブテーブル）
+// A minimal TTF that readCharWidths can read (head.unitsPerEm + hhea.numberOfHMetrics +
+// one hmtx entry + an empty cmap format4 subtable)
 function syntheticTtf(): Uint8Array {
   const headOffset = 12 + 4 * 16;
   const headLength = 20;
@@ -38,7 +38,7 @@ function syntheticTtf(): Uint8Array {
   const hmtxOffset = hheaOffset + hheaLength;
   const hmtxLength = 4;
   const cmapOffset = hmtxOffset + hmtxLength;
-  const cmapSubtableLength = 24; // format4、segCount=1（終端セグメントのみ）
+  const cmapSubtableLength = 24; // format4, segCount=1 (terminal segment only)
   const cmapLength = 12 + cmapSubtableLength;
   const bytes = new Uint8Array(cmapOffset + cmapLength);
   const view = new DataView(bytes.buffer);
@@ -67,11 +67,11 @@ function syntheticTtf(): Uint8Array {
   view.setUint16(cmapOffset + 2, 1); // numTables
   view.setUint16(cmapOffset + 4, 3); // platformId
   view.setUint16(cmapOffset + 6, 1); // encodingId
-  view.setUint32(cmapOffset + 8, 12); // subtable offset（cmap 先頭からの相対位置）
+  view.setUint32(cmapOffset + 8, 12); // subtable offset (relative to the start of cmap)
   const subtableAbs = cmapOffset + 12;
   view.setUint16(subtableAbs, 4); // format
   view.setUint16(subtableAbs + 2, cmapSubtableLength);
-  view.setUint16(subtableAbs + 6, 2); // segCountX2（segCount=1）
+  view.setUint16(subtableAbs + 6, 2); // segCountX2 (segCount=1)
   view.setUint16(subtableAbs + 14, 0xffff); // endCode[0]
   view.setUint16(subtableAbs + 18, 0xffff); // startCode[0]
   view.setInt16(subtableAbs + 20, 1); // idDelta[0]
@@ -106,7 +106,7 @@ function boundText(id: string, key: string): IrTextElement {
   };
 }
 
-// 先頭ページ容量 = 継続ページ容量 = 9 行
+// First-page capacity = continuation-page capacity = 9 rows
 function itemsTable(overrides: Partial<IrTableElement> = {}): IrTableElement {
   return {
     type: "table",
@@ -145,7 +145,7 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
-  // jsdom に FontFace がないため、フォント読込は失敗（システムフォント代替）経路で決定させる
+  // jsdom has no FontFace, so we force font loading down the failure (system-font fallback) path
   fetchMock = vi.fn(() => Promise.reject(new Error("フォントなし")));
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -165,7 +165,7 @@ async function renderDialog(
   await act(async () => {
     root.render(<PreviewDialog store={store} onClose={onClose} />);
   });
-  // フォント読込の reject を消化して表示状態を確定させる
+  // Flush the font-loading rejection to settle the display state
   await act(async () => {});
 }
 
@@ -258,7 +258,7 @@ function commitName(value: string): void {
 
 describe("PreviewDialog", () => {
   it("検証エラーがあるとページを描画せずエラー状態を表示する", async () => {
-    // x=500 は用紙幅 210mm を超えるため M02 になる
+    // x=500 exceeds the paper width of 210mm, so this becomes M02
     const store = new EditorStore(
       makeDocument([{ ...boundText("t1", "customerName"), x: 500 }]),
     );
@@ -296,7 +296,7 @@ describe("PreviewDialog", () => {
     expect(banner).not.toBeNull();
     expect(banner?.textContent).toContain("customerName");
     expect(banner?.textContent).toContain("items");
-    // 補完済みなのでページ自体は描画される
+    // The page itself is still rendered since the data has been completed
     expect(svgPages()).toHaveLength(1);
   });
 
@@ -307,7 +307,7 @@ describe("PreviewDialog", () => {
     );
     await renderDialog(store);
     const banner = container.querySelector(".apx-preview-warnings");
-    // jsdom ではフォント読込失敗の警告のみが残る
+    // In jsdom, only the font-load-failure warning remains
     expect(banner?.textContent).toContain("フォント");
     expect(banner?.textContent).not.toContain("items");
   });
@@ -378,7 +378,7 @@ describe("PreviewDialog", () => {
     commitSample("{oops");
     expect(activeSampleJson(store.getState().sampleScenarios)).toBe("{oops");
     expect(container.querySelector(".apx-sample-err")).not.toBeNull();
-    // 空データに補完されてページは出続ける
+    // The data is completed to empty, so the page keeps rendering
     expect(svgPages()).toHaveLength(1);
   });
 

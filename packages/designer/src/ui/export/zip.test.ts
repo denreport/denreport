@@ -17,7 +17,7 @@ interface ReadArchive {
   readonly entries: readonly ReadEntry[];
 }
 
-// 生成側の逆手順で読み戻す最小の zip リーダー（テスト専用・STORE 前提）
+// A minimal zip reader that reverses the writer's steps to read the data back (test-only, assumes STORE)
 function readZip(bytes: Uint8Array): ReadArchive {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const eocdOffset = bytes.length - 22;
@@ -86,7 +86,7 @@ describe("buildZip", () => {
       "font-bytes",
     );
     expect(archive.entries[0]?.localOffset).toBe(0);
-    // central directory は全ローカルセクションの直後から始まる
+    // the central directory starts right after all local sections
     const localSection = archive.centralOffset;
     const secondLocal = archive.entries[1]?.localOffset ?? 0;
     expect(secondLocal).toBeGreaterThan(0);
@@ -123,7 +123,7 @@ describe("buildZip", () => {
     const zip = buildZip([{ name: "big.bin", data: big }]);
     const archive = readZip(zip);
     expect(archive.entries[0]?.size).toBe(big.length);
-    // 数 MB の Uint8Array を toEqual で全走査するとタイムアウトするため Buffer で比較する
+    // Fully scanning a several-MB Uint8Array with toEqual would time out, so compare via Buffer instead
     expect(
       Buffer.from(archive.entries[0]?.data ?? []).equals(Buffer.from(big)),
     ).toBe(true);

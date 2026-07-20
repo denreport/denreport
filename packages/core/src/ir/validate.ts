@@ -126,7 +126,7 @@ function checkM01(
   return errors;
 }
 
-// M02 は用紙内判定であり、子はコンテナの箱に含まれるため個別判定しない（トップレベルのみを見る）。
+// M02 checks that an element stays within the page; children are contained within their container's box, so they aren't checked individually (only top-level elements are examined).
 function checkM02(document: IrDocument, m: ValidateMessages): IrError[] {
   const errors: IrError[] = [];
   const { width: pageWidth, height: pageHeight } = document.page;
@@ -393,8 +393,8 @@ function checkM07(
   return errors;
 }
 
-// atob はブラウザ・Node の両方に存在するグローバル関数だが、
-// lib.dom.d.ts を取り込まずに済むよう最小の型を自前で宣言する。
+// atob is a global function present in both browsers and Node, but
+// we declare a minimal type for it ourselves so we don't need to pull in lib.dom.d.ts.
 declare function atob(data: string): string;
 
 function isValidBase64(payload: string): boolean {
@@ -414,7 +414,7 @@ function checkM08(
   for (const { path, element } of walked) {
     if (element.type !== "image") continue;
     const match = DATA_URI_PATTERN.exec(element.src);
-    if (!match) continue; // S12 で既に報告済み
+    if (!match) continue; // Already reported by S12
     const [, mediatype, payload] = match;
     if (mediatype !== "image/png" && mediatype !== "image/jpeg") {
       errors.push(

@@ -52,7 +52,7 @@ describe("nextElementId", () => {
   it("flex 子孫の id とも衝突しない", () => {
     let doc = blankDocument();
     doc = addElement(doc, defaultElement(doc, "flex", 10, 10));
-    // flex1 と、その text 子 text1 が使用済みになる
+    // flex1, and its text child text1, become used
     expect(nextElementId(doc, "flex")).toBe("flex2");
     expect(nextElementId(doc, "text")).toBe("text2");
   });
@@ -80,7 +80,7 @@ describe("createDefaultElement", () => {
       const result = parseIr(JSON.stringify(doc));
       expect(result.ok).toBe(true);
       if (result.ok) {
-        // 正規化済み = parseIr のデフォルト適用で変化しない
+        // Normalized = unchanged by parseIr's default application
         expect(result.document).toEqual(doc);
         expect(validateIr(result.document)).toEqual([]);
       }

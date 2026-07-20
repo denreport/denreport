@@ -3,8 +3,8 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 import { dragFromPalette } from "./helpers/designer-actions";
 
-// 既定表（col1・col2 各40mm、header 8mm、row 8mm）のセル中心 px。スナップ位置の揺れに
-// 依存しないよう表・キャンバスの実測 boundingBox から算出する
+// Cell-center px for the default table (col1/col2 each 40mm, header 8mm, row 8mm). Computed
+// from the table's and canvas's measured boundingBox so it doesn't depend on snap-position jitter
 async function cellCenter(
   page: Page,
   row: "header" | number,
@@ -65,7 +65,7 @@ test("同一値の連続行の結合がキャンバスとプレビューに反�
   const props = page.getByRole("complementary", { name: "プロパティ" });
   await props.getByLabel("列1 の同一値の連続行を結合").check();
 
-  // 被覆セルが消え、起点セルと隣の列は残る
+  // The covered cell disappears, while the origin cell and the neighboring column remain
   await expect(coveredCell).toHaveCount(0);
   await expect(
     page.locator('[data-apx-id="table1"] [data-apx-row="0"][data-apx-col="0"]'),
@@ -100,7 +100,7 @@ test("静的な結合をプロパティで作成し、プレビューと書き�
   await props.getByRole("button", { name: "＋ 結合を追加" }).click();
   await expect(props.getByLabel("結合1 の行数")).toHaveValue("2");
 
-  // 既定の結合（列 col1・行0から縦2行）で被覆セルが消える
+  // The default merge (column col1, 2 rows vertically starting at row 0) hides the covered cell
   await expect(
     page.locator('[data-apx-id="table1"] [data-apx-row="1"][data-apx-col="0"]'),
   ).toHaveCount(0);

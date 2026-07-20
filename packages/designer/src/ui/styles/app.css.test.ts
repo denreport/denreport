@@ -3,12 +3,12 @@ import { join } from "node:path";
 import { TABLE_FRAME_WIDTH, TABLE_GRID_WIDTH } from "@denreport/core";
 import { describe, expect, it } from "vitest";
 
-// vitest はパッケージルートを cwd として実行される
+// vitest runs with the package root as cwd
 const css = readFileSync(join(process.cwd(), "src/ui/styles/app.css"), "utf-8");
 const FRAME_W = String(TABLE_FRAME_WIDTH).replace(".", "\\.");
 const GRID_W = String(TABLE_GRID_WIDTH).replace(".", "\\.");
 
-/** セレクタの宣言ブロック本文を取り出す（対象セレクタは単独ルールのみ） */
+/** Extract the declaration block body for a selector (target selector must be a single standalone rule) */
 function ruleBody(selector: string): string {
   const escaped = selector.replace(/\./g, "\\.");
   const match = css.match(new RegExp(`${escaped}\\s*\\{[^}]*\\}`));
@@ -16,7 +16,7 @@ function ruleBody(selector: string): string {
   return match[0];
 }
 
-// 低ズームでサブピクセルに潰れて消える罫線・枠線を画面表示上 1px 未満にしない
+// Don't let rules/borders that collapse to sub-pixel and vanish at low zoom fall below 1px on screen
 describe("app.css の低ズーム時の枠線最低太さクランプ", () => {
   it.each([
     [
@@ -58,7 +58,7 @@ describe("app.css の低ズーム時の枠線最低太さクランプ", () => {
   });
 });
 
-// 外枠は表の全内部要素を覆う位置に描かれるため、クリック・ダブルクリック操作を透過させる
+// The outer frame is drawn over a position covering all internal table elements, so let click/double-click operations pass through
 describe("app.css の表の外枠は選択・編集操作をブロックしない", () => {
   it(".apx-tbl-frame は inset:0 かつ pointer-events:none", () => {
     const body = ruleBody(".apx-tbl-frame");
@@ -67,7 +67,7 @@ describe("app.css の表の外枠は選択・編集操作をブロックしな�
   });
 });
 
-// borderWidth 0（枠なし）は正当な状態であり、下限クランプで枠を生やしてはならない
+// borderWidth 0 (no border) is a legitimate state, and the lower-bound clamp must not grow a border for it
 describe("app.css の枠線幅 0（枠なし）はクランプしない", () => {
   it.each([".apx-el-rect.is-borderless", ".apx-el-ellipse.is-borderless"])(
     "%s は border-width: 0 を明示する",
@@ -77,8 +77,8 @@ describe("app.css の枠線幅 0（枠なし）はクランプしない", () => 
   );
 });
 
-// 「書き出し」等の主要アクションは CTA 専用色 + 視覚的重み（太字・シャドウ）で
-// secondary ボタンと差別化する
+// Primary actions like "Export" are differentiated from secondary buttons
+// with the CTA-only color plus visual weight (bold, shadow)
 describe("app.css の primary ボタンは CTA 専用トークンで視覚的重みを持つ", () => {
   it(".apx-btn-primary は --color-cta 系トークンを使う", () => {
     const body = ruleBody(".apx-btn-primary");
@@ -98,8 +98,8 @@ describe("app.css の primary ボタンは CTA 専用トークンで視覚的重
   });
 });
 
-// リサイズハンドルは方向性カーソル（nwse-resize 等）を持つのに対し、
-// 回転ハンドルだけ手のひら（grab）だと回転操作であることが伝わらない
+// Resize handles have directional cursors (nwse-resize, etc.), whereas
+// the rotation handle alone would fail to convey a rotate operation if it used a hand/grab cursor
 describe("app.css の回転ハンドルは回転専用カーソルを持つ", () => {
   it(".apx-h--rotate は grab を使わず SVG data URI のカスタムカーソルを持つ", () => {
     const body = ruleBody(".apx-h--rotate");

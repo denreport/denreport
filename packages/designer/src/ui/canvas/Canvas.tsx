@@ -58,8 +58,8 @@ const NOOP_GUIDE_DRAG: GuideDragApi = {
 
 const PT_PER_MM = 0.352778;
 
-// 単一行 input は defaultValue 代入時点で改行を除去するため、改行入り value との
-// 比較はこの正規化を通してから行う
+// A single-line input strips line breaks at the point defaultValue is assigned, so comparisons
+// against a value containing line breaks must go through this normalization first
 function stripLineBreaks(value: string): string {
   return value.replace(/\r\n|\r|\n/g, "");
 }
@@ -161,7 +161,7 @@ function InlineEditingLayer(props: {
       align={column.align}
       onCommit={(raw) => {
         const document = store.getState().document;
-        // 覗いて Enter しただけで bind 由来の表示値が固定値として凍結される事故を避ける
+        // Avoid the accident of a bind-derived display value being frozen as a fixed value just from peeking in and pressing Enter
         if (
           raw !== "" &&
           !current.overridden &&
@@ -190,7 +190,7 @@ function InlineEditingLayer(props: {
 export function Canvas(props: {
   readonly store: EditorStore;
   readonly interaction: CanvasInteraction;
-  /** 検証ドロワーの行クリックが要素へスクロールするための経路（マウント時に関数を詰める） */
+  /** The path by which clicking a row in the validation drawer scrolls to the element (the function is filled in at mount time) */
   readonly revealRef: RefObject<((id: string) => void) | null>;
 }): ReactNode {
   const { store, interaction, revealRef } = props;
@@ -223,7 +223,7 @@ export function Canvas(props: {
   const panningRef = useRef(pan.panning);
   panningRef.current = pan.panning;
   const guideDragState = useGuideDrag(store, viewportRef);
-  // パンモード中はガイドの作成・移動を無効にする
+  // Disable guide creation/movement while in pan mode
   const guideDrag = pan.panMode ? NOOP_GUIDE_DRAG : guideDragState;
   const guidesOnPage = useMemo(
     () => guidesInPage(state.customGuides, doc.page),
@@ -237,8 +237,8 @@ export function Canvas(props: {
       ? envelopePresetById(state.envelopePresetId)
       : null;
 
-  // undo・IR 読込・ページ文脈切替など外部要因で文書が変わったら、古い座標の編集枠を残さない
-  // biome-ignore lint/correctness/useExhaustiveDependencies: 効果内では参照しないが、doc/pageContext の変化そのものが破棄条件
+  // Don't leave a stale-coordinate edit box behind when the document changes due to an external cause such as undo, IR load, or page-context switch
+  // biome-ignore lint/correctness/useExhaustiveDependencies: not referenced inside the effect, but a change in doc/pageContext itself is the discard condition
   useEffect(() => {
     setEditing(null);
   }, [doc, view.pageContext]);
@@ -253,7 +253,7 @@ export function Canvas(props: {
     cellSel,
   );
 
-  // 初期ズームはページ全体フィット。マウント時1回だけで、ウィンドウリサイズには追従しない
+  // The initial zoom fits the whole page. Runs only once at mount, and does not track window resizes
   useLayoutEffect(() => {
     if (fittedRef.current) {
       return;
@@ -281,7 +281,7 @@ export function Canvas(props: {
     store.setView({ zoom });
   }, [store, doc.page.width, doc.page.height]);
 
-  // ズーム変更時はアンカー（wheel ならカーソル位置、それ以外はビューポート中心）直下の mm を維持する
+  // On zoom change, keep the mm directly under the anchor fixed (cursor position for wheel, viewport center otherwise)
   useLayoutEffect(() => {
     const previous = prevZoomRef.current;
     prevZoomRef.current = view.zoom;
@@ -322,7 +322,7 @@ export function Canvas(props: {
       if (!e.ctrlKey && !e.metaKey) {
         return;
       }
-      // React の onWheel は passive 登録のため preventDefault が効かず、ネイティブリスナーが必要
+      // React's onWheel is registered as passive, so preventDefault has no effect — a native listener is needed
       e.preventDefault();
       if (interactionKindRef.current !== "idle" || panningRef.current) {
         return;
@@ -363,9 +363,9 @@ export function Canvas(props: {
     if (interaction.interaction.kind !== "idle") {
       return;
     }
-    // paperProps.onPointerDown が押下のたびに paper へ setPointerCapture するため、
-    // e.target はドラッグ中の座標追従用に paper 自身へ固定される。実際にカーソル直下に
-    // ある要素は hit-test で取り直す必要がある
+    // Because paperProps.onPointerDown calls setPointerCapture on paper every time it's pressed,
+    // e.target is pinned to paper itself for coordinate tracking during the drag. The element
+    // actually under the cursor must be re-obtained via hit-test
     const target = document.elementFromPoint(e.clientX, e.clientY);
     const handleEl = target?.closest("[data-apx-handle]") ?? null;
     if (handleEl !== null) {
@@ -426,7 +426,7 @@ export function Canvas(props: {
           }
           role="application"
           aria-label={m.canvas.ariaLabel}
-          // biome-ignore lint/a11y/noNoninteractiveTabindex: 矢印キー編集のため紙にフォーカスを持たせる
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: give the paper focus so arrow-key editing works
           tabIndex={0}
           {...interaction.paperProps}
           onPointerDown={

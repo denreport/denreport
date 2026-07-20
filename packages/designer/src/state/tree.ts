@@ -2,8 +2,8 @@ import type { IrDocument, IrElement, IrFlexChild } from "@denreport/core";
 
 type AnyElement = IrElement | IrFlexChild;
 
-/** id の要素（トップレベル・flex 子孫の両方）を update の結果で置換する。
-    見つからなければ document をそのまま返す。structural sharing を維持する */
+/** Replaces the element with id (either top-level or a flex descendant) with the result of update.
+    Returns document as-is if not found. Preserves structural sharing */
 export function updateElementById(
   document: IrDocument,
   id: string,

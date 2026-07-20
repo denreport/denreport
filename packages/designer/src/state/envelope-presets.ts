@@ -10,9 +10,9 @@ export type EnvelopePresetId =
 
 export interface EnvelopePreset {
   readonly id: EnvelopePresetId;
-  /** ページ座標での窓外形 */
+  /** The window's outer shape in page coordinates */
   readonly windowBox: MmBox;
-  /** 配置可能領域（windowBox の内側） */
+  /** The placeable area (inside windowBox) */
   readonly safeBox: MmBox;
 }
 

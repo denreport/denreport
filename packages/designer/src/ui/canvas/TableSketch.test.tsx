@@ -79,7 +79,7 @@ describe("TableSketch — stripeColor", () => {
       h: 10 + 4 * 10,
     });
     const stripes = [...container.querySelectorAll(".apx-tbl-stripe")];
-    expect(stripes).toHaveLength(2); // rows=4 → q=1,3 のみ縞
+    expect(stripes).toHaveLength(2); // rows=4 → only q=1,3 get stripes
     expect(
       stripes.map((s) => (s as HTMLElement).style.getPropertyValue("--sy")),
     ).toEqual(["20", "40"]);
@@ -156,7 +156,7 @@ describe("TableSketch — セル結合", () => {
     expect(
       container.querySelectorAll('.apx-tbl-td[data-apx-col="1"]'),
     ).toHaveLength(2);
-    // 結合内部の水平罫線は b 列側の区間だけ残る
+    // Within the merged cell, only the horizontal rule on the b-column side remains
     const innerLine = [...container.querySelectorAll(".apx-tbl-hline")].find(
       (line) => (line as HTMLElement).style.getPropertyValue("--ly") === "20",
     ) as HTMLElement | undefined;
@@ -173,7 +173,7 @@ describe("TableSketch — セル結合", () => {
     const ths = [...container.querySelectorAll(".apx-tbl-th")];
     expect(ths).toHaveLength(1);
     expect((ths[0] as HTMLElement).style.getPropertyValue("--cw")).toBe("67");
-    // ヘッダ帯の垂直罫線は明細側だけ残る
+    // In the header band, only the vertical rule on the detail side remains
     const vline = container.querySelector(".apx-tbl-vline") as HTMLElement;
     expect(vline.style.top).toBe("calc(10 * var(--mm))");
     expect(vline.style.height).toBe("calc(20 * var(--mm))");

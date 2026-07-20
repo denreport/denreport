@@ -12,8 +12,8 @@ import { fetchEmbeddedFontData } from "./export-font";
 vi.mock("../../api/download", () => ({ triggerDownload: vi.fn() }));
 vi.mock("./export-font", () => ({ fetchEmbeddedFontData: vi.fn() }));
 
-// 現行マトリクスに unsupported のエントリが存在しないため、非対応表示の検証用に
-// pdfme の image を unsupported に差し替える（他のエントリは実物のまま）
+// The current matrix has no "unsupported" entries, so to verify the unsupported display we
+// swap pdfme's image to unsupported (other entries stay as the real ones)
 vi.mock("@denreport/core", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@denreport/core")>();
   return {
@@ -37,8 +37,8 @@ vi.mock("@denreport/core", async (importOriginal) => {
   };
 });
 
-// readAscentPerEm/readCharWidths が読める最小の TTF（glyf + head.unitsPerEm +
-// hhea.ascender/numberOfHMetrics + hmtx 1本 + 空の cmap format4 サブテーブル）
+// The minimal TTF that readAscentPerEm/readCharWidths can read (glyf + head.unitsPerEm +
+// hhea.ascender/numberOfHMetrics + one hmtx entry + an empty cmap format4 subtable)
 function syntheticTtf(): Uint8Array {
   const headOffset = 12 + 5 * 16;
   const headLength = 54;
@@ -47,7 +47,7 @@ function syntheticTtf(): Uint8Array {
   const hmtxOffset = hheaOffset + hheaLength;
   const hmtxLength = 4;
   const cmapOffset = hmtxOffset + hmtxLength;
-  const cmapSubtableLength = 24; // format4、segCount=1（終端セグメントのみ）
+  const cmapSubtableLength = 24; // format4, segCount=1 (end segment only)
   const cmapLength = 12 + cmapSubtableLength;
   const bytes = new Uint8Array(cmapOffset + cmapLength);
   const view = new DataView(bytes.buffer);
@@ -77,11 +77,11 @@ function syntheticTtf(): Uint8Array {
   view.setUint16(cmapOffset + 2, 1); // numTables
   view.setUint16(cmapOffset + 4, 3); // platformId
   view.setUint16(cmapOffset + 6, 1); // encodingId
-  view.setUint32(cmapOffset + 8, 12); // subtable offset（cmap 先頭からの相対位置）
+  view.setUint32(cmapOffset + 8, 12); // subtable offset (relative to the start of cmap)
   const subtableAbs = cmapOffset + 12;
   view.setUint16(subtableAbs, 4); // format
   view.setUint16(subtableAbs + 2, cmapSubtableLength);
-  view.setUint16(subtableAbs + 6, 2); // segCountX2（segCount=1）
+  view.setUint16(subtableAbs + 6, 2); // segCountX2 (segCount=1)
   view.setUint16(subtableAbs + 14, 0xffff); // endCode[0]
   view.setUint16(subtableAbs + 18, 0xffff); // startCode[0]
   view.setInt16(subtableAbs + 20, 1); // idDelta[0]
@@ -164,8 +164,8 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
-  // 両ターゲットとも書き出しに fontData（字幅・計量）を要するため、既定で成功させる
-  // （フォント取得の失敗・形式エラーを検証するテストは個別に上書きする）
+  // Both targets need fontData (character widths/metrics) for export, so succeed by default
+  // (tests that verify font-fetch failures/format errors override this individually)
   vi.mocked(fetchEmbeddedFontData).mockResolvedValue(syntheticTtf());
 });
 
@@ -236,7 +236,7 @@ describe("警告一覧", () => {
 
     const cards = [...container.querySelectorAll(".apx-warn-card")];
     expect(cards.length).toBeGreaterThanOrEqual(2);
-    // unsupported グループが先頭
+    // the unsupported group comes first
     expect(cards[0]?.classList.contains("is-unsupported")).toBe(true);
     expect(cards[0]?.querySelector(".apx-warn-level")?.textContent).toBe(
       "非対応",
@@ -247,7 +247,7 @@ describe("警告一覧", () => {
     expect(cards[1]?.querySelector(".apx-warn-level")?.textContent).toBe(
       "近似",
     );
-    // ヘッダの件数バッジは延べ判定件数
+    // the header's count badge is the total finding count
     expect(container.querySelector(".apx-badge-warn")?.textContent).toBe("2");
   });
 
@@ -271,7 +271,7 @@ describe("警告一覧", () => {
         container.querySelector(".apx-warn-card.is-unsupported"),
       ).toBeNull();
     });
-    // ReportLab では image.src が近似
+    // for ReportLab, image.src is approximated
     expect(container.textContent).toContain("Pillow");
     expect(targetCard("ReportLab").getAttribute("aria-pressed")).toBe("true");
   });

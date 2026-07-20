@@ -3,8 +3,8 @@ import { layoutTextLines } from "@denreport/core";
 import type { CSSProperties, ReactNode } from "react";
 import { useMemo } from "react";
 
-/** text / pageNumber の模式表示。フォント計量が揃っていれば layoutTextLines の行単位で
-    描画し、justify の字間（--cs → letter-spacing）を反映する */
+/** Schematic display for text / pageNumber. When font metrics are available, renders line by line
+    using layoutTextLines, and reflects justify's character spacing (--cs → letter-spacing) */
 export function TextSketch(props: {
   readonly content: string;
   readonly widthMm: number;
@@ -23,13 +23,13 @@ export function TextSketch(props: {
   );
 
   if (lines === null) {
-    // 計量が未到着・読込失敗の間は従来どおりブラウザ折り返しで表示する
+    // While metrics haven't arrived yet or failed to load, display with the browser's normal wrapping as before
     return bind ? <span className="apx-bind">{content}</span> : content;
   }
 
   return lines.map((line, i) => (
     <div
-      // biome-ignore lint/suspicious/noArrayIndexKey: 行は layoutTextLines の並びそのもので並び替えが起きない
+      // biome-ignore lint/suspicious/noArrayIndexKey: lines are exactly layoutTextLines's ordering, and reordering never happens
       key={i}
       className="apx-text-line"
       style={
@@ -39,7 +39,7 @@ export function TextSketch(props: {
       }
     >
       {line.text === "" ? (
-        " " /* 空行でも行ボックスの高さを保つ */
+        " " /* keeps the line box's height even for an empty line */
       ) : bind ? (
         <span className="apx-bind">{line.text}</span>
       ) : (

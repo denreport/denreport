@@ -22,7 +22,7 @@ const INITIAL_VIEW: EditorViewState = {
   canvasMode: "select",
 };
 
-/** 編集状態の保持・更新・購読。React には依存しない */
+/** Holds, updates, and lets callers subscribe to edit state. Does not depend on React */
 export class EditorStore {
   #state: EditorState;
   readonly #history = new History();
@@ -34,7 +34,7 @@ export class EditorStore {
     initialDocument: IrDocument,
     initialSampleData?: string,
     initialExportTarget?: CompatTargetId,
-    // 省略時 ja。呼び出し元の大半（既存テスト等）はロケールを意識しないため既定値を持つ
+    // Defaults to ja. Most callers (existing tests, etc.) are locale-agnostic, hence a default
     messages: ScenarioMessages = ja.scenarioNames,
   ) {
     this.#state = {
@@ -70,8 +70,8 @@ export class EditorStore {
     };
   }
 
-  /** 検証メッセージの言語を切り替え、現在の文書で検証をやり直す。
-      編集状態ではないため EditorState には持たせず、結果だけを更新する */
+  /** Switches the validation message language and re-validates the current document.
+      Not part of edit state, so it isn't stored on EditorState — only the result is updated */
   setLocale(locale: Locale): void {
     if (locale === this.#locale) {
       return;
@@ -90,7 +90,7 @@ export class EditorStore {
     };
   }
 
-  /** 文書更新の唯一の入口。履歴に1エントリ積み、検証を再計算し、dirty にする */
+  /** The sole entry point for document updates. Pushes one history entry, recomputes validation, and marks dirty */
   commit(document: IrDocument, selection?: readonly string[]): void {
     this.#history.push({
       document: this.#state.document,
@@ -105,8 +105,8 @@ export class EditorStore {
     });
   }
 
-  /** 履歴をクリアして文書を置き換える。選択も外れ、dirty は下りる。
-      グループは document.groups から復元する（生存フィルタ適用。キー省略時は空） */
+  /** Clears history and replaces the document. Selection is also cleared, and dirty is lowered.
+      Groups are restored from document.groups (with the living-groups filter applied; empty when the key is omitted) */
   replaceDocument(document: IrDocument): void {
     this.#history.clear();
     this.#setState({
@@ -133,28 +133,28 @@ export class EditorStore {
     });
   }
 
-  /** 履歴に積まず、dirty を変えない状態変更（setView と同格）。購読者には通知する。
-      シナリオ操作（切替・追加・複製・削除・改名・json 編集）の唯一の入口 */
+  /** A state change that doesn't push to history and doesn't affect dirty (on par with setView). Notifies subscribers.
+      The sole entry point for scenario operations (switch, add, duplicate, delete, rename, json edit) */
   setSampleScenarios(set: SampleScenarioSet): void {
     this.#setState({ ...this.#state, sampleScenarios: set });
   }
 
-  /** 履歴に積まず、dirty を変えない状態変更（setSampleData と同格）。購読者には通知する */
+  /** A state change that doesn't push to history and doesn't affect dirty (on par with setSampleData). Notifies subscribers */
   setCustomGuides(guides: readonly CustomGuide[]): void {
     this.#setState({ ...this.#state, customGuides: guides });
   }
 
-  /** 履歴に積まず、dirty を変えない状態変更（setSampleData と同格）。購読者には通知する */
+  /** A state change that doesn't push to history and doesn't affect dirty (on par with setSampleData). Notifies subscribers */
   setEnvelopePreset(id: EnvelopePresetId | null): void {
     this.#setState({ ...this.#state, envelopePresetId: id });
   }
 
-  /** 履歴に積まず、dirty を変えない状態変更（setEnvelopePreset と同格）。購読者には通知する */
+  /** A state change that doesn't push to history and doesn't affect dirty (on par with setEnvelopePreset). Notifies subscribers */
   setSelectedExportTarget(target: CompatTargetId): void {
     this.#setState({ ...this.#state, selectedExportTarget: target });
   }
 
-  /** 履歴に積まず、dirty を変えない状態変更（setSampleData と同格）。購読者には通知する */
+  /** A state change that doesn't push to history and doesn't affect dirty (on par with setSampleData). Notifies subscribers */
   setGroups(groups: readonly ElementGroup[]): void {
     this.#setState({ ...this.#state, groups });
   }
@@ -167,13 +167,13 @@ export class EditorStore {
     return this.#clipboard;
   }
 
-  /** 履歴外・購読者への通知もしない（クリップボードを読む UI がないため） */
+  /** Outside history, and doesn't notify subscribers either (no UI reads the clipboard) */
   setClipboard(clipboard: ClipboardState): void {
     this.#clipboard = clipboard;
   }
 
-  /** レジストリに font.name キーで追加（同名は上書き）。履歴に積まず dirty を変えない。
-      購読者には通知する。replaceDocument（IR 読込）でもレジストリは維持する */
+  /** Adds to the registry keyed by font.name (same name overwrites). Doesn't push to history or affect dirty.
+      Notifies subscribers. The registry is preserved even across replaceDocument (IR load) */
   registerFont(font: RegisteredFont): void {
     const fontRegistry = new Map(this.#state.fontRegistry);
     fontRegistry.set(font.name, font);

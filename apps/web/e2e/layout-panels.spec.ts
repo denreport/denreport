@@ -58,7 +58,7 @@ test("左パネルを閉じてもキャンバスは幅を保って表示され�
   if (after === null) {
     throw new Error("キャンバスが表示されていません");
   }
-  // グリッドの自動配置ずれで幅0に潰れていた回帰を検出する
+  // Detects a regression where a grid auto-placement offset collapsed the width to 0
   expect(after.width).toBeGreaterThan(0);
   expect(after.width).toBeGreaterThan(before.width);
   await expect(

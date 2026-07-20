@@ -33,7 +33,7 @@ describe("isPanKeySource", () => {
   });
 
   it("contentEditable では false", () => {
-    // jsdom は isContentEditable を実装しないため、getter を直接差し替えて分岐を検証する
+    // jsdom does not implement isContentEditable, so directly override the getter to verify the branch
     const div = document.createElement("div");
     Object.defineProperty(div, "isContentEditable", { value: true });
     expect(isPanKeySource(div)).toBe(false);

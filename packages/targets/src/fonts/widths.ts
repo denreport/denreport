@@ -41,9 +41,10 @@ function readTableDirectory(
 
 type GlyphIndexFor = (codePoint: number) => number;
 
-// format 4（BMP のみ）。セグメントは endCode 昇順で並ぶ規約のため線形走査で十分。
-// idRangeOffset は任意のバイトオフセットを指しうるため、壊れたフォントではバッファ外を
-// 指すことがある。読めなければ .notdef（glyph 0）扱いにして、既存の未マップ経路へ合流させる
+// format 4 (BMP only). Segments are guaranteed to be ordered by ascending
+// endCode, so a linear scan suffices. idRangeOffset can point to any byte
+// offset, so a malformed font may point outside the buffer. If it can't be
+// read, treat it as .notdef (glyph 0), merging into the existing unmapped path.
 function parseCmapFormat4(
   view: DataView,
   offset: number,
@@ -53,7 +54,7 @@ function parseCmapFormat4(
   const segCountX2 = view.getUint16(offset + 6);
   const segCount = segCountX2 / 2;
   const endCodeOffset = offset + 14;
-  const startCodeOffset = endCodeOffset + segCountX2 + 2; // +2 は reservedPad
+  const startCodeOffset = endCodeOffset + segCountX2 + 2; // +2 is reservedPad
   const idDeltaOffset = startCodeOffset + segCountX2;
   const idRangeOffsetOffset = idDeltaOffset + segCountX2;
   const glyphIdArrayOffset = idRangeOffsetOffset + segCountX2;
@@ -83,7 +84,8 @@ function parseCmapFormat4(
   };
 }
 
-// format 12（全域）。グループは startCharCode 昇順で並ぶ規約のため線形走査で十分
+// format 12 (whole range). Groups are guaranteed to be ordered by ascending
+// startCharCode, so a linear scan suffices.
 function parseCmapFormat12(
   view: DataView,
   offset: number,
@@ -106,7 +108,7 @@ function parseCmapFormat12(
   };
 }
 
-// platform 3 (Windows) encoding 10 (Unicode full) > encoding 1 (Unicode BMP) > platform 0 (Unicode) の優先順
+// Priority order: platform 3 (Windows) encoding 10 (Unicode full) > encoding 1 (Unicode BMP) > platform 0 (Unicode)
 function selectCmapSubtable(
   view: DataView,
   cmapOffset: number,

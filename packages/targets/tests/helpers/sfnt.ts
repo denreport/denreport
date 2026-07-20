@@ -10,8 +10,9 @@ function writeTag(view: DataView, offset: number, tag: string): void {
   for (let i = 0; i < 4; i++) view.setUint8(offset + i, tag.charCodeAt(i));
 }
 
-// テーブルディレクトリと（与えられた場合のみ）テーブル本体を持つ合成 sfnt。
-// 形式判定・計量読み取りはヘッダ・ディレクトリ・head/hhea しか読まないため、これで十分。
+// A synthetic sfnt with a table directory and (only when given) table
+// bodies. This suffices because format detection and metrics reading only
+// read the header, the directory, and head/hhea.
 export function buildSfnt(
   version: number | string,
   tables: readonly (string | SfntTable)[],
@@ -81,8 +82,9 @@ export interface CmapMapping {
   readonly glyphId: number;
 }
 
-// 1 コードポイント = 1 セグメントの簡易 format 4 サブテーブル（idRangeOffset は常に0）。
-// 末尾に規約どおりの終端セグメント（0xFFFF → 未マップ）を付与する
+// A simplified format 4 subtable with 1 code point = 1 segment
+// (idRangeOffset is always 0). Appends the conventional terminating segment
+// (0xFFFF -> unmapped) at the end.
 export function buildCmapFormat4Subtable(
   mappings: readonly CmapMapping[],
 ): Uint8Array {
@@ -177,7 +179,7 @@ export function buildCmapTable(
 }
 
 export const SYNTHETIC_TTF_ASCENT_PER_EM = 0.8;
-// glyph0（.notdef）1本のみの hmtx・空の cmap を持つため、全コードポイントがこの幅にフォールバックする
+// Has an hmtx with only glyph0 (.notdef) and an empty cmap, so every code point falls back to this width.
 export const SYNTHETIC_TTF_CHAR_WIDTH_EM = 0.001;
 
 export function syntheticTtf(): Uint8Array {
@@ -200,8 +202,9 @@ export function syntheticCff(): Uint8Array {
   return buildSfnt("OTTO", ["CFF ", "head"]);
 }
 
-// 全コードポイントが同一 advance（em 比 = advanceWidth / unitsPerEm）にフォールバックする
-// TTF。折り返し・均等割付を w・fontSize から確定的に発生させたいテスト用
+// A TTF where every code point falls back to the same advance (em ratio =
+// advanceWidth / unitsPerEm). For tests that want to trigger wrapping /
+// justification deterministically from w and fontSize.
 export function buildUniformWidthTtf(
   advanceWidth: number,
   unitsPerEm = 1000,

@@ -7,7 +7,7 @@ import type { PaperGeometry } from "./guide-drag";
 import { isOnPage, pointerToGuidePositionMm } from "./guide-drag";
 
 export interface GuideDragApi {
-  /** ruler axis "h"（上定規）→ 水平ガイド（axis "y"）、"v"（左定規）→ 垂直ガイド（axis "x"） */
+  /** ruler axis "h" (top ruler) → horizontal guide (axis "y"), "v" (left ruler) → vertical guide (axis "x") */
   startFromRuler(rulerAxis: "h" | "v", e: ReactPointerEvent): void;
   startFromGuide(id: string, axis: "x" | "y", e: ReactPointerEvent): void;
   readonly draggingId: string | null;

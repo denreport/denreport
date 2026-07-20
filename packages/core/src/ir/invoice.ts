@@ -16,7 +16,7 @@ interface InvoiceItem {
   readonly keys: readonly string[];
 }
 
-// 国税庁の記載必要6項目。項目4（適用税率）は税率別の対価の額の欄で代表させる
+// The 6 required items per the National Tax Agency. Item 4 (applicable tax rate) is represented by the field for the consideration amount per tax rate
 const INVOICE_ITEMS: readonly InvoiceItem[] = [
   { id: "registrationNumber", keys: ["registrationNumber"] },
   { id: "transactionDate", keys: ["issueDate", "transactionDate"] },

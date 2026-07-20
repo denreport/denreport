@@ -1,21 +1,21 @@
 import type { Messages } from "../i18n/messages";
 
-/** シナリオ命名に使う文言。state 層の関数はこの部分名前空間のみを受け取る */
+/** Wording used for scenario naming. Functions in the state layer only receive this sub-namespace */
 export type ScenarioMessages = Messages["scenarioNames"];
 
 export interface SampleScenario {
-  /** セット内一意（"s" + 正整数） */
+  /** Unique within the set ("s" + a positive integer) */
   readonly id: string;
-  /** 表示名。一意性なし（識別は id が担う） */
+  /** Display name. Not unique (identification is the id's job) */
   readonly name: string;
-  /** 生の JSON 文字列。不正 JSON も編集の常態として保持する */
+  /** The raw JSON string. Invalid JSON is also kept as a normal editing state */
   readonly json: string;
 }
 
 export interface SampleScenarioSet {
-  /** 常に1件以上 */
+  /** Always at least 1 item */
   readonly items: readonly SampleScenario[];
-  /** 必ず items 内の id */
+  /** Always an id within items */
   readonly activeId: string;
 }
 
@@ -54,7 +54,7 @@ function isValidEnvelope(value: object): value is SampleScenarioEnvelope {
   );
 }
 
-/** id 未使用の最小の正整数から "s" + N を作る */
+/** Builds "s" + N from the smallest unused positive integer for id */
 function nextId(items: readonly SampleScenario[]): string {
   const used = new Set(
     items
@@ -69,7 +69,7 @@ function nextId(items: readonly SampleScenario[]): string {
   return `s${n}`;
 }
 
-/** 既存名と衝突しない最小の正整数から「シナリオ N」を作る */
+/** Builds "Scenario N" from the smallest positive integer that doesn't collide with an existing name */
 function nextName(
   items: readonly SampleScenario[],
   m: ScenarioMessages,
@@ -82,7 +82,7 @@ function nextName(
   return m.nth(n);
 }
 
-/** json（旧来の生サンプル文字列）1本から既定1件のセットを作る */
+/** Builds a set with one default item from a single json (a legacy raw sample string) */
 export function defaultScenarioSet(
   json: string,
   m: ScenarioMessages,
@@ -93,7 +93,7 @@ export function defaultScenarioSet(
   };
 }
 
-/** アクティブシナリオの json。従来の state.sampleData に相当する唯一の読み出し口 */
+/** The active scenario's json. The sole read point equivalent to the former state.sampleData */
 export function activeSampleJson(set: SampleScenarioSet): string {
   return set.items.find((item) => item.id === set.activeId)?.json ?? "";
 }
@@ -108,7 +108,7 @@ export function selectScenario(
   return { ...set, activeId: id };
 }
 
-/** 空 json の新規シナリオを作りアクティブにする */
+/** Creates a new scenario with an empty json and makes it active */
 export function addScenario(
   set: SampleScenarioSet,
   m: ScenarioMessages,
@@ -121,7 +121,7 @@ export function addScenario(
   return { items: [...set.items, item], activeId: item.id };
 }
 
-/** アクティブシナリオの json を引き継いだ新規シナリオを作りアクティブにする */
+/** Creates a new scenario that inherits the active scenario's json and makes it active */
 export function duplicateActiveScenario(
   set: SampleScenarioSet,
   m: ScenarioMessages,
@@ -135,7 +135,7 @@ export function duplicateActiveScenario(
   return { items: [...set.items, item], activeId: item.id };
 }
 
-/** 最後の1件は no-op。アクティブシナリオの削除は直後（末尾なら直前）をアクティブにする */
+/** No-op on the last remaining item. Deleting the active scenario activates the next one (or the previous one if it was last) */
 export function removeScenario(
   set: SampleScenarioSet,
   id: string,
@@ -186,7 +186,7 @@ export function updateActiveJson(
   };
 }
 
-/** 封筒形式またはレガシー生文字列を読む。常に不変条件を満たすセットを返し、throw しない */
+/** Reads the envelope format or a legacy raw string. Always returns a set that satisfies the invariants and never throws */
 export function parseSampleDataStorage(
   raw: string,
   m: ScenarioMessages,
@@ -211,7 +211,7 @@ export function parseSampleDataStorage(
     : defaultScenarioSet("", m);
 }
 
-/** 封筒形式へ直列化。parseSampleDataStorage との往復で同値 */
+/** Serializes to the envelope format. Round-trips to an equal value with parseSampleDataStorage */
 export function serializeSampleDataStorage(set: SampleScenarioSet): string {
   const envelope: SampleScenarioEnvelope = {
     format: ENVELOPE_FORMAT,

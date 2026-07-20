@@ -11,7 +11,7 @@ interface Point {
   readonly y: number;
 }
 
-/** `point` を `center` 周りに時計回り `deg` 度（IR の座標系は y 下向き）回転した点を返す */
+/** Returns `point` rotated clockwise `deg` degrees around `center` (the IR's coordinate system has y pointing downward). */
 export function rotatePointCw(point: Point, center: Point, deg: number): Point {
   const rad = (deg * Math.PI) / 180;
   const cos = Math.cos(rad);
@@ -30,8 +30,10 @@ function lineCenter(el: LoweredLineElement): Point {
     : { x: el.x, y: el.y + el.length / 2 };
 }
 
-// pdfme は各スキーマをスキーマ中心周りに回転するため、分割で生じた子の中心を
-// 親要素の回転中心周りに回転写像した位置へ置けば、全体を1回で回すのと等価になる
+// pdfme rotates each schema around the schema's own center, so mapping the
+// center of a child produced by splitting through a rotation around the
+// parent element's rotation center, and placing it there, is equivalent to
+// rotating the whole thing once.
 function placeRotatedLine(
   child: LoweredLineElement,
   parentCenter: Point,
@@ -82,8 +84,9 @@ function expandLine(el: LoweredLineElement): readonly LoweredLineElement[] {
   );
 }
 
-// M17 により borderStyle が非 solid の rect は cornerRadius = 0 が保証されるため、
-// 4辺を直角のまま線分化してよい。回転写像は expandRect が rect 中心周りに一括で行う
+// M17 guarantees that a rect with a non-solid borderStyle has cornerRadius =
+// 0, so it's fine to turn the 4 sides into line segments with right angles
+// intact. The rotation mapping is done all at once by expandRect, around the rect's center.
 function rectEdges(el: LoweredRectElement): readonly LoweredLineElement[] {
   const base = {
     sourceId: el.sourceId,
@@ -143,8 +146,9 @@ function expandRect(el: LoweredRectElement): readonly LoweredElement[] {
   return [...fill, ...edges];
 }
 
-/** 非実線の line / rect を、実線の線分・塗りのみ矩形へ静的に展開する。
-    実線要素・ellipse・text 等はそのまま返す */
+/** Statically expands non-solid line / rect elements into solid line
+    segments and fill-only rectangles. Solid elements, ellipse, text, etc.
+    are returned unchanged. */
 export function expandStrokes(
   elements: readonly LoweredElement[],
 ): readonly LoweredElement[] {

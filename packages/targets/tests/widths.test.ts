@@ -12,7 +12,7 @@ import {
 
 const UNITS_PER_EM = 1000;
 
-// glyph0（.notdef）advance=250, glyph1=300, glyph2=400, glyph3（'A' 相当）=600
+// glyph0 (.notdef) advance=250, glyph1=300, glyph2=400, glyph3 (equivalent to 'A') =600
 const HMTX = buildHmtxTable([
   { advanceWidth: 250, lsb: 0 },
   { advanceWidth: 300, lsb: 0 },

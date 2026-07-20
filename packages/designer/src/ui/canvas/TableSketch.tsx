@@ -6,7 +6,7 @@ import type { MmBox } from "../../state/geometry";
 import type { TableCellSource } from "../../state/table-cells";
 import { cellView, sketchMerges } from "../../state/table-cells";
 
-// ir-v1 の表の仕様定数（セル余白・文字オフセットは属性化されない）
+// Spec constants for ir-v1 tables (cell padding and character offsets are not exposed as attributes)
 const CELL_PADDING_X = 1.5;
 const HEADER_TEXT_OFFSET_Y = 1.8;
 const CELL_TEXT_OFFSET_Y = 2.0;
@@ -82,7 +82,7 @@ export function TableSketch(props: {
     }
   }
 
-  // キャンバスの表示行は常にチャンク先頭（1ページ目起点）のため、行インデックス q がそのまま通し行番号
+  // The canvas's displayed rows always start at the top of the chunk (page-1 origin), so row index q is directly the running row number
   const stripeRows: { readonly q: number; readonly color: string }[] = [];
   if (table.stripeColor !== undefined) {
     const stripeColor = table.stripeColor;
@@ -145,7 +145,7 @@ export function TableSketch(props: {
             },
             charWidths,
           );
-          // 明細セルは常に1行の模式描画。折り返しが必要な長さ（実測幅≧実効幅）では仕様上も字間0
+          // Detail cells are always rendered schematically as one line. At lengths that require wrapping (measured width ≥ effective width), the spec also calls for zero character spacing
           charSpacePt = lines.length === 1 ? (lines[0]?.charSpacePt ?? 0) : 0;
         }
         dataCells.push({

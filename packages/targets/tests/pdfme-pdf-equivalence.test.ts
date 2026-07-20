@@ -20,7 +20,7 @@ const outputDir = fileURLToPath(new URL("output", import.meta.url));
 const fontData = new Uint8Array(readFileSync(EMBEDDED_FONT_URL));
 
 const MM_PER_PT = 25.4 / 72;
-// 同梱 Noto Sans JP の hhea.ascender / head.unitsPerEm（fonts-metrics.test.ts で機械検証済み）
+// The bundled Noto Sans JP's hhea.ascender / head.unitsPerEm (mechanically verified in fonts-metrics.test.ts)
 const EMBEDDED_ASCENT_PER_EM = 1.16;
 
 function normativeBaselineY(
@@ -154,7 +154,7 @@ describe("buildReferenceExpectation — 参照意味論からの期待行導出"
     const expectation = buildReferenceExpectation(document, data, fontData);
 
     expect(expectation.pageCount).toBe(1);
-    // minRows=3・データ2行: 明細セルはデータ行のぶんだけ（2行×2列）
+    // minRows=3, 2 data rows: detail cells are only for the data rows (2 rows x 2 columns)
     const cellTexts = expectation.lines.filter((line) =>
       /^商品|^[\d,]+$/.test(line.text),
     );
@@ -179,10 +179,10 @@ describe("buildReferenceExpectation — 参照意味論からの期待行導出"
       [2, "2 / 3"],
       [3, "3 / 3"],
     ]);
-    // ヘッダは各ページで再表示される
+    // The header redisplays on every page
     const headers = expectation.lines.filter((line) => line.text === "品目");
     expect(headers.map((line) => line.page)).toEqual([1, 2, 3]);
-    // pages: "last" の合計欄は最終ページのみ
+    // The pages: "last" total field is on the final page only
     const totals = expectation.lines.filter(
       (line) => line.text === "合計(税込)",
     );
@@ -278,7 +278,7 @@ describe("checkAgainstReference / checkCrossTarget — 照合器の境界", () =
   });
 });
 
-// IR の rotate（時計回り・外接箱中心）で回転したテキストの、規範ベースライン原点の写像先
+// Where the normative baseline origin maps to for text rotated by the IR's rotate (clockwise, about the bounding box center)
 function rotatedBaselineOrigin(
   el: { x: number; y: number; w: number; h: number },
   fontSize: number,
@@ -321,7 +321,7 @@ describe("pdfme 実 PDF — 回転の向きと中心", () => {
     writeFileSync(`${outputDir}/pdfme-rotation.pdf`, pdfBytes);
     const pdf = await extractPdf(pdfBytes);
 
-    // 非回転の基準要素で抽出系そのものの健全性を確認する
+    // Confirm the extraction pipeline itself is sound using an unrotated reference element
     const flat = findItem(pdf, "水平");
     expect(flat.x).toBeCloseTo(20, 0);
     expect(flat.baselineY).toBeCloseTo(normativeBaselineY(20, 12, 1.25, 0), 0);

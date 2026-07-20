@@ -8,8 +8,8 @@ export interface HistoryEntry {
 export const HISTORY_LIMIT = 100;
 
 /**
- * undo/redo スタック。エントリは「現在から戻る/進む先」のスナップショットで、
- * 現在の状態そのものは呼び出し側（EditorStore）が保持する。
+ * The undo/redo stack. Each entry is a snapshot of "the destination to go back/forward to
+ * from the current state"; the current state itself is held by the caller (EditorStore).
  */
 export class History {
   #past: HistoryEntry[] = [];

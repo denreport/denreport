@@ -12,7 +12,7 @@ import { FONT_SLOTS } from "../fonts/set";
 import type { Messages } from "../i18n/messages";
 import { pyBool, pyNumber, pyRgb, pyString } from "./python";
 
-// createBarcodeDrawing の規格名（reportlab.graphics.barcode.getCodeNames() の表記）
+// The symbology names for createBarcodeDrawing (as notated by reportlab.graphics.barcode.getCodeNames())
 export const REPORTLAB_BARCODE_NAMES: Readonly<
   Record<IrBarcodeSymbology, string>
 > = {
@@ -84,8 +84,9 @@ export function registerFontsFn(messages: Messages): string {
   ].join("\n");
 }
 
-// IR の rotate は y 下向き座標系での時計回り正。PDF 座標系は y 上向きのため、
-// 各描画関数は c.rotate に符号を反転した -rot を渡して見た目の回転方向を一致させる
+// The IR's rotate is positive clockwise in a y-down coordinate system. The
+// PDF coordinate system is y-up, so each drawing function passes -rot (the
+// sign flipped) to c.rotate to match the visual direction of rotation.
 export const TEXT_FN = [
   "def _text(c, font, x, y, w, h, size, align, line_height, color, rot, underline, lines):",
   "    c.saveState()",
@@ -209,8 +210,9 @@ export const BARCODE_FN = [
   "    c.restoreState()",
 ].join("\n");
 
-// ir/table-merge.ts の結合区間計算と同一（二重実装のため同期が必要）。
-// rects は起点 (q, col) → (row_span, col_span) の辞書
+// Identical to the merge-interval computation in ir/table-merge.ts (needs to
+// stay in sync, since this is a duplicate implementation).
+// rects is a dict from origin (q, col) -> (row_span, col_span)
 export const CHUNK_MERGES_FN = [
   "def _chunk_merges(rows, spans, merge_cols, col_keys, row_offset, chunk_size):",
   "    intervals = []",
@@ -255,7 +257,7 @@ export const CHUNK_MERGES_FN = [
   "    return rects, covered, h_skips, v_skips",
 ].join("\n");
 
-// ir/table-merge.ts の subtractSkips と同一（二重実装のため同期が必要）
+// Identical to subtractSkips in ir/table-merge.ts (needs to stay in sync, since this is a duplicate implementation)
 export const KEPT_SEGMENTS_FN = [
   "def _kept(start, end, skips):",
   "    out = []",

@@ -3,8 +3,8 @@ import { useId } from "react";
 import { useMessages } from "../../i18n/context";
 import { useDraftValue } from "../properties/useDraftValue";
 
-/** サンプルデータの JSON 直接編集。blur で確定し（textarea の Enter は改行）、
-    不正 JSON でも確定は妨げない（保持形式が文字列であるため） */
+/** Direct JSON editing of sample data. Commits on blur (Enter in the textarea inserts
+    a newline); invalid JSON does not block committing (the storage format is a string) */
 export function SampleDataEditor(props: {
   readonly value: string;
   readonly onCommit: (json: string) => void;

@@ -13,21 +13,21 @@ export type CanvasMenuAction =
 
 export interface CanvasMenuItem {
   readonly action: CanvasMenuAction;
-  /** 表示名（例: コピー） */
+  /** Display name (e.g. Copy) */
   readonly label: string;
-  /** ショートカット表示（例: Ctrl+C）。複製は null */
+  /** Shortcut display (e.g. Ctrl+C). null for duplicate */
   readonly shortcut: string | null;
   readonly disabled: boolean;
 }
 
 export interface ContextTarget {
-  /** メニュー操作の対象になる選択（右クリックによる単独選択への追従を反映済み） */
+  /** The selection targeted by the menu operation (already reflects following a right-click's single-selection) */
   readonly selection: readonly string[];
-  /** true = 要素上の右クリック、false = 背景 */
+  /** true = right-click on an element, false = background */
   readonly onElement: boolean;
 }
 
-/** 右クリック対象 id（背景は null）と現在の選択から、メニューの対象を決める */
+/** Determines the menu's target from the right-clicked id (null for background) and the current selection */
 export function resolveContextTarget(
   selection: readonly string[],
   targetId: string | null,
@@ -46,12 +46,12 @@ export interface CellMenuContext {
   readonly canUnmerge: boolean;
 }
 
-/** 要素操作7項目に、セル文脈があれば先頭へセル結合の2項目を加えて構築する */
+/** Builds the 7 element-operation items, prepending the 2 cell-merge items at the front if a cell context is present */
 export function buildCanvasMenuItems(
   m: Messages["contextMenu"],
   input: {
     readonly onElement: boolean;
-    /** clipboardFromSelection が非 null（= トップレベル要素を含む選択） */
+    /** clipboardFromSelection is non-null (= a selection that includes a top-level element) */
     readonly canCopy: boolean;
     readonly hasSelection: boolean;
     readonly hasClipboard: boolean;

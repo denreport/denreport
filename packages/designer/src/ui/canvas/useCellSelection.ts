@@ -32,7 +32,7 @@ export interface CellSelectionApi {
   readonly canUnmerge: boolean;
   readonly merge: () => void;
   readonly unmerge: () => void;
-  /** true = イベントを消費した（呼び出し側は要素インタラクションへ流さない） */
+  /** true = the event was consumed (the caller does not pass it on to element interaction) */
   readonly onPointerDown: (e: ReactPointerEvent<HTMLDivElement>) => boolean;
   readonly onPointerMove: (e: ReactPointerEvent<HTMLDivElement>) => void;
   readonly onPointerUp: () => void;
@@ -66,7 +66,7 @@ function findTable(document: IrDocument, id: string): IrTableElement | null {
   return el !== undefined && el.type === "table" ? el : null;
 }
 
-/** テーブル単位のセル矩形選択。EditorStore の selection（要素単位）とは独立した Canvas ローカル状態 */
+/** Per-table cell rectangle selection. Canvas-local state, independent of EditorStore's selection (which is per-element) */
 export function useCellSelection(
   store: EditorStore,
   layout: readonly PlacedElementView[],
@@ -75,7 +75,7 @@ export function useCellSelection(
   const [selection, setSelection] = useState<CellSelectionState | null>(null);
   const dragRef = useRef<{ tableId: string; anchor: CellAddress } | null>(null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: 効果内では参照しないが、doc/pageContext の変化そのものが破棄条件
+  // biome-ignore lint/correctness/useExhaustiveDependencies: not referenced inside the effect, but a change in doc/pageContext itself is the discard condition
   useEffect(() => {
     setSelection(null);
     dragRef.current = null;

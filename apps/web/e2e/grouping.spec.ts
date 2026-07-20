@@ -41,7 +41,7 @@ async function dragOnCanvas(page: Page, from: Mm, to: Mm): Promise<void> {
   await page.mouse.up();
 }
 
-/** 要素の現在の描画中心を mm 座標で返す */
+/** Returns the element's current rendered center in mm coordinates */
 async function elementCenterMm(page: Page, id: string): Promise<Mm> {
   const el = await page.locator(`.apx-el[data-apx-id="${id}"]`).boundingBox();
   if (el === null) {
@@ -61,7 +61,7 @@ interface IrElementXY {
   readonly y: number;
 }
 
-/** 自動保存は 500ms デバウンスのため、id が書き込まれるまで待ってから読む */
+/** Autosave is debounced 500ms, so wait until the id is written before reading */
 async function waitForElementXY(page: Page, id: string): Promise<IrElementXY> {
   await page.waitForFunction((id) => {
     const raw = localStorage.getItem("denreport-designer.ir");
@@ -175,8 +175,9 @@ test("要素のグループ化: 保存・リロードを跨いでグループが
   await dragFromPalette(page, TEXT_PALETTE, { x: 120, y: 60 });
   await expect(page.locator('.apx-el[data-apx-id="text2"]')).toBeVisible();
 
-  // 要素配置ぶんの自動保存デバウンスを先に完了させておく。未完了のままだと、後続の
-  // タイマー発火が saveIr() を遅延評価するため、グループ化自体の通知漏れが隠れてしまう
+  // Let the autosave debounce for the element placement finish first. If it hasn't finished,
+  // the subsequent timer firing lazily evaluates saveIr(), which would mask a missed
+  // notification for the grouping itself
   await waitForElementXY(page, "text2");
   expect(
     await page.evaluate(() =>

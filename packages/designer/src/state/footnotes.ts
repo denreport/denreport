@@ -17,7 +17,7 @@ export function defaultFootnotes(page: IrPage): IrFootnotes {
   };
 }
 
-/** footnotes が undefined ならキーごと除去する */
+/** If footnotes is undefined, remove the key entirely */
 export function setFootnotes(
   document: IrDocument,
   footnotes: IrFootnotes | undefined,
@@ -29,7 +29,7 @@ export function setFootnotes(
   return { ...document, footnotes };
 }
 
-/** id は footnotes 内で未使用の最小 n の "note<n>"、本文は空文字列 */
+/** id is "note<n>" with the smallest n unused within footnotes; body text is an empty string */
 export function addFootnoteNote(document: IrDocument): IrDocument {
   const { footnotes } = document;
   if (footnotes === undefined) {

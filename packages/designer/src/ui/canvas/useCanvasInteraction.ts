@@ -95,7 +95,7 @@ export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
     [store],
   );
 
-  // ドラッグ中の Esc キャンセル（pointer capture 中はフォーカス位置に依らず効かせる）
+  // Esc cancels during a drag (effective regardless of focus position while pointer capture is active)
   useEffect(() => {
     if (interaction.kind === "idle") {
       return;
@@ -165,7 +165,7 @@ export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
       if (e.button !== 0) {
         return;
       }
-      // pointerdown の取消は互換 mousedown も抑止し、テキスト選択の開始ごと止める
+      // Canceling pointerdown also suppresses the compatibility mousedown, stopping every start of text selection
       e.preventDefault();
       e.currentTarget.focus({ preventScroll: true });
       const at = toMm(e);

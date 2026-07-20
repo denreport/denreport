@@ -31,8 +31,9 @@ function resolveId(document: IrDocument, path: string): string | null {
 }
 
 /**
- * IrError の path から該当要素の id を解決し、エラーを持つ要素 id の集合を返す。
- * 要素に対応しない path（ルート・page 等）は無視する。
+ * Resolves the id of the corresponding element from an IrError's path, and returns
+ * the set of element ids that have errors.
+ * Paths that don't correspond to an element (root, page, etc.) are ignored.
  */
 export function errorElementIds(
   document: IrDocument,
@@ -48,7 +49,7 @@ export function errorElementIds(
   return ids;
 }
 
-/** 要素 id → その要素に解決されるエラー列。要素に対応しない path（ルート・page 等）は含めない */
+/** Element id -> list of errors that resolve to that element. Paths that don't correspond to an element (root, page, etc.) are excluded */
 export function errorsByElement(
   document: IrDocument,
   errors: readonly IrError[],
@@ -70,8 +71,9 @@ export function errorsByElement(
 }
 
 /**
- * 要素に絞ったエラー列から、path が ".<attrPath>" で終わる最初の message を返す。
- * フィールド単位のエラー表示への best-effort な対応付け。
+ * From an error list already narrowed to an element, returns the first message
+ * whose path ends with ".<attrPath>".
+ * A best-effort mapping for field-level error display.
  */
 export function errorMessageFor(
   errors: readonly IrError[],

@@ -250,9 +250,9 @@ describe("Canvas ダブルクリック編集開始", () => {
       throw new Error("paper または対象要素が見つからない");
     }
 
-    // setPointerCapture 済みのポインタでは dblclick の target が paper 自身に固定される
-    // （実ブラウザの挙動）ため、ここでは document.elementFromPoint 側だけが実際の
-    // カーソル位置の要素を返す状況を再現する
+    // For a pointer that already has setPointerCapture, dblclick's target is pinned to paper
+    // itself (real browser behavior), so here we reproduce the situation where only
+    // document.elementFromPoint returns the element actually at the cursor position
     document.elementFromPoint = () => target as HTMLElement;
     act(() => {
       paper.dispatchEvent(
@@ -355,7 +355,7 @@ describe("Canvas 表のデータ行セル編集", () => {
 });
 
 describe("Canvas セル範囲選択", () => {
-  const MM = 3.78; // MM_TO_PX（zoom 1）
+  const MM = 3.78; // MM_TO_PX (zoom 1)
 
   function firePointer(
     target: Element,
@@ -379,7 +379,7 @@ describe("Canvas セル範囲選択", () => {
   }
 
   beforeEach(() => {
-    // jsdom は setPointerCapture を実装しないため、onPointerDown の呼び出しをスタブで無害化する
+    // jsdom does not implement setPointerCapture, so stub it out to neutralize the onPointerDown call
     HTMLElement.prototype.setPointerCapture ??= () => {};
     HTMLElement.prototype.hasPointerCapture ??= () => false;
   });
@@ -397,8 +397,8 @@ describe("Canvas セル範囲選択", () => {
     }
     const beforeDocument = store.getState().document;
 
-    // tbl1: box x10 y10 w50 h24（headerHeight8 + minRows2 * rowHeight8）
-    // pointerdown は data-apx-id を e.target から解決するため表要素上で発火する
+    // tbl1: box x10 y10 w50 h24 (headerHeight8 + minRows2 * rowHeight8)
+    // pointerdown resolves data-apx-id from e.target, so it's fired on the table element
     firePointer(tableEl, "pointerdown", 35, 22); // row0
     firePointer(paper, "pointermove", 35, 30); // row1
     expect(container.querySelector(".apx-cell-sel")).not.toBeNull();

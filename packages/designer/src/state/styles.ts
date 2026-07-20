@@ -16,7 +16,7 @@ function findStyle(
   return document.styles?.find((style) => style.name === name);
 }
 
-/** image / flex / ellipse / barcode は style を持てないため常に undefined */
+/** image / flex / ellipse / barcode cannot have a style, so this is always undefined */
 function elementStyleName(element: AnyElement): string | undefined {
   return element.type === "image" ||
     element.type === "flex" ||
@@ -26,7 +26,7 @@ function elementStyleName(element: AnyElement): string | undefined {
     : element.style;
 }
 
-/** el の型に該当する属性だけを定義値で上書きし、style 参照を設定する */
+/** Overwrites only the attributes applicable to el's type with the definition's values, and sets the style reference */
 function withDefinition(el: AnyElement, style: IrNamedStyle): AnyElement {
   if (
     el.type === "image" ||
@@ -68,7 +68,7 @@ function withStyleName(el: AnyElement, name: string): AnyElement {
     : ({ ...el, style: name } as AnyElement);
 }
 
-/** document.elements（flex 子孫を含む）全体へ fn を適用し、structural sharing を維持する */
+/** Applies fn across the whole of document.elements (including flex descendants), preserving structural sharing */
 function mapAllElements(
   document: IrDocument,
   fn: (el: AnyElement) => AnyElement,
@@ -99,7 +99,7 @@ function mapAllElements(
     : { ...document, elements };
 }
 
-/** styles が空になったら属性ごと除去する（cellOverrides と同じ規約） */
+/** Removes the attribute entirely once styles becomes empty (the same convention as cellOverrides) */
 function finalizeStyles(
   document: IrDocument,
   styles: readonly IrNamedStyle[],
@@ -114,7 +114,7 @@ function finalizeStyles(
   return rest as IrDocument;
 }
 
-/** 要素にスタイルを適用し、該当属性へ定義値を書き込む。未知の id / name では同一参照 */
+/** Applies a style to an element, writing the definition's values into the matching attributes. Returns the same reference for an unknown id / name */
 export function applyStyle(
   document: IrDocument,
   id: string,
@@ -127,12 +127,12 @@ export function applyStyle(
   return updateElementById(document, id, (el) => withDefinition(el, style));
 }
 
-/** style 属性を除去する。具体値は保持 */
+/** Removes the style attribute. Concrete values are preserved */
 export function clearStyle(document: IrDocument, id: string): IrDocument {
   return updateElementById(document, id, (el) => withoutStyle(el));
 }
 
-/** 同名があれば置換・なければ追加し、参照中の全要素（flex 子孫含む）を定義値で再同期する */
+/** Replaces if a same-named style exists, otherwise adds it, and re-syncs all referencing elements (including flex descendants) with the definition's values */
 export function upsertStyle(
   document: IrDocument,
   style: IrNamedStyle,
@@ -149,7 +149,7 @@ export function upsertStyle(
   return { ...synced, styles };
 }
 
-/** 定義の name と全参照を書き換える。newName が既存名と衝突する場合は同一参照 */
+/** Rewrites the definition's name and all references. Returns the same reference if newName collides with an existing name */
 export function renameStyle(
   document: IrDocument,
   oldName: string,
@@ -175,7 +175,7 @@ export function renameStyle(
   return { ...synced, styles };
 }
 
-/** 定義を除去し、全参照要素の style 属性を除去する。具体値は保持 */
+/** Removes the definition and removes the style attribute from all referencing elements. Concrete values are preserved */
 export function removeStyle(document: IrDocument, name: string): IrDocument {
   const existing = document.styles ?? [];
   if (!existing.some((s) => s.name === name)) {
@@ -188,7 +188,7 @@ export function removeStyle(document: IrDocument, name: string): IrDocument {
   return finalizeStyles(synced, styles);
 }
 
-/** 要素の適用可能属性から IrNamedStyle を組み立てる（「選択要素から作成」用） */
+/** Builds an IrNamedStyle from an element's applicable attributes (for "create from selected element") */
 export function styleFromElement(
   element: IrElement | IrFlexChild,
   name: string,
@@ -199,7 +199,7 @@ export function styleFromElement(
   }
   const attrs: Record<string, unknown> = {};
   for (const key of keys) {
-    // fontWeight 等の任意属性は未指定要素から undefined を写さない（attrs は指定時のみキーを持つ）
+    // Optional attributes like fontWeight aren't copied as undefined from an unspecified element (attrs only has a key when specified)
     const value = (element as Record<string, unknown>)[key];
     if (value !== undefined) {
       attrs[key] = value;

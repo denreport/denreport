@@ -840,7 +840,7 @@ describe("lowerIr — cellOverrides", () => {
   });
 
   it("applies an override whose row lands on a continuation-page chunk", () => {
-    // headerHeight=10, rowHeight=10, maxY=100 → kFirst=9, kCont(continuationY=40)=5. row 10 は2ページ目
+    // headerHeight=10, rowHeight=10, maxY=100 → kFirst=9, kCont(continuationY=40)=5. row 10 is on page 2
     const doc = docOf(
       table({
         maxY: 100,
@@ -976,7 +976,7 @@ describe("lowerIr — cell merges", () => {
     const horizontal = linesOf(page).filter(
       (l) => l.orientation === "horizontal",
     );
-    // 結合内部の行境界 y=20 は amount 列のぶんだけ残る
+    // The row boundary y=20 inside the merge remains only for the amount column
     const atMergedBoundary = horizontal.filter((l) => l.y === 20);
     expect(atMergedBoundary).toEqual([
       expect.objectContaining({ x: 15 + 90, length: 35 }),
@@ -1029,7 +1029,7 @@ describe("lowerIr — cell merges", () => {
     expect(textsOf(page, "0")).toHaveLength(0);
     expect(textsOf(page, "1")).toHaveLength(1);
     const vertical = linesOf(page).filter((l) => l.orientation === "vertical");
-    // 行0 の内側だけ切れて、ヘッダ帯と行1 が残る
+    // Only the inside of row 0 is cut, leaving the header band and row 1
     expect(vertical).toEqual([
       expect.objectContaining({ x: 105, y: 0, length: 10 }),
       expect.objectContaining({ x: 105, y: 20, length: 10 }),
@@ -1037,7 +1037,7 @@ describe("lowerIr — cell merges", () => {
   });
 
   it("re-draws the merged value on the continuation page (content duplication across the page break)", () => {
-    // kFirst=9, kCont(continuationY=40)=5。11行の同一値は 9+2 に割れ、両ページに起点ができる
+    // kFirst=9, kCont(continuationY=40)=5. The same value across 11 rows splits into 9+2, creating a merge origin on both pages
     const doc = docOf(
       table({
         maxY: 100,
@@ -1125,7 +1125,7 @@ describe("lowerIr — cell merges", () => {
     expect(result.ok && plainResult.ok).toBe(true);
     if (!result.ok || !plainResult.ok) throw new Error("expected success");
     expect(result.document.pageCount).toBe(plainResult.document.pageCount);
-    // 行1 起点の結合は出力2行に切り詰められ、行5 起点は不活性
+    // The merge originating at row 1 is truncated to 2 output rows, and the one originating at row 5 is inert
     const page = result.document.pages[0] ?? [];
     const item1 = textsOf(page, "item1");
     expect(item1).toEqual([expect.objectContaining({ h: 10 - 2.0 })]);

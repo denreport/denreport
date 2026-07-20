@@ -3,14 +3,14 @@ import type { Locale } from "./locale";
 import type { Messages } from "./messages";
 import { ja } from "./messages/ja";
 
-/** 既定値は ja。Provider なしでレンダーされる既存コンポーネントテストを壊さないための値 */
+/** Defaults to ja. This value exists so existing component tests rendered without a Provider don't break */
 export const MessagesContext = createContext<Messages>(ja);
 
 export function useMessages(): Messages {
   return useContext(MessagesContext);
 }
 
-/** core / targets へ渡すロケール。文言そのものではなく解決済みの値が要るとき使う */
+/** The locale passed to core / targets. Used when the resolved value itself is needed, not the message strings */
 export const LocaleContext = createContext<Locale>("ja");
 
 export function useLocale(): Locale {

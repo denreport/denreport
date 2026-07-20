@@ -17,9 +17,9 @@ import { useMessages } from "../../i18n/context";
 import { PT_TO_MM, textBaselinesMm } from "../../state/preview";
 import type { PreviewFont, PreviewFontSet } from "./preview-font";
 
-// フォント読込前・失敗時のシステムフォント代替描画に使う概算値。実測値は PreviewFont が与える
+// Approximate value used for system-font fallback rendering before the font loads or on failure. PreviewFont supplies the measured value
 const FALLBACK_ASCENT_PER_EM = 0.88;
-// 実測の字幅がないときは折り返しを起こさない（誤った位置で折り返すより従来どおりはみ出す方を選ぶ）
+// When there's no measured char width, don't wrap (prefer the traditional overflow over wrapping at the wrong position)
 const FALLBACK_CHAR_WIDTH_EM: CharWidthEm = () => 0;
 
 const FALLBACK_PREVIEW_FONT: PreviewFont = {
@@ -28,7 +28,7 @@ const FALLBACK_PREVIEW_FONT: PreviewFont = {
   charWidths: FALLBACK_CHAR_WIDTH_EM,
 };
 
-/** core の劣化規則をそのまま使うため、定義済みスロットだけを持つ擬似 IrFont に写して解決する */
+/** To reuse core's degradation rules as-is, map to a pseudo IrFont that has only the defined slots and resolve against it */
 function previewFontFor(
   fonts: PreviewFontSet,
   el: LoweredTextElement,
@@ -55,7 +55,7 @@ function dasharrayOf(strokeStyle: IrStrokeStyle): string | undefined {
   return STROKE_DASH_MM[strokeStyle].join(" ");
 }
 
-// SVG の rotate(θ cx cy) は y 下向き座標系で時計回り = IR の rotate と同じ向き
+// SVG's rotate(θ cx cy) is clockwise in a y-down coordinate system = same direction as IR's rotate
 function rotationTransform(el: LoweredElement): string | undefined {
   if (el.rotate === 0) return undefined;
   const center =
@@ -79,7 +79,7 @@ function anchorX(el: LoweredTextElement): number {
   }
 }
 
-// 実バーコードは符号化しない模式パターン（BarcodeSketch と同じ視覚表現。値の走査可能性は保証しない）
+// A schematic pattern that does not actually encode the barcode (same visual representation as BarcodeSketch; scannability of the value is not guaranteed)
 const BARCODE_BAR_WEIGHTS: readonly number[] = [
   3, 2, 1, 2, 2, 1, 3, 1, 2, 3, 1, 2,
 ];
@@ -99,7 +99,7 @@ function barcodeBars(box: {
     if (i % 2 === 0) {
       bars.push(
         <rect
-          // biome-ignore lint/suspicious/noArrayIndexKey: 固定パターンで並び替えが起きない
+          // biome-ignore lint/suspicious/noArrayIndexKey: the pattern is fixed and never reordered
           key={i}
           x={cursor}
           y={box.y}
@@ -163,7 +163,7 @@ function renderElement(el: LoweredElement, fonts: PreviewFontSet): ReactNode {
       );
       return baselines.map((line, lineIndex) => (
         <text
-          // biome-ignore lint/suspicious/noArrayIndexKey: 行は layoutTextLines の並び順そのもので並び替えが起きない
+          // biome-ignore lint/suspicious/noArrayIndexKey: lines are exactly layoutTextLines' order and are never reordered
           key={lineIndex}
           x={x}
           y={line.baselineY}
@@ -261,8 +261,8 @@ function renderElement(el: LoweredElement, fonts: PreviewFontSet): ReactNode {
   }
 }
 
-/** LoweredDocument の1ページ分を SVG に描画する。viewBox を用紙 mm にすることで
-    mm がそのまま SVG ユーザー単位になる */
+/** Renders one page of a LoweredDocument as SVG. Setting the viewBox to the paper size in mm
+    makes mm directly usable as the SVG user unit */
 export function PreviewPage(props: {
   readonly elements: readonly LoweredElement[];
   readonly page: IrPage;
@@ -279,7 +279,7 @@ export function PreviewPage(props: {
       aria-label={m.preview.pageAriaLabel}
     >
       {elements.map((el, index) => (
-        // biome-ignore lint/suspicious/noArrayIndexKey: 展開結果は毎回全再導出され、配列位置が唯一の識別子
+        // biome-ignore lint/suspicious/noArrayIndexKey: the rendered output is fully re-derived every time, so array position is the only identifier
         <g key={index} transform={rotationTransform(el)}>
           {renderElement(el, fontSet)}
         </g>

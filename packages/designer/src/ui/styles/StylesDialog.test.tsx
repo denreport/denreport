@@ -77,8 +77,8 @@ function click(el: Element): void {
   });
 }
 
-/** htmlFor で紐づく入力（NumberField / TextField）のみを対象とする。
-    チェックボックスラベル（for なし）とは別扱い */
+/** Targets only inputs linked via htmlFor (NumberField / TextField).
+    Checkbox labels (without for) are handled separately */
 function inputByLabel(text: string): HTMLInputElement {
   const label = [...container.querySelectorAll("label[for]")].find(
     (l) => l.textContent === text,

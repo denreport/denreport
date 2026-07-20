@@ -32,7 +32,7 @@ export function TableProperties(props: ElementFormProps): ReactNode {
   }
   const totalWidth = el.columns.reduce((total, col) => total + col.width, 0);
   const x = liveBox === null ? el.x : liveBox.x;
-  // rest / last 文脈では移動の縦成分が continuationY に確定するため、y は first 文脈でのみライブ表示する
+  // In the rest / last context, the vertical component of a move resolves to continuationY, so y is only live-displayed in the first context
   const y =
     liveBox !== null && state.view.pageContext === "first" ? liveBox.y : el.y;
   return (
@@ -145,7 +145,7 @@ export function TableProperties(props: ElementFormProps): ReactNode {
       </section>
       <section className="apx-sect">
         <div className="apx-sect-h">{t.bordersSection}</div>
-        {/* 既定の gridWidth（0.25mm）が 0.1mm 刻みに乗らないため、他の mm 欄より細かい刻みにする */}
+        {/* The default gridWidth (0.25mm) doesn't land on a 0.1mm step, so use a finer step than the other mm fields */}
         <NumberField
           label={t.frameWidth}
           value={el.frameWidth ?? TABLE_FRAME_WIDTH}

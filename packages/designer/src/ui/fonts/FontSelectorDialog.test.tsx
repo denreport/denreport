@@ -6,8 +6,8 @@ import { MessagesContext } from "../../i18n/context";
 import { en } from "../../i18n/messages/en";
 import { FontSelectorDialog } from "./FontSelectorDialog";
 
-// jsdom では globalThis === window のため、vi.stubGlobal で queryLocalFonts を生やせば
-// window.queryLocalFonts として観測できる
+// In jsdom, globalThis === window, so growing queryLocalFonts via vi.stubGlobal makes it
+// observable as window.queryLocalFonts
 function stubQueryLocalFonts(
   impl: () => Promise<
     readonly {
@@ -33,7 +33,7 @@ function stubQueryLocalFontsRejecting(error: Error): void {
   vi.stubGlobal("queryLocalFonts", () => Promise.reject(error));
 }
 
-// readAscentPerEm が読める最小の TTF（glyf + head.unitsPerEm + hhea.ascender）
+// A minimal TTF that readAscentPerEm can read (glyf + head.unitsPerEm + hhea.ascender)
 function embeddedTtf(): Uint8Array<ArrayBuffer> {
   const headOffset = 12 + 3 * 16;
   const hheaOffset = headOffset + 54;
@@ -135,7 +135,7 @@ function buttonByText(text: string): HTMLButtonElement {
   return button;
 }
 
-// フォント行のボタンは fullName と副記の2つの span を持つため textContent が完全一致しない
+// A font row button has two spans, fullName and a subtext, so textContent doesn't match exactly
 function fontRowButton(fullName: string): HTMLButtonElement {
   const name = [...container.querySelectorAll(".apx-font-name")].find(
     (el) => el.textContent === fullName,

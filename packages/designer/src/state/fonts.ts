@@ -1,21 +1,23 @@
 import type { IrFont, IrFontSlot } from "@denreport/core";
 
-// IR の font 論理名の識別子パターン（core の IDENTIFIER_PATTERN・IDENTIFIER_MAX_LENGTH と同一）を
-// ここでも満たす必要があるが、定数は core から公開されていないため複製する。
+// The identifier pattern for IR font logical names (identical to core's IDENTIFIER_PATTERN /
+// IDENTIFIER_MAX_LENGTH) must be satisfied here too, but the constant isn't exported from
+// core, so it's duplicated here.
 const IDENTIFIER_MAX_LENGTH = 64;
 
 export interface RegisteredFont {
-  /** IR 識別子（font の論理名との突き合わせキー。sanitizeFontName の出力） */
+  /** IR identifier (the matching key against a font's logical name; the output of sanitizeFontName) */
   readonly name: string;
-  /** UI 表示用の元の名前（FontData.fullName） */
+  /** Original name for UI display (FontData.fullName) */
   readonly displayName: string;
   readonly data: Uint8Array;
-  /** readAscentPerEm(data) の値（プレビュー規範式の入力） */
+  /** The value of readAscentPerEm(data) (input to the preview's normative formula) */
   readonly ascentPerEm: number;
 }
 
-/** フォント名を IR 識別子（^[A-Za-z_][A-Za-z0-9_]*$・64 文字以内）に落とす。
-    非該当文字は除去し、先頭が数字なら "_" を前置、空になったら "LocalFont"、64 文字で切る */
+/** Reduces a font name to an IR identifier (^[A-Za-z_][A-Za-z0-9_]*$, 64 characters or fewer).
+    Non-matching characters are stripped, a leading digit gets a "_" prefix, an empty result
+    becomes "LocalFont", and the result is truncated to 64 characters */
 export function sanitizeFontName(raw: string): string {
   let out = raw.replace(/[^A-Za-z0-9_]/g, "");
   if (/^[0-9]/.test(out)) {
@@ -32,8 +34,10 @@ export type FontResolution =
   | { readonly kind: "registered"; readonly font: RegisteredFont }
   | { readonly kind: "missing"; readonly name: string };
 
-/** 論理名 → 実データの解決規則の唯一の定義点。優先順: レジストリ → 同梱名 → missing。
-    embeddedNames は呼び出し側（ui 層）が EMBEDDED_*_FONT_NAME を渡す（state は targets 非依存のため） */
+/** The single definition point for resolving a logical name to actual data. Priority order:
+    registry -> bundled name -> missing.
+    embeddedNames is passed by the caller (the ui layer) as EMBEDDED_*_FONT_NAME
+    (since state doesn't depend on targets) */
 export function resolveFont(
   name: string,
   registry: ReadonlyMap<string, RegisteredFont>,
@@ -56,7 +60,7 @@ const FONT_SLOTS: readonly IrFontSlot[] = [
   "boldItalic",
 ];
 
-/** 文書の宣言スロットを一括解決する（未宣言スロットはエントリなし） */
+/** Resolves all of a document's declared slots at once (undeclared slots get no entry) */
 export function resolveFontSet(
   font: IrFont,
   registry: ReadonlyMap<string, RegisteredFont>,

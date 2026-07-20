@@ -16,8 +16,8 @@ import { spanExtentsOverlap } from "./table-cells";
 import { updateElementById as updateById } from "./tree";
 
 /**
- * id の要素（トップレベル・flex 子孫の両方）を next で置換する。
- * next.id === id かつ型不変が呼び出し側の契約（フォームは同型の要素を組み立てて渡す）。
+ * Replaces the element with id (either top-level or a flex descendant) with next.
+ * It's the caller's contract that next.id === id and the type is unchanged (the form builds and passes an element of the same type).
  */
 export function replaceElement(
   document: IrDocument,
@@ -28,9 +28,9 @@ export function replaceElement(
 }
 
 /**
- * ids の各要素（トップレベル・flex 子孫の両方）に update を適用する。
- * update は無変化なら引数と同一参照を返す契約（updateElementById の structural sharing に乗る）。
- * 1つも変化しなければ同一参照の document を返す。存在しない id は無視する。
+ * Applies update to each element in ids (either top-level or a flex descendant).
+ * It's update's contract to return the same reference as its argument when unchanged (this rides on updateElementById's structural sharing).
+ * Returns the same reference for document if nothing changed. Nonexistent ids are ignored.
  */
 export function updateElements(
   document: IrDocument,
@@ -40,7 +40,7 @@ export function updateElements(
   return ids.reduce((doc, id) => updateById(doc, id, update), document);
 }
 
-/** direction を切り替える。明示主軸寸法は除去して導出に戻す（軸の意味が変わった値を残さない） */
+/** Switches direction. Removes an explicit main-axis dimension, reverting it to derived (doesn't leave a value whose axis meaning has changed) */
 export function setFlexDirection(
   document: IrDocument,
   id: string,
@@ -55,7 +55,7 @@ export function setFlexDirection(
   });
 }
 
-/** 主軸寸法の明示（number、roundMm 適用）/ 導出への切替（undefined = 属性除去） */
+/** Makes the main-axis dimension explicit (a number, with roundMm applied) / switches it back to derived (undefined = remove the attribute) */
 export function setFlexMainSize(
   document: IrDocument,
   id: string,
@@ -77,7 +77,7 @@ export function setFlexMainSize(
   });
 }
 
-/** image の src のみを差し替える。非同期読込の完了時に他属性の編集を巻き戻さないための専用操作 */
+/** Replaces only an image's src. A dedicated operation so an async load's completion doesn't roll back edits to other attributes */
 export function setImageSrc(
   document: IrDocument,
   id: string,
@@ -98,7 +98,7 @@ function updateTable(
   );
 }
 
-/** 末尾に列を追加する。key はその table 内で未使用の最小 n の "col<n>"、label は "column<n>"、width 40、align "left" */
+/** Appends a column at the end. key is "col<n>" with the smallest n unused within that table; label is "column<n>"; width 40; align "left" */
 export function addTableColumn(
   document: IrDocument,
   tableId: string,
@@ -119,7 +119,7 @@ export function addTableColumn(
   });
 }
 
-/** overrides が空なら cellOverrides 属性ごと除去し、そうでなければ差し替える */
+/** Removes the cellOverrides attribute entirely if overrides is empty; otherwise replaces it */
 function withCellOverrides(
   table: IrTableElement,
   overrides: readonly IrTableCellOverride[],
@@ -131,7 +131,7 @@ function withCellOverrides(
   return { ...table, cellOverrides: overrides };
 }
 
-/** spans が空なら cellSpans 属性ごと除去し、そうでなければ差し替える */
+/** Removes the cellSpans attribute entirely if spans is empty; otherwise replaces it */
 function withCellSpans(
   table: IrTableElement,
   spans: readonly IrTableCellSpan[],
@@ -143,7 +143,7 @@ function withCellSpans(
   return { ...table, cellSpans: spans };
 }
 
-/** colSpan を差し替える。1（デフォルト）なら属性を持たせず、同値なら同一参照を返す */
+/** Replaces colSpan. Doesn't set the attribute when 1 (the default); returns the same reference when the value is unchanged */
 function withColSpan(span: IrTableCellSpan, colSpan: number): IrTableCellSpan {
   if (colSpan === (span.colSpan ?? 1)) {
     return span;
@@ -153,9 +153,9 @@ function withColSpan(span: IrTableCellSpan, colSpan: number): IrTableCellSpan {
 }
 
 /**
- * 列並び変更後の cellSpans を検証（M20）が通る形に整える。列範囲からのはみ出しと
- * mergeSameValue 列への到達は colSpan を切り詰め、1×1 になった結合と先行する結合に
- * 重なった結合は破棄する。
+ * Adjusts cellSpans after a column reorder into a shape that passes validation (M20). Overflow
+ * past the column range and reaching a mergeSameValue column truncate colSpan; a merge that
+ * becomes 1x1, or one that now overlaps an earlier merge, is discarded.
  */
 function normalizeCellSpans(
   columns: readonly IrColumn[],
@@ -192,8 +192,9 @@ function normalizeCellSpans(
 }
 
 /**
- * index の列を削除する。columns が1個のときは何もしない。削除列を起点に指す上書き・
- * 結合は破棄し、削除列を被覆していた結合は colSpan を1列ぶん狭める（1×1 になれば破棄）。
+ * Deletes the column at index. Does nothing when columns has only 1 item. Overrides/merges
+ * that originate at the deleted column are discarded, and merges that covered the deleted
+ * column have colSpan narrowed by one column (discarded if it becomes 1x1).
  */
 export function removeTableColumn(
   document: IrDocument,
@@ -238,9 +239,9 @@ export function removeTableColumn(
 }
 
 /**
- * index の列を delta 方向の隣と入れ替える。端では何もしない。入れ替えで成立しなくなる
- * 結合（列範囲からのはみ出し・mergeSameValue 列への到達・他の結合との重なり）は
- * 切り詰め・破棄する。
+ * Swaps the column at index with its neighbor in the delta direction. Does nothing at the
+ * edge. Merges that become invalid due to the swap (overflow past the column range, reaching
+ * a mergeSameValue column, overlap with another merge) are truncated or discarded.
  */
 export function moveTableColumn(
   document: IrDocument,
@@ -314,7 +315,7 @@ export function updateTableColumn(
   });
 }
 
-/** 末尾に結合を追加する。既定は先頭列の行0を起点とした縦2行の結合 */
+/** Appends a merge at the end. Default is a 2-row vertical merge starting at row 0 of the first column */
 export function addTableCellSpan(
   document: IrDocument,
   tableId: string,
@@ -329,7 +330,7 @@ export function addTableCellSpan(
   });
 }
 
-/** span を末尾に追加する。妥当性は呼び出し側が先回りで検査する契約 */
+/** Appends span at the end. It's the caller's contract to have already validated it */
 export function appendTableCellSpan(
   document: IrDocument,
   tableId: string,
@@ -342,8 +343,8 @@ export function appendTableCellSpan(
 }
 
 /**
- * index の結合に patch を適用する。rowSpan / colSpan は 1（デフォルト）なら属性を
- * 持たせず、"header" 行では rowSpan を除去する。変化が無ければ同一参照を返す。
+ * Applies patch to the merge at index. rowSpan / colSpan don't get an attribute when 1 (the
+ * default), and rowSpan is removed on a "header" row. Returns the same reference if unchanged.
  */
 export function updateTableCellSpan(
   document: IrDocument,
@@ -379,7 +380,7 @@ export function updateTableCellSpan(
   });
 }
 
-/** index の結合を削除する。0件になれば cellSpans 属性ごと除去する */
+/** Deletes the merge at index. Removes the cellSpans attribute entirely if it becomes empty */
 export function removeTableCellSpan(
   document: IrDocument,
   tableId: string,
@@ -397,7 +398,7 @@ export function removeTableCellSpan(
   });
 }
 
-/** indices の結合をまとめて削除する。0件になれば cellSpans 属性ごと除去し、対象なしなら同一参照を返す */
+/** Deletes the merges at indices in bulk. Removes the cellSpans attribute entirely if it becomes empty; returns the same reference if there's nothing to remove */
 export function removeTableCellSpansAt(
   document: IrDocument,
   tableId: string,
@@ -417,9 +418,9 @@ export function removeTableCellSpansAt(
 }
 
 /**
- * 表のセル固定値上書きを設定する。value が空文字列なら当該 (row, key) の上書きを削除し、
- * 上書きが 0 件になったら cellOverrides 属性ごと除去する。
- * 変化が無ければ同一参照の document を返す（commit-if-changed 規約）。
+ * Sets a table cell's fixed-value override. If value is an empty string, removes the override
+ * for that (row, key), and removes the cellOverrides attribute entirely once overrides reaches 0.
+ * Returns the same reference for document if unchanged (the commit-if-changed convention).
  */
 export function setTableCellOverride(
   document: IrDocument,
@@ -465,7 +466,7 @@ export function setFontRegular(document: IrDocument, name: string): IrDocument {
     : { ...document, font: { ...document.font, regular: name } };
 }
 
-/** regular 以外のスロットの論理名を設定する。undefined でスロット解除（属性除去） */
+/** Sets the logical name of a slot other than regular. undefined clears the slot (removes the attribute) */
 export function setFontSlot(
   document: IrDocument,
   slot: Exclude<IrFontSlot, "regular">,

@@ -8,7 +8,7 @@ export interface CellAddress {
   readonly col: number;
 }
 
-/** TableSketch と同じ規範式（headerHeight を除いた高さを rowHeight で割った整数行数） */
+/** Same canonical formula as TableSketch (the integer row count from the height minus headerHeight, divided by rowHeight) */
 export function visibleRowCount(table: IrTableElement, box: MmBox): number {
   return Math.max(
     0,
@@ -16,7 +16,7 @@ export function visibleRowCount(table: IrTableElement, box: MmBox): number {
   );
 }
 
-/** 紙座標 mm → セル番地。box（表の箱）の外なら null */
+/** Paper coordinates mm → cell address. null if outside box (the table's bounding box) */
 export function cellAtPoint(
   table: IrTableElement,
   box: MmBox,
@@ -54,8 +54,9 @@ export function cellAtPoint(
 }
 
 /**
- * アンカー（固定）とフォーカスから正規化矩形を作る。アンカーがヘッダ帯ならヘッダ帯の横選択に
- * 固定する（フォーカスの row は無視）。アンカーが明細でフォーカスがヘッダ帯に入ったら行0扱い。
+ * Builds a normalized rectangle from the anchor (fixed point) and focus. If the anchor is in the
+ * header band, it is fixed to a horizontal selection within the header band (the focus's row is
+ * ignored). If the anchor is in the detail rows and the focus enters the header band, it is treated as row 0.
  */
 export function cellRectFrom(
   anchor: CellAddress,
@@ -76,7 +77,7 @@ export function cellRectFrom(
   };
 }
 
-/** 選択矩形の紙座標 mm 箱（ハイライト描画用） */
+/** The selection rectangle's paper-coordinate mm box (for highlight rendering) */
 export function cellRectBox(
   table: IrTableElement,
   box: MmBox,

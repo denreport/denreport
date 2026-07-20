@@ -27,7 +27,7 @@ async function toPx(page: Page, mm: Mm): Promise<Mm> {
   return { x: box.x + mm.x * pxPerMm, y: box.y + mm.y * pxPerMm };
 }
 
-/** 要素の現在の描画中心を mm 座標で返す。リサイズ・並び替え後の実位置を追うのに使う */
+/** Returns the element's current rendered center in mm coordinates. Used to track its actual position after resize/reorder */
 async function elementCenterMm(page: Page, id: string): Promise<Mm> {
   const el = await page.locator(`.apx-el[data-apx-id="${id}"]`).boundingBox();
   if (el === null) {
@@ -74,7 +74,7 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
   });
 
   await test.step("段階的選択: 同じ矩形への1クリック目で flex、2クリック目で子", async () => {
-    // flex1 は子 text1 が1つだけで gap も無いため、両者の箱は完全に重なる
+    // flex1 has only one child, text1, and no gap, so the two boxes fully overlap
     await clickCanvas(page, { x: 70, y: 63 });
     await expect(props.locator(".apx-props-id")).toHaveText("flex1");
 
@@ -83,14 +83,14 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
   });
 
   await test.step("既存要素のドラッグ挿入: text2 を flex1 へ", async () => {
-    // flex1 の現在の箱（y60-68）の下寄りに落として text1 の後ろへ挿入する
+    // Drop it toward the bottom of flex1's current box (y60-68) to insert it after text1
     await dragOnCanvas(page, await elementCenterMm(page, "text2"), {
       x: 80,
       y: 67,
     });
     await expect(props.locator(".apx-props-id")).toHaveText("text2");
 
-    // 自動保存は 500ms デバウンスのため、flex1.children への反映が書き込まれるまで待つ
+    // Autosave is debounced 500ms, so wait until the change is written to flex1.children
     await page.waitForFunction(() => {
       const raw = localStorage.getItem("denreport-designer.ir");
       if (raw === null) {
@@ -130,7 +130,7 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
   });
 
   await test.step("子のキャンバスリサイズ: text1 の se ハンドルで w/h を広げると text2 が再解決される", async () => {
-    // 直前の選択（兄弟の text2）から text1 の専有領域を直接クリックすると1手で text1 が選ばれる
+    // From the previous selection (sibling text2), clicking directly on text1's exclusive area selects text1 in one step
     await clickCanvas(page, { x: 70, y: 63 });
     await expect(props.locator(".apx-props-id")).toHaveText("text1");
 
@@ -155,7 +155,7 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
     const after = await elementCenterMm(page, "text2");
     expect(after.y).toBeGreaterThan(before.y);
 
-    // 自動保存は 500ms デバウンスのため、リサイズ後の w/h が書き込まれるまで待つ
+    // Autosave is debounced 500ms, so wait until the post-resize w/h is written
     await page.waitForFunction(() => {
       const raw = localStorage.getItem("denreport-designer.ir");
       if (raw === null) {
@@ -202,7 +202,7 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
     const from = await elementCenterMm(page, "text2");
     await dragOnCanvas(page, from, { x: 150, y: 200 });
 
-    // 自動保存は 500ms デバウンスのため、text2 のトップレベル化が書き込まれるまで待つ
+    // Autosave is debounced 500ms, so wait until text2's promotion to top-level is written
     await page.waitForFunction(() => {
       const raw = localStorage.getItem("denreport-designer.ir");
       if (raw === null) {
@@ -228,8 +228,8 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
         readonly children?: readonly { readonly id: string }[];
       }[];
     };
-    // ドラッグ始点は text2 の中心（40x8 の箱で grabOffset=(20,4)）なので、
-    // 確定 x/y はドロップ点からその分だけ引いた値になる
+    // The drag start point is text2's center (a 40x8 box, so grabOffset=(20,4)), so the
+    // committed x/y is the drop point minus that offset
     const text2 = parsed.elements.find((el) => el.id === "text2");
     expect(text2?.x).toBeCloseTo(130, 0);
     expect(text2?.y).toBeCloseTo(196, 0);

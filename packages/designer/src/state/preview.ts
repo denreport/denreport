@@ -16,7 +16,7 @@ import type { Locale } from "../i18n/locale";
 import { getMessages } from "../i18n/messages";
 import { parseSampleJson } from "./sample-data";
 
-/** プレビュー用のデータ補完の記録。source = "json"（パース不能）| "data"（C01/C02 の補完） */
+/** A record of data completion for preview. source = "json" (unparseable) | "data" (C01/C02 completion) */
 export interface PreviewWarning {
   readonly source: "json" | "data";
   readonly message: string;
@@ -30,9 +30,9 @@ export type PreviewResult =
     }
   | { readonly ok: false; readonly errors: readonly IrError[] };
 
-/** 前提条件: document は正規化済みで validateIr 合格（呼び出し側がゲートする）。
-    sampleJson をパースし、C01/C02 違反キーを補完（text → "{キー名}"、
-    table bind → 空配列）したうえで lowerIr を呼ぶ。書き出し経路の厳格検証には触れない */
+/** Precondition: document is normalized and passes validateIr (the caller gates this).
+    Parses sampleJson, completes C01/C02-violating keys (text -> "{keyName}", table bind ->
+    an empty array), then calls lowerIr. Doesn't touch the export path's strict validation */
 export function buildPreview(
   document: IrDocument,
   sampleJson: string,
@@ -48,7 +48,7 @@ export function buildPreview(
   }
   const data = parsed.data;
 
-  // C01 は C02 より先に並ぶため、text と table が同一キーを共有する場合は table が勝つ
+  // C01 sorts before C02, so when text and table share the same key, table wins
   for (const problem of analyzeData(document, data, { locale })) {
     warnings.push({ source: "data", message: problem.message });
     data[problem.key] = problem.kind === "table" ? [] : `{${problem.key}}`;
@@ -63,10 +63,10 @@ export function buildPreview(
 
 const GENERATED_TABLE_ROWS = 3;
 
-/** 文書の bind キーから既定サンプル JSON（2スペースインデント）を生成する。
-    text・barcode 内の {key} トークン → キー名そのものを値に、
-    table bind → 3行（セル値 "<列key> <行番号>"）。
-    キーは文書内の出現順・重複なし。text と table が同一キーを共有する場合は table を優先する */
+/** Generates a default sample JSON (2-space indent) from the document's bind keys.
+    {key} tokens inside text/barcode -> the key name itself as the value;
+    table bind -> 3 rows (cell values are "<column key> <row number>").
+    Keys are in document appearance order, deduplicated. When text and table share the same key, table takes priority */
 export function generateSampleData(document: IrDocument): string {
   const sample = new Map<string, unknown>();
   function visit(element: IrElement | IrFlexChild): void {
@@ -105,8 +105,9 @@ export function generateSampleData(document: IrDocument): string {
 
 export const PT_TO_MM = CORE_PT_TO_MM;
 
-/** 規範ベースライン式の実装点。行 i（layoutTextLines 済みの行）のベースライン y（mm・ページ座標）=
-    el.y + (ascentPerEm + (lineHeight − 1) / 2 + i × lineHeight) × el.fontSize × PT_TO_MM */
+/** The implementation point of the normative baseline formula. The baseline y (mm, page
+    coordinates) of line i (a line already run through layoutTextLines) =
+    el.y + (ascentPerEm + (lineHeight - 1) / 2 + i x lineHeight) x el.fontSize x PT_TO_MM */
 export function textBaselinesMm(
   el: LoweredTextElement,
   ascentPerEm: number,

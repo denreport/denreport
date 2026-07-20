@@ -12,7 +12,7 @@ import {
 import type { EditorStore } from "../../state/store";
 import { NumberField, SegmentField, TextAreaField, TextField } from "./fields";
 
-/** 権限拒否・非対応ブラウザでも操作を継続できるよう、失敗は無視する */
+/** Ignores failures so the operation can continue even on permission denial or an unsupported browser */
 function copyToClipboard(text: string): void {
   navigator.clipboard?.writeText(text)?.catch(() => {});
 }
@@ -126,7 +126,7 @@ export function FootnotesSection(props: {
       {footnotes.notes.map((note, i) => {
         const textError = errorMessageFor(errors, `notes[${i}].text`);
         return (
-          // biome-ignore lint/suspicious/noArrayIndexKey: 注記に安定 id がなく、id 編集中の重複は編集の常態のため index で識別する
+          // biome-ignore lint/suspicious/noArrayIndexKey: notes have no stable id, and duplicates while editing the id are a normal part of editing, so index is used to identify them
           <div key={i} className="apx-col-card">
             <div className="apx-sect-h">
               {f.noteHeading(i + 1)}

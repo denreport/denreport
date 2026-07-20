@@ -105,7 +105,7 @@ export function Sidebar(props: {
       }
     >
       <Palette beginPlacement={beginPlacement} onQuickAdd={onQuickAdd} />
-      {/* biome-ignore lint/a11y/useSemanticElements: <hr> は focusable/interactive にできず、ドラッグ・キーボード操作を持たせられない */}
+      {/* biome-ignore lint/a11y/useSemanticElements: <hr> cannot be made focusable/interactive, so it can't support drag/keyboard operation */}
       <div
         role="separator"
         aria-orientation="horizontal"

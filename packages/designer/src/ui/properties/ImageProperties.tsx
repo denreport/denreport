@@ -41,7 +41,7 @@ export function ImageProperties(props: ElementFormProps): ReactNode {
       if (typeof reader.result !== "string") {
         return;
       }
-      // 読込完了までの間に同じ要素の別属性が編集され得るため、レンダー時の el を使わず最新文書の src だけを差し替える
+      // Another attribute of the same element may be edited before the read completes, so replace only the src on the latest document instead of using the el captured at render time
       const document = store.getState().document;
       const updated = setImageSrc(document, el.id, reader.result);
       if (updated !== document) {

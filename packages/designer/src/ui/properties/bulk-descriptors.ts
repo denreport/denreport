@@ -52,7 +52,7 @@ export type BulkDescriptor =
       readonly apply: (el: AnyElement, value: string) => AnyElement;
     };
 
-// pages/x/y は IrPositioned 由来の属性なので "in" 判定だけで table・flex 子要素を自然に除外できる
+// pages/x/y are attributes originating from IrPositioned, so an "in" check alone naturally excludes table and flex child elements
 export function buildBulkDescriptors(
   messages: Pick<Messages, "properties" | "propertiesBulk">,
 ): readonly BulkDescriptor[] {
@@ -376,7 +376,7 @@ export function buildBulkDescriptors(
   ];
 }
 
-/** 選択全 view に適用可能なディスクリプタ（型交差 + topLevelOnly 判定） */
+/** Descriptors applicable to all selected views (type intersection + topLevelOnly check) */
 export function applicableDescriptors(
   views: readonly PlacedElementView[],
   descriptors: readonly BulkDescriptor[],
@@ -399,7 +399,7 @@ function uniformOrMixed<T>(values: readonly T[]): BulkValue<T> {
     : { kind: "mixed" };
 }
 
-/** 選択全要素から read した値の uniform / mixed 集約 */
+/** Aggregates the values read from all selected elements into uniform / mixed */
 export function bulkValueFor(
   descriptor: BulkDescriptor,
   elements: readonly AnyElement[],

@@ -42,8 +42,8 @@ interface RowInterval {
   readonly colSpan: number;
 }
 
-// 検証前の文書（デザイナーの編集途中）にも適用されるため、
-// 不正な key・範囲超過はエラーにせず読み飛ばし・切り詰めで吸収する
+// This is also applied to pre-validation documents (mid-edit in the designer),
+// so an invalid key or out-of-range value is absorbed by skipping/truncating rather than raising an error
 function staticIntervals(table: IrTableElement): {
   readonly header: readonly TableMergeRect[];
   readonly body: readonly RowInterval[];
@@ -78,7 +78,7 @@ function dataIntervals(
   rows: readonly IrTableRow[],
 ): RowInterval[] {
   const out: RowInterval[] = [];
-  // 左の mergeSameValue 列の値が変わる行では、右の列の結合区間も切る（階層グルーピング）
+  // At rows where a left mergeSameValue column's value changes, also cut the merge interval of columns to its right (hierarchical grouping)
   const boundaries = new Set<number>();
   table.columns.forEach((column, col) => {
     if (column.mergeSameValue !== true) return;

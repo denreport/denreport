@@ -20,7 +20,7 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
-  // jsdom は setPointerCapture を実装しないため、ドラッグ検証のみスタブで補う
+  // jsdom does not implement setPointerCapture, so stub it just for drag verification
   Element.prototype.setPointerCapture = vi.fn();
   Element.prototype.releasePointerCapture = vi.fn();
 });
@@ -114,7 +114,7 @@ describe("ポインタ操作", () => {
     await vi.waitFor(() => {
       expect(sidebarEl().classList.contains("has-split")).toBe(true);
     });
-    // jsdom は getBoundingClientRect が常に 0 のため、clamp の下限に縮退した構造のみ検証する
+    // jsdom always returns 0 from getBoundingClientRect, so only verify the structure degraded to clamp's lower bound
     expect(sidebarEl().style.getPropertyValue("--apx-palette-h")).toBe(
       `${MIN_PALETTE_HEIGHT}px`,
     );

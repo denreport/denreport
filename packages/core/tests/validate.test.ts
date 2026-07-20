@@ -247,7 +247,7 @@ describe("validateIr", () => {
       const elements = doc.elements.map((el) =>
         el.id === "flex1" ? { ...el, x: 200 } : el,
       );
-      // column 方向のコンテナ幅は交差軸導出（子の w の最大値 = 10）なので x=200 で 200+10=210 に収まる
+      // For a column-direction container, width is derived from the cross axis (the max of the children's w = 10), so at x=200 it fits within 200+10=210
       expectNoRule(validateIr(withElements(doc, elements)), "M02");
     });
 
@@ -315,13 +315,13 @@ describe("validateIr", () => {
 
     it("judges the unrotated box: rotate neither causes nor cures an M02 error", () => {
       const doc = baseDocument();
-      // 回転すれば紙からはみ出す位置だが、非回転の箱は収まっている
+      // A position that would overflow the page if rotated, but the unrotated box fits
       const inside = doc.elements.map((el) =>
         el.id === "r1" ? { ...el, x: 160, w: 50, rotate: 45 } : el,
       );
       expectNoRule(validateIr(withElements(doc, inside)), "M02");
 
-      // 回転すれば紙に収まる位置だが、非回転の箱がはみ出している
+      // A position that would fit the page if rotated, but the unrotated box overflows
       const outside = doc.elements.map((el) =>
         el.id === "r1" ? { ...el, x: 161, w: 50, rotate: 90 } : el,
       );
@@ -382,7 +382,7 @@ describe("validateIr", () => {
       );
       const zeroErrors = validateIr(withElements(doc, zero));
       expectRule(zeroErrors, "M03", "elements[5].h");
-      // 内容寸法 11 に対し明示値 0 は下回るため、全件列挙により M12 も同時に報告される
+      // Since the explicit value 0 is below the content dimension of 11, M12 is also reported at the same time because all violations are enumerated
       expectRule(zeroErrors, "M12", "elements[5].h");
 
       const negative = doc.elements.map((el) =>
@@ -703,7 +703,7 @@ describe("validateIr", () => {
 
     it("accepts the boundary where the explicit dimension equals the content dimension", () => {
       const doc = baseDocument();
-      // children: h=5 + h=5 + gap(1) = 11 の内容寸法ちょうど
+      // children: h=5 + h=5 + gap(1) = 11, exactly the content dimension
       const elements = doc.elements.map((el) =>
         el.type === "flex" ? { ...el, h: 11 } : el,
       );

@@ -77,7 +77,7 @@ function bindStrFn(messages: Messages): string {
   ].join("\n");
 }
 
-// ir/interpolate.ts の走査パターンと同一（二重実装のため同期が必要）
+// Identical to the traversal pattern in ir/interpolate.ts (needs to stay in sync, since this is a duplicate implementation)
 const INTERPOLATE_FN = [
   '_TOKEN_RE = re.compile(r"\\{([A-Za-z_][A-Za-z0-9_]{0,63})\\}")',
   "",
@@ -85,7 +85,7 @@ const INTERPOLATE_FN = [
   "    return _TOKEN_RE.sub(lambda m: _bind_str(data, m.group(1)), template)",
 ].join("\n");
 
-// ir/text-layout.ts の折り返し・行頭禁則アルゴリズムと同一（二重実装のため同期が必要）
+// Identical to the wrapping / line-head prohibition (kinsoku) algorithm in ir/text-layout.ts (needs to stay in sync, since this is a duplicate implementation)
 const WRAP_FN = [
   '_KINSOKU_HEAD = "、。，．）｝］」』】〕〉》｡､｣,.)]}"',
   "",
@@ -197,7 +197,7 @@ function buildConstants(
   ].join("\n");
 }
 
-// lowerIr 内の非公開関数と同じ式（IR のページ分割仕様そのもの）
+// The same formula as the private function inside lowerIr (this is the IR's page-splitting spec itself)
 function rowCapacity(
   maxY: number,
   top: number,
@@ -287,8 +287,8 @@ function tableHasMerges(table: IrTableElement): boolean {
   );
 }
 
-// 結合つきの表は、被覆セル・分節罫線が実行時データに依存するため
-// _chunk_merges の結果を参照する形の関数を生成する
+// For tables with merges, covered cells and segmented gridlines depend on
+// runtime data, so generate a function that references _chunk_merges's result.
 function buildMergedTableFunction(
   table: IrTableElement,
   regularName: string,
@@ -325,7 +325,7 @@ function buildMergedTableFunction(
   const xsLiteral = Array.from({ length: columnCount + 1 }, (_, i) =>
     pyNumber(xOf(table, i)),
   ).join(", ");
-  // ヘッダの結合は静的（データ非依存）なので生成時に確定させる
+  // Header merges are static (data-independent), so resolve them at generation time
   const headerMerges = computeChunkMerges(table, [], 0, 0);
 
   const lines: string[] = [
@@ -754,7 +754,8 @@ function buildTemplateSource(
   const needsRect =
     hasTables || placed.some((element) => element.type === "rect");
   const needsEllipse = placed.some((element) => element.type === "ellipse");
-  // トークンつき text・table・pageNumber はいずれも値が実行時にしか確定せず、Python 側で折り返す
+  // For tokenized text, table, and pageNumber, the value is only resolved at
+  // runtime in every case, so wrapping happens on the Python side.
   const needsWrapFn = hasTokenText || hasTables || hasPageNumber;
 
   const helperFns = [
@@ -775,10 +776,11 @@ function buildTemplateSource(
   ];
 
   const charWidthOf = (slot: IrFontSlot): CharWidthEm =>
-    // effectiveFontOf により解決先スロットのデータ存在は保証される
+    // effectiveFontOf guarantees that data exists for the resolved slot
     (slots.get(slot) as ResolvedSlotFont).charWidthEm;
 
-  // align は行分割そのものには影響しない（justify の字間は生成 Python が実行時に計算する）ため固定値を渡す
+  // align doesn't affect the line splitting itself (the generated Python
+  // computes justify's character spacing at runtime), so pass a fixed value.
   const wrapWith = (
     charWidthEm: CharWidthEm,
     content: string,
