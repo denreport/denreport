@@ -16,6 +16,7 @@ from pathlib import Path
 from pypdf import PdfReader
 
 CODE_FILE = "report.py"
+OFL_FILE = "OFL.txt"
 PAGE_COUNT_RE = re.compile(r"^PAGE_COUNT = (\d+)$", re.MULTILINE)
 FONT_ENTRY_RE = re.compile(r'^    "[^"]+": \("([^"]+)", [-\d.eE+]+\),$', re.MULTILINE)
 
@@ -39,7 +40,10 @@ def verify(zip_path):
         font_files = FONT_ENTRY_RE.findall(source)
         if not font_files:
             return "FONTS constant not found"
-        if sorted(names) != sorted([CODE_FILE, *font_files]):
+        # OFL.txt は同梱フォント使用時にのみ添付されるため、あってもなくても許容する。
+        expected = sorted([CODE_FILE, *font_files])
+        actual = sorted(n for n in names if n != OFL_FILE)
+        if actual != expected:
             return f"unexpected zip entries: {names}"
 
         out_pdf = tmp / "out.pdf"

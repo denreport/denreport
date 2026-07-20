@@ -660,6 +660,7 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
     expect(entries.map((e) => e.name).sort()).toEqual([
       "NotoSansJP.ttf",
       "NotoSansJPBold.ttf",
+      "OFL.txt",
       "report.py",
     ]);
     const code = entryOf(entries, "report.py").data.toString("utf8");
