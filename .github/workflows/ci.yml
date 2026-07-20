@@ -32,6 +32,8 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm --filter @denreport/web run build
+      - run: pnpm run build:packages
+      - run: bash scripts/check-build-output.sh
       - run: bash scripts/check-comment-refs.sh
 
   reportlab-exec:

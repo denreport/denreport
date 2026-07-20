@@ -9,19 +9,38 @@
     "./styles/tokens.css": "./src/ui/styles/tokens.css",
     "./styles/app.css": "./src/ui/styles/app.css"
   },
+  "files": [
+    "dist",
+    "src/ui/styles"
+  ],
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./styles/tokens.css": "./src/ui/styles/tokens.css",
+      "./styles/app.css": "./src/ui/styles/app.css"
+    }
+  },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run"
   },
   "dependencies": {
     "@denreport/core": "workspace:*",
-    "@denreport/targets": "workspace:*",
-    "react": "19.2.7",
-    "react-dom": "19.2.7"
+    "@denreport/targets": "workspace:*"
+  },
+  "peerDependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
-    "jsdom": "^29.1.1"
+    "jsdom": "^29.1.1",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
   }
 }
