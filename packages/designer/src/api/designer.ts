@@ -144,7 +144,7 @@ export class Designer {
 
     container.replaceChildren();
     this.rootEl = container.ownerDocument.createElement("div");
-    this.rootEl.className = "apx-designer";
+    this.rootEl.className = "dr-designer";
     container.append(this.rootEl);
 
     this.theme = options?.theme ?? "auto";

@@ -170,7 +170,7 @@ export function TableSketch(props: {
       {stripeRows.map(({ q, color }) => (
         <span
           key={q}
-          className="apx-tbl-stripe"
+          className="dr-tbl-stripe"
           style={
             {
               "--sy": table.headerHeight + q * table.rowHeight,
@@ -180,11 +180,11 @@ export function TableSketch(props: {
           }
         />
       ))}
-      <span className="apx-tbl-frame" />
+      <span className="dr-tbl-frame" />
       {hlines.map((line) => (
         <span
           key={line.key}
-          className="apx-tbl-hline"
+          className="dr-tbl-hline"
           style={
             {
               "--ly": line.y,
@@ -198,7 +198,7 @@ export function TableSketch(props: {
       {vlines.map((line) => (
         <span
           key={line.key}
-          className="apx-tbl-vline"
+          className="dr-tbl-vline"
           style={
             {
               "--lx": line.x,
@@ -212,8 +212,8 @@ export function TableSketch(props: {
       {headers.map((header) => (
         <span
           key={table.columns[header.col]?.key ?? header.col}
-          className="apx-tbl-th"
-          data-apx-col={header.col}
+          className="dr-tbl-th"
+          data-dr-col={header.col}
           style={
             {
               "--cx": header.x,
@@ -229,9 +229,9 @@ export function TableSketch(props: {
       {dataCells.map((cell) => (
         <span
           key={`${cell.row}-${cell.col}`}
-          className={`apx-tbl-td apx-align-${cell.align}${cell.overridden ? " is-override" : ""}`}
-          data-apx-row={cell.row}
-          data-apx-col={cell.col}
+          className={`dr-tbl-td dr-align-${cell.align}${cell.overridden ? " is-override" : ""}`}
+          data-dr-row={cell.row}
+          data-dr-col={cell.col}
           title={cell.overridden ? m.canvas.overriddenCellTitle : undefined}
           style={
             {
@@ -248,7 +248,7 @@ export function TableSketch(props: {
       ))}
       {showNote && (
         <span
-          className="apx-tbl-note"
+          className="dr-tbl-note"
           style={{ "--ny": noteY } as CSSProperties}
         >
           bind: {table.bind} ・ minRows {table.minRows} ・ maxY {table.maxY}

@@ -135,7 +135,7 @@ async function uploadLogo(props: Locator): Promise<void> {
     mimeType: "image/png",
     buffer: LOGO_BUFFER,
   });
-  await expect(props.locator(".apx-field-static")).toHaveText("image/png");
+  await expect(props.locator(".dr-field-static")).toHaveText("image/png");
 }
 
 const ELEMENTS: readonly ElementSpec[] = [
@@ -397,7 +397,7 @@ async function placeElement(
   spec: ElementSpec,
 ): Promise<void> {
   await dragFromPalette(page, spec.palette, SAFE_SPOT);
-  const el = page.locator(`.apx-el[data-apx-id="${spec.id}"]`);
+  const el = page.locator(`.dr-el[data-dr-id="${spec.id}"]`);
   await expect(el).toBeVisible();
   await el.click();
   await commitField(props.getByLabel("x", { exact: true }), String(spec.x));
@@ -436,21 +436,21 @@ function entryOf(entries: readonly ZipEntryData[], name: string): ZipEntryData {
 
 async function expectTableWarning(exportDialog: Locator): Promise<void> {
   const tableCard = exportDialog
-    .locator(".apx-warn-card")
+    .locator(".dr-warn-card")
     .filter({ hasText: "表の行がページをまたぐ" });
   await expect(tableCard).toBeVisible();
   await expect(
-    tableCard.locator(".apx-chip").filter({ hasText: "table1" }),
+    tableCard.locator(".dr-chip").filter({ hasText: "table1" }),
   ).toBeVisible();
 }
 
 async function expectPageNumberWarning(exportDialog: Locator): Promise<void> {
   const card = exportDialog
-    .locator(".apx-warn-card")
+    .locator(".dr-warn-card")
     .filter({ hasText: "確定した文字列に変換" });
   await expect(card).toBeVisible();
   await expect(
-    card.locator(".apx-chip").filter({ hasText: "pageNumber1" }),
+    card.locator(".dr-chip").filter({ hasText: "pageNumber1" }),
   ).toBeVisible();
 }
 
@@ -525,20 +525,20 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
   await test.step("要素配置: flex（発行者担当者情報）", async () => {
     // flex1's final position overlaps the safe spot, so from here on we don't drop onto the safe spot.
     await dragFromPalette(page, FLEX_PALETTE, SAFE_SPOT);
-    const flexEl = page.locator('.apx-el[data-apx-id="flex1"]');
+    const flexEl = page.locator('.dr-el[data-dr-id="flex1"]');
     await expect(flexEl).toBeVisible();
     // flex1 itself is already selected right after the drop, so commit x/y directly without an intervening click-select
     await commitField(props.getByLabel("x", { exact: true }), "130");
     await commitField(props.getByLabel("y", { exact: true }), "85");
 
-    const text20 = page.locator('.apx-el[data-apx-id="text20"]');
+    const text20 = page.locator('.dr-el[data-dr-id="text20"]');
     await expect(text20).toBeVisible();
     await text20.click();
     await setStaticText(props, FLEX_CHILD_TEXT.text20);
 
     // Drop below text20's main-axis center (y89) to get a trailing insert (insertIndex 1)
     await dragFromPalette(page, TEXT_PALETTE, { x: 140, y: 92 });
-    const text21 = page.locator('.apx-el[data-apx-id="text21"]');
+    const text21 = page.locator('.dr-el[data-dr-id="text21"]');
     await expect(text21).toBeVisible();
     await setStaticText(props, FLEX_CHILD_TEXT.text21);
   });
@@ -555,11 +555,11 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
 
   await test.step("プレビュー確認", async () => {
     await expect(preview.getByText("1 ページ", { exact: true })).toBeVisible();
-    await expect(preview.locator(".apx-preview-warnings")).toHaveCount(0);
+    await expect(preview.locator(".dr-preview-warnings")).toHaveCount(0);
     // The "1 / 1" text at the bottom of the page and the preview's own page-number caption end up
     // as the same string, so scope the match for pageNumber1's expanded output to inside the SVG
     await expect(
-      preview.locator(".apx-preview-svg").getByText("1 / 1", { exact: true }),
+      preview.locator(".dr-preview-svg").getByText("1 / 1", { exact: true }),
     ).toBeVisible();
     await expect(preview.getByText(FLEX_CHILD_TEXT.text20)).toBeVisible();
     await preview.getByRole("button", { name: "閉じる" }).click();
@@ -577,7 +577,7 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
     await expectTableWarning(exportDialog);
     await expectPageNumberWarning(exportDialog);
     await expect(
-      exportDialog.locator(".apx-warn-card").filter({ hasText: "Pillow" }),
+      exportDialog.locator(".dr-warn-card").filter({ hasText: "Pillow" }),
     ).toHaveCount(0);
 
     const downloadPromise = page.waitForEvent("download");
@@ -642,11 +642,11 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
     await expectTableWarning(exportDialog);
     await expectPageNumberWarning(exportDialog);
     const imageCard = exportDialog
-      .locator(".apx-warn-card")
+      .locator(".dr-warn-card")
       .filter({ hasText: "Pillow" });
     await expect(imageCard).toBeVisible();
     await expect(
-      imageCard.locator(".apx-chip").filter({ hasText: "image1" }),
+      imageCard.locator(".dr-chip").filter({ hasText: "image1" }),
     ).toBeVisible();
 
     const downloadPromise = page.waitForEvent("download");

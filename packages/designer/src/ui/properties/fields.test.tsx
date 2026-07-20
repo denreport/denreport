@@ -201,8 +201,8 @@ describe("NumberField", () => {
         onCommit={() => {}}
       />,
     );
-    expect(container.querySelector(".apx-field.is-error")).not.toBeNull();
-    expect(container.querySelector(".apx-ferr")?.textContent).toBe(
+    expect(container.querySelector(".dr-field.is-error")).not.toBeNull();
+    expect(container.querySelector(".dr-ferr")?.textContent).toBe(
       "用紙の幅を超えています",
     );
   });
@@ -294,8 +294,8 @@ describe("TextAreaField", () => {
         onCommit={() => {}}
       />,
     );
-    expect(container.querySelector(".apx-field.is-error")).not.toBeNull();
-    expect(container.querySelector(".apx-ferr")?.textContent).toBe(
+    expect(container.querySelector(".dr-field.is-error")).not.toBeNull();
+    expect(container.querySelector(".dr-ferr")?.textContent).toBe(
       "参照先の注記が定義されていません",
     );
   });
@@ -309,7 +309,7 @@ describe("TextAreaField", () => {
         onCommit={() => {}}
       />,
     );
-    expect(container.querySelector(".apx-fhint")?.textContent).toBe(
+    expect(container.querySelector(".dr-fhint")?.textContent).toBe(
       "{#id} で脚注を参照",
     );
   });

@@ -27,7 +27,7 @@ test("fixture IR を localStorage から復元し pdfme JSON を書き出す", a
     [IR_FIXTURE, SAMPLE_DATA],
   );
   await page.goto("/");
-  await expect(page.locator('.apx-el[data-apx-id="title"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="title"]')).toBeVisible();
 
   await page.getByRole("button", { name: "書き出し" }).click();
   const exportDialog = page.getByRole("dialog", { name: "書き出し" });
@@ -71,7 +71,7 @@ test("フォント全体埋め込みをオンにすると font ブロック付�
     [IR_FIXTURE, SAMPLE_DATA],
   );
   await page.goto("/");
-  await expect(page.locator('.apx-el[data-apx-id="title"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="title"]')).toBeVisible();
 
   await page.getByRole("button", { name: "書き出し" }).click();
   const exportDialog = page.getByRole("dialog", { name: "書き出し" });

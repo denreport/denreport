@@ -53,33 +53,33 @@ export function ImageProperties(props: ElementFormProps): ReactNode {
 
   return (
     <>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.image.section}</div>
-        <div className="apx-frow">
-          <span className="apx-frow-label">{m.properties.image.current}</span>
-          <span className="apx-field-static">
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.image.section}</div>
+        <div className="dr-frow">
+          <span className="dr-frow-label">{m.properties.image.current}</span>
+          <span className="dr-field-static">
             {srcSummary(el.src, m.properties.image)}
           </span>
         </div>
-        <div className="apx-frow">
+        <div className="dr-frow">
           <label htmlFor={fileId}>{m.properties.image.file}</label>
           <input
             id={fileId}
             type="file"
             accept="image/png,image/jpeg"
-            className="apx-file"
+            className="dr-file"
             onChange={onFile}
           />
         </div>
         {errorMessageFor(errors, "src") !== undefined && (
-          <div className="apx-frow">
+          <div className="dr-frow">
             <span />
-            <span className="apx-ferr">{errorMessageFor(errors, "src")}</span>
+            <span className="dr-ferr">{errorMessageFor(errors, "src")}</span>
           </div>
         )}
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.placement}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.placement}</div>
         {"x" in el && (
           <>
             <NumberField

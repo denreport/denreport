@@ -237,21 +237,21 @@ export function ExportDialog(props: {
       wide
       footer={
         <>
-          <span className="apx-dialog-note">
+          <span className="dr-dialog-note">
             {validationErrorCount > 0
               ? m.export.blockedByErrors(validationErrorCount)
               : m.export.warningsNote}
           </span>
           <button
             type="button"
-            className="apx-btn apx-btn-secondary"
+            className="dr-btn dr-btn-secondary"
             onClick={onClose}
           >
             {m.export.close}
           </button>
           <button
             type="button"
-            className="apx-btn apx-btn-primary"
+            className="dr-btn dr-btn-primary"
             disabled={validationErrorCount > 0 || running}
             onClick={(event) => runExport(event.currentTarget.ownerDocument)}
           >
@@ -260,24 +260,24 @@ export function ExportDialog(props: {
         </>
       }
     >
-      <div className="apx-tcards">
+      <div className="dr-tcards">
         {EXPORT_TARGET_IDS.map((id) => (
           <button
             key={id}
             type="button"
             aria-pressed={target === id}
-            className={`apx-tcard${target === id ? " is-selected" : ""}`}
+            className={`dr-tcard${target === id ? " is-selected" : ""}`}
             onClick={() => {
               store.setSelectedExportTarget(id);
               setRun(RUN_IDLE);
             }}
           >
-            <span className="apx-rdot" aria-hidden="true" />
-            <span className="apx-tcard-label">
-              <span className="apx-tcard-name">
+            <span className="dr-rdot" aria-hidden="true" />
+            <span className="dr-tcard-label">
+              <span className="dr-tcard-name">
                 {COMPAT_MATRICES[id].displayName}
               </span>
-              <span className="apx-tcard-sub">
+              <span className="dr-tcard-sub">
                 {m.export.targetDescriptions[id]}
               </span>
             </span>
@@ -286,7 +286,7 @@ export function ExportDialog(props: {
       </div>
       {target === "pdfme" && (
         <>
-          <label className="apx-check">
+          <label className="dr-check">
             <input
               type="checkbox"
               checked={fullEmbedFont}
@@ -294,18 +294,18 @@ export function ExportDialog(props: {
             />
             {m.export.fullEmbedFont}
           </label>
-          <p className="apx-dialog-note">{m.export.fullEmbedFontNote}</p>
+          <p className="dr-dialog-note">{m.export.fullEmbedFontNote}</p>
         </>
       )}
-      <div className="apx-export-warns">
-        <p className="apx-export-warns-h">
+      <div className="dr-export-warns">
+        <p className="dr-export-warns-h">
           {m.export.compatWarnings}
           {findingTotal > 0 && (
-            <span className="apx-badge apx-badge-warn">{findingTotal}</span>
+            <span className="dr-badge dr-badge-warn">{findingTotal}</span>
           )}
         </p>
         {groups.length === 0 ? (
-          <p className="apx-export-ok">{m.export.compatOk}</p>
+          <p className="dr-export-ok">{m.export.compatOk}</p>
         ) : (
           groups.map((group) => (
             <WarningGroupCard
@@ -317,65 +317,65 @@ export function ExportDialog(props: {
         )}
       </div>
       {isTemplateMode && (
-        <p className="apx-dialog-note">{m.export.templateModeNote}</p>
+        <p className="dr-dialog-note">{m.export.templateModeNote}</p>
       )}
-      {running && <p className="apx-export-running">{m.export.running}</p>}
+      {running && <p className="dr-export-running">{m.export.running}</p>}
       {run.kind === "data-error" && (
-        <div className="apx-export-error" role="alert">
+        <div className="dr-export-error" role="alert">
           <p>{run.message}</p>
-          <p className="apx-dialog-note">{m.export.noArtifact}</p>
+          <p className="dr-dialog-note">{m.export.noArtifact}</p>
         </div>
       )}
       {run.kind === "font-fetch-error" && (
-        <div className="apx-export-error" role="alert">
+        <div className="dr-export-error" role="alert">
           <p>{m.export.fontFetchFailed}</p>
-          <p className="apx-dialog-note">{m.export.noArtifact}</p>
+          <p className="dr-dialog-note">{m.export.noArtifact}</p>
         </div>
       )}
       {run.kind === "font-missing" && (
-        <div className="apx-export-error" role="alert">
+        <div className="dr-export-error" role="alert">
           <p>{m.export.fontMissing(m.fonts.slotLabels[run.slot], run.name)}</p>
-          <p className="apx-dialog-note">{m.export.noArtifact}</p>
+          <p className="dr-dialog-note">{m.export.noArtifact}</p>
         </div>
       )}
       {run.kind === "export-error" && (
-        <div className="apx-export-error" role="alert">
+        <div className="dr-export-error" role="alert">
           <p>{m.export.failed}</p>
           {run.errors.length > 0 && (
-            <ul className="apx-dialog-errors">
+            <ul className="dr-dialog-errors">
               {run.errors.map((error, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same rule/path can appear side by side, so identify by index
                 <li key={i}>
-                  <span className="apx-verr-rule">{error.rule}</span>
-                  <span className="apx-verr-path">{error.path}</span>
+                  <span className="dr-verr-rule">{error.rule}</span>
+                  <span className="dr-verr-path">{error.path}</span>
                   <span>{error.message}</span>
                 </li>
               ))}
             </ul>
           )}
           {run.fontIssues.length > 0 && (
-            <ul className="apx-export-font-issues">
+            <ul className="dr-export-font-issues">
               {run.fontIssues.map((issue, i) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same format can appear side by side, so identify by index
                 <li key={i}>
-                  <span className="apx-verr-rule">{issue.format}</span>
+                  <span className="dr-verr-rule">{issue.format}</span>
                   <span>{issue.message}</span>
                 </li>
               ))}
             </ul>
           )}
-          <p className="apx-dialog-note">{m.export.noArtifact}</p>
+          <p className="dr-dialog-note">{m.export.noArtifact}</p>
         </div>
       )}
       {run.kind === "export-warning" && (
         <div role="status">
-          <p className="apx-dialog-note">{m.export.warningsProduced}</p>
-          <ul className="apx-dialog-errors">
+          <p className="dr-dialog-note">{m.export.warningsProduced}</p>
+          <ul className="dr-dialog-errors">
             {run.warnings.map((warning, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: warnings with the same rule/path can appear side by side, so identify by index
               <li key={i}>
-                <span className="apx-verr-rule">{warning.rule}</span>
-                <span className="apx-verr-path">{warning.path}</span>
+                <span className="dr-verr-rule">{warning.rule}</span>
+                <span className="dr-verr-path">{warning.path}</span>
                 <span>{warning.message}</span>
               </li>
             ))}

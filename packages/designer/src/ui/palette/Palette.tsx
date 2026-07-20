@@ -22,19 +22,19 @@ export function Palette(props: {
 }): ReactNode {
   const m = useMessages();
   return (
-    <nav className="apx-palette" aria-label={m.palette.ariaLabel}>
-      <div className="apx-panel-caption">{m.palette.caption}</div>
-      <ul className="apx-pal-list">
+    <nav className="dr-palette" aria-label={m.palette.ariaLabel}>
+      <div className="dr-panel-caption">{m.palette.caption}</div>
+      <ul className="dr-pal-list">
         {PALETTE_ORDER.map((type) => {
           return (
             <li key={type}>
               <button
                 type="button"
-                className="apx-pal-item"
+                className="dr-pal-item"
                 onPointerDown={(e) => props.beginPlacement(type, e.nativeEvent)}
                 onClick={() => props.onQuickAdd(type)}
               >
-                <span className="apx-pal-icon" aria-hidden="true">
+                <span className="dr-pal-icon" aria-hidden="true">
                   {elementTypeIcon(type, m)}
                 </span>
                 {m.elementTypes[type]}
@@ -43,7 +43,7 @@ export function Palette(props: {
           );
         })}
       </ul>
-      <div className="apx-pal-hint">{m.palette.hint}</div>
+      <div className="dr-pal-hint">{m.palette.hint}</div>
     </nav>
   );
 }

@@ -12,7 +12,7 @@ test("text 要素の整列を均等にすると、キャンバスの行に字間
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^テキスト/, { x: 60, y: 40 });
-  const textEl = page.locator('.apx-el[data-apx-id="text1"]');
+  const textEl = page.locator('.dr-el[data-dr-id="text1"]');
   await expect(textEl).toBeVisible();
 
   const props = page.getByRole("complementary", { name: "プロパティ" });
@@ -22,7 +22,7 @@ test("text 要素の整列を均等にすると、キャンバスの行に字間
     .click();
 
   // Absorb the asynchronous arrival of font metrics via expect's polling
-  const line = textEl.locator(".apx-text-line").first();
+  const line = textEl.locator(".dr-text-line").first();
   await expect(line).toBeVisible();
   await expect.poll(() => letterSpacingPx(line)).toBeGreaterThan(0);
 
@@ -38,16 +38,16 @@ test("表の列の整列を均等にすると、明細セルの字間に反映�
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 130, y: 150 });
-  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  const table = page.locator('.dr-el[data-dr-id="table1"]');
   await expect(table).toBeVisible();
 
   await page.getByLabel("列1 の整列").selectOption("justify");
 
   const cell = page.locator(
-    '[data-apx-id="table1"] [data-apx-row="0"][data-apx-col="0"]',
+    '[data-dr-id="table1"] [data-dr-row="0"][data-dr-col="0"]',
   );
   await cell.dblclick();
-  const editor = page.locator(".apx-inline-editor");
+  const editor = page.locator(".dr-inline-editor");
   await expect(editor).toBeVisible();
   await editor.fill("御中様");
   await editor.press("Enter");

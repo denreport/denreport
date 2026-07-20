@@ -24,14 +24,14 @@ export function TextSketch(props: {
 
   if (lines === null) {
     // While metrics haven't arrived yet or failed to load, display with the browser's normal wrapping as before
-    return bind ? <span className="apx-bind">{content}</span> : content;
+    return bind ? <span className="dr-bind">{content}</span> : content;
   }
 
   return lines.map((line, i) => (
     <div
       // biome-ignore lint/suspicious/noArrayIndexKey: lines are exactly layoutTextLines's ordering, and reordering never happens
       key={i}
-      className="apx-text-line"
+      className="dr-text-line"
       style={
         line.charSpacePt !== 0
           ? ({ "--cs": line.charSpacePt } as CSSProperties)
@@ -41,7 +41,7 @@ export function TextSketch(props: {
       {line.text === "" ? (
         " " /* keeps the line box's height even for an empty line */
       ) : bind ? (
-        <span className="apx-bind">{line.text}</span>
+        <span className="dr-bind">{line.text}</span>
       ) : (
         line.text
       )}

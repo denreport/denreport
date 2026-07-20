@@ -25,8 +25,8 @@ export function ScenarioBar(props: {
   });
 
   return (
-    <div className="apx-scenariobar">
-      <span className="apx-field apx-scenariobar-select">
+    <div className="dr-scenariobar">
+      <span className="dr-field dr-scenariobar-select">
         <select
           aria-label={m.selectAriaLabel}
           value={scenarios.activeId}
@@ -39,7 +39,7 @@ export function ScenarioBar(props: {
           ))}
         </select>
       </span>
-      <span className="apx-field apx-scenariobar-name">
+      <span className="dr-field dr-scenariobar-name">
         <input
           aria-label={m.nameAriaLabel}
           value={nameHandlers.draft}
@@ -48,23 +48,19 @@ export function ScenarioBar(props: {
           onKeyDown={nameHandlers.onKeyDown}
         />
       </span>
-      <button
-        type="button"
-        className="apx-btn apx-btn-secondary"
-        onClick={onAdd}
-      >
+      <button type="button" className="dr-btn dr-btn-secondary" onClick={onAdd}>
         {m.add}
       </button>
       <button
         type="button"
-        className="apx-btn apx-btn-secondary"
+        className="dr-btn dr-btn-secondary"
         onClick={onDuplicate}
       >
         {m.duplicate}
       </button>
       <button
         type="button"
-        className="apx-btn apx-btn-secondary"
+        className="dr-btn dr-btn-secondary"
         disabled={scenarios.items.length === 1}
         onClick={onRemove}
       >

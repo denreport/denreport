@@ -66,11 +66,11 @@ function elementContent(
     case "image":
       if (el.src === IMAGE_PLACEHOLDER_SRC) {
         return (
-          <span className="apx-image-placeholder">{imagePlaceholderLabel}</span>
+          <span className="dr-image-placeholder">{imagePlaceholderLabel}</span>
         );
       }
       return (
-        <img className="apx-el-img" src={el.src} alt="" draggable={false} />
+        <img className="dr-el-img" src={el.src} alt="" draggable={false} />
       );
     case "barcode":
       return <BarcodeSketch symbology={el.symbology} value={el.value} />;
@@ -91,14 +91,14 @@ export function PaperElement(props: {
   const el = view.element;
   const ghost = !visibleInContext(view.pages, props.context);
 
-  const classes = ["apx-el", `apx-el-${el.type}`];
+  const classes = ["dr-el", `dr-el-${el.type}`];
   if (el.type === "line") {
     classes.push(
-      el.orientation === "horizontal" ? "apx-el-line-h" : "apx-el-line-v",
+      el.orientation === "horizontal" ? "dr-el-line-h" : "dr-el-line-v",
     );
   }
   if (el.type === "text" || el.type === "pageNumber") {
-    classes.push(`apx-align-${el.align}`);
+    classes.push(`dr-align-${el.align}`);
   }
   if (el.type === "image" && el.src === IMAGE_PLACEHOLDER_SRC) {
     classes.push("is-placeholder");
@@ -173,14 +173,14 @@ export function PaperElement(props: {
   const style = { ...vars, lineHeight, ...textStyle } as CSSProperties;
 
   return (
-    <div className={classes.join(" ")} style={style} data-apx-id={view.id}>
+    <div className={classes.join(" ")} style={style} data-dr-id={view.id}>
       {el.type === "flex" && (
-        <span className="apx-el-chip apx-el-chip--muted">
+        <span className="dr-el-chip dr-el-chip--muted">
           {m.elementTypes.flex} · {el.id}
         </span>
       )}
       {ghost && view.pages !== null && (
-        <span className="apx-el-chip apx-el-chip--muted">
+        <span className="dr-el-chip dr-el-chip--muted">
           pages: {view.pages}
         </span>
       )}

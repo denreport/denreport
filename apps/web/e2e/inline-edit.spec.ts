@@ -6,18 +6,18 @@ test("text 要素のダブルクリック編集は blur で確定し、Ctrl+Z 1�
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^テキスト/, { x: 60, y: 40 });
-  const textEl = page.locator('.apx-el[data-apx-id="text1"]');
+  const textEl = page.locator('.dr-el[data-dr-id="text1"]');
   await expect(textEl).toBeVisible();
 
   await textEl.dblclick();
-  const editor = page.locator(".apx-inline-editor");
+  const editor = page.locator(".dr-inline-editor");
   await expect(editor).toBeVisible();
   await expect(editor).toHaveValue("text1");
   await editor.fill("新しい文言");
 
   // Click the margin (padding outside the paper) to blur → commit. Since this doesn't go
   // through paper's pointer handling, the selection state doesn't change
-  await page.locator(".apx-canvas-content").click({ position: { x: 2, y: 2 } });
+  await page.locator(".dr-canvas-content").click({ position: { x: 2, y: 2 } });
   await expect(editor).toBeHidden();
   await expect(textEl).toHaveText("新しい文言");
   await expect(
@@ -38,12 +38,12 @@ test("表の列見出しのダブルクリック編集は Enter で確定する"
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 130, y: 150 });
   const header = page.locator(
-    '.apx-el[data-apx-id="table1"] .apx-tbl-th[data-apx-col="0"]',
+    '.dr-el[data-dr-id="table1"] .dr-tbl-th[data-dr-col="0"]',
   );
   await expect(header).toBeVisible();
 
   await header.dblclick();
-  const editor = page.locator(".apx-inline-editor");
+  const editor = page.locator(".dr-inline-editor");
   await expect(editor).toBeVisible();
   await expect(editor).toHaveValue("column1");
   await editor.fill("品名");
@@ -56,11 +56,11 @@ test("表の列見出しのダブルクリック編集は Enter で確定する"
 test("Escape で閉じると文書は変わらない", async ({ page }) => {
   await page.goto("/");
   await dragFromPalette(page, /^テキスト/, { x: 60, y: 40 });
-  const textEl = page.locator('.apx-el[data-apx-id="text1"]');
+  const textEl = page.locator('.dr-el[data-dr-id="text1"]');
   await expect(textEl).toBeVisible();
 
   await textEl.dblclick();
-  const editor = page.locator(".apx-inline-editor");
+  const editor = page.locator(".dr-inline-editor");
   await expect(editor).toBeVisible();
   await editor.fill("破棄されるはずの文言");
   await editor.press("Escape");

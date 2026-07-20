@@ -62,15 +62,15 @@ function render(props: {
 }
 
 describe("GuidesLayer のガイド描画", () => {
-  it("axis ごとに apx-cguide-v / apx-cguide-h を描画する", () => {
+  it("axis ごとに dr-cguide-v / dr-cguide-h を描画する", () => {
     const guides: readonly CustomGuide[] = [
       { id: "guide1", axis: "x", positionMm: 30 },
       { id: "guide2", axis: "y", positionMm: 50 },
     ];
     render({ guides, envelopePreset: null, drag: noopDrag() });
 
-    const vertical = container.querySelector(".apx-cguide-v");
-    const horizontal = container.querySelector(".apx-cguide-h");
+    const vertical = container.querySelector(".dr-cguide-v");
+    const horizontal = container.querySelector(".dr-cguide-h");
     expect(vertical).not.toBeNull();
     expect(horizontal).not.toBeNull();
     expect((vertical as HTMLElement).style.getPropertyValue("--gx")).toBe("30");
@@ -94,7 +94,7 @@ describe("GuidesLayer のガイド描画", () => {
       },
     });
 
-    const hit = container.querySelector(".apx-cguide-hit");
+    const hit = container.querySelector(".dr-cguide-hit");
     if (hit === null) {
       throw new Error("hit ハンドルが見つからない");
     }
@@ -114,14 +114,14 @@ describe("GuidesLayer のガイド描画", () => {
 describe("GuidesLayer の封筒プリセット", () => {
   it("envelopePreset が null なら封筒枠を描かない", () => {
     render({ guides: [], envelopePreset: null, drag: noopDrag() });
-    expect(container.querySelector(".apx-env-window")).toBeNull();
-    expect(container.querySelector(".apx-env-safe")).toBeNull();
+    expect(container.querySelector(".dr-env-window")).toBeNull();
+    expect(container.querySelector(".dr-env-safe")).toBeNull();
   });
 
   it("envelopePreset があれば windowBox / safeBox を描く", () => {
     render({ guides: [], envelopePreset: ENVELOPE, drag: noopDrag() });
-    const windowEl = container.querySelector(".apx-env-window");
-    const safeEl = container.querySelector(".apx-env-safe");
+    const windowEl = container.querySelector(".dr-env-window");
+    const safeEl = container.querySelector(".dr-env-safe");
     expect(windowEl).not.toBeNull();
     expect(safeEl).not.toBeNull();
     expect((windowEl as HTMLElement).style.getPropertyValue("--w")).toBe("80");

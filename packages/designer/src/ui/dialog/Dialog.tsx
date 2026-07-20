@@ -65,19 +65,19 @@ export function Dialog(props: {
   };
 
   return (
-    <div className="apx-dialog-scrim">
+    <div className="dr-dialog-scrim">
       <div
         ref={dialogRef}
-        className={`apx-dialog${wide === true ? " apx-dialog-wide" : ""}`}
+        className={`dr-dialog${wide === true ? " dr-dialog-wide" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
         onKeyDown={onKeyDown}
       >
-        <div className="apx-dialog-h">{title}</div>
-        <div className="apx-dialog-b">{children}</div>
-        <div className="apx-dialog-f">{footer}</div>
+        <div className="dr-dialog-h">{title}</div>
+        <div className="dr-dialog-b">{children}</div>
+        <div className="dr-dialog-f">{footer}</div>
       </div>
     </div>
   );

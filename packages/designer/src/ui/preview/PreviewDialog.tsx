@@ -42,17 +42,17 @@ const EMBEDDED_NAMES: ReadonlySet<string> = new Set([
   EMBEDDED_BOLD_FONT_NAME,
 ]);
 
-// Register with a unique apx- prefixed name rather than the logical font name, to avoid colliding with a same-named font on the host page
+// Register with a unique dr- prefixed name rather than the logical font name, to avoid colliding with a same-named font on the host page
 const EMBEDDED_PREVIEW_FONTS: Readonly<
   Record<string, { readonly url: URL; readonly family: string }>
 > = {
   [EMBEDDED_FONT_NAME]: {
     url: EMBEDDED_FONT_URL,
-    family: "apx-embedded-notosansjp",
+    family: "dr-embedded-notosansjp",
   },
   [EMBEDDED_BOLD_FONT_NAME]: {
     url: EMBEDDED_BOLD_FONT_URL,
-    family: "apx-embedded-notosansjp-bold",
+    family: "dr-embedded-notosansjp-bold",
   },
 };
 
@@ -226,31 +226,31 @@ export function PreviewDialog(props: {
   return (
     <div
       ref={rootRef}
-      className="apx-preview"
+      className="dr-preview"
       role="dialog"
       aria-modal="true"
       aria-label={m.preview.title}
     >
-      <header className="apx-preview-bar">
-        <span className="apx-preview-title">{m.preview.title}</span>
+      <header className="dr-preview-bar">
+        <span className="dr-preview-title">{m.preview.title}</span>
         {preview?.ok === true && (
-          <span className="apx-preview-count">
+          <span className="dr-preview-count">
             {m.preview.pageCount(preview.document.pageCount)}
           </span>
         )}
-        <span className="apx-toolbar-spacer" />
+        <span className="dr-toolbar-spacer" />
         <button
           type="button"
-          className="apx-btn apx-btn-secondary"
+          className="dr-btn dr-btn-secondary"
           onClick={onClose}
         >
           {m.preview.close}
         </button>
       </header>
-      <div className="apx-preview-body">
-        <div className="apx-preview-pages">
+      <div className="dr-preview-body">
+        <div className="dr-preview-pages">
           {bannerMessages.length > 0 && (
-            <div className="apx-preview-warnings" role="status">
+            <div className="dr-preview-warnings" role="status">
               <ul>
                 {bannerMessages.map((message) => (
                   <li key={message}>{message}</li>
@@ -259,35 +259,35 @@ export function PreviewDialog(props: {
             </div>
           )}
           {hasValidationErrors ? (
-            <div className="apx-preview-error">
+            <div className="dr-preview-error">
               <p>
                 {m.preview.validationErrorsNote(state.validationErrors.length)}
               </p>
             </div>
           ) : preview !== undefined && !preview.ok ? (
-            <div className="apx-preview-error">
+            <div className="dr-preview-error">
               <p>{m.preview.cannotDisplay}</p>
-              <ul className="apx-dialog-errors">
+              <ul className="dr-dialog-errors">
                 {preview.errors.map((error, i) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same rule / path can appear side by side, so identify by index
                   <li key={i}>
-                    <span className="apx-verr-rule">{error.rule}</span>
-                    <span className="apx-verr-path">{error.path}</span>
+                    <span className="dr-verr-rule">{error.rule}</span>
+                    <span className="dr-verr-path">{error.path}</span>
                     <span>{error.message}</span>
                   </li>
                 ))}
               </ul>
             </div>
           ) : preview !== undefined && fontState.kind === "loading" ? (
-            <div className="apx-preview-loading">{m.preview.loadingFont}</div>
+            <div className="dr-preview-loading">{m.preview.loadingFont}</div>
           ) : preview !== undefined ? (
             preview.document.pages.map((elements, pageIndex) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: the page order is exactly the order of the rendered output
-              <figure className="apx-preview-sheet" key={pageIndex}>
-                <figcaption className="apx-preview-pageno">
+              <figure className="dr-preview-sheet" key={pageIndex}>
+                <figcaption className="dr-preview-pageno">
                   {pageIndex + 1} / {preview.document.pageCount}
                 </figcaption>
-                <div className="apx-preview-page">
+                <div className="dr-preview-page">
                   <PreviewPage
                     elements={elements}
                     page={preview.document.page}
@@ -298,7 +298,7 @@ export function PreviewDialog(props: {
             ))
           ) : null}
         </div>
-        <aside className="apx-preview-side">
+        <aside className="dr-preview-side">
           <ScenarioBar
             scenarios={state.sampleScenarios}
             onSelect={(id) =>
@@ -340,30 +340,30 @@ export function PreviewDialog(props: {
         </aside>
       </div>
       {confirmingRemove && (
-        <div className="apx-dialog-scrim">
+        <div className="dr-dialog-scrim">
           <div
-            className="apx-dialog"
+            className="dr-dialog"
             role="dialog"
             aria-modal="true"
             aria-label={m.preview.removeScenario.ariaLabel}
           >
-            <div className="apx-dialog-h">
+            <div className="dr-dialog-h">
               {m.preview.removeScenario.heading}
             </div>
-            <div className="apx-dialog-b">
+            <div className="dr-dialog-b">
               <p>{m.preview.removeScenario.body}</p>
             </div>
-            <div className="apx-dialog-f">
+            <div className="dr-dialog-f">
               <button
                 type="button"
-                className="apx-btn apx-btn-secondary"
+                className="dr-btn dr-btn-secondary"
                 onClick={() => setConfirmingRemove(false)}
               >
                 {m.preview.removeScenario.cancel}
               </button>
               <button
                 type="button"
-                className="apx-btn apx-btn-primary"
+                className="dr-btn dr-btn-primary"
                 onClick={confirmRemove}
               >
                 {m.preview.removeScenario.confirm}
@@ -373,30 +373,30 @@ export function PreviewDialog(props: {
         </div>
       )}
       {confirmingGenerate && (
-        <div className="apx-dialog-scrim">
+        <div className="dr-dialog-scrim">
           <div
-            className="apx-dialog"
+            className="dr-dialog"
             role="dialog"
             aria-modal="true"
             aria-label={m.preview.regenerateSample.ariaLabel}
           >
-            <div className="apx-dialog-h">
+            <div className="dr-dialog-h">
               {m.preview.regenerateSample.heading}
             </div>
-            <div className="apx-dialog-b">
+            <div className="dr-dialog-b">
               <p>{m.preview.regenerateSample.body}</p>
             </div>
-            <div className="apx-dialog-f">
+            <div className="dr-dialog-f">
               <button
                 type="button"
-                className="apx-btn apx-btn-secondary"
+                className="dr-btn dr-btn-secondary"
                 onClick={() => setConfirmingGenerate(false)}
               >
                 {m.preview.regenerateSample.cancel}
               </button>
               <button
                 type="button"
-                className="apx-btn apx-btn-primary"
+                className="dr-btn dr-btn-primary"
                 onClick={applyGenerated}
               >
                 {m.preview.regenerateSample.confirm}

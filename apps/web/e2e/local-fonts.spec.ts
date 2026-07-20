@@ -14,7 +14,7 @@ test.describe("PC 内フォントからの選択（許可済み環境）", () =>
     // fonts-liberation is installed on both CI (playwright install --with-deps) and the dev
     // container, and being a TrueType (glyf) outline it always passes validateFont
     await dialog.getByLabel("フォント名で検索").fill("Liberation");
-    const candidate = dialog.locator(".apx-font-name").first();
+    const candidate = dialog.locator(".dr-font-name").first();
     await expect(candidate).toBeVisible();
     const displayName = await candidate.innerText();
 
@@ -30,12 +30,12 @@ test.describe("PC 内フォントからの選択（許可済み環境）", () =>
     await page.getByRole("button", { name: "プレビュー" }).click();
     const preview = page.getByRole("dialog", { name: "プレビュー" });
     await expect(preview).toBeVisible();
-    await expect(preview.locator(".apx-preview-warnings")).toHaveCount(0);
+    await expect(preview.locator(".dr-preview-warnings")).toHaveCount(0);
     await expect
       .poll(() =>
         page.evaluate(
           (family) => document.fonts.check(`13px ${family}`),
-          `apx-local-${registeredName}`,
+          `dr-local-${registeredName}`,
         ),
       )
       .toBe(true);

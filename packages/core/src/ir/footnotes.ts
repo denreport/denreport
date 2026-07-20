@@ -78,7 +78,7 @@ export function resolveFootnotes(document: IrDocument): IrDocument {
 
   const notesElement: IrTextElement = {
     type: "text",
-    id: "apxFootnotes",
+    id: "drFootnotes",
     x: footnotes.x,
     y: document.page.height - footnotes.bottom - blockHeight,
     pages: footnotes.pages,

@@ -101,11 +101,11 @@ export function DocumentProperties(props: {
 
   return (
     <>
-      <div className="apx-props-head">
-        <span className="apx-props-id">{d.heading}</span>
+      <div className="dr-props-head">
+        <span className="dr-props-id">{d.heading}</span>
       </div>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{d.paperSection}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{d.paperSection}</div>
         <SelectField<PaperPresetId | typeof CUSTOM_PAPER_PRESET>
           label={d.size}
           value={paperPresetId}
@@ -151,8 +151,8 @@ export function DocumentProperties(props: {
           }
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{d.fontSection}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{d.fontSection}</div>
         <TextField
           label={d.fontName}
           value={state.document.font.regular}
@@ -173,19 +173,19 @@ export function DocumentProperties(props: {
           return (
             <div key={slot}>
               {slot !== "regular" && (
-                <div className="apx-frow">
-                  <span className="apx-frow-label">
+                <div className="dr-frow">
+                  <span className="dr-frow-label">
                     {m.fonts.slotLabels[slot]}
                   </span>
-                  <span className="apx-field">{name ?? d.unset}</span>
+                  <span className="dr-field">{name ?? d.unset}</span>
                 </div>
               )}
               {slotError !== undefined && (
-                <p className="apx-ferr" role="alert">
+                <p className="dr-ferr" role="alert">
                   {slotError}
                 </p>
               )}
-              <p className="apx-sect-note">
+              <p className="dr-sect-note">
                 {m.fonts.slotLabels[slot]}:{" "}
                 {slot === "regular" || name !== undefined
                   ? resolutionNote(resolutions.get(slot), d)
@@ -194,7 +194,7 @@ export function DocumentProperties(props: {
               {isLocalFontAccessSupported(window) && (
                 <button
                   type="button"
-                  className="apx-btn apx-btn-secondary"
+                  className="dr-btn dr-btn-secondary"
                   onClick={() => setFontDialogSlot(slot)}
                 >
                   {d.selectFont(m.fonts.slotLabels[slot])}
@@ -204,17 +204,17 @@ export function DocumentProperties(props: {
           );
         })}
         {!isLocalFontAccessSupported(window) && (
-          <p className="apx-sect-note">{d.localFontUnsupported}</p>
+          <p className="dr-sect-note">{d.localFontUnsupported}</p>
         )}
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{d.qualifiedInvoiceSection}</div>
-        <div className="apx-frow">
-          <span className="apx-frow-label">
+      <section className="dr-sect">
+        <div className="dr-sect-h">{d.qualifiedInvoiceSection}</div>
+        <div className="dr-frow">
+          <span className="dr-frow-label">
             {d.qualifiedInvoiceCheck}
-            <span className="apx-nowrap">{d.checkSuffix}</span>
+            <span className="dr-nowrap">{d.checkSuffix}</span>
           </span>
-          <label className="apx-check" htmlFor={docTypeCheckId}>
+          <label className="dr-check" htmlFor={docTypeCheckId}>
             <input
               id={docTypeCheckId}
               type="checkbox"
@@ -234,7 +234,7 @@ export function DocumentProperties(props: {
         document={state.document}
         errors={footnoteErrors}
       />
-      <p className="apx-props-empty">{d.selectPrompt}</p>
+      <p className="dr-props-empty">{d.selectPrompt}</p>
       {fontDialogSlot !== null && (
         <FontSelectorDialog
           slot={fontDialogSlot}

@@ -368,7 +368,7 @@ describe("lowerIr — footnotes", () => {
     if (!result.ok) throw new Error("expected success");
     expect(result.document.pageCount).toBe(2);
     const isNoteBlock = (el: { sourceId: string }): boolean =>
-      el.sourceId === "apxFootnotes";
+      el.sourceId === "drFootnotes";
     expect(result.document.pages[0]?.some(isNoteBlock)).toBe(false);
     expect(result.document.pages[1]?.some(isNoteBlock)).toBe(true);
   });

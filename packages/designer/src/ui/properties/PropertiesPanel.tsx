@@ -51,7 +51,7 @@ export function PropertiesPanel(props: {
   }
 
   return (
-    <aside className="apx-props" aria-label={m.toolbar.propertiesPanel}>
+    <aside className="dr-props" aria-label={m.toolbar.propertiesPanel}>
       {content}
     </aside>
   );

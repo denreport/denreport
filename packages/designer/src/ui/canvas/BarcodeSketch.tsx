@@ -12,26 +12,26 @@ export function BarcodeSketch(props: {
 }): ReactNode {
   const { symbology, value } = props;
   return (
-    <span className="apx-bc">
+    <span className="dr-bc">
       {symbology === "qrcode" ? (
-        <span className="apx-bc-qr" aria-hidden="true">
-          <span className="apx-bc-qr-finder apx-bc-qr-finder--tl" />
-          <span className="apx-bc-qr-finder apx-bc-qr-finder--tr" />
-          <span className="apx-bc-qr-finder apx-bc-qr-finder--bl" />
+        <span className="dr-bc-qr" aria-hidden="true">
+          <span className="dr-bc-qr-finder dr-bc-qr-finder--tl" />
+          <span className="dr-bc-qr-finder dr-bc-qr-finder--tr" />
+          <span className="dr-bc-qr-finder dr-bc-qr-finder--bl" />
         </span>
       ) : (
-        <span className="apx-bc-bars" aria-hidden="true">
+        <span className="dr-bc-bars" aria-hidden="true">
           {BAR_SEGMENT_WEIGHTS.map((weight, i) => (
             <span
               // biome-ignore lint/suspicious/noArrayIndexKey: fixed pattern, no reordering occurs
               key={i}
-              className={i % 2 === 0 ? "apx-bc-bar" : undefined}
+              className={i % 2 === 0 ? "dr-bc-bar" : undefined}
               style={{ flexGrow: weight }}
             />
           ))}
         </span>
       )}
-      <span className="apx-bc-value">{value}</span>
+      <span className="dr-bc-value">{value}</span>
     </span>
   );
 }

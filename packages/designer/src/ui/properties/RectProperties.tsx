@@ -21,8 +21,8 @@ export function RectProperties(props: ElementFormProps): ReactNode {
   const h = liveBox === null ? el.h : liveBox.h;
   return (
     <>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.placement}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.placement}</div>
         {"x" in el && (
           <>
             <NumberField
@@ -60,8 +60,8 @@ export function RectProperties(props: ElementFormProps): ReactNode {
           onCommit={(h) => commitReplace(store, el.id, { ...el, h })}
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.border.section}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.border.section}</div>
         <NumberField
           label={m.properties.border.width}
           value={el.borderWidth}
@@ -124,8 +124,8 @@ export function RectProperties(props: ElementFormProps): ReactNode {
           }
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.fill.section}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.fill.section}</div>
         <ColorField
           label={m.properties.fill.color}
           value={el.fillColor ?? null}

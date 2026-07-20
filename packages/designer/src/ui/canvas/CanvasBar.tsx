@@ -28,9 +28,9 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
     { value: "last", label: m.canvas.pageContextLast },
   ];
   return (
-    <div className="apx-canvasbar">
-      <span className="apx-canvasbar-label">{m.canvas.editPage}</span>
-      <fieldset className="apx-seg" aria-label={m.canvas.pageContext}>
+    <div className="dr-canvasbar">
+      <span className="dr-canvasbar-label">{m.canvas.editPage}</span>
+      <fieldset className="dr-seg" aria-label={m.canvas.pageContext}>
         {contexts.map((c) => (
           <button
             key={c.value}
@@ -42,11 +42,11 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
           </button>
         ))}
       </fieldset>
-      <span className="apx-toolbar-spacer" />
+      <span className="dr-toolbar-spacer" />
       <AlignmentButtons store={store} />
       <button
         type="button"
-        className={`apx-tbtn${view.snapEnabled ? " is-on" : ""}`}
+        className={`dr-tbtn${view.snapEnabled ? " is-on" : ""}`}
         aria-pressed={view.snapEnabled}
         onClick={() => store.setView({ snapEnabled: !view.snapEnabled })}
       >
@@ -54,13 +54,13 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
       </button>
       <button
         type="button"
-        className={`apx-tbtn${view.gridVisible ? " is-on" : ""}`}
+        className={`dr-tbtn${view.gridVisible ? " is-on" : ""}`}
         aria-pressed={view.gridVisible}
         onClick={() => store.setView({ gridVisible: !view.gridVisible })}
       >
         {m.canvas.grid}
       </button>
-      <span className="apx-field">
+      <span className="dr-field">
         <select
           aria-label={m.canvas.envelopeGuide}
           disabled={!envelopeEnabled}
@@ -81,22 +81,22 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
           ))}
         </select>
       </span>
-      <span className="apx-toolbar-sep" />
+      <span className="dr-toolbar-sep" />
       <button
         type="button"
-        className="apx-tbtn"
+        className="dr-tbtn"
         aria-label={m.canvas.zoomOut}
         disabled={lower === null}
         onClick={() => lower !== null && store.setView({ zoom: lower })}
       >
         −
       </button>
-      <span className="apx-zoom-value apx-mono">
+      <span className="dr-zoom-value dr-mono">
         {Math.round(view.zoom * 100)}%
       </span>
       <button
         type="button"
-        className="apx-tbtn"
+        className="dr-tbtn"
         aria-label={m.canvas.zoomIn}
         disabled={higher === null}
         onClick={() => higher !== null && store.setView({ zoom: higher })}

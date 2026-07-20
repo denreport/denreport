@@ -118,11 +118,11 @@ export function useCellSelection(
         return false;
       }
       const target = e.target instanceof Element ? e.target : null;
-      if (target !== null && target.closest("[data-apx-handle]") !== null) {
+      if (target !== null && target.closest("[data-dr-handle]") !== null) {
         return false;
       }
       const id =
-        target?.closest("[data-apx-id]")?.getAttribute("data-apx-id") ?? null;
+        target?.closest("[data-dr-id]")?.getAttribute("data-dr-id") ?? null;
       if (id === null || s.selection.length !== 1 || s.selection[0] !== id) {
         return false;
       }

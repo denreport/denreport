@@ -37,10 +37,10 @@ export function Toolbar(props: {
   const m = useMessages();
   const isDark = chrome.resolvedTheme === "dark";
   return (
-    <header className="apx-toolbar">
+    <header className="dr-toolbar">
       <button
         type="button"
-        className="apx-tbtn"
+        className="dr-tbtn"
         aria-label={m.toolbar.togglePanelLeft}
         aria-expanded={sidebarOpen}
         title={m.toolbar.elementsPanel}
@@ -59,21 +59,21 @@ export function Toolbar(props: {
           <path strokeWidth="1.3" d="M6 2.5v11" />
         </svg>
       </button>
-      <div className="apx-brand">
-        <span className="apx-brand-mark" aria-hidden="true">
+      <div className="dr-brand">
+        <span className="dr-brand-mark" aria-hidden="true">
           <BrandLogo />
         </span>
-        <span className="apx-brand-name">{m.toolbar.brandName}</span>
+        <span className="dr-brand-name">{m.toolbar.brandName}</span>
       </div>
-      <span className="apx-toolbar-sep" />
+      <span className="dr-toolbar-sep" />
       <span
-        className={`apx-doc-dirty${state.dirty ? " is-on" : ""}`}
+        className={`dr-doc-dirty${state.dirty ? " is-on" : ""}`}
         title={state.dirty ? m.toolbar.unsavedChanges : undefined}
       />
-      <span className="apx-toolbar-sep" />
+      <span className="dr-toolbar-sep" />
       <button
         type="button"
-        className="apx-tbtn"
+        className="dr-tbtn"
         aria-label={m.toolbar.undo}
         disabled={!store.canUndo()}
         onClick={() => store.undo()}
@@ -82,15 +82,15 @@ export function Toolbar(props: {
       </button>
       <button
         type="button"
-        className="apx-tbtn"
+        className="dr-tbtn"
         aria-label={m.toolbar.redo}
         disabled={!store.canRedo()}
         onClick={() => store.redo()}
       >
         ↷
       </button>
-      <span className="apx-toolbar-sep" />
-      <fieldset className="apx-seg" aria-label={m.toolbar.canvasMode}>
+      <span className="dr-toolbar-sep" />
+      <fieldset className="dr-seg" aria-label={m.toolbar.canvasMode}>
         <button
           type="button"
           className={
@@ -110,10 +110,10 @@ export function Toolbar(props: {
           {m.toolbar.pan}
         </button>
       </fieldset>
-      <span className="apx-toolbar-spacer" />
+      <span className="dr-toolbar-spacer" />
       <button
         type="button"
-        className={`apx-tbtn${isDark ? " is-on" : ""}`}
+        className={`dr-tbtn${isDark ? " is-on" : ""}`}
         aria-pressed={isDark}
         aria-label={m.toolbar.theme}
         title={m.toolbar.themeTitle(isDark)}
@@ -157,7 +157,7 @@ export function Toolbar(props: {
       </button>
       <button
         type="button"
-        className="apx-tbtn"
+        className="dr-tbtn"
         aria-label={m.toolbar.locale}
         title={m.toolbar.localeTitle}
         onClick={chrome.toggleLocale}
@@ -166,36 +166,36 @@ export function Toolbar(props: {
       </button>
       <button
         type="button"
-        className="apx-tbtn"
+        className="dr-tbtn"
         aria-label={m.toolbar.shortcuts}
         onClick={onShowShortcuts}
       >
         ?
       </button>
-      <span className="apx-toolbar-sep" />
+      <span className="dr-toolbar-sep" />
       <OpenIrButton dirty={state.dirty} importIr={chrome.importIr} />
       <button
         type="button"
-        className="apx-btn apx-btn-secondary"
+        className="dr-btn dr-btn-secondary"
         onClick={chrome.requestSave}
       >
         {m.toolbar.save}
       </button>
       <button
         type="button"
-        className="apx-btn apx-btn-secondary"
+        className="dr-btn dr-btn-secondary"
         onClick={onManageStyles}
       >
         {m.toolbar.manageStyles}
       </button>
       <button
         type="button"
-        className="apx-btn apx-btn-secondary"
+        className="dr-btn dr-btn-secondary"
         onClick={onPreview}
       >
         {m.toolbar.preview}
       </button>
-      <span className="apx-field">
+      <span className="dr-field">
         <select
           aria-label={m.toolbar.exportTarget}
           value={state.selectedExportTarget}
@@ -214,14 +214,14 @@ export function Toolbar(props: {
       </span>
       <button
         type="button"
-        className="apx-btn apx-btn-primary"
+        className="dr-btn dr-btn-primary"
         onClick={onExport}
       >
         {m.toolbar.export}
       </button>
       <button
         type="button"
-        className="apx-tbtn"
+        className="dr-tbtn"
         aria-label={m.toolbar.togglePanelRight}
         aria-expanded={propsOpen}
         title={m.toolbar.propertiesPanel}

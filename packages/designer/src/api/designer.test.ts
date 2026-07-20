@@ -193,7 +193,7 @@ async function toolbarButton(
 ): Promise<HTMLButtonElement> {
   return await vi.waitFor(() => {
     const button = [
-      ...container.querySelectorAll<HTMLButtonElement>(".apx-toolbar button"),
+      ...container.querySelectorAll<HTMLButtonElement>(".dr-toolbar button"),
     ].find((b) => (b.getAttribute("aria-label") ?? b.textContent) === label);
     if (button === undefined) {
       throw new Error(`ツールバーにボタンがない: ${label}`);
@@ -229,12 +229,12 @@ function spyAnchorClicks(): HTMLAnchorElement[] {
 }
 
 describe("Designer のマウントと破棄", () => {
-  it("マウントで container 内に .apx-designer が描画される", async () => {
+  it("マウントで container 内に .dr-designer が描画される", async () => {
     const { container } = mount();
-    const rootEl = container.querySelector(".apx-designer");
+    const rootEl = container.querySelector(".dr-designer");
     expect(rootEl).not.toBeNull();
     await vi.waitFor(() => {
-      expect(container.querySelector(".apx-statusbar")).not.toBeNull();
+      expect(container.querySelector(".dr-statusbar")).not.toBeNull();
     });
   });
 
@@ -612,7 +612,7 @@ describe("書き出しターゲット API", () => {
 describe("テーマ", () => {
   it("setTheme で data-theme 属性が切り替わる", () => {
     const { container, designer } = mount();
-    const rootEl = container.querySelector(".apx-designer");
+    const rootEl = container.querySelector(".dr-designer");
     designer.setTheme("dark");
     expect(rootEl?.getAttribute("data-theme")).toBe("dark");
     designer.setTheme("light");
@@ -621,7 +621,7 @@ describe("テーマ", () => {
 
   it('"auto" は OS 設定の解決値になる（jsdom では light）', () => {
     const { container, designer } = mount();
-    const rootEl = container.querySelector(".apx-designer");
+    const rootEl = container.querySelector(".dr-designer");
     expect(rootEl?.getAttribute("data-theme")).toBe("light");
     designer.setTheme("dark");
     designer.setTheme("auto");
@@ -677,7 +677,7 @@ describe("保存ボタンと onSaveRequest", () => {
 describe("テーマトグル", () => {
   it("トグルで data-theme と aria-pressed が裏返り、auto から明示テーマに移る", async () => {
     const { container } = mount();
-    const rootEl = container.querySelector(".apx-designer");
+    const rootEl = container.querySelector(".dr-designer");
     expect(rootEl?.getAttribute("data-theme")).toBe("light");
 
     const toggle = await toolbarButton(container, "テーマ");
@@ -711,7 +711,7 @@ describe("言語切替", () => {
 
   it("setLocale で表示言語と rootEl.lang が切り替わり、onLocaleChange が発火する", async () => {
     const { container, designer } = mount();
-    const rootEl = container.querySelector(".apx-designer");
+    const rootEl = container.querySelector(".dr-designer");
     expect(rootEl?.getAttribute("lang")).toBe("ja");
     expect(designer.getLocale()).toBe("ja");
     await toolbarButton(container, "保存");
@@ -757,13 +757,13 @@ describe("言語切替", () => {
 describe("core / targets への locale 伝搬", () => {
   async function openedDrawer(container: HTMLElement): Promise<HTMLElement> {
     const bar = await vi.waitFor(() => {
-      const el = container.querySelector<HTMLButtonElement>(".apx-drawer-bar");
+      const el = container.querySelector<HTMLButtonElement>(".dr-drawer-bar");
       if (el === null) throw new Error("検証ペインがない");
       return el;
     });
     click(bar);
     return await vi.waitFor(() => {
-      const body = container.querySelector<HTMLElement>(".apx-drawer-body");
+      const body = container.querySelector<HTMLElement>(".dr-drawer-body");
       if (body === null) throw new Error("検証ペインが開かない");
       return body;
     });
@@ -807,7 +807,7 @@ describe("core / targets への locale 伝搬", () => {
     const { container, designer } = mount({ initialIr: VALID_IR });
     click(await toolbarButton(container, "書き出し"));
     const dialog = await vi.waitFor(() => {
-      const el = container.querySelector<HTMLElement>(".apx-warn-card");
+      const el = container.querySelector<HTMLElement>(".dr-warn-card");
       if (el === null) throw new Error("互換警告カードがない");
       return el;
     });
@@ -815,7 +815,7 @@ describe("core / targets への locale 伝搬", () => {
 
     designer.setLocale("en");
     await vi.waitFor(() => {
-      const el = container.querySelector<HTMLElement>(".apx-warn-card");
+      const el = container.querySelector<HTMLElement>(".dr-warn-card");
       expect(el?.textContent).toContain("Text wrapping and alignment");
     });
   });

@@ -68,7 +68,7 @@ function renderSketch(
 describe("TableSketch — stripeColor", () => {
   it("stripeColor がなければ縞を描画しない", () => {
     renderSketch(table(), { x: 0, y: 0, w: 40, h: 10 + 4 * 10 });
-    expect(container.querySelectorAll(".apx-tbl-stripe")).toHaveLength(0);
+    expect(container.querySelectorAll(".dr-tbl-stripe")).toHaveLength(0);
   });
 
   it("奇数行インデックス（表示上の2, 4行目）にのみ縞を描画する", () => {
@@ -78,7 +78,7 @@ describe("TableSketch — stripeColor", () => {
       w: 40,
       h: 10 + 4 * 10,
     });
-    const stripes = [...container.querySelectorAll(".apx-tbl-stripe")];
+    const stripes = [...container.querySelectorAll(".dr-tbl-stripe")];
     expect(stripes).toHaveLength(2); // rows=4 → only q=1,3 get stripes
     expect(
       stripes.map((s) => (s as HTMLElement).style.getPropertyValue("--sy")),
@@ -99,9 +99,9 @@ describe("TableSketch — stripeColor", () => {
       h: 10 + 2 * 10,
     });
     const nodes = [
-      ...container.querySelectorAll(".apx-tbl-stripe, .apx-tbl-hline"),
+      ...container.querySelectorAll(".dr-tbl-stripe, .dr-tbl-hline"),
     ];
-    expect(nodes[0]?.classList.contains("apx-tbl-stripe")).toBe(true);
+    expect(nodes[0]?.classList.contains("dr-tbl-stripe")).toBe(true);
   });
 
   it("行数0（ヘッダのみ）では縞を描画しない", () => {
@@ -111,7 +111,7 @@ describe("TableSketch — stripeColor", () => {
       w: 40,
       h: 10,
     });
-    expect(container.querySelectorAll(".apx-tbl-stripe")).toHaveLength(0);
+    expect(container.querySelectorAll(".dr-tbl-stripe")).toHaveLength(0);
   });
 });
 
@@ -148,16 +148,14 @@ describe("TableSketch — セル結合", () => {
         { a: "同じ", b: "2" },
       ]),
     );
-    const colA = [
-      ...container.querySelectorAll('.apx-tbl-td[data-apx-col="0"]'),
-    ];
+    const colA = [...container.querySelectorAll('.dr-tbl-td[data-dr-col="0"]')];
     expect(colA).toHaveLength(1);
-    expect(colA[0]?.getAttribute("data-apx-row")).toBe("0");
+    expect(colA[0]?.getAttribute("data-dr-row")).toBe("0");
     expect(
-      container.querySelectorAll('.apx-tbl-td[data-apx-col="1"]'),
+      container.querySelectorAll('.dr-tbl-td[data-dr-col="1"]'),
     ).toHaveLength(2);
     // Within the merged cell, only the horizontal rule on the b-column side remains
-    const innerLine = [...container.querySelectorAll(".apx-tbl-hline")].find(
+    const innerLine = [...container.querySelectorAll(".dr-tbl-hline")].find(
       (line) => (line as HTMLElement).style.getPropertyValue("--ly") === "20",
     ) as HTMLElement | undefined;
     expect(innerLine?.style.left).toBe("calc(40 * var(--mm))");
@@ -170,11 +168,11 @@ describe("TableSketch — セル結合", () => {
       cellSpans: [{ row: "header", key: "a", colSpan: 2 }],
     });
     renderSketch(el, { x: 0, y: 0, w: 70, h: 10 + 2 * 10 });
-    const ths = [...container.querySelectorAll(".apx-tbl-th")];
+    const ths = [...container.querySelectorAll(".dr-tbl-th")];
     expect(ths).toHaveLength(1);
     expect((ths[0] as HTMLElement).style.getPropertyValue("--cw")).toBe("67");
     // In the header band, only the vertical rule on the detail side remains
-    const vline = container.querySelector(".apx-tbl-vline") as HTMLElement;
+    const vline = container.querySelector(".dr-tbl-vline") as HTMLElement;
     expect(vline.style.top).toBe("calc(10 * var(--mm))");
     expect(vline.style.height).toBe("calc(20 * var(--mm))");
   });
@@ -193,18 +191,14 @@ describe("TableSketch — セル結合", () => {
       ]),
     );
     const origin = container.querySelector(
-      '.apx-tbl-td[data-apx-row="0"][data-apx-col="0"]',
+      '.dr-tbl-td[data-dr-row="0"][data-dr-col="0"]',
     ) as HTMLElement;
     expect(origin.style.getPropertyValue("--cw")).toBe("67");
     expect(
-      container.querySelector(
-        '.apx-tbl-td[data-apx-row="0"][data-apx-col="1"]',
-      ),
+      container.querySelector('.dr-tbl-td[data-dr-row="0"][data-dr-col="1"]'),
     ).toBeNull();
     expect(
-      container.querySelector(
-        '.apx-tbl-td[data-apx-row="1"][data-apx-col="1"]',
-      ),
+      container.querySelector('.dr-tbl-td[data-dr-row="1"][data-dr-col="1"]'),
     ).not.toBeNull();
   });
 
@@ -227,9 +221,9 @@ describe("TableSketch — セル結合", () => {
 });
 
 describe("TableSketch — 外枠", () => {
-  it(".apx-tbl-frame をちょうど1個描画する", () => {
+  it(".dr-tbl-frame をちょうど1個描画する", () => {
     renderSketch(table(), { x: 0, y: 0, w: 40, h: 10 + 2 * 10 });
-    expect(container.querySelectorAll(".apx-tbl-frame")).toHaveLength(1);
+    expect(container.querySelectorAll(".dr-tbl-frame")).toHaveLength(1);
   });
 
   it("描画順は 縞 → 外枠 → 内部罫線", () => {
@@ -241,12 +235,12 @@ describe("TableSketch — 外枠", () => {
     });
     const classes = [
       ...container.querySelectorAll(
-        ".apx-tbl-stripe, .apx-tbl-frame, .apx-tbl-hline",
+        ".dr-tbl-stripe, .dr-tbl-frame, .dr-tbl-hline",
       ),
     ].map((node) =>
-      node.classList.contains("apx-tbl-stripe")
+      node.classList.contains("dr-tbl-stripe")
         ? "stripe"
-        : node.classList.contains("apx-tbl-frame")
+        : node.classList.contains("dr-tbl-frame")
           ? "frame"
           : "hline",
     );
@@ -274,7 +268,7 @@ describe("TableSketch — 明細セルの均等割付", () => {
       { rows: [{ a: "abc" }], overrides: new Map() },
       CONST_WIDTHS,
     );
-    const cell = container.querySelector(".apx-tbl-td") as HTMLElement;
+    const cell = container.querySelector(".dr-tbl-td") as HTMLElement;
     const expectedCharSpacePt = (4 - 3) / (3 - 1);
     expect(Number(cell.style.getPropertyValue("--cs"))).toBeCloseTo(
       expectedCharSpacePt,
@@ -294,7 +288,7 @@ describe("TableSketch — 明細セルの均等割付", () => {
       { rows: [{ a: "abcdef" }], overrides: new Map() },
       CONST_WIDTHS,
     );
-    const cell = container.querySelector(".apx-tbl-td") as HTMLElement;
+    const cell = container.querySelector(".dr-tbl-td") as HTMLElement;
     expect(cell.style.getPropertyValue("--cs")).toBe("");
   });
 
@@ -310,7 +304,7 @@ describe("TableSketch — 明細セルの均等割付", () => {
       { rows: [{ a: "abc" }], overrides: new Map() },
       CONST_WIDTHS,
     );
-    const cell = container.querySelector(".apx-tbl-td") as HTMLElement;
+    const cell = container.querySelector(".dr-tbl-td") as HTMLElement;
     expect(cell.style.getPropertyValue("--cs")).toBe("");
   });
 
@@ -328,7 +322,7 @@ describe("TableSketch — 明細セルの均等割付", () => {
         overrides: new Map(),
       },
     );
-    const cell = container.querySelector(".apx-tbl-td") as HTMLElement;
+    const cell = container.querySelector(".dr-tbl-td") as HTMLElement;
     expect(cell.style.getPropertyValue("--cs")).toBe("");
   });
 });

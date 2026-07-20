@@ -129,17 +129,17 @@ export function FontSelectorDialog(props: {
       onClose={onClose}
       footer={
         <>
-          <span className="apx-dialog-note">{m.fonts.licenseNote}</span>
+          <span className="dr-dialog-note">{m.fonts.licenseNote}</span>
           <button
             type="button"
-            className="apx-btn apx-btn-secondary"
+            className="dr-btn dr-btn-secondary"
             onClick={onClose}
           >
             {m.fonts.cancel}
           </button>
           <button
             type="button"
-            className="apx-btn apx-btn-primary"
+            className="dr-btn dr-btn-primary"
             disabled={selected === null || confirm.kind === "loading"}
             onClick={confirmSelection}
           >
@@ -148,13 +148,13 @@ export function FontSelectorDialog(props: {
         </>
       }
     >
-      <ul className="apx-font-list">
+      <ul className="dr-font-list">
         {embeddedName !== undefined && (
           <li>
             <button
               type="button"
               aria-pressed={selected === null && currentName === embeddedName}
-              className="apx-font-row"
+              className="dr-font-row"
               onClick={() => {
                 setSelected(null);
                 onSelectEmbedded(embeddedName);
@@ -169,7 +169,7 @@ export function FontSelectorDialog(props: {
             <button
               type="button"
               aria-pressed={selected === null && currentName === undefined}
-              className="apx-font-row"
+              className="dr-font-row"
               onClick={() => {
                 setSelected(null);
                 onClear();
@@ -182,12 +182,12 @@ export function FontSelectorDialog(props: {
       </ul>
       {list.kind === "loading" && <p>{m.fonts.loadingList}</p>}
       {list.kind === "failed" && (
-        <div className="apx-font-notice" role="alert">
+        <div className="dr-font-notice" role="alert">
           <p>{m.fonts.reasons[list.reason]}</p>
           {list.reason === "error" && (
             <button
               type="button"
-              className="apx-btn apx-btn-secondary"
+              className="dr-btn dr-btn-secondary"
               onClick={load}
             >
               {m.fonts.retry}
@@ -199,13 +199,13 @@ export function FontSelectorDialog(props: {
         <>
           <input
             type="search"
-            className="apx-font-search"
+            className="dr-font-search"
             placeholder={m.fonts.searchPlaceholder}
             aria-label={m.fonts.searchPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.currentTarget.value)}
           />
-          <ul className="apx-font-list">
+          <ul className="dr-font-list">
             {filtered.map((font) => {
               const isCurrent =
                 selected !== null
@@ -216,14 +216,14 @@ export function FontSelectorDialog(props: {
                   <button
                     type="button"
                     aria-pressed={isCurrent}
-                    className="apx-font-row"
+                    className="dr-font-row"
                     onClick={() => {
                       setSelected(font);
                       setConfirm({ kind: "idle" });
                     }}
                   >
-                    <span className="apx-font-name">{font.fullName}</span>
-                    <span className="apx-font-sub">
+                    <span className="dr-font-name">{font.fullName}</span>
+                    <span className="dr-font-sub">
                       {font.family} / {font.style}
                     </span>
                   </button>
@@ -234,7 +234,7 @@ export function FontSelectorDialog(props: {
         </>
       )}
       {confirm.kind === "failed" && (
-        <div className="apx-font-notice" role="alert">
+        <div className="dr-font-notice" role="alert">
           {confirm.issues.map((issue, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same format can appear side by side, so identify by index
             <p key={i}>{issue.message}</p>

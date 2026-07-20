@@ -109,7 +109,7 @@ describe("resolveFootnotes", () => {
     const resolved = resolveFootnotes(document);
     const block = resolved.elements[resolved.elements.length - 1];
     expect(block).toMatchObject({
-      id: "apxFootnotes",
+      id: "drFootnotes",
       text: "*1 本体価格は税抜表示です\n*2 振込手数料はお客様負担です",
     });
   });

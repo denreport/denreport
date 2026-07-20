@@ -27,7 +27,7 @@ export function useGuideDrag(
   }, []);
 
   const geometry = useCallback((): PaperGeometry | null => {
-    const paper = viewportRef.current?.querySelector(".apx-paper");
+    const paper = viewportRef.current?.querySelector(".dr-paper");
     if (!(paper instanceof HTMLElement)) {
       return null;
     }

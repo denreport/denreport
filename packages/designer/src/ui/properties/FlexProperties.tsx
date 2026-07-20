@@ -40,8 +40,8 @@ export function FlexProperties(props: ElementFormProps): ReactNode {
   return (
     <>
       {"x" in el && (
-        <section className="apx-sect">
-          <div className="apx-sect-h">{m.properties.placement}</div>
+        <section className="dr-sect">
+          <div className="dr-sect-h">{m.properties.placement}</div>
           <NumberField
             label="x"
             value={liveBox === null ? el.x : liveBox.x}
@@ -60,8 +60,8 @@ export function FlexProperties(props: ElementFormProps): ReactNode {
           />
         </section>
       )}
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.flex.layout}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.flex.layout}</div>
         <SegmentField
           label={m.properties.flex.direction}
           value={el.direction}
@@ -100,13 +100,13 @@ export function FlexProperties(props: ElementFormProps): ReactNode {
           }
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.flex.dimension}</div>
-        <div className="apx-frow">
-          <span className="apx-frow-label">
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.flex.dimension}</div>
+        <div className="dr-frow">
+          <span className="dr-frow-label">
             {m.properties.flex.mainSize(el.direction === "row" ? "w" : "h")}
           </span>
-          <label className="apx-check" htmlFor={checkId}>
+          <label className="dr-check" htmlFor={checkId}>
             <input
               id={checkId}
               type="checkbox"
@@ -138,16 +138,16 @@ export function FlexProperties(props: ElementFormProps): ReactNode {
             }
           />
         ) : (
-          <div className="apx-frow">
+          <div className="dr-frow">
             <span />
-            <span className="apx-field-static">
+            <span className="dr-field-static">
               {m.properties.flex.derived(content.toFixed(1))}
             </span>
           </div>
         )}
-        <div className="apx-frow">
-          <span className="apx-frow-label">{m.properties.flex.crossAxis}</span>
-          <span className="apx-field-static">
+        <div className="dr-frow">
+          <span className="dr-frow-label">{m.properties.flex.crossAxis}</span>
+          <span className="dr-field-static">
             {m.properties.flex.derived(cross.toFixed(1))}
           </span>
         </div>

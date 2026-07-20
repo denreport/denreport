@@ -84,11 +84,11 @@ export function MultiElementProperties(props: {
 
   return (
     <>
-      <div className="apx-props-head">
+      <div className="dr-props-head">
         {uniformType !== undefined && (
-          <span className="apx-type-badge">{m.elementTypes[uniformType]}</span>
+          <span className="dr-type-badge">{m.elementTypes[uniformType]}</span>
         )}
-        <span className="apx-props-id">
+        <span className="dr-props-id">
           {m.propertiesBulk.selectedCount(views.length)}
         </span>
       </div>
@@ -98,8 +98,8 @@ export function MultiElementProperties(props: {
           return null;
         }
         return (
-          <section className="apx-sect" key={section}>
-            <div className="apx-sect-h">
+          <section className="dr-sect" key={section}>
+            <div className="dr-sect-h">
               {m.propertiesBulk.sections[section]}
             </div>
             {inSection.map((descriptor) => (

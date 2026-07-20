@@ -244,7 +244,7 @@ export function Canvas(props: {
   }, [doc, view.pageContext]);
 
   const restoreFocus = useCallback((): void => {
-    viewportRef.current?.querySelector<HTMLElement>(".apx-paper")?.focus();
+    viewportRef.current?.querySelector<HTMLElement>(".dr-paper")?.focus();
   }, []);
   const menu = useCanvasContextMenu(
     store,
@@ -263,7 +263,7 @@ export function Canvas(props: {
     if (viewport === null) {
       return;
     }
-    const corner = viewport.querySelector(".apx-ruler-corner");
+    const corner = viewport.querySelector(".dr-ruler-corner");
     const rulerWidth = corner instanceof HTMLElement ? corner.offsetWidth : 0;
     const rulerHeight = corner instanceof HTMLElement ? corner.offsetHeight : 0;
     const zoom = fitPageZoom({
@@ -289,7 +289,7 @@ export function Canvas(props: {
     if (viewport === null || previous === view.zoom) {
       return;
     }
-    const paper = viewport.querySelector(".apx-paper");
+    const paper = viewport.querySelector(".dr-paper");
     if (!(paper instanceof HTMLElement)) {
       return;
     }
@@ -348,7 +348,7 @@ export function Canvas(props: {
   useEffect(() => {
     revealRef.current = (id: string): void => {
       viewportRef.current
-        ?.querySelector(`[data-apx-id="${CSS.escape(id)}"]`)
+        ?.querySelector(`[data-dr-id="${CSS.escape(id)}"]`)
         ?.scrollIntoView({ block: "nearest", inline: "nearest" });
     };
     return () => {
@@ -367,28 +367,28 @@ export function Canvas(props: {
     // e.target is pinned to paper itself for coordinate tracking during the drag. The element
     // actually under the cursor must be re-obtained via hit-test
     const target = document.elementFromPoint(e.clientX, e.clientY);
-    const handleEl = target?.closest("[data-apx-handle]") ?? null;
+    const handleEl = target?.closest("[data-dr-handle]") ?? null;
     if (handleEl !== null) {
       return;
     }
-    const idEl = target?.closest("[data-apx-id]") ?? null;
-    const colEl = target?.closest("[data-apx-col]") ?? null;
-    const colAttr = colEl?.getAttribute("data-apx-col") ?? null;
-    const rowEl = target?.closest("[data-apx-row]") ?? null;
-    const rowAttr = rowEl?.getAttribute("data-apx-row") ?? null;
+    const idEl = target?.closest("[data-dr-id]") ?? null;
+    const colEl = target?.closest("[data-dr-col]") ?? null;
+    const colAttr = colEl?.getAttribute("data-dr-col") ?? null;
+    const rowEl = target?.closest("[data-dr-row]") ?? null;
+    const rowAttr = rowEl?.getAttribute("data-dr-row") ?? null;
     setEditing(
       resolveInlineEditTarget({
         layout,
         selection: state.selection,
         pageContext: view.pageContext,
-        elementId: idEl?.getAttribute("data-apx-id") ?? null,
+        elementId: idEl?.getAttribute("data-dr-id") ?? null,
         columnIndex: colAttr === null ? null : Number(colAttr),
         rowIndex: rowAttr === null ? null : Number(rowAttr),
       }),
     );
   };
 
-  const viewportClass = `apx-viewport${pan.panMode ? " is-pan" : ""}${
+  const viewportClass = `dr-viewport${pan.panMode ? " is-pan" : ""}${
     pan.panning ? " is-panning" : ""
   }`;
 
@@ -404,7 +404,7 @@ export function Canvas(props: {
         } as CSSProperties
       }
     >
-      <div className="apx-ruler-corner">mm</div>
+      <div className="dr-ruler-corner">mm</div>
       <Ruler
         axis="h"
         lengthMm={doc.page.width}
@@ -415,9 +415,9 @@ export function Canvas(props: {
         lengthMm={doc.page.height}
         onGuidePointerDown={(e) => guideDrag.startFromRuler("v", e)}
       />
-      <div className="apx-canvas-content">
+      <div className="dr-canvas-content">
         <div
-          className={`apx-paper${view.gridVisible ? " apx-show-grid" : ""}`}
+          className={`dr-paper${view.gridVisible ? " dr-show-grid" : ""}`}
           style={
             {
               "--pw": doc.page.width,
@@ -475,7 +475,7 @@ export function Canvas(props: {
           ))}
           {cellSel.selectionBox !== null && (
             <div
-              className="apx-cell-sel"
+              className="dr-cell-sel"
               style={
                 {
                   "--x": cellSel.selectionBox.x,
@@ -488,7 +488,7 @@ export function Canvas(props: {
           )}
           {doc.elements.length === 0 &&
             interaction.interaction.kind !== "placing" && (
-              <div className="apx-paper-empty-hint">{m.canvas.emptyHint}</div>
+              <div className="dr-paper-empty-hint">{m.canvas.emptyHint}</div>
             )}
           <GuidesLayer
             guides={guidesOnPage}

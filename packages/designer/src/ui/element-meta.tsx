@@ -5,25 +5,25 @@ import type { Messages } from "../i18n/messages";
 const STATIC_ICONS: Readonly<
   Record<Exclude<IrElementType, "text">, ReactNode>
 > = {
-  line: <span className="apx-pi-line" />,
-  rect: <span className="apx-pi-rect" />,
-  ellipse: <span className="apx-pi-ellipse" />,
-  table: <span className="apx-pi-table" />,
-  image: <span className="apx-pi-image" />,
+  line: <span className="dr-pi-line" />,
+  rect: <span className="dr-pi-rect" />,
+  ellipse: <span className="dr-pi-ellipse" />,
+  table: <span className="dr-pi-table" />,
+  image: <span className="dr-pi-image" />,
   flex: (
-    <span className="apx-pi-flex">
+    <span className="dr-pi-flex">
       <i />
     </span>
   ),
-  pageNumber: <span className="apx-pi-pageno">n/N</span>,
-  barcode: <span className="apx-pi-barcode" />,
+  pageNumber: <span className="dr-pi-pageno">n/N</span>,
+  barcode: <span className="dr-pi-barcode" />,
 };
 
 /** Palette / layer-row icon for an element type. Display names are locale-dependent, so use useMessages().elementTypes */
 export function elementTypeIcon(type: IrElementType, m: Messages): ReactNode {
   // Only "text" draws a single sample glyph, so use the locale's character
   return type === "text" ? (
-    <span className="apx-pi-text">{m.textIconGlyph}</span>
+    <span className="dr-pi-text">{m.textIconGlyph}</span>
   ) : (
     STATIC_ICONS[type]
   );

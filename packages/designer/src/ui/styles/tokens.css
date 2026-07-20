@@ -1,8 +1,8 @@
 /* ==== Design tokens (whole designer UI) ==== */
-/* Scope tokens to the .apx-designer root element so the embedded widget
+/* Scope tokens to the .dr-designer root element so the embedded widget
    never rewrites the host page's <html> */
 
-.apx-designer {
+.dr-designer {
   color-scheme: light;
 
   /* --- Typography --- */
@@ -111,7 +111,7 @@
   --paper-ghost-opacity: 0.35;
 }
 
-.apx-designer[data-theme="dark"] {
+.dr-designer[data-theme="dark"] {
   color-scheme: dark;
 
   --color-bg-app: #211f1b;

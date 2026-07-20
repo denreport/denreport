@@ -26,10 +26,10 @@ function TextCell(props: {
     }
   });
   return (
-    <span className={`apx-field${invalid === true ? " is-error" : ""}`}>
+    <span className={`dr-field${invalid === true ? " is-error" : ""}`}>
       <input
         aria-label={ariaLabel}
-        className={mono === true ? "apx-mono" : undefined}
+        className={mono === true ? "dr-mono" : undefined}
         value={handlers.draft}
         onChange={(e) => handlers.onChange(e.currentTarget.value)}
         onBlur={handlers.onBlur}
@@ -61,19 +61,17 @@ function WidthCell(props: {
     }
   });
   return (
-    <span
-      className={`apx-field apx-col-w${invalid === true ? " is-error" : ""}`}
-    >
+    <span className={`dr-field dr-col-w${invalid === true ? " is-error" : ""}`}>
       <input
         aria-label={ariaLabel}
-        className="apx-num"
+        className="dr-num"
         inputMode="decimal"
         value={handlers.draft}
         onChange={(e) => handlers.onChange(e.currentTarget.value)}
         onBlur={handlers.onBlur}
         onKeyDown={handlers.onKeyDown}
       />
-      <span className="apx-unit">mm</span>
+      <span className="dr-unit">mm</span>
     </span>
   );
 }
@@ -97,18 +95,18 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
   };
 
   return (
-    <section className="apx-sect">
-      <div className="apx-sect-h">
+    <section className="dr-sect">
+      <div className="dr-sect-h">
         {c.heading}
-        <span className="apx-mono">{el.columns.length}</span>
+        <span className="dr-mono">{el.columns.length}</span>
       </div>
       {el.columns.map((col, i) => {
         const keyError = errorMessageFor(errors, `columns[${i}].key`);
         const widthError = errorMessageFor(errors, `columns[${i}].width`);
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: columns have no stable id, and duplicate keys while editing are a normal part of editing, so index is used to identify them
-          <div key={i} className="apx-col-card">
-            <div className="apx-col-row">
+          <div key={i} className="dr-col-card">
+            <div className="dr-col-row">
               <TextCell
                 ariaLabel={c.keyLabel(i + 1)}
                 value={col.key}
@@ -120,7 +118,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
               />
               <button
                 type="button"
-                className="apx-col-btn"
+                className="dr-col-btn"
                 aria-label={c.moveUpLabel(i + 1)}
                 disabled={i === 0}
                 onClick={() =>
@@ -131,7 +129,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
               </button>
               <button
                 type="button"
-                className="apx-col-btn"
+                className="dr-col-btn"
                 aria-label={c.moveDownLabel(i + 1)}
                 disabled={i === el.columns.length - 1}
                 onClick={() =>
@@ -142,7 +140,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
               </button>
               <button
                 type="button"
-                className="apx-col-btn apx-col-del"
+                className="dr-col-btn dr-col-del"
                 aria-label={c.deleteLabel(i + 1)}
                 disabled={el.columns.length === 1}
                 onClick={() =>
@@ -152,7 +150,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
                 ×
               </button>
             </div>
-            <div className="apx-col-row">
+            <div className="dr-col-row">
               <TextCell
                 ariaLabel={c.headingLabel(i + 1)}
                 value={col.label}
@@ -172,7 +170,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
                   )
                 }
               />
-              <span className="apx-field apx-col-align">
+              <span className="dr-field dr-col-align">
                 <select
                   aria-label={c.alignLabel(i + 1)}
                   value={col.align}
@@ -192,8 +190,8 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
                 </select>
               </span>
             </div>
-            <div className="apx-col-row">
-              <label className="apx-check">
+            <div className="dr-col-row">
+              <label className="dr-check">
                 <input
                   type="checkbox"
                   aria-label={c.mergeSameValueLabel(i + 1)}
@@ -210,17 +208,17 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
               </label>
             </div>
             {keyError !== undefined && (
-              <div className="apx-col-err">{keyError}</div>
+              <div className="dr-col-err">{keyError}</div>
             )}
             {widthError !== undefined && (
-              <div className="apx-col-err">{widthError}</div>
+              <div className="dr-col-err">{widthError}</div>
             )}
           </div>
         );
       })}
       <button
         type="button"
-        className="apx-add-col"
+        className="dr-add-col"
         onClick={() => commitDoc((doc) => addTableColumn(doc, el.id))}
       >
         {c.addColumn}

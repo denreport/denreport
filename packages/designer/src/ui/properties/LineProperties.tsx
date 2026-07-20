@@ -27,8 +27,8 @@ export function LineProperties(props: ElementFormProps): ReactNode {
   return (
     <>
       {"x" in el && (
-        <section className="apx-sect">
-          <div className="apx-sect-h">{m.properties.placement}</div>
+        <section className="dr-sect">
+          <div className="dr-sect-h">{m.properties.placement}</div>
           <NumberField
             label="x"
             value={liveBox === null ? el.x : liveBox.x}
@@ -47,8 +47,8 @@ export function LineProperties(props: ElementFormProps): ReactNode {
           />
         </section>
       )}
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.line.shape}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.line.shape}</div>
         <SegmentField
           label={m.properties.line.orientation}
           value={el.orientation}
@@ -82,8 +82,8 @@ export function LineProperties(props: ElementFormProps): ReactNode {
           }
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.line.style}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.line.style}</div>
         <ColorField
           label={m.properties.line.color}
           value={el.color ?? null}

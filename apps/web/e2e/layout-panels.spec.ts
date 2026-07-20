@@ -46,7 +46,7 @@ test("両パネルを閉じてもキャンバスバーの操作は可視かつ�
 });
 
 test("左パネルを閉じてもキャンバスは幅を保って表示される", async ({ page }) => {
-  const canvasArea = page.locator(".apx-canvas-area");
+  const canvasArea = page.locator(".dr-canvas-area");
   const before = await canvasArea.boundingBox();
   if (before === null) {
     throw new Error("キャンバスが表示されていません");
@@ -67,7 +67,7 @@ test("左パネルを閉じてもキャンバスは幅を保って表示され�
 });
 
 test("右パネルを閉じてもキャンバスは幅を保って表示される", async ({ page }) => {
-  const canvasArea = page.locator(".apx-canvas-area");
+  const canvasArea = page.locator(".dr-canvas-area");
   const before = await canvasArea.boundingBox();
   if (before === null) {
     throw new Error("キャンバスが表示されていません");

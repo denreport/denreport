@@ -15,12 +15,12 @@ export function Ruler(props: {
   }
   return (
     <div
-      className={props.axis === "h" ? "apx-ruler-h" : "apx-ruler-v"}
+      className={props.axis === "h" ? "dr-ruler-h" : "dr-ruler-v"}
       aria-hidden="true"
       onPointerDown={props.onGuidePointerDown}
     >
       {marks.map((n) => (
-        <span key={n} className="apx-rl" style={{ "--n": n } as CSSProperties}>
+        <span key={n} className="dr-rl" style={{ "--n": n } as CSSProperties}>
           {n}
         </span>
       ))}

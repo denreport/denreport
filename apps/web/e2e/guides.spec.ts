@@ -18,7 +18,7 @@ async function dragHorizontalGuideFromRuler(
   page: Page,
   targetYPx: number,
 ): Promise<Locator> {
-  const rulerBox = await page.locator(".apx-ruler-h").boundingBox();
+  const rulerBox = await page.locator(".dr-ruler-h").boundingBox();
   if (rulerBox === null) {
     throw new Error("上定規が表示されていません");
   }
@@ -27,7 +27,7 @@ async function dragHorizontalGuideFromRuler(
   await page.mouse.down();
   await page.mouse.move(startX, targetYPx, { steps: 8 });
   await page.mouse.up();
-  return page.locator(".apx-cguide-h");
+  return page.locator(".dr-cguide-h");
 }
 
 test("上定規からのドラッグで水平ガイドが作成され、離しても消えない", async ({
@@ -88,7 +88,7 @@ test("ガイドを定規側へドラッグすると消える", async ({ page }) 
   );
   await expect(guide).toBeVisible();
 
-  const hit = guide.locator(".apx-cguide-hit");
+  const hit = guide.locator(".dr-cguide-hit");
   const hitBox = await hit.boundingBox();
   if (hitBox === null) {
     throw new Error("ガイドの掴みハンドルが表示されていません");
@@ -101,7 +101,7 @@ test("ガイドを定規側へドラッグすると消える", async ({ page }) 
   await page.mouse.move(paperBox.x + 20, paperBox.y - 20, { steps: 8 });
   await page.mouse.up();
 
-  await expect(page.locator(".apx-cguide-h")).toHaveCount(0);
+  await expect(page.locator(".dr-cguide-h")).toHaveCount(0);
 });
 
 test("封筒プリセットを選択すると1ページ目文脈で窓枠が表示され、継続ページ文脈では表示されない", async ({
@@ -111,12 +111,12 @@ test("封筒プリセットを選択すると1ページ目文脈で窓枠が表�
   const select = page.getByRole("combobox", { name: "封筒窓ガイド" });
   await select.selectOption("l3-w80h45");
 
-  await expect(page.locator(".apx-env-window")).toBeVisible();
-  await expect(page.locator(".apx-env-safe")).toBeVisible();
+  await expect(page.locator(".dr-env-window")).toBeVisible();
+  await expect(page.locator(".dr-env-safe")).toBeVisible();
 
   await page
     .getByRole("group", { name: "ページ文脈" })
     .getByRole("button", { name: "継続ページ" })
     .click();
-  await expect(page.locator(".apx-env-window")).toHaveCount(0);
+  await expect(page.locator(".dr-env-window")).toHaveCount(0);
 });

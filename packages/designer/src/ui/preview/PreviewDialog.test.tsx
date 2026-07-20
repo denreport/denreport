@@ -208,7 +208,7 @@ function commitSample(json: string): void {
 }
 
 function svgPages(): NodeListOf<Element> {
-  return container.querySelectorAll(".apx-preview-svg");
+  return container.querySelectorAll(".dr-preview-svg");
 }
 
 function scenarioSelect(): HTMLSelectElement {
@@ -292,7 +292,7 @@ describe("PreviewDialog", () => {
       "{}",
     );
     await renderDialog(store);
-    const banner = container.querySelector(".apx-preview-warnings");
+    const banner = container.querySelector(".dr-preview-warnings");
     expect(banner).not.toBeNull();
     expect(banner?.textContent).toContain("customerName");
     expect(banner?.textContent).toContain("items");
@@ -306,7 +306,7 @@ describe("PreviewDialog", () => {
       sampleWithRows(2),
     );
     await renderDialog(store);
-    const banner = container.querySelector(".apx-preview-warnings");
+    const banner = container.querySelector(".dr-preview-warnings");
     // In jsdom, only the font-load-failure warning remains
     expect(banner?.textContent).toContain("フォント");
     expect(banner?.textContent).not.toContain("items");
@@ -331,7 +331,7 @@ describe("PreviewDialog", () => {
     );
     await renderDialog(store);
     expect(svgPages()).toHaveLength(0);
-    expect(container.querySelector(".apx-verr-rule")?.textContent).toBe("C03");
+    expect(container.querySelector(".dr-verr-rule")?.textContent).toBe("C03");
   });
 
   it("サンプルが空なら生成ボタンで即座に generateSampleData の結果になる", async () => {
@@ -344,7 +344,7 @@ describe("PreviewDialog", () => {
       generateSampleData(document_),
     );
     expect(textarea().value).toBe(generateSampleData(document_));
-    expect(container.querySelector(".apx-dialog")).toBeNull();
+    expect(container.querySelector(".dr-dialog")).toBeNull();
   });
 
   it("既存サンプルがあるときは確認を挟み、キャンセルなら変更しない", async () => {
@@ -353,13 +353,13 @@ describe("PreviewDialog", () => {
     await renderDialog(store);
 
     click(buttonByText("bind キーから生成"));
-    expect(container.querySelector(".apx-dialog")).not.toBeNull();
+    expect(container.querySelector(".dr-dialog")).not.toBeNull();
     expect(activeSampleJson(store.getState().sampleScenarios)).toBe(
       sampleWithRows(1),
     );
 
     click(buttonByText("キャンセル"));
-    expect(container.querySelector(".apx-dialog")).toBeNull();
+    expect(container.querySelector(".dr-dialog")).toBeNull();
     expect(activeSampleJson(store.getState().sampleScenarios)).toBe(
       sampleWithRows(1),
     );
@@ -377,7 +377,7 @@ describe("PreviewDialog", () => {
 
     commitSample("{oops");
     expect(activeSampleJson(store.getState().sampleScenarios)).toBe("{oops");
-    expect(container.querySelector(".apx-sample-err")).not.toBeNull();
+    expect(container.querySelector(".dr-sample-err")).not.toBeNull();
     // The data is completed to empty, so the page keeps rendering
     expect(svgPages()).toHaveLength(1);
   });
@@ -463,7 +463,7 @@ describe("シナリオ操作", () => {
     expect(store.getState().sampleScenarios.items).toHaveLength(2);
 
     click(buttonByText("削除"));
-    expect(container.querySelector(".apx-dialog")).not.toBeNull();
+    expect(container.querySelector(".dr-dialog")).not.toBeNull();
     expect(store.getState().sampleScenarios.items).toHaveLength(2);
 
     click(buttonByText("削除する"));
@@ -491,7 +491,7 @@ describe("シナリオ操作", () => {
 describe("フォント解決の反映", () => {
   it("registered 解決では選択フォントの family が描画に使われ、fetch は呼ばれない", async () => {
     vi.mocked(registerPreviewFace).mockResolvedValueOnce(
-      "apx-local-MyLocalFont",
+      "dr-local-MyLocalFont",
     );
     const font = {
       name: "MyLocalFont",
@@ -507,8 +507,8 @@ describe("フォント解決の反映", () => {
     await renderDialog(store);
 
     await vi.waitFor(() => {
-      const text = container.querySelector(".apx-preview-svg text");
-      expect(text?.getAttribute("font-family")).toBe("apx-local-MyLocalFont");
+      const text = container.querySelector(".dr-preview-svg text");
+      expect(text?.getAttribute("font-family")).toBe("dr-local-MyLocalFont");
     });
     expect(registerPreviewFace).toHaveBeenCalledWith(
       expect.anything(),
@@ -525,7 +525,7 @@ describe("フォント解決の反映", () => {
     );
     await renderDialog(store);
 
-    const banner = container.querySelector(".apx-preview-warnings");
+    const banner = container.querySelector(".dr-preview-warnings");
     expect(banner?.textContent).toContain(
       "フォント「GoneFont」の実データが未選択のため",
     );
@@ -551,7 +551,7 @@ describe("en の MessagesContext", () => {
 
   it("文言が英語で描画される", async () => {
     await renderEn();
-    expect(container.querySelector(".apx-preview-title")?.textContent).toBe(
+    expect(container.querySelector(".dr-preview-title")?.textContent).toBe(
       "Preview",
     );
     expect(buttonByText("Close")).not.toBeNull();
@@ -569,9 +569,9 @@ describe("en の MessagesContext", () => {
     expect(
       container.querySelector('input[aria-label="Scenario name"]'),
     ).not.toBeNull();
-    expect(
-      container.querySelector(".apx-sample .apx-sect-h")?.textContent,
-    ).toBe("Sample data (JSON)");
+    expect(container.querySelector(".dr-sample .dr-sect-h")?.textContent).toBe(
+      "Sample data (JSON)",
+    );
     expect(svgPages()[0]?.getAttribute("aria-label")).toBe("Preview page");
   });
 });

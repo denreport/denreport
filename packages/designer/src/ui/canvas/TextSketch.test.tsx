@@ -39,7 +39,7 @@ function render(props: Parameters<typeof TextSketch>[0]): void {
 }
 
 function lineTexts(): string[] {
-  return [...container.querySelectorAll(".apx-text-line")].map(
+  return [...container.querySelectorAll(".dr-text-line")].map(
     (n) => n.textContent ?? "",
   );
 }
@@ -53,11 +53,11 @@ describe("TextSketch — charWidths が null（未到着・読込失敗）", () 
       align: "left",
       charWidths: null,
     });
-    expect(container.querySelectorAll(".apx-text-line")).toHaveLength(0);
+    expect(container.querySelectorAll(".dr-text-line")).toHaveLength(0);
     expect(container.textContent).toBe("本文");
   });
 
-  it("bind 指定でも .apx-bind の生テキストのまま描画する", () => {
+  it("bind 指定でも .dr-bind の生テキストのまま描画する", () => {
     render({
       content: "{n} / {N}",
       widthMm: 40,
@@ -66,8 +66,8 @@ describe("TextSketch — charWidths が null（未到着・読込失敗）", () 
       charWidths: null,
       bind: true,
     });
-    expect(container.querySelectorAll(".apx-text-line")).toHaveLength(0);
-    expect(container.querySelector(".apx-bind")?.textContent).toBe("{n} / {N}");
+    expect(container.querySelectorAll(".dr-text-line")).toHaveLength(0);
+    expect(container.querySelector(".dr-bind")?.textContent).toBe("{n} / {N}");
   });
 });
 
@@ -81,7 +81,7 @@ describe("TextSketch — 折り返し", () => {
       charWidths: CONST_WIDTHS,
     });
     expect(lineTexts()).toEqual(["abc", "def"]);
-    for (const line of container.querySelectorAll(".apx-text-line")) {
+    for (const line of container.querySelectorAll(".dr-text-line")) {
       expect((line as HTMLElement).style.getPropertyValue("--cs")).toBe("");
     }
   });
@@ -98,7 +98,7 @@ describe("TextSketch — justify", () => {
     });
     expect(lineTexts()).toEqual(["abc", "def"]);
     const expectedCharSpacePt = (3.5 - 3) / (3 - 1);
-    for (const line of container.querySelectorAll(".apx-text-line")) {
+    for (const line of container.querySelectorAll(".dr-text-line")) {
       expect(
         Number((line as HTMLElement).style.getPropertyValue("--cs")),
       ).toBeCloseTo(expectedCharSpacePt, 6);
@@ -113,7 +113,7 @@ describe("TextSketch — justify", () => {
       align: "left",
       charWidths: CONST_WIDTHS,
     });
-    const line = container.querySelector(".apx-text-line") as HTMLElement;
+    const line = container.querySelector(".dr-text-line") as HTMLElement;
     expect(line.style.getPropertyValue("--cs")).toBe("");
   });
 });
@@ -127,14 +127,14 @@ describe("TextSketch — 空行", () => {
       align: "left",
       charWidths: CONST_WIDTHS,
     });
-    const lines = [...container.querySelectorAll(".apx-text-line")];
+    const lines = [...container.querySelectorAll(".dr-text-line")];
     expect(lines).toHaveLength(3);
     expect(lines.map((l) => l.textContent)).toEqual(["a", " ", "b"]);
   });
 });
 
 describe("TextSketch — bind", () => {
-  it("各行を span.apx-bind に包む", () => {
+  it("各行を span.dr-bind に包む", () => {
     render({
       content: "a\nb",
       widthMm: widthMmFor(100),
@@ -143,10 +143,10 @@ describe("TextSketch — bind", () => {
       charWidths: CONST_WIDTHS,
       bind: true,
     });
-    const lines = [...container.querySelectorAll(".apx-text-line")];
+    const lines = [...container.querySelectorAll(".dr-text-line")];
     expect(lines).toHaveLength(2);
     for (const line of lines) {
-      expect(line.querySelector(".apx-bind")).not.toBeNull();
+      expect(line.querySelector(".dr-bind")).not.toBeNull();
     }
   });
 });

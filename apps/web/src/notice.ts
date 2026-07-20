@@ -8,7 +8,7 @@ export function createNoticeArea(doc: Document): {
   readonly show: (message: string, closeLabel: string) => void;
 } {
   const element = doc.createElement("div");
-  element.className = "apx-host-notice";
+  element.className = "dr-host-notice";
   element.setAttribute("role", "status");
   element.hidden = true;
 

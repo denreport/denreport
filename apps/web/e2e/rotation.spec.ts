@@ -21,10 +21,10 @@ test("回転ハンドルのドラッグで IR に rotate が入り、キャン�
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^矩形/, { x: 100, y: 100 });
-  const rect = page.locator('.apx-el[data-apx-id="rect1"]');
+  const rect = page.locator('.dr-el[data-dr-id="rect1"]');
   await expect(rect).toBeVisible();
 
-  const handle = page.locator('[data-apx-handle="rotate"]');
+  const handle = page.locator('[data-dr-handle="rotate"]');
   await expect(handle).toBeVisible();
 
   const box = await rect.boundingBox();
@@ -54,9 +54,10 @@ test("回転ハンドルのドラッグで IR に rotate が入り、キャン�
   await page.getByRole("button", { name: "プレビュー" }).click();
   const preview = page.getByRole("dialog", { name: "プレビュー" });
   await expect(preview).toBeVisible();
-  await expect(
-    preview.locator(".apx-preview-svg g[transform]"),
-  ).toHaveAttribute("transform", /^rotate\(90 /);
+  await expect(preview.locator(".dr-preview-svg g[transform]")).toHaveAttribute(
+    "transform",
+    /^rotate\(90 /,
+  );
 });
 
 test("プロパティパネルの角度入力で rotate が設定・解除される", async ({
@@ -64,7 +65,7 @@ test("プロパティパネルの角度入力で rotate が設定・解除され
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^矩形/, { x: 100, y: 100 });
-  const rect = page.locator('.apx-el[data-apx-id="rect1"]');
+  const rect = page.locator('.dr-el[data-dr-id="rect1"]');
   await expect(rect).toBeVisible();
 
   const props = page.getByRole("complementary", { name: "プロパティ" });
@@ -84,9 +85,10 @@ test("プロパティパネルの角度入力で rotate が設定・解除され
   await page.getByRole("button", { name: "プレビュー" }).click();
   const preview = page.getByRole("dialog", { name: "プレビュー" });
   await expect(preview).toBeVisible();
-  await expect(
-    preview.locator(".apx-preview-svg g[transform]"),
-  ).toHaveAttribute("transform", /^rotate\(45 /);
+  await expect(preview.locator(".dr-preview-svg g[transform]")).toHaveAttribute(
+    "transform",
+    /^rotate\(45 /,
+  );
   await preview.getByRole("button", { name: "閉じる" }).click();
   await expect(preview).toBeHidden();
 
@@ -106,14 +108,14 @@ test("プロパティパネルの角度入力で rotate が設定・解除され
 test("回転した要素では選択枠とハンドルが回転に追従する", async ({ page }) => {
   await page.goto("/");
   await dragFromPalette(page, /^矩形/, { x: 100, y: 100 });
-  const rect = page.locator('.apx-el[data-apx-id="rect1"]');
+  const rect = page.locator('.dr-el[data-dr-id="rect1"]');
   await expect(rect).toBeVisible();
 
   const props = page.getByRole("complementary", { name: "プロパティ" });
   await commitField(props.getByLabel("回転"), "90");
   await expect(rect).toHaveAttribute("style", /--rot: 90deg/);
 
-  const selBox = page.locator(".apx-sel-box");
+  const selBox = page.locator(".dr-sel-box");
   await expect(selBox).toHaveAttribute("style", /--rot: 90deg/);
 
   // Rotation is around the element center, so the center stays fixed even when the AABB dimensions change
@@ -122,7 +124,7 @@ test("回転した要素では選択枠とハンドルが回転に追従する",
   const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 
   // With a 90° rotation, the top-center handle moves to the right of the element center (same height)
-  const nHandle = page.locator('.apx-h[data-apx-handle="n"]');
+  const nHandle = page.locator('.dr-h[data-dr-handle="n"]');
   const nBox = await nHandle.boundingBox();
   if (nBox === null) throw new Error("n ハンドルが表示されていません");
   const nCenter = { x: nBox.x + nBox.width / 2, y: nBox.y + nBox.height / 2 };
@@ -130,7 +132,7 @@ test("回転した要素では選択枠とハンドルが回転に追従する",
   expect(Math.abs(nCenter.y - center.y)).toBeLessThanOrEqual(2);
 
   // The rotate handle sits further out in the same direction
-  const rotateHandle = page.locator('[data-apx-handle="rotate"]');
+  const rotateHandle = page.locator('[data-dr-handle="rotate"]');
   const rotateBox = await rotateHandle.boundingBox();
   if (rotateBox === null) throw new Error("回転ハンドルが表示されていません");
   const rotateCenter = {
@@ -150,7 +152,7 @@ test("回転した要素をリサイズ中、ドラッグゴーストが回転�
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^矩形/, { x: 100, y: 100 });
-  const rect = page.locator('.apx-el[data-apx-id="rect1"]');
+  const rect = page.locator('.dr-el[data-dr-id="rect1"]');
   await expect(rect).toBeVisible();
 
   const props = page.getByRole("complementary", { name: "プロパティ" });
@@ -158,7 +160,7 @@ test("回転した要素をリサイズ中、ドラッグゴーストが回転�
   await expect(rect).toHaveAttribute("style", /--rot: 90deg/);
 
   const seHandle = page.locator(
-    '.apx-h[data-apx-handle="se"][data-apx-id="rect1"]',
+    '.dr-h[data-dr-handle="se"][data-dr-id="rect1"]',
   );
   await expect(seHandle).toBeVisible();
   const handleBox = await seHandle.boundingBox();
@@ -171,8 +173,8 @@ test("回転した要素をリサイズ中、ドラッグゴーストが回転�
   await page.mouse.down();
   await page.mouse.move(handleBox.x + 40, handleBox.y + 40, { steps: 8 });
 
-  const ghost = page.locator(".apx-drag-ghost");
-  await expect(ghost).toHaveClass(/apx-drag-ghost--rotated/);
+  const ghost = page.locator(".dr-drag-ghost");
+  await expect(ghost).toHaveClass(/dr-drag-ghost--rotated/);
   await expect(ghost).toHaveAttribute("style", /--rot: 90deg/);
 
   await page.mouse.up();
@@ -183,7 +185,7 @@ test("90° 回転した矩形のリサイズがドラッグ方向に追従し、
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^矩形/, { x: 100, y: 100 });
-  const rect = page.locator('.apx-el[data-apx-id="rect1"]');
+  const rect = page.locator('.dr-el[data-dr-id="rect1"]');
   await expect(rect).toBeVisible();
 
   const props = page.getByRole("complementary", { name: "プロパティ" });
@@ -196,9 +198,7 @@ test("90° 回転した矩形のリサイズがドラッグ方向に追従し、
   if (before === null) throw new Error("矩形が表示されていません");
 
   // Due to the 90° rotation, the actual handle is "e" but it visually sits at the bottom-center
-  const eHandle = page.locator(
-    '.apx-h[data-apx-handle="e"][data-apx-id="rect1"]',
-  );
+  const eHandle = page.locator('.dr-h[data-dr-handle="e"][data-dr-id="rect1"]');
   const handleBox = await eHandle.boundingBox();
   if (handleBox === null) throw new Error("e ハンドルが表示されていません");
 

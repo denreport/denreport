@@ -17,8 +17,8 @@ export function TextProperties(props: ElementFormProps): ReactNode {
   const h = liveBox === null ? el.h : liveBox.h;
   return (
     <>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.text.content}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.text.content}</div>
         <TextAreaField
           label={m.properties.text.text}
           value={el.text}
@@ -27,8 +27,8 @@ export function TextProperties(props: ElementFormProps): ReactNode {
           onCommit={(text) => commitReplace(store, el.id, { ...el, text })}
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.placement}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.placement}</div>
         {"x" in el && (
           <>
             <NumberField
@@ -66,8 +66,8 @@ export function TextProperties(props: ElementFormProps): ReactNode {
           onCommit={(h) => commitReplace(store, el.id, { ...el, h })}
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">{m.properties.character.section}</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.character.section}</div>
         <NumberField
           label={m.properties.character.fontSize}
           value={el.fontSize}
@@ -93,10 +93,10 @@ export function TextProperties(props: ElementFormProps): ReactNode {
             commitReplace(store, el.id, { ...el, lineHeight })
           }
         />
-        <div className="apx-frow">
-          <span className="apx-frow-label">{m.properties.text.decoration}</span>
+        <div className="dr-frow">
+          <span className="dr-frow-label">{m.properties.text.decoration}</span>
           <fieldset
-            className="apx-seg"
+            className="dr-seg"
             aria-label={m.properties.text.decoration}
           >
             <button

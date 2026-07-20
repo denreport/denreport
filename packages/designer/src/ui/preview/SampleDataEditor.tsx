@@ -20,18 +20,18 @@ export function SampleDataEditor(props: {
   });
   const id = useId();
   return (
-    <div className="apx-sample">
-      <label className="apx-sect-h" htmlFor={id}>
+    <div className="dr-sample">
+      <label className="dr-sect-h" htmlFor={id}>
         {m.label}
       </label>
       <span
-        className={`apx-field apx-field-multi apx-sample-field${
+        className={`dr-field dr-field-multi dr-sample-field${
           parseError !== undefined ? " is-error" : ""
         }`}
       >
         <textarea
           id={id}
-          className="apx-mono"
+          className="dr-mono"
           rows={18}
           value={handlers.draft}
           onChange={(e) => handlers.onChange(e.currentTarget.value)}
@@ -40,11 +40,11 @@ export function SampleDataEditor(props: {
         />
       </span>
       {parseError !== undefined && (
-        <p className="apx-sample-err">{parseError}</p>
+        <p className="dr-sample-err">{parseError}</p>
       )}
       <button
         type="button"
-        className="apx-btn apx-btn-secondary"
+        className="dr-btn dr-btn-secondary"
         onClick={onGenerate}
       >
         {m.generate}

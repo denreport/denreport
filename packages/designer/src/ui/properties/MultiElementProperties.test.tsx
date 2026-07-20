@@ -349,7 +349,7 @@ describe("MultiElementProperties", () => {
   it("text + rect の選択では「文字」セクションが出ず「配置」のみ出る", () => {
     const store = makeStore();
     renderSelection(store, ["t1", "r1"]);
-    const headings = [...container.querySelectorAll(".apx-sect-h")].map(
+    const headings = [...container.querySelectorAll(".dr-sect-h")].map(
       (h) => h.textContent,
     );
     expect(headings).toEqual(["配置"]);
@@ -358,13 +358,13 @@ describe("MultiElementProperties", () => {
   it("全要素同型なら型バッジ、異型なら件数表示のみのヘッダになる", () => {
     const store = makeStore();
     renderSelection(store, ["t1", "t2"]);
-    expect(container.querySelector(".apx-type-badge")?.textContent).toBe(
+    expect(container.querySelector(".dr-type-badge")?.textContent).toBe(
       "テキスト",
     );
     expect(container.textContent).toContain("2 個の要素を選択中");
 
     renderSelection(store, ["t1", "r1"]);
-    expect(container.querySelector(".apx-type-badge")).toBeNull();
+    expect(container.querySelector(".dr-type-badge")).toBeNull();
     expect(container.textContent).toContain("2 個の要素を選択中");
   });
 
@@ -397,7 +397,7 @@ describe("MultiElementProperties", () => {
         />
       </MessagesContext.Provider>,
     );
-    const headings = [...container.querySelectorAll(".apx-sect-h")].map(
+    const headings = [...container.querySelectorAll(".dr-sect-h")].map(
       (h) => h.textContent,
     );
     expect(headings).toEqual(["Placement", "Text"]);

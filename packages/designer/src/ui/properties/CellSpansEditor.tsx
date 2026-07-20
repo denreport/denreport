@@ -28,12 +28,10 @@ function IntCell(props: {
     }
   });
   return (
-    <span
-      className={`apx-field apx-col-w${invalid === true ? " is-error" : ""}`}
-    >
+    <span className={`dr-field dr-col-w${invalid === true ? " is-error" : ""}`}>
       <input
         aria-label={ariaLabel}
-        className="apx-num"
+        className="dr-num"
         inputMode="numeric"
         value={handlers.draft}
         onChange={(e) => handlers.onChange(e.currentTarget.value)}
@@ -76,19 +74,19 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
     commitDoc((doc) => updateTableCellSpan(doc, el.id, index, patch));
 
   return (
-    <section className="apx-sect">
-      <div className="apx-sect-h">
+    <section className="dr-sect">
+      <div className="dr-sect-h">
         {c.heading}
-        <span className="apx-mono">{spans.length}</span>
+        <span className="dr-mono">{spans.length}</span>
       </div>
       {spans.map((span, i) => {
         const error = spanErrorFor(errors, i);
         const isHeader = span.row === "header";
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: merges have no stable id, so index is used to identify them
-          <div key={i} className="apx-col-card">
-            <div className="apx-col-row">
-              <span className="apx-field">
+          <div key={i} className="dr-col-card">
+            <div className="dr-col-row">
+              <span className="dr-field">
                 <select
                   aria-label={c.targetLabel(i + 1)}
                   value={isHeader ? "header" : "body"}
@@ -113,7 +111,7 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
               )}
               <button
                 type="button"
-                className="apx-col-btn apx-col-del"
+                className="dr-col-btn dr-col-del"
                 aria-label={c.deleteLabel(i + 1)}
                 onClick={() =>
                   commitDoc((doc) => removeTableCellSpan(doc, el.id, i))
@@ -122,11 +120,11 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
                 ×
               </button>
             </div>
-            <div className="apx-col-row">
-              <span className="apx-field">
+            <div className="dr-col-row">
+              <span className="dr-field">
                 <select
                   aria-label={c.columnLabel(i + 1)}
-                  className="apx-mono"
+                  className="dr-mono"
                   value={span.key}
                   onChange={(e) =>
                     commitPatch(i, { key: e.currentTarget.value })
@@ -159,18 +157,18 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
                 onCommit={(colSpan) => commitPatch(i, { colSpan })}
               />
             </div>
-            {error !== undefined && <div className="apx-col-err">{error}</div>}
+            {error !== undefined && <div className="dr-col-err">{error}</div>}
           </div>
         );
       })}
       <button
         type="button"
-        className="apx-add-col"
+        className="dr-add-col"
         onClick={() => commitDoc((doc) => addTableCellSpan(doc, el.id))}
       >
         {c.addSpan}
       </button>
-      <p className="apx-sect-note">{c.note}</p>
+      <p className="dr-sect-note">{c.note}</p>
     </section>
   );
 }

@@ -77,13 +77,13 @@ describe("StatusBar", () => {
     act(() => {
       root.render(<StatusBar store={store} cursorMm={null} />);
     });
-    expect(container.querySelector(".apx-statusbar-saved")?.textContent).toBe(
+    expect(container.querySelector(".dr-statusbar-saved")?.textContent).toBe(
       "保存済み",
     );
     act(() => {
       store.commit({ ...store.getState().document, elements: [TEXT_EL] });
     });
-    expect(container.querySelector(".apx-statusbar-saved")?.textContent).toBe(
+    expect(container.querySelector(".dr-statusbar-saved")?.textContent).toBe(
       "未保存の変更あり",
     );
   });
@@ -99,7 +99,7 @@ describe("StatusBar", () => {
       );
     });
     expect(container.textContent).toContain("Selection: ");
-    expect(container.querySelector(".apx-statusbar-saved")?.textContent).toBe(
+    expect(container.querySelector(".dr-statusbar-saved")?.textContent).toBe(
       "Saved",
     );
   });

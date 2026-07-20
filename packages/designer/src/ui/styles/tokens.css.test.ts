@@ -8,7 +8,7 @@ const css = readFileSync(
   "utf-8",
 );
 
-/** Extract the declaration block body of a theme root (`.apx-designer` or `.apx-designer[data-theme="dark"]`) */
+/** Extract the declaration block body of a theme root (`.dr-designer` or `.dr-designer[data-theme="dark"]`) */
 function themeBody(selector: string): string {
   const escaped = selector.replace(/[.[\]="]/g, "\\$&");
   const match = css.match(new RegExp(`${escaped}\\s*\\{[^}]*\\}`));
@@ -19,7 +19,7 @@ function themeBody(selector: string): string {
 // Ensure the CTA color is a token separate from --color-accent (shared across the UI for the focus ring etc.),
 // and that it's defined in both the light and dark themes
 describe("tokens.css の CTA 専用アクセントカラー", () => {
-  it.each([".apx-designer", '.apx-designer[data-theme="dark"]'])(
+  it.each([".dr-designer", '.dr-designer[data-theme="dark"]'])(
     "%s に --color-cta 系トークンが定義される",
     (selector) => {
       const body = themeBody(selector);
@@ -30,7 +30,7 @@ describe("tokens.css の CTA 専用アクセントカラー", () => {
     },
   );
 
-  it.each([".apx-designer", '.apx-designer[data-theme="dark"]'])(
+  it.each([".dr-designer", '.dr-designer[data-theme="dark"]'])(
     "%s の --color-cta は --color-accent と異なる値を持つ",
     (selector) => {
       const body = themeBody(selector);

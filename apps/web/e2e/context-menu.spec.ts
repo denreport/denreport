@@ -12,7 +12,7 @@ test("要素上の右クリックからメニューで削除し、undo・コピ�
 }) => {
   await page.goto("/");
   await paletteButton(page).click();
-  const element = page.locator('.apx-el[data-apx-id="text1"]');
+  const element = page.locator('.dr-el[data-dr-id="text1"]');
   await expect(element).toBeVisible();
 
   await element.click({ button: "right" });
@@ -52,13 +52,13 @@ test("要素上の右クリックからメニューで削除し、undo・コピ�
   ).toHaveAttribute("aria-disabled", "false");
 
   await bgMenu.getByRole("menuitem", { name: /^貼り付け/ }).click();
-  await expect(page.locator(".apx-el[data-apx-id]")).toHaveCount(2);
+  await expect(page.locator(".dr-el[data-dr-id]")).toHaveCount(2);
 });
 
 test("Esc でメニューが閉じる", async ({ page }) => {
   await page.goto("/");
   await paletteButton(page).click();
-  const element = page.locator('.apx-el[data-apx-id="text1"]');
+  const element = page.locator('.dr-el[data-dr-id="text1"]');
   await expect(element).toBeVisible();
 
   await element.click({ button: "right" });

@@ -26,7 +26,7 @@ function hasRegistered(doc: Document, family: string): boolean {
 }
 
 /** Fetches the bundled font from the url, registers a FontFace to doc.fonts under family (the
-    caller passes a unique apx- prefixed name that won't collide with the host page), and returns
+    caller passes a unique dr- prefixed name that won't collide with the host page), and returns
     it together with its metrics. Does not re-register if already registered on the same doc
     (prevents duplication across multiple instances / reopens). Failures (fetch failure, unreadable
     metrics) reject, and the caller shows a fallback display */
@@ -76,7 +76,7 @@ const registeredByDoc = new WeakMap<
   Map<string, { readonly data: Uint8Array; readonly face: FontFace }>
 >();
 
-/** Registers an arbitrary byte array to doc.fonts under the family "apx-local-<name>" and
+/** Registers an arbitrary byte array to doc.fonts under the family "dr-local-<name>" and
     returns the family name. Does not re-register if the same byte array is already registered
     under the same family. If the byte array differs (even on a name collision), swaps it and
     registers anew */
@@ -85,7 +85,7 @@ export async function registerPreviewFace(
   name: string,
   data: Uint8Array,
 ): Promise<string> {
-  const family = `apx-local-${name}`;
+  const family = `dr-local-${name}`;
   let registered = registeredByDoc.get(doc);
   if (registered === undefined) {
     registered = new Map();

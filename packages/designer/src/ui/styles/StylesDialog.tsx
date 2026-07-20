@@ -131,12 +131,12 @@ function StyleCard(props: {
   };
 
   return (
-    <li className="apx-col-card">
-      <div className="apx-col-row">
+    <li className="dr-col-card">
+      <div className="dr-col-row">
         <TextField label={m.nameLabel} value={style.name} onCommit={onRename} />
         <button
           type="button"
-          className="apx-col-btn apx-col-del"
+          className="dr-col-btn dr-col-del"
           aria-label={m.deleteAriaLabel(style.name)}
           onClick={() =>
             commitDoc((document) => removeStyle(document, style.name))
@@ -145,12 +145,12 @@ function StyleCard(props: {
           ×
         </button>
       </div>
-      <p className="apx-sect-note">{attrSummary(style.attrs, m, alignOpts)}</p>
+      <p className="dr-sect-note">{attrSummary(style.attrs, m, alignOpts)}</p>
       {STYLE_ATTR_KEYS.map((key) => {
         const included = style.attrs[key] !== undefined;
         return (
-          <div key={key} className="apx-col-row">
-            <label className="apx-frow-label">
+          <div key={key} className="dr-col-row">
+            <label className="dr-frow-label">
               <input
                 type="checkbox"
                 checked={included}
@@ -294,24 +294,24 @@ export function StylesDialog(props: {
       footer={
         <button
           type="button"
-          className="apx-btn apx-btn-secondary"
+          className="dr-btn dr-btn-secondary"
           onClick={onClose}
         >
           {messages.dialog.close}
         </button>
       }
     >
-      <div className="apx-col-row">
+      <div className="dr-col-row">
         <button
           type="button"
-          className="apx-btn apx-btn-secondary"
+          className="dr-btn dr-btn-secondary"
           onClick={onCreate}
         >
           {m.addNew}
         </button>
         <button
           type="button"
-          className="apx-btn apx-btn-secondary"
+          className="dr-btn dr-btn-secondary"
           disabled={!canCreateFromSelection}
           onClick={onCreateFromSelection}
         >
@@ -319,9 +319,9 @@ export function StylesDialog(props: {
         </button>
       </div>
       {styles.length === 0 ? (
-        <p className="apx-props-empty">{m.empty}</p>
+        <p className="dr-props-empty">{m.empty}</p>
       ) : (
-        <ul className="apx-col-list">
+        <ul className="dr-col-list">
           {styles.map((style) => (
             <StyleCard
               key={style.name}

@@ -273,7 +273,7 @@ export function PreviewPage(props: {
   const fontSet = fonts ?? { regular: FALLBACK_PREVIEW_FONT };
   return (
     <svg
-      className="apx-preview-svg"
+      className="dr-preview-svg"
       viewBox={`0 0 ${page.width} ${page.height}`}
       role="img"
       aria-label={m.preview.pageAriaLabel}

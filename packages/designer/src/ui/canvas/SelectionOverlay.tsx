@@ -320,7 +320,7 @@ export function SelectionOverlay(props: {
         }
       : null;
 
-  // Ids that overlap the committed selection (state.selection) are left to the solid apx-sel-box, avoiding double-drawing
+  // Ids that overlap the committed selection (state.selection) are left to the solid dr-sel-box, avoiding double-drawing
   const previewViews =
     interaction.kind === "marquee"
       ? interaction.previewIds
@@ -336,15 +336,15 @@ export function SelectionOverlay(props: {
       : null;
 
   return (
-    <div className="apx-overlay">
+    <div className="dr-overlay">
       {[...errorRules.entries()].map(([id, rule]) => {
         const view = byId.get(id);
         if (view === undefined) {
           return null;
         }
         return (
-          <div key={id} className="apx-err-box" style={boxVars(view.box)}>
-            <span className="apx-el-chip apx-el-chip--error">
+          <div key={id} className="dr-err-box" style={boxVars(view.box)}>
+            <span className="dr-el-chip dr-el-chip--error">
               {rule} · {id}
             </span>
           </div>
@@ -354,11 +354,11 @@ export function SelectionOverlay(props: {
       {maxYGuide !== null && (
         <>
           <span
-            className="apx-maxy-line"
+            className="dr-maxy-line"
             style={{ "--gy": maxYGuide } as CSSProperties}
           />
           <span
-            className="apx-maxy-chip"
+            className="dr-maxy-chip"
             style={{ "--gy": maxYGuide } as CSSProperties}
           >
             maxY {maxYGuide}
@@ -371,7 +371,7 @@ export function SelectionOverlay(props: {
         return (
           <div
             key={view.id}
-            className="apx-sel-box"
+            className="dr-sel-box"
             style={
               {
                 ...boxVars(view.box),
@@ -380,7 +380,7 @@ export function SelectionOverlay(props: {
             }
           >
             {single !== undefined && (
-              <span className="apx-el-chip">
+              <span className="dr-el-chip">
                 {m.elementTypes[view.element.type]} · {view.id}
               </span>
             )}
@@ -395,9 +395,9 @@ export function SelectionOverlay(props: {
           return handlesFor(single).map((handle) => (
             <span
               key={handle.id}
-              className="apx-h"
-              data-apx-handle={handle.id}
-              data-apx-id={single.id}
+              className="dr-h"
+              data-dr-handle={handle.id}
+              data-dr-id={single.id}
               style={
                 {
                   "--hx": handle.x,
@@ -424,9 +424,9 @@ export function SelectionOverlay(props: {
           );
           return (
             <span
-              className="apx-h apx-h--rotate"
-              data-apx-handle="rotate"
-              data-apx-id={single.id}
+              className="dr-h dr-h--rotate"
+              data-dr-handle="rotate"
+              data-dr-id={single.id}
               style={
                 {
                   "--hx": p.x,
@@ -440,7 +440,7 @@ export function SelectionOverlay(props: {
 
       {rotatingGhost !== null && (
         <div
-          className="apx-drag-ghost apx-drag-ghost--rotated"
+          className="dr-drag-ghost dr-drag-ghost--rotated"
           style={
             {
               ...boxVars(rotatingGhost.box),
@@ -457,8 +457,8 @@ export function SelectionOverlay(props: {
             key={ghost.key}
             className={
               rotate !== 0
-                ? "apx-drag-ghost apx-drag-ghost--rotated"
-                : "apx-drag-ghost"
+                ? "dr-drag-ghost dr-drag-ghost--rotated"
+                : "dr-drag-ghost"
             }
             style={
               {
@@ -471,13 +471,13 @@ export function SelectionOverlay(props: {
       })}
 
       {targetFlex !== undefined && (
-        <div className="apx-flex-target" style={boxVars(targetFlex.box)} />
+        <div className="dr-flex-target" style={boxVars(targetFlex.box)} />
       )}
 
       {insertLine !== null && (
         <span
           className={
-            insertLine.horizontal ? "apx-insert-line-h" : "apx-insert-line-v"
+            insertLine.horizontal ? "dr-insert-line-h" : "dr-insert-line-v"
           }
           style={
             {
@@ -492,26 +492,26 @@ export function SelectionOverlay(props: {
       {previewViews.map((view) => (
         <div
           key={view.id}
-          className="apx-sel-box apx-sel-box--preview"
+          className="dr-sel-box dr-sel-box--preview"
           style={boxVars(view.box)}
         />
       ))}
 
       {marquee !== null && (
-        <div className="apx-marquee" style={boxVars(marquee)} />
+        <div className="dr-marquee" style={boxVars(marquee)} />
       )}
 
       {guides.map((guide) =>
         guide.axis === "x" ? (
           <span
             key={`x${guide.positionMm}`}
-            className="apx-guide-v"
+            className="dr-guide-v"
             style={{ "--gx": guide.positionMm } as CSSProperties}
           />
         ) : (
           <span
             key={`y${guide.positionMm}`}
-            className="apx-guide-h"
+            className="dr-guide-h"
             style={{ "--gy": guide.positionMm } as CSSProperties}
           />
         ),
@@ -519,7 +519,7 @@ export function SelectionOverlay(props: {
 
       {tip !== null && (
         <span
-          className="apx-coord-tip"
+          className="dr-coord-tip"
           style={
             {
               "--x": tip.box.x,

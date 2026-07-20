@@ -59,44 +59,44 @@ test("UC-1: 請求書レイアウトを作りプレビューして ReportLab コ
 
   // 2. Place elements: text ×4 (recipient, issuer, registration number, total) + table ×1
   await dragFromPalette(page, /^テキスト/, { x: 45, y: 40 });
-  await expect(page.locator('.apx-el[data-apx-id="text1"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text1"]')).toBeVisible();
   await dragFromPalette(page, /^テキスト/, { x: 160, y: 40 });
-  await expect(page.locator('.apx-el[data-apx-id="text2"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text2"]')).toBeVisible();
   await dragFromPalette(page, /^テキスト/, { x: 160, y: 55 });
-  await expect(page.locator('.apx-el[data-apx-id="text3"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text3"]')).toBeVisible();
   await dragFromPalette(page, /^テキスト/, { x: 160, y: 250 });
-  await expect(page.locator('.apx-el[data-apx-id="text4"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text4"]')).toBeVisible();
   await dragFromPalette(page, /^表/, { x: 105, y: 120 });
-  await expect(page.locator('.apx-el[data-apx-id="table1"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="table1"]')).toBeVisible();
 
   // 3. Edit properties
   const props = page.getByRole("complementary", { name: "プロパティ" });
 
   // Recipient: {customerName} token
-  await page.locator('.apx-el[data-apx-id="text1"]').click();
+  await page.locator('.dr-el[data-dr-id="text1"]').click();
   const destinationField = props.getByLabel("テキスト", { exact: true });
   await destinationField.fill("{customerName}");
   await destinationField.blur();
 
   // Issuer / registration number: fixed text
-  await page.locator('.apx-el[data-apx-id="text2"]').click();
+  await page.locator('.dr-el[data-dr-id="text2"]').click();
   const issuerField = props.getByLabel("テキスト", { exact: true });
   await issuerField.fill("株式会社サンプル商事");
   await issuerField.blur();
 
-  await page.locator('.apx-el[data-apx-id="text3"]').click();
+  await page.locator('.dr-el[data-dr-id="text3"]').click();
   const registrationField = props.getByLabel("テキスト", { exact: true });
   await registrationField.fill("登録番号 T1234567890123");
   await registrationField.blur();
 
   // Total: {total} token
-  await page.locator('.apx-el[data-apx-id="text4"]').click();
+  await page.locator('.dr-el[data-dr-id="text4"]').click();
   const totalField = props.getByLabel("テキスト", { exact: true });
   await totalField.fill("{total}");
   await totalField.blur();
 
   // Line-item table: bind = items (verify the default) and 3 column definitions (name / qty / price)
-  await page.locator('.apx-el[data-apx-id="table1"]').click();
+  await page.locator('.dr-el[data-dr-id="table1"]').click();
   await expect(props.getByLabel("バインド")).toHaveValue("items");
   await commitField(props.getByLabel("y（1ページ目）", { exact: true }), "100");
   await commitField(props.getByLabel("列1 の key"), "name");
@@ -130,10 +130,10 @@ test("UC-1: 請求書レイアウトを作りプレビューして ReportLab コ
 
   // 5. Verify the preview: page count, no warnings, bundled font
   await expect(preview.getByText("1 ページ", { exact: true })).toBeVisible();
-  await expect(preview.locator(".apx-preview-warnings")).toHaveCount(0);
+  await expect(preview.locator(".dr-preview-warnings")).toHaveCount(0);
   await expect
     .poll(() =>
-      page.evaluate(() => document.fonts.check("13px apx-embedded-notosansjp")),
+      page.evaluate(() => document.fonts.check("13px dr-embedded-notosansjp")),
     )
     .toBe(true);
 
@@ -147,17 +147,17 @@ test("UC-1: 請求書レイアウトを作りプレビューして ReportLab コ
   );
   await sampleField.blur();
   await expect(preview.getByText(/^[2-9]\d* ページ$/)).toBeVisible();
-  await expect(preview.locator(".apx-preview-pageno").first()).toHaveText(
+  await expect(preview.locator(".dr-preview-pageno").first()).toHaveText(
     /^1 \/ [2-9]\d*$/,
   );
-  await expect(preview.locator(".apx-preview-warnings")).toHaveCount(0);
+  await expect(preview.locator(".dr-preview-warnings")).toHaveCount(0);
 
   // Reopening the preview doesn't re-download the font bodies (2 files: regular + bold)
   expect(await fontDownloadCount()).toBe(2);
   await preview.getByRole("button", { name: "閉じる" }).click();
   await expect(preview).toBeHidden();
   await page.getByRole("button", { name: "プレビュー" }).click();
-  await expect(preview.locator(".apx-preview-pageno").first()).toBeVisible();
+  await expect(preview.locator(".dr-preview-pageno").first()).toBeVisible();
   expect(await fontDownloadCount()).toBe(2);
   await preview.getByRole("button", { name: "閉じる" }).click();
   await expect(preview).toBeHidden();

@@ -29,7 +29,7 @@ async function toPx(page: Page, mm: Mm): Promise<Mm> {
 
 /** Returns the element's current rendered center in mm coordinates. Used to track its actual position after resize/reorder */
 async function elementCenterMm(page: Page, id: string): Promise<Mm> {
-  const el = await page.locator(`.apx-el[data-apx-id="${id}"]`).boundingBox();
+  const el = await page.locator(`.dr-el[data-dr-id="${id}"]`).boundingBox();
   if (el === null) {
     throw new Error(`${id} が表示されていません`);
   }
@@ -63,12 +63,12 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
 
   await test.step("配置: flex（子 text1 つき）と、別のトップレベル text2", async () => {
     await dragFromPalette(page, FLEX_PALETTE, { x: 60, y: 60 });
-    await expect(page.locator('.apx-el[data-apx-id="flex1"]')).toBeVisible();
+    await expect(page.locator('.dr-el[data-dr-id="flex1"]')).toBeVisible();
     await commitField(props.getByLabel("x", { exact: true }), "60");
     await commitField(props.getByLabel("y", { exact: true }), "60");
 
     await dragFromPalette(page, TEXT_PALETTE, { x: 150, y: 150 });
-    await expect(page.locator('.apx-el[data-apx-id="text2"]')).toBeVisible();
+    await expect(page.locator('.dr-el[data-dr-id="text2"]')).toBeVisible();
     await commitField(props.getByLabel("x", { exact: true }), "150");
     await commitField(props.getByLabel("y", { exact: true }), "150");
   });
@@ -76,10 +76,10 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
   await test.step("段階的選択: 同じ矩形への1クリック目で flex、2クリック目で子", async () => {
     // flex1 has only one child, text1, and no gap, so the two boxes fully overlap
     await clickCanvas(page, { x: 70, y: 63 });
-    await expect(props.locator(".apx-props-id")).toHaveText("flex1");
+    await expect(props.locator(".dr-props-id")).toHaveText("flex1");
 
     await clickCanvas(page, { x: 70, y: 63 });
-    await expect(props.locator(".apx-props-id")).toHaveText("text1");
+    await expect(props.locator(".dr-props-id")).toHaveText("text1");
   });
 
   await test.step("既存要素のドラッグ挿入: text2 を flex1 へ", async () => {
@@ -88,7 +88,7 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
       x: 80,
       y: 67,
     });
-    await expect(props.locator(".apx-props-id")).toHaveText("text2");
+    await expect(props.locator(".dr-props-id")).toHaveText("text2");
 
     // Autosave is debounced 500ms, so wait until the change is written to flex1.children
     await page.waitForFunction(() => {
@@ -132,11 +132,11 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
   await test.step("子のキャンバスリサイズ: text1 の se ハンドルで w/h を広げると text2 が再解決される", async () => {
     // From the previous selection (sibling text2), clicking directly on text1's exclusive area selects text1 in one step
     await clickCanvas(page, { x: 70, y: 63 });
-    await expect(props.locator(".apx-props-id")).toHaveText("text1");
+    await expect(props.locator(".dr-props-id")).toHaveText("text1");
 
     const before = await elementCenterMm(page, "text2");
     const handle = page.locator(
-      '.apx-h[data-apx-handle="se"][data-apx-id="text1"]',
+      '.dr-h[data-dr-handle="se"][data-dr-id="text1"]',
     );
     await expect(handle).toBeVisible();
     const handleBox = await handle.boundingBox();
