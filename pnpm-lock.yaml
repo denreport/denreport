@@ -24,6 +24,9 @@ importers:
         specifier: workspace:*
         version: link:../../packages/designer
     devDependencies:
+      '@denreport/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@playwright/test':
         specifier: 1.61.1
         version: 1.61.1
