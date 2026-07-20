@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorsByElement } from "../../state/error-index";
 import type { PlacedElementView } from "../../state/geometry";
 import { layoutDocument } from "../../state/geometry";
@@ -16,6 +17,7 @@ export function PropertiesPanel(props: {
   readonly interaction: InteractionState;
 }): ReactNode {
   const { store, interaction } = props;
+  const m = useMessages();
   const state = useEditorState(store);
   const layout = useMemo(
     () => layoutDocument(state.document, state.view.pageContext),
@@ -49,7 +51,7 @@ export function PropertiesPanel(props: {
   }
 
   return (
-    <aside className="apx-props" aria-label="プロパティ">
+    <aside className="apx-props" aria-label={m.toolbar.propertiesPanel}>
       {content}
     </aside>
   );

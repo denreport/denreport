@@ -1,6 +1,8 @@
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { ja } from "../../i18n/messages/ja";
 import { Palette } from "./Palette";
 
@@ -85,5 +87,24 @@ describe("Palette", () => {
       new MouseEvent("click", { bubbles: true }),
     );
     expect(onQuickAdd).toHaveBeenCalledExactlyOnceWith("barcode");
+  });
+
+  it("text アイコンの字形見本がロケールで切り替わる", async () => {
+    root.render(<Palette beginPlacement={vi.fn()} onQuickAdd={vi.fn()} />);
+    await vi.waitFor(() => {
+      if (container.querySelector(".apx-palette") === null) {
+        throw new Error("パレットが未描画");
+      }
+    });
+    expect(container.querySelector(".apx-pi-text")?.textContent).toBe("あ");
+
+    root.render(
+      <MessagesContext.Provider value={en}>
+        <Palette beginPlacement={vi.fn()} onQuickAdd={vi.fn()} />
+      </MessagesContext.Provider>,
+    );
+    await vi.waitFor(() => {
+      expect(container.querySelector(".apx-pi-text")?.textContent).toBe("A");
+    });
   });
 });

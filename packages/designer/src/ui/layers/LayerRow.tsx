@@ -4,7 +4,7 @@ import { visibleInContext } from "../../state/geometry";
 import type { LayerNode } from "../../state/layers";
 import { layerLabel } from "../../state/layers";
 import type { PageContext } from "../../state/types";
-import { ELEMENT_TYPE_ICON } from "../element-meta";
+import { elementTypeIcon } from "../element-meta";
 
 export function LayerRow(props: {
   readonly node: LayerNode;
@@ -29,7 +29,7 @@ export function LayerRow(props: {
   const m = useMessages();
   const isFlex = node.children !== null;
   const isCollapsed = isFlex && collapsed.has(node.id);
-  const icon = ELEMENT_TYPE_ICON[node.element.type];
+  const icon = elementTypeIcon(node.element.type, m);
 
   const classes = ["apx-layer-row"];
   if (selection.has(node.id)) {

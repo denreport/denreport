@@ -680,4 +680,25 @@ describe("en の MessagesContext", () => {
       "All elements can be exported for the selected target.",
     );
   });
+
+  it("フォント取得の失敗が英語で表示される", async () => {
+    vi.mocked(fetchEmbeddedFontData).mockRejectedValue(new Error("不通"));
+    const store = new EditorStore(docOf(staticText("t1")));
+    root.render(
+      <MessagesContext.Provider value={en}>
+        <ExportDialog store={store} onClose={() => {}} onReveal={() => {}} />
+      </MessagesContext.Provider>,
+    );
+    await vi.waitFor(() => {
+      if (container.querySelector(".apx-dialog") === null) {
+        throw new Error("ダイアログが未描画");
+      }
+    });
+    click(buttonByText("Export"));
+    await vi.waitFor(() => {
+      expect(
+        container.querySelector(".apx-export-error")?.textContent,
+      ).toContain("Couldn't fetch the bundled font. Please try again.");
+    });
+  });
 });
