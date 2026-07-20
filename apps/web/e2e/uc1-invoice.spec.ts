@@ -16,6 +16,9 @@ const BOLD_FONT_ASSET_PATH = fileURLToPath(
     import.meta.url,
   ),
 );
+const OFL_ASSET_PATH = fileURLToPath(
+  new URL("../../../packages/targets/assets/fonts/OFL.txt", import.meta.url),
+);
 const ZIP_SAVE_PATH = fileURLToPath(
   new URL("../test-results/uc1/report-reportlab.zip", import.meta.url),
 );
@@ -188,6 +191,7 @@ test("UC-1: 請求書レイアウトを作りプレビューして ReportLab コ
   expect(entries.map((e) => e.name).sort()).toEqual([
     "NotoSansJP.ttf",
     "NotoSansJPBold.ttf",
+    "OFL.txt",
     "report.py",
   ]);
   const fontEntry = entryOf(entries, "NotoSansJP.ttf");
@@ -196,6 +200,8 @@ test("UC-1: 請求書レイアウトを作りプレビューして ReportLab コ
   expect(boldFontEntry.data.equals(readFileSync(BOLD_FONT_ASSET_PATH))).toBe(
     true,
   );
+  const oflEntry = entryOf(entries, "OFL.txt");
+  expect(oflEntry.data.equals(readFileSync(OFL_ASSET_PATH))).toBe(true);
   const code = entryOf(entries, "report.py").data.toString("utf8");
   expect(code).toContain('"NotoSansJP": ("NotoSansJP.ttf", ');
   expect(code).toContain('"NotoSansJPBold": ("NotoSansJPBold.ttf", ');

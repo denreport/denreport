@@ -2,7 +2,7 @@
 """E2E が保存した ReportLab 書き出し zip を展開し、report.py を実行して PDF を検証する。
 
 使い方: python scripts/verify-exported-zip.py <zip のパス>
-検査: エントリが report.py + FONTS の全フォント / report.py の実行成功 /
+検査: エントリが report.py + FONTS の全フォント（OFL.txt は任意）/ report.py の実行成功 /
 生成 PDF のページ数 == ソース中の PAGE_COUNT。失敗時は非 0 終了。
 """
 
@@ -16,6 +16,7 @@ from pathlib import Path
 from pypdf import PdfReader
 
 CODE_FILE = "report.py"
+OFL_FILE = "OFL.txt"
 PAGE_COUNT_RE = re.compile(r"^PAGE_COUNT = (\d+)$", re.MULTILINE)
 FONT_ENTRY_RE = re.compile(r'^    "[^"]+": \("([^"]+)", [-\d.eE+]+\),$', re.MULTILINE)
 
@@ -39,7 +40,10 @@ def verify(zip_path):
         font_files = FONT_ENTRY_RE.findall(source)
         if not font_files:
             return "FONTS constant not found"
-        if sorted(names) != sorted([CODE_FILE, *font_files]):
+        # OFL.txt は同梱フォント使用時にのみ添付されるため、あってもなくても許容する。
+        expected = sorted([CODE_FILE, *font_files])
+        actual = sorted(n for n in names if n != OFL_FILE)
+        if actual != expected:
             return f"unexpected zip entries: {names}"
 
         out_pdf = tmp / "out.pdf"
