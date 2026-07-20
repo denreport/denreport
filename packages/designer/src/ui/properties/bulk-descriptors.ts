@@ -6,8 +6,12 @@ import type {
   IrOrientation,
   IrPages,
 } from "@denreport/core";
+import { ja } from "../../i18n/messages/ja";
 import type { PlacedElementView } from "../../state/geometry";
-import { ALIGN_OPTIONS } from "./align-options";
+import { alignOptions } from "./align-options";
+
+// このファイルは useMessages 未導入のため、整列ラベルは ja 固定で解決する
+const ALIGN_OPTIONS = alignOptions(ja.properties.align);
 
 type AnyElement = IrElement | IrFlexChild;
 

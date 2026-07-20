@@ -1,5 +1,6 @@
 import type { IrAlign, IrDocument } from "@denreport/core";
 import type { ReactNode } from "react";
+import { ja } from "../../i18n/messages/ja";
 import { errorMessageFor } from "../../state/error-index";
 import {
   addTableColumn,
@@ -7,9 +8,12 @@ import {
   removeTableColumn,
   updateTableColumn,
 } from "../../state/properties";
-import { ALIGN_OPTIONS } from "./align-options";
+import { alignOptions } from "./align-options";
 import type { ElementFormProps } from "./ElementProperties";
 import { useDraftValue } from "./useDraftValue";
+
+// このファイルは useMessages 未導入のため、整列ラベルは ja 固定で解決する
+const ALIGN_OPTIONS = alignOptions(ja.properties.align);
 
 function TextCell(props: {
   readonly ariaLabel: string;

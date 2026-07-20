@@ -1,10 +1,12 @@
 import type { IrBarcodeSymbology } from "@denreport/core";
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorMessageFor } from "../../state/error-index";
 import type { ElementFormProps } from "./ElementProperties";
 import { commitReplace } from "./ElementProperties";
 import { NumberField, SegmentField, TextField } from "./fields";
 
+// QR/CODE39/CODE128/EAN13 は規格名そのものであり ja/en 共通
 const SYMBOLOGY_OPTIONS: readonly {
   readonly value: IrBarcodeSymbology;
   readonly label: string;
@@ -18,6 +20,7 @@ const SYMBOLOGY_OPTIONS: readonly {
 export function BarcodeProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;
   const el = view.element;
+  const m = useMessages();
   if (el.type !== "barcode") {
     return null;
   }
@@ -26,9 +29,9 @@ export function BarcodeProperties(props: ElementFormProps): ReactNode {
   return (
     <>
       <section className="apx-sect">
-        <div className="apx-sect-h">バーコード</div>
+        <div className="apx-sect-h">{m.properties.barcode.section}</div>
         <SegmentField
-          label="規格"
+          label={m.properties.barcode.symbology}
           value={el.symbology}
           options={SYMBOLOGY_OPTIONS}
           onCommit={(symbology) =>
@@ -36,7 +39,7 @@ export function BarcodeProperties(props: ElementFormProps): ReactNode {
           }
         />
         <TextField
-          label="値"
+          label={m.properties.barcode.value}
           value={el.value}
           mono
           error={errorMessageFor(errors, "value")}
@@ -44,7 +47,7 @@ export function BarcodeProperties(props: ElementFormProps): ReactNode {
         />
       </section>
       <section className="apx-sect">
-        <div className="apx-sect-h">配置</div>
+        <div className="apx-sect-h">{m.properties.placement}</div>
         {"x" in el && (
           <>
             <NumberField

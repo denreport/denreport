@@ -2,6 +2,7 @@ import type { IrElement, IrError, IrFlexChild, IrPages } from "@denreport/core";
 import { applicableStyleAttrs } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId } from "react";
+import { useMessages } from "../../i18n/context";
 import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
 import { rotateElement } from "../../state/elements";
 import type { MmBox, PlacedElementView } from "../../state/geometry";
@@ -54,16 +55,6 @@ export function withOptionalAttr<T extends object, K extends keyof T>(
   return { ...base, [key]: value };
 }
 
-const PAGES_OPTIONS: readonly {
-  readonly value: IrPages;
-  readonly label: string;
-}[] = [
-  { value: "first", label: "1ページ目" },
-  { value: "rest", label: "継続" },
-  { value: "last", label: "最終" },
-  { value: "all", label: "全" },
-];
-
 function styleOf(el: IrElement | IrFlexChild): string | undefined {
   return el.type === "image" ||
     el.type === "flex" ||
@@ -100,6 +91,16 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
   const { store, view } = props;
   const el = view.element;
   const styleSelectId = useId();
+  const m = useMessages();
+  const pagesOptions: readonly {
+    readonly value: IrPages;
+    readonly label: string;
+  }[] = [
+    { value: "first", label: m.properties.element.pagesFirst },
+    { value: "rest", label: m.properties.element.pagesRest },
+    { value: "last", label: m.properties.element.pagesLast },
+    { value: "all", label: m.properties.element.pagesAll },
+  ];
   return (
     <>
       <div className="apx-props-head">
@@ -108,7 +109,7 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
           <span className="apx-props-id">{el.id}</span>
         </div>
         <TextField
-          label="名前"
+          label={m.properties.element.name}
           value={el.name ?? ""}
           onCommit={(raw) => {
             const trimmed = raw.trim();
@@ -129,15 +130,15 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
       </div>
       {view.parentFlexId !== null && (
         <p className="apx-sect apx-sect-note">
-          位置はフレックスが決定します。並び替えはキャンバスで行います。
+          {m.properties.element.flexChildNote}
         </p>
       )}
       {view.parentFlexId === null && "pages" in el && (
         <section className="apx-sect">
           <SegmentField
-            label="ページ"
+            label={m.properties.element.pages}
             value={el.pages}
-            options={PAGES_OPTIONS}
+            options={pagesOptions}
             onCommit={(pages) => commitReplace(store, el.id, { ...el, pages })}
           />
         </section>
@@ -145,7 +146,7 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
       {el.type !== "table" && el.type !== "flex" && (
         <section className="apx-sect">
           <NumberField
-            label="回転"
+            label={m.properties.element.rotate}
             value={el.rotate ?? 0}
             unit="°"
             precision={0.1}
@@ -162,7 +163,7 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
       {applicableStyleAttrs(el.type).length > 0 && (
         <section className="apx-sect">
           <div className="apx-frow">
-            <label htmlFor={styleSelectId}>スタイル</label>
+            <label htmlFor={styleSelectId}>{m.properties.element.style}</label>
             <span className="apx-field">
               <select
                 id={styleSelectId}
@@ -179,7 +180,7 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
                   }
                 }}
               >
-                <option value="">スタイルなし</option>
+                <option value="">{m.properties.element.noStyle}</option>
                 {(store.getState().document.styles ?? []).map((style) => (
                   <option key={style.name} value={style.name}>
                     {style.name}
