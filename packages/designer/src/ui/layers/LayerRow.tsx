@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { visibleInContext } from "../../state/geometry";
 import type { LayerNode } from "../../state/layers";
 import { layerLabel } from "../../state/layers";
@@ -25,6 +26,7 @@ export function LayerRow(props: {
     onSelect,
     onDelete,
   } = props;
+  const m = useMessages();
   const isFlex = node.children !== null;
   const isCollapsed = isFlex && collapsed.has(node.id);
   const meta = ELEMENT_TYPE_META[node.element.type];
@@ -49,7 +51,7 @@ export function LayerRow(props: {
             type="button"
             className="apx-layer-caret"
             aria-expanded={!isCollapsed}
-            aria-label={isCollapsed ? "展開" : "折りたたむ"}
+            aria-label={isCollapsed ? m.layers.expand : m.layers.collapse}
             onClick={() => onToggle(node.id)}
           >
             {isCollapsed ? "▸" : "▾"}
@@ -71,7 +73,7 @@ export function LayerRow(props: {
         <button
           type="button"
           className="apx-layer-del"
-          aria-label="削除"
+          aria-label={m.layers.delete}
           onClick={() => onDelete(node.id)}
         >
           ×

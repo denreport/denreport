@@ -2,6 +2,7 @@ import type { IrError } from "@denreport/core";
 import { COMPAT_MATRICES, checkCompat } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorElementIds } from "../../state/error-index";
 import { groupCompatFindings } from "../../state/export-warnings";
 import { layoutDocument, visibleInContext } from "../../state/geometry";
@@ -16,6 +17,7 @@ export function ValidationDrawer(props: {
 }): ReactNode {
   const { store, onReveal } = props;
   const state = useEditorState(store);
+  const m = useMessages();
   const [open, setOpen] = useState(false);
   const errors = state.validationErrors;
   const warnings = state.validationWarnings;
@@ -95,7 +97,7 @@ export function ValidationDrawer(props: {
         onClick={() => setOpen((prev) => !prev)}
       >
         <span className="apx-caret">{open ? "▾" : "▸"}</span>
-        <span>検証</span>
+        <span>{m.drawer.title}</span>
         {errors.length > 0 ? (
           <span className="apx-badge apx-badge-err">{errors.length}</span>
         ) : warnings.length > 0 ? (
@@ -103,13 +105,13 @@ export function ValidationDrawer(props: {
         ) : compatFindingTotal > 0 ? (
           <span className="apx-badge apx-badge-warn">{compatFindingTotal}</span>
         ) : (
-          <span className="apx-badge apx-badge-ok">✓ 問題なし</span>
+          <span className="apx-badge apx-badge-ok">{m.drawer.ok}</span>
         )}
       </button>
       {open && (
         <div className="apx-drawer-body">
           {errors.length === 0 && warnings.length === 0 ? (
-            <div className="apx-drawer-empty">検証エラーはありません。</div>
+            <div className="apx-drawer-empty">{m.drawer.empty}</div>
           ) : (
             <>
               {errors.length > 0 && (
@@ -126,7 +128,11 @@ export function ValidationDrawer(props: {
           )}
           <div className="apx-export-warns apx-drawer-compat">
             <p className="apx-export-warns-h">
-              <span>{`書き出し互換性（${COMPAT_MATRICES[state.selectedExportTarget].displayName}）`}</span>
+              <span>
+                {m.drawer.compatTitle(
+                  COMPAT_MATRICES[state.selectedExportTarget].displayName,
+                )}
+              </span>
               {compatFindingTotal > 0 && (
                 <span className="apx-badge apx-badge-warn">
                   {compatFindingTotal}
@@ -134,9 +140,7 @@ export function ValidationDrawer(props: {
               )}
             </p>
             {compatGroups.length === 0 ? (
-              <p className="apx-export-ok">
-                ✓ 選択中のターゲットですべての要素を書き出せます。
-              </p>
+              <p className="apx-export-ok">{m.drawer.compatOk}</p>
             ) : (
               compatGroups.map((group) => (
                 <WarningGroupCard

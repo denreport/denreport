@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { workspaceEn } from "../../i18n/messages/en/workspace";
+import { workspaceJa } from "../../i18n/messages/ja/workspace";
 import {
   buildCanvasMenuItems,
   type CanvasMenuAction,
   resolveContextTarget,
 } from "./menu-items";
+
+const m = workspaceJa.contextMenu;
 
 describe("resolveContextTarget", () => {
   it("選択外の要素なら単独選択に切り替え、onElement=true", () => {
@@ -30,7 +34,7 @@ describe("resolveContextTarget", () => {
 
 describe("buildCanvasMenuItems", () => {
   it("7項目・固定順で返す", () => {
-    const items = buildCanvasMenuItems({
+    const items = buildCanvasMenuItems(m, {
       onElement: true,
       canCopy: true,
       hasSelection: true,
@@ -50,7 +54,7 @@ describe("buildCanvasMenuItems", () => {
   });
 
   it("要素上・コピー可能・クリップボードあり・グループ化/解除可能なら全項目が有効", () => {
-    const items = buildCanvasMenuItems({
+    const items = buildCanvasMenuItems(m, {
       onElement: true,
       canCopy: true,
       hasSelection: true,
@@ -62,7 +66,7 @@ describe("buildCanvasMenuItems", () => {
   });
 
   it("背景では貼り付け以外が無効", () => {
-    const items = buildCanvasMenuItems({
+    const items = buildCanvasMenuItems(m, {
       onElement: false,
       canCopy: false,
       hasSelection: false,
@@ -81,7 +85,7 @@ describe("buildCanvasMenuItems", () => {
   });
 
   it("cell 省略時はセル項目を含まない従来7項目のまま", () => {
-    const items = buildCanvasMenuItems({
+    const items = buildCanvasMenuItems(m, {
       onElement: true,
       canCopy: true,
       hasSelection: true,
@@ -95,7 +99,7 @@ describe("buildCanvasMenuItems", () => {
   });
 
   it("cell が非 null なら先頭にセル結合2項目を足す", () => {
-    const items = buildCanvasMenuItems({
+    const items = buildCanvasMenuItems(m, {
       onElement: true,
       canCopy: true,
       hasSelection: true,
@@ -121,7 +125,7 @@ describe("buildCanvasMenuItems", () => {
   });
 
   it("cell が null ならセル項目を含まない", () => {
-    const items = buildCanvasMenuItems({
+    const items = buildCanvasMenuItems(m, {
       onElement: true,
       canCopy: true,
       hasSelection: true,
@@ -134,7 +138,7 @@ describe("buildCanvasMenuItems", () => {
   });
 
   it("クリップボードが空なら貼り付けが無効", () => {
-    const items = buildCanvasMenuItems({
+    const items = buildCanvasMenuItems(m, {
       onElement: true,
       canCopy: true,
       hasSelection: true,
@@ -146,7 +150,7 @@ describe("buildCanvasMenuItems", () => {
   });
 
   it("flex 子のみの選択相当（canCopy=false）では削除だけ有効", () => {
-    const items = buildCanvasMenuItems({
+    const items = buildCanvasMenuItems(m, {
       onElement: true,
       canCopy: false,
       hasSelection: true,
@@ -162,7 +166,7 @@ describe("buildCanvasMenuItems", () => {
   });
 
   it("要素上でも選択が空なら削除が無効", () => {
-    const items = buildCanvasMenuItems({
+    const items = buildCanvasMenuItems(m, {
       onElement: true,
       canCopy: false,
       hasSelection: false,
@@ -174,7 +178,7 @@ describe("buildCanvasMenuItems", () => {
   });
 
   it("canGroup/canUngroup が false なら要素上でもグループ化/解除は無効", () => {
-    const items = buildCanvasMenuItems({
+    const items = buildCanvasMenuItems(m, {
       onElement: true,
       canCopy: true,
       hasSelection: true,
@@ -188,7 +192,7 @@ describe("buildCanvasMenuItems", () => {
   });
 
   it("背景では canGroup/canUngroup が true でもグループ化/解除は無効", () => {
-    const items = buildCanvasMenuItems({
+    const items = buildCanvasMenuItems(m, {
       onElement: false,
       canCopy: false,
       hasSelection: false,
@@ -202,7 +206,7 @@ describe("buildCanvasMenuItems", () => {
   });
 
   it("ショートカット表示はコピー/切り取り/貼り付け/グループ化/グループ解除/削除にあり、複製は null", () => {
-    const items = buildCanvasMenuItems({
+    const items = buildCanvasMenuItems(m, {
       onElement: true,
       canCopy: true,
       hasSelection: true,
@@ -218,5 +222,21 @@ describe("buildCanvasMenuItems", () => {
     expect(byAction.get("ungroup")?.shortcut).toBe("Ctrl+Shift+G");
     expect(byAction.get("delete")?.shortcut).toBe("Delete");
     expect(byAction.get("duplicate")?.shortcut).toBeNull();
+  });
+
+  it("en の m を渡すとラベルが英語になる", () => {
+    const items = buildCanvasMenuItems(workspaceEn.contextMenu, {
+      onElement: true,
+      canCopy: true,
+      hasSelection: true,
+      hasClipboard: true,
+      canGroup: true,
+      canUngroup: true,
+      cell: { canMerge: true, canUnmerge: true },
+    });
+    const byAction = new Map(items.map((item) => [item.action, item]));
+    expect(byAction.get("copy")?.label).toBe("Copy");
+    expect(byAction.get("delete")?.label).toBe("Delete");
+    expect(byAction.get("mergeCells")?.label).toBe("Merge cells");
   });
 });

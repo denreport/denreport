@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
+import { useMessages } from "../../i18n/context";
 import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
 import { layoutDocument } from "../../state/geometry";
 import type { EditorStore } from "../../state/store";
@@ -15,6 +16,7 @@ export function StatusBar(props: {
   readonly cursorMm: MmPoint | null;
 }): ReactNode {
   const state = useEditorState(props.store);
+  const m = useMessages();
   const layout = useMemo(
     () => layoutDocument(state.document, state.view.pageContext),
     [state.document, state.view.pageContext],
@@ -27,8 +29,9 @@ export function StatusBar(props: {
     if (view !== undefined) {
       selectionSummary = (
         <span>
-          選択: <span className="apx-mono">{view.id}</span>（
-          {ELEMENT_TYPE_LABEL[view.element.type]}）{" "}
+          {m.statusBar.selectionLabel}
+          <span className="apx-mono">{view.id}</span>
+          {m.statusBar.selectionType(ELEMENT_TYPE_LABEL[view.element.type])}{" "}
           <span className="apx-mono">
             {fmt(view.box.x)}, {fmt(view.box.y)} / {fmt(view.box.w)}×
             {fmt(view.box.h)} mm
@@ -37,7 +40,9 @@ export function StatusBar(props: {
       );
     }
   } else if (state.selection.length > 1) {
-    selectionSummary = <span>選択: {state.selection.length}個</span>;
+    selectionSummary = (
+      <span>{m.statusBar.selectionMultiple(state.selection.length)}</span>
+    );
   }
 
   return (
@@ -50,7 +55,7 @@ export function StatusBar(props: {
       {selectionSummary}
       <span className="apx-statusbar-spacer" />
       <span className="apx-statusbar-saved">
-        {state.dirty ? "未保存の変更あり" : "保存済み"}
+        {state.dirty ? m.statusBar.unsaved : m.statusBar.saved}
       </span>
       <span className="apx-mono apx-statusbar-version">
         IR v{state.document.version}
