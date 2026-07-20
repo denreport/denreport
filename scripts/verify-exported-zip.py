@@ -2,7 +2,7 @@
 """E2E が保存した ReportLab 書き出し zip を展開し、report.py を実行して PDF を検証する。
 
 使い方: python scripts/verify-exported-zip.py <zip のパス>
-検査: エントリが report.py + FONTS の全フォント / report.py の実行成功 /
+検査: エントリが report.py + FONTS の全フォント（OFL.txt は任意）/ report.py の実行成功 /
 生成 PDF のページ数 == ソース中の PAGE_COUNT。失敗時は非 0 終了。
 """
 
