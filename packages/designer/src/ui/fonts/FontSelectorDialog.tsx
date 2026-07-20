@@ -33,14 +33,6 @@ const EMBEDDED_NAME_BY_SLOT: Readonly<Partial<Record<IrFontSlot, string>>> = {
   bold: EMBEDDED_BOLD_FONT_NAME,
 };
 
-// DocumentProperties.tsx（プロパティパネル、別カタログの担当）が引き続き参照する既存 API
-export const FONT_SLOT_LABELS: Readonly<Record<IrFontSlot, string>> = {
-  regular: "標準",
-  bold: "太字",
-  italic: "斜体",
-  boldItalic: "太字斜体",
-};
-
 /** Dialog 部品（ui/dialog/Dialog.tsx）に載せる、対象スロットのフォント選択ダイアログ。
     一覧取得はマウント時に listLocalFonts（開くボタンのクリックがユーザー操作起点）。
     確定時に loadData → buildRegisteredFont を実行し、非 TTF は issues をダイアログ内に表示して閉じない */

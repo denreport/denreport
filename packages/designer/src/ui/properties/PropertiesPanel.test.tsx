@@ -1219,4 +1219,20 @@ describe("en ロケール表示", () => {
     expect(container.textContent).toContain("Barcode");
     expect(container.textContent).toContain("Symbology");
   });
+
+  it("文書設定パネルのフォントスロット名が英語で描画される", () => {
+    const store = makeStore();
+    render(
+      <MessagesContext.Provider value={en}>
+        <PropertiesPanel store={store} interaction={IDLE} />
+      </MessagesContext.Provider>,
+    );
+
+    expect(container.textContent).toContain("Document settings");
+    expect(container.textContent).toContain("Regular:");
+    expect(container.textContent).toContain("Bold:");
+    expect(container.textContent).toContain("Italic:");
+    expect(container.textContent).not.toContain("標準");
+    expect(container.textContent).not.toContain("太字");
+  });
 });
