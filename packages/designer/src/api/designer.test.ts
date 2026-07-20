@@ -752,6 +752,86 @@ describe("言語切替", () => {
   });
 });
 
+describe("core / targets への locale 伝搬", () => {
+  async function openedDrawer(container: HTMLElement): Promise<HTMLElement> {
+    const bar = await vi.waitFor(() => {
+      const el = container.querySelector<HTMLButtonElement>(".apx-drawer-bar");
+      if (el === null) throw new Error("検証ペインがない");
+      return el;
+    });
+    click(bar);
+    return await vi.waitFor(() => {
+      const body = container.querySelector<HTMLElement>(".apx-drawer-body");
+      if (body === null) throw new Error("検証ペインが開かない");
+      return body;
+    });
+  }
+
+  it("setLocale で検証エラーの文言が切り替わる", async () => {
+    const { container, designer } = mount({ initialIr: VALID_IR });
+    const store = storeOf(designer);
+    const document_ = store.getState().document;
+    store.commit({
+      ...document_,
+      elements: document_.elements.map((el) => ({ ...el, x: -1 })),
+    });
+    const body = await openedDrawer(container);
+    await vi.waitFor(() => {
+      expect(body.textContent).toContain("x が 0 未満です");
+    });
+
+    designer.setLocale("en");
+    await vi.waitFor(() => {
+      expect(body.textContent).toContain("x is below 0");
+      expect(body.textContent).not.toContain("x が 0 未満です");
+    });
+  });
+
+  it("setLocale で互換警告の文言が切り替わる", async () => {
+    const { container, designer } = mount({ initialIr: VALID_IR });
+    const body = await openedDrawer(container);
+    await vi.waitFor(() => {
+      expect(body.textContent).toContain("文字の折り返しや配置は");
+    });
+
+    designer.setLocale("en");
+    await vi.waitFor(() => {
+      expect(body.textContent).toContain("Text wrapping and alignment");
+      expect(body.textContent).not.toContain("文字の折り返しや配置は");
+    });
+  });
+
+  it("書き出しダイアログの互換警告が setLocale で切り替わる", async () => {
+    const { container, designer } = mount({ initialIr: VALID_IR });
+    click(await toolbarButton(container, "書き出し"));
+    const dialog = await vi.waitFor(() => {
+      const el = container.querySelector<HTMLElement>(".apx-warn-card");
+      if (el === null) throw new Error("互換警告カードがない");
+      return el;
+    });
+    expect(dialog.textContent).toContain("文字の折り返しや配置は");
+
+    designer.setLocale("en");
+    await vi.waitFor(() => {
+      const el = container.querySelector<HTMLElement>(".apx-warn-card");
+      expect(el?.textContent).toContain("Text wrapping and alignment");
+    });
+  });
+
+  it("loadIr の失敗メッセージが解決済み locale に従う", () => {
+    const { designer } = mount();
+    const jaResult = designer.loadIr("{");
+    expect(jaResult.ok).toBe(false);
+    if (jaResult.ok) throw new Error("失敗を期待");
+
+    designer.setLocale("en");
+    const enResult = designer.loadIr("{");
+    expect(enResult.ok).toBe(false);
+    if (enResult.ok) throw new Error("失敗を期待");
+    expect(enResult.errors[0]?.message).not.toBe(jaResult.errors[0]?.message);
+  });
+});
+
 describe("公開面の型（React 非漏洩）", () => {
   it("値のエクスポートは Designer クラスのみ", () => {
     expectTypeOf<keyof typeof publicExports>().toEqualTypeOf<"Designer">();

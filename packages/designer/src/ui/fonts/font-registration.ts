@@ -4,6 +4,7 @@ import {
   readAscentPerEm,
   validateFont,
 } from "@denreport/targets";
+import type { Locale } from "../../i18n/locale";
 import type { Messages } from "../../i18n/messages";
 import type { RegisteredFont } from "../../state/fonts";
 import { sanitizeFontName } from "../../state/fonts";
@@ -27,8 +28,9 @@ export function buildRegisteredFont(
   data: Uint8Array,
   candidate: { readonly fullName: string },
   m: FontsMessages,
+  locale: Locale,
 ): BuildRegisteredFontResult {
-  const issues = validateFont(data);
+  const issues = validateFont(data, { locale });
   if (issues.length > 0) {
     return { ok: false, issues };
   }

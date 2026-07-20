@@ -7,7 +7,7 @@ import {
 } from "@denreport/targets";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMessages } from "../../i18n/context";
+import { useLocale, useMessages } from "../../i18n/context";
 import type { Messages } from "../../i18n/messages";
 import type { FontResolution } from "../../state/fonts";
 import { resolveFontSet } from "../../state/fonts";
@@ -105,6 +105,7 @@ export function PreviewDialog(props: {
 }): ReactNode {
   const { store, onClose } = props;
   const m = useMessages();
+  const locale = useLocale();
   const state = useEditorState(store);
   const activeJson = activeSampleJson(state.sampleScenarios);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -179,8 +180,8 @@ export function PreviewDialog(props: {
     () =>
       hasValidationErrors
         ? undefined
-        : buildPreview(state.document, activeJson),
-    [hasValidationErrors, state.document, activeJson],
+        : buildPreview(state.document, activeJson, locale),
+    [hasValidationErrors, state.document, activeJson, locale],
   );
 
   const bannerMessages: string[] = [];

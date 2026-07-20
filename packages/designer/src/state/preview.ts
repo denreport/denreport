@@ -12,6 +12,7 @@ import {
   lowerIr,
   textTemplateKeys,
 } from "@denreport/core";
+import type { Locale } from "../i18n/locale";
 import { parseSampleJson } from "./sample-data";
 
 /** プレビュー用のデータ補完の記録。source = "json"（パース不能）| "data"（C01/C02 の補完） */
@@ -34,6 +35,7 @@ export type PreviewResult =
 export function buildPreview(
   document: IrDocument,
   sampleJson: string,
+  locale: Locale,
 ): PreviewResult {
   const warnings: PreviewWarning[] = [];
   const parsed = parseSampleJson(sampleJson);
@@ -43,12 +45,12 @@ export function buildPreview(
   const data = parsed.data;
 
   // C01 は C02 より先に並ぶため、text と table が同一キーを共有する場合は table が勝つ
-  for (const problem of analyzeData(document, data)) {
+  for (const problem of analyzeData(document, data, { locale })) {
     warnings.push({ source: "data", message: problem.message });
     data[problem.key] = problem.kind === "table" ? [] : `{${problem.key}}`;
   }
 
-  const result = lowerIr(document, data);
+  const result = lowerIr(document, data, { locale });
   if (!result.ok) {
     return { ok: false, errors: result.errors };
   }

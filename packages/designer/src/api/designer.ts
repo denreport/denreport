@@ -160,7 +160,7 @@ export class Designer {
       成功時は undo/redo 履歴をクリアし、変更通知を発火する */
   loadIr(json: string): LoadIrResult {
     this.assertAlive();
-    const result = parseIr(json);
+    const result = parseIr(json, { locale: this.getLocale() });
     if (!result.ok) {
       return { ok: false, errors: result.errors };
     }
@@ -312,6 +312,7 @@ export class Designer {
           : "light"
         : this.theme;
     const resolvedLocale = resolveLocale(this.locale, navigator.languages);
+    this.store.setLocale(resolvedLocale);
     this.rootEl.dataset.theme = resolvedTheme;
     this.rootEl.lang = resolvedLocale;
     const chrome: DesignerChrome = {

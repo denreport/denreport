@@ -1,7 +1,7 @@
 import type { IrFontSlot } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { useMessages } from "../../i18n/context";
+import { useLocale, useMessages } from "../../i18n/context";
 import type { RegisteredFont } from "../../state/fonts";
 import { sanitizeFontName } from "../../state/fonts";
 import { Dialog } from "../dialog/Dialog";
@@ -52,6 +52,7 @@ export function FontSelectorDialog(props: {
   const { slot, currentName, onSelect, onSelectEmbedded, onClear, onClose } =
     props;
   const m = useMessages();
+  const locale = useLocale();
   const [list, setList] = useState<ListState>({ kind: "loading" });
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<LocalFontCandidate | null>(null);
@@ -96,6 +97,7 @@ export function FontSelectorDialog(props: {
           data,
           { fullName: candidate.fullName },
           m.fonts,
+          locale,
         );
         if (!built.ok) {
           setConfirm({ kind: "failed", issues: built.issues });

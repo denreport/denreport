@@ -170,7 +170,7 @@ export function exportReportlab(
 ): ExportReportlabResult {
   const locale = options?.locale ?? "ja";
   const fontSet = resolveFontSetData(fonts, { locale });
-  const result = lowerIr(document, data);
+  const result = lowerIr(document, data, { locale });
   if (!fontSet.ok || !result.ok) {
     return {
       ok: false,

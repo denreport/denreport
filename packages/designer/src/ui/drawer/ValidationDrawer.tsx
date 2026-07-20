@@ -2,7 +2,7 @@ import type { IrError } from "@denreport/core";
 import { COMPAT_MATRICES, checkCompat } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
-import { useMessages } from "../../i18n/context";
+import { useLocale, useMessages } from "../../i18n/context";
 import { errorElementIds } from "../../state/error-index";
 import { groupCompatFindings } from "../../state/export-warnings";
 import { layoutDocument, visibleInContext } from "../../state/geometry";
@@ -18,6 +18,7 @@ export function ValidationDrawer(props: {
   const { store, onReveal } = props;
   const state = useEditorState(store);
   const m = useMessages();
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const errors = state.validationErrors;
   const warnings = state.validationWarnings;
@@ -28,9 +29,10 @@ export function ValidationDrawer(props: {
         checkCompat(
           state.document,
           COMPAT_MATRICES[state.selectedExportTarget],
+          { locale },
         ),
       ),
-    [state.document, state.selectedExportTarget],
+    [state.document, state.selectedExportTarget, locale],
   );
   const compatFindingTotal = compatGroups.reduce(
     (total, group) => total + group.findingCount,
