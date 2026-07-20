@@ -13,9 +13,9 @@ import {
   STROKE_DASH_MM,
 } from "@denreport/core";
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import { PT_TO_MM, textBaselinesMm } from "../../state/preview";
-import type { PreviewFont, PreviewFontSet } from "./preview-font";
+import { useMessages } from "../../i18n/context.js";
+import { PT_TO_MM, textBaselinesMm } from "../../state/preview.js";
+import type { PreviewFont, PreviewFontSet } from "./preview-font.js";
 
 // Approximate value used for system-font fallback rendering before the font loads or on failure. PreviewFont supplies the measured value
 const FALLBACK_ASCENT_PER_EM = 0.88;

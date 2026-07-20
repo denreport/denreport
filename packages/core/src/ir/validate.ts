@@ -2,7 +2,7 @@ import {
   getMessages,
   type MessageLocale,
   type Messages,
-} from "../i18n/messages";
+} from "../i18n/messages/index.js";
 import {
   DATA_URI_PATTERN,
   ELEMENT_NAME_MAX_LENGTH,
@@ -15,11 +15,11 @@ import {
   PT_TO_MM,
   ROTATE_MAX,
   STYLE_NAME_MAX_LENGTH,
-} from "./constants";
-import type { IrError, IrRuleId } from "./errors";
-import { measureFlex } from "./flex";
-import { footnoteMarkIds } from "./footnotes";
-import type { IrDocument, IrElement, IrFlexChild } from "./types";
+} from "./constants.js";
+import type { IrError, IrRuleId } from "./errors.js";
+import { measureFlex } from "./flex.js";
+import { footnoteMarkIds } from "./footnotes.js";
+import type { IrDocument, IrElement, IrFlexChild } from "./types.js";
 
 type ValidateMessages = Messages["validate"];
 

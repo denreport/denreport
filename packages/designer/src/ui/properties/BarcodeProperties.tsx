@@ -1,10 +1,10 @@
 import type { IrBarcodeSymbology } from "@denreport/core";
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import { errorMessageFor } from "../../state/error-index";
-import type { ElementFormProps } from "./ElementProperties";
-import { commitReplace } from "./ElementProperties";
-import { NumberField, SegmentField, TextField } from "./fields";
+import { useMessages } from "../../i18n/context.js";
+import { errorMessageFor } from "../../state/error-index.js";
+import type { ElementFormProps } from "./ElementProperties.js";
+import { commitReplace } from "./ElementProperties.js";
+import { NumberField, SegmentField, TextField } from "./fields.js";
 
 // QR/CODE39/CODE128/EAN13 are the standard names themselves, shared between ja/en
 const SYMBOLOGY_OPTIONS: readonly {

@@ -11,8 +11,8 @@ import {
   DRAG_THRESHOLD_PX,
   MIN_SIZE_MM,
   SNAP_TOLERANCE_PX,
-} from "../../state/constants";
-import { createDefaultElement, defaultSizeMm } from "../../state/defaults";
+} from "../../state/constants.js";
+import { createDefaultElement, defaultSizeMm } from "../../state/defaults.js";
 import {
   addElement,
   deleteElements,
@@ -25,14 +25,22 @@ import {
   setTableContinuationY,
   toFlexChild,
   toTopLevelElement,
-} from "../../state/elements";
-import type { MmBox, PlacedElementView } from "../../state/geometry";
-import { rotationDeg, roundMm, visibleInContext } from "../../state/geometry";
-import { expandIdsToGroups } from "../../state/groups";
-import { guidesInPage } from "../../state/guides";
-import type { MovingEdges, SnapContext, SnapGuide } from "../../state/snapping";
-import { snapForMove, snapForResize } from "../../state/snapping";
-import type { EditorState, PageContext } from "../../state/types";
+} from "../../state/elements.js";
+import type { MmBox, PlacedElementView } from "../../state/geometry.js";
+import {
+  rotationDeg,
+  roundMm,
+  visibleInContext,
+} from "../../state/geometry.js";
+import { expandIdsToGroups } from "../../state/groups.js";
+import { guidesInPage } from "../../state/guides.js";
+import type {
+  MovingEdges,
+  SnapContext,
+  SnapGuide,
+} from "../../state/snapping.js";
+import { snapForMove, snapForResize } from "../../state/snapping.js";
+import type { EditorState, PageContext } from "../../state/types.js";
 
 export type HandleId =
   | "nw"

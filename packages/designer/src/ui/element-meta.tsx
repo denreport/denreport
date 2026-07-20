@@ -1,6 +1,6 @@
 import type { IrElementType } from "@denreport/core";
 import type { ReactNode } from "react";
-import type { Messages } from "../i18n/messages";
+import type { Messages } from "../i18n/messages/index.js";
 
 const STATIC_ICONS: Readonly<
   Record<Exclude<IrElementType, "text">, ReactNode>

@@ -4,11 +4,11 @@ import type {
   IrElementType,
   IrFlexChild,
 } from "@denreport/core";
-import { PASTE_OFFSET_MM } from "./constants";
-import { addElement } from "./elements";
-import { roundMm } from "./geometry";
-import type { ElementGroup } from "./groups";
-import { livingGroups } from "./groups";
+import { PASTE_OFFSET_MM } from "./constants.js";
+import { addElement } from "./elements.js";
+import { roundMm } from "./geometry.js";
+import type { ElementGroup } from "./groups.js";
+import { livingGroups } from "./groups.js";
 
 /** The value held by the in-app clipboard. elements are the elements as of the time they were
     stored (in document order).

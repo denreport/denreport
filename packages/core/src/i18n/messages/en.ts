@@ -1,4 +1,4 @@
-import type { Messages } from "./index";
+import type { Messages } from "./index.js";
 
 /**
  * English mirror of `ja.ts`. Typed against `Messages` so a missing or extra

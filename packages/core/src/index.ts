@@ -1,13 +1,13 @@
-export type { CompatFinding } from "./compat/check";
-export { checkCompat } from "./compat/check";
-export { COMPAT_MATRICES } from "./compat/registry";
+export type { CompatFinding } from "./compat/check.js";
+export { checkCompat } from "./compat/check.js";
+export { COMPAT_MATRICES } from "./compat/registry.js";
 export type {
   CompatEntry,
   CompatLevel,
   CompatTargetId,
   ElementCompat,
   TargetCompatMatrix,
-} from "./compat/types";
+} from "./compat/types.js";
 export {
   PAGE_COUNT_MAX,
   PT_TO_MM,
@@ -16,16 +16,16 @@ export {
   TABLE_FRAME_WIDTH,
   TABLE_GRID_WIDTH,
   TABLE_HEADER_TEXT_OFFSET_Y,
-} from "./ir/constants";
-export type { DataProblem, IrData, IrTableRow } from "./ir/data";
-export { analyzeData, emptyDataFor, validateData } from "./ir/data";
-export type { IrError, IrRuleId } from "./ir/errors";
-export type { IrPlacedElement } from "./ir/flex";
-export { resolveFlex } from "./ir/flex";
-export { resolveFontSlot } from "./ir/font";
-export { resolveFootnotes } from "./ir/footnotes";
-export { textTemplateKeys } from "./ir/interpolate";
-export { checkQualifiedInvoice } from "./ir/invoice";
+} from "./ir/constants.js";
+export type { DataProblem, IrData, IrTableRow } from "./ir/data.js";
+export { analyzeData, emptyDataFor, validateData } from "./ir/data.js";
+export type { IrError, IrRuleId } from "./ir/errors.js";
+export type { IrPlacedElement } from "./ir/flex.js";
+export { resolveFlex } from "./ir/flex.js";
+export { resolveFontSlot } from "./ir/font.js";
+export { resolveFootnotes } from "./ir/footnotes.js";
+export { textTemplateKeys } from "./ir/interpolate.js";
+export { checkQualifiedInvoice } from "./ir/invoice.js";
 export type {
   LoweredBarcodeElement,
   LoweredDocument,
@@ -36,35 +36,35 @@ export type {
   LoweredRectElement,
   LoweredTextElement,
   LowerIrResult,
-} from "./ir/lower";
-export { lowerIr } from "./ir/lower";
-export type { ParseIrResult } from "./ir/parse";
-export { parseIr } from "./ir/parse";
+} from "./ir/lower.js";
+export { lowerIr } from "./ir/lower.js";
+export type { ParseIrResult } from "./ir/parse.js";
+export { parseIr } from "./ir/parse.js";
 export type {
   ResolvedShapeStyle,
   ResolvedStroke,
   ResolvedTextStyle,
-} from "./ir/style";
+} from "./ir/style.js";
 export {
   resolveEllipseStyle,
   resolveLineStyle,
   resolveRectStyle,
   resolveTextStyle,
   STROKE_DASH_MM,
-} from "./ir/style";
-export { applicableStyleAttrs, STYLEABLE_ATTRS } from "./ir/styles";
+} from "./ir/style.js";
+export { applicableStyleAttrs, STYLEABLE_ATTRS } from "./ir/styles.js";
 export type {
   SkipRange,
   TableChunkMerges,
   TableMergeRect,
-} from "./ir/table-merge";
-export { computeChunkMerges, subtractSkips } from "./ir/table-merge";
+} from "./ir/table-merge.js";
+export { computeChunkMerges, subtractSkips } from "./ir/table-merge.js";
 export type {
   CharWidthEm,
   LaidOutLine,
   TextLayoutInput,
-} from "./ir/text-layout";
-export { layoutTextLines } from "./ir/text-layout";
+} from "./ir/text-layout.js";
+export { layoutTextLines } from "./ir/text-layout.js";
 export type {
   IrAlign,
   IrBarcodeElement,
@@ -101,6 +101,6 @@ export type {
   IrTableElement,
   IrTextElement,
   StyleAttrKey,
-} from "./ir/types";
-export { IR_VERSION } from "./ir/types";
-export { validateIr } from "./ir/validate";
+} from "./ir/types.js";
+export { IR_VERSION } from "./ir/types.js";
+export { validateIr } from "./ir/validate.js";

@@ -1,7 +1,7 @@
 import type { IrFontSlot } from "@denreport/core";
-import { getMessages, type MessageLocale } from "../i18n/messages";
-import type { FontFormat } from "./format";
-import { detectFontFormat } from "./format";
+import { getMessages, type MessageLocale } from "../i18n/messages/index.js";
+import type { FontFormat } from "./format.js";
+import { detectFontFormat } from "./format.js";
 
 /**
  * A reason a font cannot be used for export: its detected `format` and a

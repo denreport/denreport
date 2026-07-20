@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import type { CompatWarningGroup } from "../../state/export-warnings";
+import { useMessages } from "../../i18n/context.js";
+import type { CompatWarningGroup } from "../../state/export-warnings.js";
 
 /** Card display for one compat-finding group (level + userMessage). Shared by the export
     dialog and the validation pane */

@@ -1,7 +1,7 @@
 import type { IrTableElement } from "@denreport/core";
-import type { MmBox, PlacedElementView } from "../../state/geometry";
-import { visibleInContext } from "../../state/geometry";
-import type { PageContext } from "../../state/types";
+import type { MmBox, PlacedElementView } from "../../state/geometry.js";
+import { visibleInContext } from "../../state/geometry.js";
+import type { PageContext } from "../../state/types.js";
 
 export type InlineEditTarget =
   | { readonly kind: "text"; readonly id: string }

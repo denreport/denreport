@@ -1,4 +1,4 @@
-import { getMessages, type MessageLocale } from "../i18n/messages";
+import { getMessages, type MessageLocale } from "../i18n/messages/index.js";
 import {
   PAGE_COUNT_MAX,
   TABLE_CELL_PADDING_X,
@@ -6,22 +6,22 @@ import {
   TABLE_FRAME_WIDTH,
   TABLE_GRID_WIDTH,
   TABLE_HEADER_TEXT_OFFSET_Y,
-} from "./constants";
-import type { DataProblem, IrData, IrTableRow } from "./data";
-import { analyzeData, readTableRows } from "./data";
-import type { IrError, IrRuleId } from "./errors";
-import type { IrPlacedElement } from "./flex";
-import { resolveFlex } from "./flex";
-import { resolveFootnotes } from "./footnotes";
-import { interpolateText } from "./interpolate";
+} from "./constants.js";
+import type { DataProblem, IrData, IrTableRow } from "./data.js";
+import { analyzeData, readTableRows } from "./data.js";
+import type { IrError, IrRuleId } from "./errors.js";
+import type { IrPlacedElement } from "./flex.js";
+import { resolveFlex } from "./flex.js";
+import { resolveFootnotes } from "./footnotes.js";
+import { interpolateText } from "./interpolate.js";
 import {
   resolveEllipseStyle,
   resolveLineStyle,
   resolveRectStyle,
   resolveTextStyle,
-} from "./style";
-import type { TableMergeRect } from "./table-merge";
-import { computeChunkMerges, subtractSkips } from "./table-merge";
+} from "./style.js";
+import type { TableMergeRect } from "./table-merge.js";
+import { computeChunkMerges, subtractSkips } from "./table-merge.js";
 import type {
   IrAlign,
   IrBarcodeSymbology,
@@ -35,7 +35,7 @@ import type {
   IrPages,
   IrStrokeStyle,
   IrTableElement,
-} from "./types";
+} from "./types.js";
 
 /**
  * A text element after data interpolation and flex/table resolution:

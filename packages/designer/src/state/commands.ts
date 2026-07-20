@@ -1,16 +1,16 @@
-import type { AlignKind, DistributeAxis } from "./alignment";
+import type { AlignKind, DistributeAxis } from "./alignment.js";
 import {
   alignmentDeltas,
   applyMoveDeltas,
   distributionDeltas,
-} from "./alignment";
-import { clipboardFromSelection, pasteFromClipboard } from "./clipboard";
-import { deleteElements } from "./elements";
-import { layoutDocument } from "./geometry";
-import type { ElementGroup } from "./groups";
-import { createGroupFrom, dissolveGroupsOf, livingGroups } from "./groups";
-import type { EditorStore } from "./store";
-import type { EditorState } from "./types";
+} from "./alignment.js";
+import { clipboardFromSelection, pasteFromClipboard } from "./clipboard.js";
+import { deleteElements } from "./elements.js";
+import { layoutDocument } from "./geometry.js";
+import type { ElementGroup } from "./groups.js";
+import { createGroupFrom, dissolveGroupsOf, livingGroups } from "./groups.js";
+import type { EditorStore } from "./store.js";
+import type { EditorState } from "./types.js";
 
 /** Stores the top-level elements of the selection into the clipboard */
 export function copySelection(store: EditorStore): boolean {

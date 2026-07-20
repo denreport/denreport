@@ -4,10 +4,10 @@ import {
   readAscentPerEm,
   validateFont,
 } from "@denreport/targets";
-import type { Locale } from "../../i18n/locale";
-import type { Messages } from "../../i18n/messages";
-import type { RegisteredFont } from "../../state/fonts";
-import { sanitizeFontName } from "../../state/fonts";
+import type { Locale } from "../../i18n/locale.js";
+import type { Messages } from "../../i18n/messages/index.js";
+import type { RegisteredFont } from "../../state/fonts.js";
+import { sanitizeFontName } from "../../state/fonts.js";
 
 export {
   EMBEDDED_BOLD_FONT_NAME,

@@ -1,16 +1,21 @@
 import type { IrDocument, IrError, IrPages } from "@denreport/core";
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import { errorMessageFor } from "../../state/error-index";
+import { useMessages } from "../../i18n/context.js";
+import { errorMessageFor } from "../../state/error-index.js";
 import {
   addFootnoteNote,
   defaultFootnotes,
   removeFootnoteNote,
   setFootnotes,
   updateFootnoteNote,
-} from "../../state/footnotes";
-import type { EditorStore } from "../../state/store";
-import { NumberField, SegmentField, TextAreaField, TextField } from "./fields";
+} from "../../state/footnotes.js";
+import type { EditorStore } from "../../state/store.js";
+import {
+  NumberField,
+  SegmentField,
+  TextAreaField,
+  TextField,
+} from "./fields.js";
 
 /** Ignores failures so the operation can continue even on permission denial or an unsupported browser */
 function copyToClipboard(text: string): void {

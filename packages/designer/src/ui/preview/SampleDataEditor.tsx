@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useId } from "react";
-import { useMessages } from "../../i18n/context";
-import { useDraftValue } from "../properties/useDraftValue";
+import { useMessages } from "../../i18n/context.js";
+import { useDraftValue } from "../properties/useDraftValue.js";
 
 /** Direct JSON editing of sample data. Commits on blur (Enter in the textarea inserts
     a newline); invalid JSON does not block committing (the storage format is a string) */

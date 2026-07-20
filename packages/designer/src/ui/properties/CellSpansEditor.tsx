@@ -1,14 +1,14 @@
 import type { IrDocument, IrTableCellSpan } from "@denreport/core";
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import { errorMessageFor } from "../../state/error-index";
+import { useMessages } from "../../i18n/context.js";
+import { errorMessageFor } from "../../state/error-index.js";
 import {
   addTableCellSpan,
   removeTableCellSpan,
   updateTableCellSpan,
-} from "../../state/properties";
-import type { ElementFormProps } from "./ElementProperties";
-import { useDraftValue } from "./useDraftValue";
+} from "../../state/properties.js";
+import type { ElementFormProps } from "./ElementProperties.js";
+import { useDraftValue } from "./useDraftValue.js";
 
 function IntCell(props: {
   readonly ariaLabel: string;

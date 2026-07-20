@@ -1,23 +1,23 @@
 import { TABLE_FRAME_WIDTH, TABLE_GRID_WIDTH } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId } from "react";
-import { useMessages } from "../../i18n/context";
-import { collectBindKeys, sampleDataKeys } from "../../state/bind-keys";
-import { STRIPE_DEFAULT_COLOR } from "../../state/constants";
-import { errorMessageFor } from "../../state/error-index";
-import { activeSampleJson } from "../../state/sample-scenarios";
-import { useEditorState } from "../useEditorState";
-import { CellSpansEditor } from "./CellSpansEditor";
-import { ColumnsEditor } from "./ColumnsEditor";
-import type { ElementFormProps } from "./ElementProperties";
-import { commitReplace, withOptionalAttr } from "./ElementProperties";
+import { useMessages } from "../../i18n/context.js";
+import { collectBindKeys, sampleDataKeys } from "../../state/bind-keys.js";
+import { STRIPE_DEFAULT_COLOR } from "../../state/constants.js";
+import { errorMessageFor } from "../../state/error-index.js";
+import { activeSampleJson } from "../../state/sample-scenarios.js";
+import { useEditorState } from "../useEditorState.js";
+import { CellSpansEditor } from "./CellSpansEditor.js";
+import { ColumnsEditor } from "./ColumnsEditor.js";
+import type { ElementFormProps } from "./ElementProperties.js";
+import { commitReplace, withOptionalAttr } from "./ElementProperties.js";
 import {
   ColorField,
   NumberField,
   SelectField,
   strokeStyleOptions,
   TextField,
-} from "./fields";
+} from "./fields.js";
 
 export function TableProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;

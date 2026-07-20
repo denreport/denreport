@@ -12,43 +12,43 @@ import {
   useRef,
   useState,
 } from "react";
-import { useMessages } from "../../i18n/context";
-import { MM_TO_PX } from "../../state/constants";
-import { envelopePresetById } from "../../state/envelope-presets";
-import type { PlacedElementView } from "../../state/geometry";
-import { layoutDocument } from "../../state/geometry";
-import { guidesInPage } from "../../state/guides";
+import { useMessages } from "../../i18n/context.js";
+import { MM_TO_PX } from "../../state/constants.js";
+import { envelopePresetById } from "../../state/envelope-presets.js";
+import type { PlacedElementView } from "../../state/geometry.js";
+import { layoutDocument } from "../../state/geometry.js";
+import { guidesInPage } from "../../state/guides.js";
 import {
   setTableCellOverride,
   updateTableColumn,
-} from "../../state/properties";
-import { activeSampleJson } from "../../state/sample-scenarios";
-import type { EditorStore } from "../../state/store";
-import type { TableCellSource } from "../../state/table-cells";
-import { cellView, tableCellSources } from "../../state/table-cells";
-import { ContextMenu } from "../context-menu/ContextMenu";
-import { useCanvasContextMenu } from "../context-menu/useCanvasContextMenu";
-import { useFontMetrics } from "../fonts/font-metrics";
-import { commitReplace } from "../properties/ElementProperties";
-import { useEditorState } from "../useEditorState";
-import { GuidesLayer } from "./GuidesLayer";
-import { InlineEditor } from "./InlineEditor";
-import type { InlineEditTarget } from "./inline-edit";
+} from "../../state/properties.js";
+import { activeSampleJson } from "../../state/sample-scenarios.js";
+import type { EditorStore } from "../../state/store.js";
+import type { TableCellSource } from "../../state/table-cells.js";
+import { cellView, tableCellSources } from "../../state/table-cells.js";
+import { ContextMenu } from "../context-menu/ContextMenu.js";
+import { useCanvasContextMenu } from "../context-menu/useCanvasContextMenu.js";
+import { useFontMetrics } from "../fonts/font-metrics.js";
+import { commitReplace } from "../properties/ElementProperties.js";
+import { useEditorState } from "../useEditorState.js";
+import { GuidesLayer } from "./GuidesLayer.js";
+import { InlineEditor } from "./InlineEditor.js";
+import type { InlineEditTarget } from "./inline-edit.js";
 import {
   resolveInlineEditTarget,
   tableCellBox,
   tableHeaderCellBox,
-} from "./inline-edit";
-import type { InteractionState } from "./interaction";
-import { PaperElement } from "./PaperElement";
-import { Ruler } from "./Ruler";
-import { SelectionOverlay } from "./SelectionOverlay";
-import type { CanvasInteraction } from "./useCanvasInteraction";
-import { useCellSelection } from "./useCellSelection";
-import type { GuideDragApi } from "./useGuideDrag";
-import { useGuideDrag } from "./useGuideDrag";
-import { usePanning } from "./usePanning";
-import { anchoredScroll, fitPageZoom, nextWheelZoom } from "./zoom";
+} from "./inline-edit.js";
+import type { InteractionState } from "./interaction.js";
+import { PaperElement } from "./PaperElement.js";
+import { Ruler } from "./Ruler.js";
+import { SelectionOverlay } from "./SelectionOverlay.js";
+import type { CanvasInteraction } from "./useCanvasInteraction.js";
+import { useCellSelection } from "./useCellSelection.js";
+import type { GuideDragApi } from "./useGuideDrag.js";
+import { useGuideDrag } from "./useGuideDrag.js";
+import { usePanning } from "./usePanning.js";
+import { anchoredScroll, fitPageZoom, nextWheelZoom } from "./zoom.js";
 
 const NOOP_GUIDE_DRAG: GuideDragApi = {
   startFromRuler: () => {},

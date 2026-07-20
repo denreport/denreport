@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import { errorMessageFor } from "../../state/error-index";
-import type { ElementFormProps } from "./ElementProperties";
-import { commitReplace, withOptionalAttr } from "./ElementProperties";
+import { useMessages } from "../../i18n/context.js";
+import { errorMessageFor } from "../../state/error-index.js";
+import type { ElementFormProps } from "./ElementProperties.js";
+import { commitReplace, withOptionalAttr } from "./ElementProperties.js";
 import {
   ColorField,
   NumberField,
   SelectField,
   strokeStyleOptions,
-} from "./fields";
+} from "./fields.js";
 
 export function RectProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;

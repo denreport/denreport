@@ -1,5 +1,5 @@
-import { getMessages } from "../i18n/messages";
-import type { TargetCompatMatrix } from "./types";
+import { getMessages } from "../i18n/messages/index.js";
+import type { TargetCompatMatrix } from "./types.js";
 
 export const pdfmeCompatMatrix = {
   target: "pdfme",

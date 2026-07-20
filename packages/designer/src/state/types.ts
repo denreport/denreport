@@ -1,9 +1,9 @@
 import type { CompatTargetId, IrDocument, IrError } from "@denreport/core";
-import type { EnvelopePresetId } from "./envelope-presets";
-import type { RegisteredFont } from "./fonts";
-import type { ElementGroup } from "./groups";
-import type { CustomGuide } from "./guides";
-import type { SampleScenarioSet } from "./sample-scenarios";
+import type { EnvelopePresetId } from "./envelope-presets.js";
+import type { RegisteredFont } from "./fonts.js";
+import type { ElementGroup } from "./groups.js";
+import type { CustomGuide } from "./guides.js";
+import type { SampleScenarioSet } from "./sample-scenarios.js";
 
 /** The edit view's context. IrPages' "all" is an attribute value shown in all contexts, not a context itself */
 export type PageContext = "first" | "rest" | "last";

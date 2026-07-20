@@ -1,5 +1,5 @@
-import { PT_TO_MM } from "./constants";
-import type { IrAlign } from "./types";
+import { PT_TO_MM } from "./constants.js";
+import type { IrAlign } from "./types.js";
 
 /**
  * A glyph width function: given a Unicode code point, returns its advance

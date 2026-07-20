@@ -1,32 +1,32 @@
 import type { IrDocument, IrFontSlot } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
-import { useMessages } from "../../i18n/context";
-import type { Messages } from "../../i18n/messages";
-import { errorMessageFor } from "../../state/error-index";
-import type { FontResolution } from "../../state/fonts";
-import { resolveFontSet } from "../../state/fonts";
+import { useMessages } from "../../i18n/context.js";
+import type { Messages } from "../../i18n/messages/index.js";
+import { errorMessageFor } from "../../state/error-index.js";
+import type { FontResolution } from "../../state/fonts.js";
+import { resolveFontSet } from "../../state/fonts.js";
 import {
   type PaperPresetId,
   paperPresetIdForSize,
   paperPresetsForLanguage,
-} from "../../state/paper-presets";
+} from "../../state/paper-presets.js";
 import {
   setDocType,
   setFontRegular,
   setFontSlot,
   setPage,
-} from "../../state/properties";
-import type { EditorStore } from "../../state/store";
-import { FontSelectorDialog } from "../fonts/FontSelectorDialog";
+} from "../../state/properties.js";
+import type { EditorStore } from "../../state/store.js";
+import { FontSelectorDialog } from "../fonts/FontSelectorDialog.js";
 import {
   EMBEDDED_BOLD_FONT_NAME,
   EMBEDDED_FONT_NAME,
-} from "../fonts/font-registration";
-import { isLocalFontAccessSupported } from "../fonts/local-fonts";
-import { useEditorState } from "../useEditorState";
-import { FootnotesSection } from "./FootnotesSection";
-import { NumberField, SelectField, TextField } from "./fields";
+} from "../fonts/font-registration.js";
+import { isLocalFontAccessSupported } from "../fonts/local-fonts.js";
+import { useEditorState } from "../useEditorState.js";
+import { FootnotesSection } from "./FootnotesSection.js";
+import { NumberField, SelectField, TextField } from "./fields.js";
 
 /** Select display value when the dimensions don't match any preset */
 const CUSTOM_PAPER_PRESET = "custom";

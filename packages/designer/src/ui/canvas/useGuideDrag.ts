@@ -1,10 +1,10 @@
 import type { PointerEvent as ReactPointerEvent, RefObject } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MM_TO_PX } from "../../state/constants";
-import { addGuide, moveGuide, removeGuide } from "../../state/guides";
-import type { EditorStore } from "../../state/store";
-import type { PaperGeometry } from "./guide-drag";
-import { isOnPage, pointerToGuidePositionMm } from "./guide-drag";
+import { MM_TO_PX } from "../../state/constants.js";
+import { addGuide, moveGuide, removeGuide } from "../../state/guides.js";
+import type { EditorStore } from "../../state/store.js";
+import type { PaperGeometry } from "./guide-drag.js";
+import { isOnPage, pointerToGuidePositionMm } from "./guide-drag.js";
 
 export interface GuideDragApi {
   /** ruler axis "h" (top ruler) → horizontal guide (axis "y"), "v" (left ruler) → vertical guide (axis "x") */

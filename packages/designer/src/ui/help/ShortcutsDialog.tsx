@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import type { Messages } from "../../i18n/messages";
-import { Dialog } from "../dialog/Dialog";
+import { useMessages } from "../../i18n/context.js";
+import type { Messages } from "../../i18n/messages/index.js";
+import { Dialog } from "../dialog/Dialog.js";
 
 interface ShortcutItem {
   readonly keys: string;

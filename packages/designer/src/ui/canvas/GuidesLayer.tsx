@@ -1,8 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
-import type { EnvelopePreset } from "../../state/envelope-presets";
-import type { MmBox } from "../../state/geometry";
-import type { CustomGuide } from "../../state/guides";
-import type { GuideDragApi } from "./useGuideDrag";
+import type { EnvelopePreset } from "../../state/envelope-presets.js";
+import type { MmBox } from "../../state/geometry.js";
+import type { CustomGuide } from "../../state/guides.js";
+import type { GuideDragApi } from "./useGuideDrag.js";
 
 function boxVars(box: MmBox): CSSProperties {
   return {

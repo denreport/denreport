@@ -4,5 +4,5 @@ export type {
   DesignerOptions,
   DesignerTheme,
   LoadIrResult,
-} from "./api/designer";
-export { Designer } from "./api/designer";
+} from "./api/designer.js";
+export { Designer } from "./api/designer.js";

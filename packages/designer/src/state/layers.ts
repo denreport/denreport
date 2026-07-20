@@ -5,7 +5,7 @@ import type {
   IrFlexChild,
   IrPages,
 } from "@denreport/core";
-import { IMAGE_PLACEHOLDER_SRC } from "./constants";
+import { IMAGE_PLACEHOLDER_SRC } from "./constants.js";
 
 /** One node in the layer tree. children is non-null only for flex */
 export interface LayerNode {

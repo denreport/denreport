@@ -1,19 +1,19 @@
 import type { IrElementType } from "@denreport/core";
 import type { PointerEvent as ReactPointerEvent, RefCallback } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MM_TO_PX, SNAP_TOLERANCE_PX } from "../../state/constants";
-import type { PlacedElementView } from "../../state/geometry";
-import { layoutDocument } from "../../state/geometry";
-import type { EditorStore } from "../../state/store";
-import type { EditorState } from "../../state/types";
+import { MM_TO_PX, SNAP_TOLERANCE_PX } from "../../state/constants.js";
+import type { PlacedElementView } from "../../state/geometry.js";
+import { layoutDocument } from "../../state/geometry.js";
+import type { EditorStore } from "../../state/store.js";
+import type { EditorState } from "../../state/types.js";
 import type {
   HandleId,
   InteractionContext,
   InteractionEvent,
   InteractionState,
   MmPoint,
-} from "./interaction";
-import { reduceInteraction } from "./interaction";
+} from "./interaction.js";
+import { reduceInteraction } from "./interaction.js";
 
 export interface PaperProps {
   readonly ref: RefCallback<HTMLDivElement>;

@@ -1,18 +1,21 @@
 import type { CompatTargetId, IrDocument, IrError } from "@denreport/core";
 import { checkQualifiedInvoice, validateIr } from "@denreport/core";
-import type { Locale } from "../i18n/locale";
-import { ja } from "../i18n/messages/ja";
-import type { ClipboardState } from "./clipboard";
-import type { EnvelopePresetId } from "./envelope-presets";
-import type { RegisteredFont } from "./fonts";
-import type { ElementGroup } from "./groups";
-import { livingGroups } from "./groups";
-import type { CustomGuide } from "./guides";
-import type { HistoryEntry } from "./history";
-import { History } from "./history";
-import type { SampleScenarioSet, ScenarioMessages } from "./sample-scenarios";
-import { parseSampleDataStorage } from "./sample-scenarios";
-import type { EditorState, EditorViewState } from "./types";
+import type { Locale } from "../i18n/locale.js";
+import { ja } from "../i18n/messages/ja.js";
+import type { ClipboardState } from "./clipboard.js";
+import type { EnvelopePresetId } from "./envelope-presets.js";
+import type { RegisteredFont } from "./fonts.js";
+import type { ElementGroup } from "./groups.js";
+import { livingGroups } from "./groups.js";
+import type { CustomGuide } from "./guides.js";
+import type { HistoryEntry } from "./history.js";
+import { History } from "./history.js";
+import type {
+  SampleScenarioSet,
+  ScenarioMessages,
+} from "./sample-scenarios.js";
+import { parseSampleDataStorage } from "./sample-scenarios.js";
+import type { EditorState, EditorViewState } from "./types.js";
 
 const INITIAL_VIEW: EditorViewState = {
   zoom: 1,

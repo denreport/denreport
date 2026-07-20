@@ -10,10 +10,10 @@ import type {
   IrTableCellSpan,
   IrTableElement,
 } from "@denreport/core";
-import { roundMm } from "./geometry";
-import type { SpanExtent } from "./table-cells";
-import { spanExtentsOverlap } from "./table-cells";
-import { updateElementById as updateById } from "./tree";
+import { roundMm } from "./geometry.js";
+import type { SpanExtent } from "./table-cells.js";
+import { spanExtentsOverlap } from "./table-cells.js";
+import { updateElementById as updateById } from "./tree.js";
 
 /**
  * Replaces the element with id (either top-level or a flex descendant) with next.

@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import type { Messages } from "../../i18n/messages";
-import type { AlignKind, DistributeAxis } from "../../state/alignment";
-import { alignSelection, distributeSelection } from "../../state/commands";
-import type { EditorStore } from "../../state/store";
-import { useEditorState } from "../useEditorState";
+import { useMessages } from "../../i18n/context.js";
+import type { Messages } from "../../i18n/messages/index.js";
+import type { AlignKind, DistributeAxis } from "../../state/alignment.js";
+import { alignSelection, distributeSelection } from "../../state/commands.js";
+import type { EditorStore } from "../../state/store.js";
+import { useEditorState } from "../useEditorState.js";
 
 const ALIGN_BUTTONS: readonly {
   readonly kind: AlignKind;

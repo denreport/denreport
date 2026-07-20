@@ -1,7 +1,7 @@
 import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { CanvasMenuAction, CanvasMenuItem } from "./menu-items";
-import { clampMenuPosition } from "./position";
+import type { CanvasMenuAction, CanvasMenuItem } from "./menu-items.js";
+import { clampMenuPosition } from "./position.js";
 
 export function ContextMenu(props: {
   /** Right-click position (viewport coordinates, px). Corrected via clampMenuPosition at display time */

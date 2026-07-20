@@ -1,16 +1,16 @@
 import type { IrAlign, IrDocument } from "@denreport/core";
 import type { ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import { errorMessageFor } from "../../state/error-index";
+import { useMessages } from "../../i18n/context.js";
+import { errorMessageFor } from "../../state/error-index.js";
 import {
   addTableColumn,
   moveTableColumn,
   removeTableColumn,
   updateTableColumn,
-} from "../../state/properties";
-import { alignOptions } from "./align-options";
-import type { ElementFormProps } from "./ElementProperties";
-import { useDraftValue } from "./useDraftValue";
+} from "../../state/properties.js";
+import { alignOptions } from "./align-options.js";
+import type { ElementFormProps } from "./ElementProperties.js";
+import { useDraftValue } from "./useDraftValue.js";
 
 function TextCell(props: {
   readonly ariaLabel: string;

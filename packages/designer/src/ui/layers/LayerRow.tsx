@@ -1,10 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
-import { useMessages } from "../../i18n/context";
-import { visibleInContext } from "../../state/geometry";
-import type { LayerNode } from "../../state/layers";
-import { layerLabel } from "../../state/layers";
-import type { PageContext } from "../../state/types";
-import { elementTypeIcon } from "../element-meta";
+import { useMessages } from "../../i18n/context.js";
+import { visibleInContext } from "../../state/geometry.js";
+import type { LayerNode } from "../../state/layers.js";
+import { layerLabel } from "../../state/layers.js";
+import type { PageContext } from "../../state/types.js";
+import { elementTypeIcon } from "../element-meta.js";
 
 export function LayerRow(props: {
   readonly node: LayerNode;

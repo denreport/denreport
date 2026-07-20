@@ -10,9 +10,9 @@ import {
   exportReportlab,
   exportReportlabTemplate,
 } from "@denreport/targets";
-import type { Locale } from "../../i18n/locale";
-import type { Messages } from "../../i18n/messages";
-import { buildZip } from "./zip";
+import type { Locale } from "../../i18n/locale.js";
+import type { Messages } from "../../i18n/messages/index.js";
+import { buildZip } from "./zip.js";
 
 export type { FontIssue };
 

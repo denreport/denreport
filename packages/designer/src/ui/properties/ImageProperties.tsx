@@ -1,13 +1,13 @@
 import type { ChangeEvent, ReactNode } from "react";
 import { useId } from "react";
-import { useMessages } from "../../i18n/context";
-import type { Messages } from "../../i18n/messages";
-import { IMAGE_PLACEHOLDER_SRC } from "../../state/constants";
-import { errorMessageFor } from "../../state/error-index";
-import { setImageSrc } from "../../state/properties";
-import type { ElementFormProps } from "./ElementProperties";
-import { commitReplace } from "./ElementProperties";
-import { NumberField } from "./fields";
+import { useMessages } from "../../i18n/context.js";
+import type { Messages } from "../../i18n/messages/index.js";
+import { IMAGE_PLACEHOLDER_SRC } from "../../state/constants.js";
+import { errorMessageFor } from "../../state/error-index.js";
+import { setImageSrc } from "../../state/properties.js";
+import type { ElementFormProps } from "./ElementProperties.js";
+import { commitReplace } from "./ElementProperties.js";
+import { NumberField } from "./fields.js";
 
 function srcSummary(
   src: string,

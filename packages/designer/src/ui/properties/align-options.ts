@@ -1,5 +1,5 @@
 import type { IrAlign } from "@denreport/core";
-import type { Messages } from "../../i18n/messages";
+import type { Messages } from "../../i18n/messages/index.js";
 
 export type AlignLabels = Messages["properties"]["align"];
 

@@ -1,9 +1,9 @@
 import type { IrError } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useRef, useState } from "react";
-import type { LoadIrResult } from "../../api/designer";
-import { useMessages } from "../../i18n/context";
-import { Dialog } from "../dialog/Dialog";
+import type { LoadIrResult } from "../../api/designer.js";
+import { useMessages } from "../../i18n/context.js";
+import { Dialog } from "../dialog/Dialog.js";
 
 type FlowState =
   | { readonly kind: "idle" }

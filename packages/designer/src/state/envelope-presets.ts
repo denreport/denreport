@@ -1,4 +1,4 @@
-import type { MmBox } from "./geometry";
+import type { MmBox } from "./geometry.js";
 
 export type EnvelopePresetId =
   | "l3-w80h45"

@@ -1,18 +1,18 @@
 import type { IrFontSlot } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { useLocale, useMessages } from "../../i18n/context";
-import type { RegisteredFont } from "../../state/fonts";
-import { sanitizeFontName } from "../../state/fonts";
-import { Dialog } from "../dialog/Dialog";
-import type { FontIssue } from "./font-registration";
+import { useLocale, useMessages } from "../../i18n/context.js";
+import type { RegisteredFont } from "../../state/fonts.js";
+import { sanitizeFontName } from "../../state/fonts.js";
+import { Dialog } from "../dialog/Dialog.js";
+import type { FontIssue } from "./font-registration.js";
 import {
   buildRegisteredFont,
   EMBEDDED_BOLD_FONT_NAME,
   EMBEDDED_FONT_NAME,
-} from "./font-registration";
-import type { LocalFontCandidate } from "./local-fonts";
-import { listLocalFonts } from "./local-fonts";
+} from "./font-registration.js";
+import type { LocalFontCandidate } from "./local-fonts.js";
+import { listLocalFonts } from "./local-fonts.js";
 
 type ListState =
   | { readonly kind: "loading" }

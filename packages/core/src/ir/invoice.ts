@@ -1,7 +1,7 @@
-import { getMessages, type MessageLocale } from "../i18n/messages";
-import type { IrError } from "./errors";
-import { textTemplateKeys } from "./interpolate";
-import type { IrDocument, IrElement, IrFlexChild } from "./types";
+import { getMessages, type MessageLocale } from "../i18n/messages/index.js";
+import type { IrError } from "./errors.js";
+import { textTemplateKeys } from "./interpolate.js";
+import type { IrDocument, IrElement, IrFlexChild } from "./types.js";
 
 type InvoiceItemId =
   | "registrationNumber"

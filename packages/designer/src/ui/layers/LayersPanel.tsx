@@ -1,13 +1,13 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMessages } from "../../i18n/context";
-import { deleteElements } from "../../state/elements";
-import { visibleInContext } from "../../state/geometry";
-import type { LayerNode } from "../../state/layers";
-import { buildLayerTree } from "../../state/layers";
-import type { EditorStore } from "../../state/store";
-import { useEditorState } from "../useEditorState";
-import { LayerRow } from "./LayerRow";
+import { useMessages } from "../../i18n/context.js";
+import { deleteElements } from "../../state/elements.js";
+import { visibleInContext } from "../../state/geometry.js";
+import type { LayerNode } from "../../state/layers.js";
+import { buildLayerTree } from "../../state/layers.js";
+import type { EditorStore } from "../../state/store.js";
+import { useEditorState } from "../useEditorState.js";
+import { LayerRow } from "./LayerRow.js";
 
 /** Collects the ids of flex nodes that have any of targetIds among their descendants (candidates for uncollapsing) */
 function collectFlexAncestors(

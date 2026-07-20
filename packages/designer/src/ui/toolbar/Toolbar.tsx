@@ -2,15 +2,15 @@ import type { CompatTargetId } from "@denreport/core";
 import { COMPAT_MATRICES } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useRef, useState } from "react";
-import type { DesignerChrome } from "../../api/designer";
-import { useMessages } from "../../i18n/context";
-import { EXPORT_TARGET_IDS } from "../../state/export-warnings";
-import type { EditorStore } from "../../state/store";
-import { useEditorState } from "../useEditorState";
-import { BrandLogo } from "./BrandLogo";
-import { OpenIrButton } from "./OpenIrButton";
-import type { ToolbarMenuItem } from "./ToolbarMenu";
-import { ToolbarMenu } from "./ToolbarMenu";
+import type { DesignerChrome } from "../../api/designer.js";
+import { useMessages } from "../../i18n/context.js";
+import { EXPORT_TARGET_IDS } from "../../state/export-warnings.js";
+import type { EditorStore } from "../../state/store.js";
+import { useEditorState } from "../useEditorState.js";
+import { BrandLogo } from "./BrandLogo.js";
+import { OpenIrButton } from "./OpenIrButton.js";
+import type { ToolbarMenuItem } from "./ToolbarMenu.js";
+import { ToolbarMenu } from "./ToolbarMenu.js";
 
 export function Toolbar(props: {
   readonly store: EditorStore;

@@ -6,7 +6,7 @@ import type {
   IrFlexDirection,
   IrFlexElement,
   IrPages,
-} from "./types";
+} from "./types.js";
 
 /**
  * An IrElement with its flex container resolved away: never a flex element

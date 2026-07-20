@@ -5,7 +5,7 @@ import type {
   IrNamedStyle,
 } from "@denreport/core";
 import { applicableStyleAttrs } from "@denreport/core";
-import { updateElementById } from "./tree";
+import { updateElementById } from "./tree.js";
 
 type AnyElement = IrElement | IrFlexChild;
 
