@@ -40,11 +40,8 @@ export const stateJa = {
     invalidJson:
       "サンプルデータを JSON として解釈できないため、空のデータとして扱います",
   },
-  defaults: {
-    text: "テキスト",
-    columnName: (n: number): string => `列${n}`,
-    imagePlaceholder: "画像未設定",
-    scenarioName: (n: number): string => `シナリオ ${n}`,
+  scenarioNames: {
+    nth: (n: number): string => `シナリオ ${n}`,
     copyOf: (name: string): string => `${name} のコピー`,
   },
 };

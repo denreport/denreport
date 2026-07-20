@@ -1,4 +1,7 @@
-import type { DefaultsMessages } from "./defaults";
+import type { Messages } from "../i18n/messages";
+
+/** シナリオ命名に使う文言。state 層の関数はこの部分名前空間のみを受け取る */
+export type ScenarioMessages = Messages["scenarioNames"];
 
 export interface SampleScenario {
   /** セット内一意（"s" + 正整数） */
@@ -69,23 +72,23 @@ function nextId(items: readonly SampleScenario[]): string {
 /** 既存名と衝突しない最小の正整数から「シナリオ N」を作る */
 function nextName(
   items: readonly SampleScenario[],
-  m: DefaultsMessages,
+  m: ScenarioMessages,
 ): string {
   const used = new Set(items.map((item) => item.name));
   let n = 1;
-  while (used.has(m.scenarioName(n))) {
+  while (used.has(m.nth(n))) {
     n += 1;
   }
-  return m.scenarioName(n);
+  return m.nth(n);
 }
 
 /** json（旧来の生サンプル文字列）1本から既定1件のセットを作る */
 export function defaultScenarioSet(
   json: string,
-  m: DefaultsMessages,
+  m: ScenarioMessages,
 ): SampleScenarioSet {
   return {
-    items: [{ id: "s1", name: m.scenarioName(1), json }],
+    items: [{ id: "s1", name: m.nth(1), json }],
     activeId: "s1",
   };
 }
@@ -108,7 +111,7 @@ export function selectScenario(
 /** 空 json の新規シナリオを作りアクティブにする */
 export function addScenario(
   set: SampleScenarioSet,
-  m: DefaultsMessages,
+  m: ScenarioMessages,
 ): SampleScenarioSet {
   const item: SampleScenario = {
     id: nextId(set.items),
@@ -121,7 +124,7 @@ export function addScenario(
 /** アクティブシナリオの json を引き継いだ新規シナリオを作りアクティブにする */
 export function duplicateActiveScenario(
   set: SampleScenarioSet,
-  m: DefaultsMessages,
+  m: ScenarioMessages,
 ): SampleScenarioSet {
   const active = set.items.find((item) => item.id === set.activeId);
   const item: SampleScenario = {
@@ -186,7 +189,7 @@ export function updateActiveJson(
 /** 封筒形式またはレガシー生文字列を読む。常に不変条件を満たすセットを返し、throw しない */
 export function parseSampleDataStorage(
   raw: string,
-  m: DefaultsMessages,
+  m: ScenarioMessages,
 ): SampleScenarioSet {
   let parsed: unknown;
   try {

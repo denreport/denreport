@@ -7,7 +7,6 @@ import type {
   IrTableElement,
 } from "@denreport/core";
 import { describe, expect, it } from "vitest";
-import { ja } from "../i18n/messages/ja";
 import { createDefaultElement } from "./defaults";
 import {
   addElement,
@@ -97,13 +96,7 @@ describe("moveElements", () => {
   });
 
   it("table: continuationY が y と等値なら縦移動に追従する", () => {
-    const table = createDefaultElement(
-      blankDocument(),
-      "table",
-      15,
-      90,
-      ja.defaults,
-    );
+    const table = createDefaultElement(blankDocument(), "table", 15, 90);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const next = moveElements(doc, [table.id], 0, 10);
     expect(next.elements[0]).toMatchObject({ y: 100, continuationY: 100 });
@@ -111,7 +104,7 @@ describe("moveElements", () => {
 
   it("table: continuationY が y と異なるなら縦移動しても変わらない", () => {
     const table = {
-      ...createDefaultElement(blankDocument(), "table", 15, 90, ja.defaults),
+      ...createDefaultElement(blankDocument(), "table", 15, 90),
       continuationY: 30,
     };
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
@@ -120,13 +113,7 @@ describe("moveElements", () => {
   });
 
   it("table: 連動状態でも横移動のみなら y・continuationY は不変", () => {
-    const table = createDefaultElement(
-      blankDocument(),
-      "table",
-      15,
-      90,
-      ja.defaults,
-    );
+    const table = createDefaultElement(blankDocument(), "table", 15, 90);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const next = moveElements(doc, [table.id], 5, 0);
     expect(next.elements[0]).toMatchObject({
@@ -169,13 +156,7 @@ describe("resizeElement", () => {
   });
 
   it("table は x/y のみ反映する（幅は Σ列幅の導出）", () => {
-    const table = createDefaultElement(
-      blankDocument(),
-      "table",
-      15,
-      90,
-      ja.defaults,
-    );
+    const table = createDefaultElement(blankDocument(), "table", 15, 90);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const next = resizeElement(doc, table.id, { x: 20, y: 95, w: 999, h: 999 });
     expect(next.elements[0]).toMatchObject({ x: 20, y: 95 });
@@ -215,7 +196,7 @@ describe("rotateElement", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [
-        createDefaultElement(blankDocument(), "table", 0, 0, ja.defaults),
+        createDefaultElement(blankDocument(), "table", 0, 0),
         flexElement("f", ["c1"]),
       ],
     };
@@ -241,13 +222,7 @@ describe("rotateElement", () => {
 
 describe("setTableContinuationY", () => {
   it("continuationY だけを 0.1mm 丸めで更新する", () => {
-    const table = createDefaultElement(
-      blankDocument(),
-      "table",
-      15,
-      90,
-      ja.defaults,
-    );
+    const table = createDefaultElement(blankDocument(), "table", 15, 90);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const next = setTableContinuationY(doc, table.id, 30.06);
     expect(next.elements[0]).toMatchObject({ y: 90, continuationY: 30.1 });
@@ -479,13 +454,7 @@ describe("resizeFlexChild", () => {
   });
 
   it("table・入れ子 flex には作用しない", () => {
-    const table = createDefaultElement(
-      blankDocument(),
-      "table",
-      10,
-      10,
-      ja.defaults,
-    );
+    const table = createDefaultElement(blankDocument(), "table", 10, 10);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     expect(resizeFlexChild(doc, table.id, { x: 0, y: 0, w: 20, h: 9 })).toBe(
       doc,
@@ -564,13 +533,7 @@ describe("ストア操作: 全8要素型の 配置 → 選択 → 移動/リサ�
       const store = new EditorStore(blankDocument());
 
       // 配置
-      const el = createDefaultElement(
-        store.getState().document,
-        type,
-        20,
-        30,
-        ja.defaults,
-      );
+      const el = createDefaultElement(store.getState().document, type, 20, 30);
       store.commit(addElement(store.getState().document, el), [el.id]);
       expect(store.getState().selection).toEqual([el.id]);
       expect(store.getState().document.elements).toHaveLength(1);

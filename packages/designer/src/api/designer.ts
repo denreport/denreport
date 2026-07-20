@@ -107,7 +107,8 @@ export class Designer {
       initialDocument,
       options?.initialSampleData,
       options?.initialExportTarget,
-      getMessages(resolveLocale(initialLocale, navigator.languages)).defaults,
+      getMessages(resolveLocale(initialLocale, navigator.languages))
+        .scenarioNames,
     );
     this.lastDocument = initialDocument;
     this.lastGroups = this.store.getState().groups;
@@ -213,7 +214,7 @@ export class Designer {
   setSampleData(json: string): void {
     this.assertAlive();
     this.store.setSampleScenarios(
-      parseSampleDataStorage(json, getMessages(this.getLocale()).defaults),
+      parseSampleDataStorage(json, getMessages(this.getLocale()).scenarioNames),
     );
   }
 

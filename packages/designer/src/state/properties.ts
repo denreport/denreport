@@ -10,7 +10,6 @@ import type {
   IrTableCellSpan,
   IrTableElement,
 } from "@denreport/core";
-import type { DefaultsMessages } from "./defaults";
 import { roundMm } from "./geometry";
 import type { SpanExtent } from "./table-cells";
 import { spanExtentsOverlap } from "./table-cells";
@@ -99,11 +98,10 @@ function updateTable(
   );
 }
 
-/** 末尾に列を追加する。key はその table 内で未使用の最小 n の "col<n>"、label は m.columnName(n)、width 40、align "left" */
+/** 末尾に列を追加する。key はその table 内で未使用の最小 n の "col<n>"、label は "column<n>"、width 40、align "left" */
 export function addTableColumn(
   document: IrDocument,
   tableId: string,
-  m: DefaultsMessages,
 ): IrDocument {
   return updateTable(document, tableId, (table) => {
     const keys = new Set(table.columns.map((column) => column.key));
@@ -113,7 +111,7 @@ export function addTableColumn(
     }
     const column: IrColumn = {
       key: `col${n}`,
-      label: m.columnName(n),
+      label: `column${n}`,
       width: 40,
       align: "left",
     };

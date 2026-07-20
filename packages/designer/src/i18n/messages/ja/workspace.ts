@@ -44,6 +44,7 @@ export const workspaceJa = {
     splitterAriaLabel: "パレットとレイヤーの高さ",
   },
   layers: {
+    imagePlaceholder: "画像未設定",
     ariaLabel: "レイヤー",
     caption: "レイヤー",
     empty: "要素がありません",

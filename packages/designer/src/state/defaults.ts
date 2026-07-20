@@ -4,12 +4,11 @@ import type {
   IrElementType,
   IrFlexChild,
 } from "@denreport/core";
-import type { Messages } from "../i18n/messages";
 import { IMAGE_PLACEHOLDER_SRC } from "./constants";
 import { roundMm } from "./geometry";
 
-/** 既定テキスト・シナリオ命名に使う文言。designer state 層の関数はこの部分名前空間のみを受け取る */
-export type DefaultsMessages = Messages["defaults"];
+// 文書の初期内容はユーザーデータでありロケールに依存させない
+const DEFAULT_TEXT = "text1";
 
 function collectIds(document: IrDocument): Set<string> {
   const ids = new Set<string>();
@@ -76,7 +75,6 @@ export function createDefaultElement(
   type: IrElementType,
   x: number,
   y: number,
-  m: DefaultsMessages,
 ): IrElement {
   const id = nextElementId(document, type);
   const px = roundMm(x);
@@ -91,7 +89,7 @@ export function createDefaultElement(
         pages: "first",
         w: 40,
         h: 8,
-        text: m.text,
+        text: DEFAULT_TEXT,
         fontSize: 10,
         align: "left",
         lineHeight: 1.25,
@@ -137,8 +135,8 @@ export function createDefaultElement(
         y: py,
         bind: "items",
         columns: [
-          { key: "col1", label: m.columnName(1), width: 40, align: "left" },
-          { key: "col2", label: m.columnName(2), width: 40, align: "left" },
+          { key: "col1", label: "column1", width: 40, align: "left" },
+          { key: "col2", label: "column2", width: 40, align: "left" },
         ],
         rowHeight: 8,
         headerHeight: 8,
@@ -164,7 +162,7 @@ export function createDefaultElement(
         id: nextElementId(document, "text"),
         w: 40,
         h: 8,
-        text: m.text,
+        text: DEFAULT_TEXT,
         fontSize: 10,
         align: "left",
         lineHeight: 1.25,
@@ -215,10 +213,9 @@ export function createDefaultElement(
 export function createCenteredElement(
   document: IrDocument,
   type: IrElementType,
-  m: DefaultsMessages,
 ): IrElement {
   const size = defaultSizeMm(type);
   const x = Math.max(0, (document.page.width - size.w) / 2);
   const y = Math.max(0, (document.page.height - size.h) / 2);
-  return createDefaultElement(document, type, x, y, m);
+  return createDefaultElement(document, type, x, y);
 }

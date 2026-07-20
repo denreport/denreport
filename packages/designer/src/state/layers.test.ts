@@ -145,7 +145,7 @@ describe("layerLabel", () => {
   };
 
   function label(element: Parameters<typeof layerLabel>[0]): string {
-    return layerLabel(element, ja.elementTypes, ja.defaults.imagePlaceholder);
+    return layerLabel(element, ja.elementTypes, ja.layers.imagePlaceholder);
   }
 
   it("トークンを含む text も先頭12文字を超えると … で切り詰める", () => {
@@ -242,14 +242,14 @@ describe("layerLabel", () => {
       h: 30,
       src: IMAGE_PLACEHOLDER_SRC,
     };
-    expect(
-      layerLabel(image, en.elementTypes, en.defaults.imagePlaceholder),
-    ).toBe("No image set");
+    expect(layerLabel(image, en.elementTypes, en.layers.imagePlaceholder)).toBe(
+      "No image set",
+    );
     expect(
       layerLabel(
         { ...image, src: "data:image/png;base64,xxx" },
         en.elementTypes,
-        en.defaults.imagePlaceholder,
+        en.layers.imagePlaceholder,
       ),
     ).toBe("Image");
   });

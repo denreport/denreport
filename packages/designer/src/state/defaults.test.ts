@@ -1,8 +1,6 @@
 import type { IrDocument, IrElementType } from "@denreport/core";
 import { parseIr, validateIr } from "@denreport/core";
 import { describe, expect, it } from "vitest";
-import { en } from "../i18n/messages/en";
-import { ja } from "../i18n/messages/ja";
 import {
   createCenteredElement,
   createDefaultElement,
@@ -38,11 +36,11 @@ function defaultElement(
   x: number,
   y: number,
 ) {
-  return createDefaultElement(document, type, x, y, ja.defaults);
+  return createDefaultElement(document, type, x, y);
 }
 
 function centeredElement(document: IrDocument, type: IrElementType) {
-  return createCenteredElement(document, type, ja.defaults);
+  return createCenteredElement(document, type);
 }
 
 describe("nextElementId", () => {
@@ -130,32 +128,17 @@ describe("createDefaultElement", () => {
     }
   });
 
-  it("en メッセージでは既定テキスト・列名が英語になる", () => {
-    const el = createDefaultElement(
-      blankDocument(),
-      "text",
-      10,
-      10,
-      en.defaults,
-    );
+  it("既定テキスト・列名はロケールに依らず英語", () => {
+    const el = defaultElement(blankDocument(), "text", 10, 10);
     expect(el.type).toBe("text");
     if (el.type === "text") {
-      expect(el.text).toBe("Text");
+      expect(el.text).toBe("text1");
     }
 
-    const table = createDefaultElement(
-      blankDocument(),
-      "table",
-      10,
-      10,
-      en.defaults,
-    );
+    const table = defaultElement(blankDocument(), "table", 10, 10);
     expect(table.type).toBe("table");
     if (table.type === "table") {
-      expect(table.columns.map((c) => c.label)).toEqual([
-        "Column 1",
-        "Column 2",
-      ]);
+      expect(table.columns.map((c) => c.label)).toEqual(["column1", "column2"]);
     }
   });
 });

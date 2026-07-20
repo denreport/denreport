@@ -221,9 +221,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
       <button
         type="button"
         className="apx-add-col"
-        onClick={() =>
-          commitDoc((doc) => addTableColumn(doc, el.id, m.defaults))
-        }
+        onClick={() => commitDoc((doc) => addTableColumn(doc, el.id))}
       >
         {c.addColumn}
       </button>
