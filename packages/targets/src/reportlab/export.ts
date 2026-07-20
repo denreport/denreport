@@ -123,7 +123,7 @@ function buildSource(
   ];
   const layoutLines = (el: LoweredTextElement): readonly string[] => {
     const slot = resolveFontSlot(font, el.fontWeight, el.fontStyle);
-    // effectiveFontOf により解決先スロットのデータ存在は保証される
+    // effectiveFontOf guarantees that data exists for the resolved slot
     const slotFont = slots.get(slot) as ResolvedSlotFont;
     return layoutTextLines(
       {

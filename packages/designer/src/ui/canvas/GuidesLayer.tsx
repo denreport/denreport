@@ -14,9 +14,9 @@ function boxVars(box: MmBox): CSSProperties {
 }
 
 export function GuidesLayer(props: {
-  /** guidesInPage 適用済み */
+  /** Already has guidesInPage applied */
   readonly guides: readonly CustomGuide[];
-  /** pageContext !== "first" では null を渡す */
+  /** Pass null when pageContext !== "first" */
   readonly envelopePreset: EnvelopePreset | null;
   readonly drag: GuideDragApi;
 }): ReactNode {

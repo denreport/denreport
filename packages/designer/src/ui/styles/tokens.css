@@ -1,11 +1,11 @@
-/* ==== デザイントークン（デザイナー UI 全体） ==== */
-/* 組込ウィジェットがホストページの <html> を書き換えないよう、
-   トークンは .apx-designer ルート要素にスコープする */
+/* ==== Design tokens (whole designer UI) ==== */
+/* Scope tokens to the .apx-designer root element so the embedded widget
+   never rewrites the host page's <html> */
 
 .apx-designer {
   color-scheme: light;
 
-  /* --- タイポグラフィ --- */
+  /* --- Typography --- */
   --font-ui:
     system-ui, -apple-system, "Segoe UI", "Hiragino Sans",
     "Hiragino Kaku Gothic ProN", "Noto Sans CJK JP", "Yu Gothic UI", "Meiryo",
@@ -20,7 +20,7 @@
   --leading-tight: 1.35;
   --leading-normal: 1.6;
 
-  /* --- 余白・角丸 --- */
+  /* --- Spacing / radius --- */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -32,7 +32,7 @@
   --radius-md: 4px;
   --radius-lg: 6px;
 
-  /* --- レイアウト定数 --- */
+  /* --- Layout constants --- */
   --size-toolbar: 44px;
   --size-canvasbar: 32px;
   --size-statusbar: 26px;
@@ -41,15 +41,15 @@
   --size-ruler: 22px;
   --size-drawer: 168px;
 
-  /* --- キャンバス実寸（倍率 100%）: 1mm = 3.78px(96dpi), 1pt = 0.352778mm --- */
+  /* --- Canvas actual size (100% zoom): 1mm = 3.78px(96dpi), 1pt = 0.352778mm --- */
   --mm: 3.78px;
   --pt: 1.3335px;
 
-  /* --- フォーカスリング --- */
+  /* --- Focus ring --- */
   --focus-ring-width: 2px;
   --focus-ring-offset: 1px;
 
-  /* --- 色（ライト） --- */
+  /* --- Colors (light) --- */
   --color-bg-app: #fbfaf8;
   --color-bg-panel: #f4f3f0;
   --color-bg-inset: #ffffff;
@@ -65,8 +65,8 @@
   --color-accent-active: #1d4368;
   --color-on-accent: #ffffff;
   --color-accent-subtle-bg: rgba(42, 91, 140, 0.1);
-  /* --color-accent はフォーカスリング・選択枠等 UI 全体で共用のため、
-     主要アクションボタン専用に彩度・明度を上げた色を分離する */
+  /* --color-accent is shared across the whole UI (focus ring, selection box, etc.),
+     so a separate color with higher saturation/lightness is split out for primary action buttons only */
   --color-cta: #175fd3;
   --color-cta-hover: #1453b8;
   --color-cta-active: #11479c;
@@ -90,7 +90,7 @@
   --shadow-raised: 0 1px 3px rgba(31, 29, 26, 0.16);
   --shadow-overlay: 0 12px 40px rgba(31, 29, 26, 0.28);
 
-  /* --- 紙上トークン: 紙は両テーマとも白のまま。テーマで変えない --- */
+  /* --- On-paper tokens: paper stays white in both themes. Not changed by theme --- */
   --paper-bg: #ffffff;
   --paper-text: #1a1916;
   --paper-grid: #dce5ee;

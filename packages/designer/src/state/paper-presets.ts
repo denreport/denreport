@@ -34,14 +34,14 @@ const INTL_PRESETS: readonly PaperPreset[] = [
   { id: "legal", width: 215.9, height: 355.6 },
 ];
 
-/** UI 言語（BCP 47 言語タグ）に応じたプリセット一覧を返す。日本語のみ専用セット、他は英語圏セット共通 */
+/** Returns the preset list for the UI language (BCP 47 language tag). Only Japanese gets its own set; all others share the English-locale set */
 export function paperPresetsForLanguage(
   language: string,
 ): readonly PaperPreset[] {
   return language.toLowerCase().startsWith("ja") ? JA_PRESETS : INTL_PRESETS;
 }
 
-/** 幅・高さに一致するプリセットの id。一致なしは undefined（呼び出し側で「カスタム」表示に使う） */
+/** The id of the preset matching width and height. undefined if there's no match (the caller uses this to show "Custom") */
 export function paperPresetIdForSize(
   presets: readonly PaperPreset[],
   width: number,

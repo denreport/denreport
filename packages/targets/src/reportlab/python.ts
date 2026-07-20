@@ -18,7 +18,7 @@ export function pyBool(value: boolean): string {
   return value ? "True" : "False";
 }
 
-/** #rrggbb を ReportLab の setStrokeColorRGB/setFillColorRGB 用に 0..1 の3値タプル文字列へ変換する */
+/** Converts #rrggbb into a 0..1 three-value tuple string for ReportLab's setStrokeColorRGB/setFillColorRGB. */
 export function pyRgb(color: string): string {
   const r = Number.parseInt(color.slice(1, 3), 16) / 255;
   const g = Number.parseInt(color.slice(3, 5), 16) / 255;

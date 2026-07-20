@@ -17,8 +17,8 @@ import { charWidthsFor, useFontMetrics } from "./font-metrics";
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-// readCharWidths が読める最小の sfnt（head.unitsPerEm・hhea.numberOfHMetrics・
-// hmtx 1本・空の cmap format4 サブテーブルのみ実値。preview-font.test.ts と同構成）
+// A minimal sfnt that readCharWidths can read (only head.unitsPerEm, hhea.numberOfHMetrics,
+// one hmtx entry, and an empty cmap format4 subtable have real values; same layout as preview-font.test.ts)
 function sfntWith(unitsPerEm: number): Uint8Array {
   const headOffset = 12 + 4 * 16;
   const headLength = 20;
@@ -27,7 +27,7 @@ function sfntWith(unitsPerEm: number): Uint8Array {
   const hmtxOffset = hheaOffset + hheaLength;
   const hmtxLength = 4;
   const cmapOffset = hmtxOffset + hmtxLength;
-  const cmapSubtableLength = 24; // format4、segCount=1（終端セグメントのみ）
+  const cmapSubtableLength = 24; // format4, segCount=1 (terminal segment only)
   const cmapLength = 12 + cmapSubtableLength;
   const bytes = new Uint8Array(cmapOffset + cmapLength);
   const view = new DataView(bytes.buffer);
@@ -55,11 +55,11 @@ function sfntWith(unitsPerEm: number): Uint8Array {
   view.setUint16(cmapOffset + 2, 1); // numTables
   view.setUint16(cmapOffset + 4, 3); // platformId
   view.setUint16(cmapOffset + 6, 1); // encodingId
-  view.setUint32(cmapOffset + 8, 12); // subtable offset（cmap 先頭からの相対位置）
+  view.setUint32(cmapOffset + 8, 12); // subtable offset (relative to the start of cmap)
   const subtableAbs = cmapOffset + 12;
   view.setUint16(subtableAbs, 4); // format
   view.setUint16(subtableAbs + 2, cmapSubtableLength);
-  view.setUint16(subtableAbs + 6, 2); // segCountX2（segCount=1）
+  view.setUint16(subtableAbs + 6, 2); // segCountX2 (segCount=1)
   view.setUint16(subtableAbs + 14, 0xffff); // endCode[0]
   view.setUint16(subtableAbs + 18, 0xffff); // startCode[0]
   view.setInt16(subtableAbs + 20, 1); // idDelta[0]

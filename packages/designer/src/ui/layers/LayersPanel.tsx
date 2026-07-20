@@ -9,7 +9,7 @@ import type { EditorStore } from "../../state/store";
 import { useEditorState } from "../useEditorState";
 import { LayerRow } from "./LayerRow";
 
-/** targetIds のいずれかを子孫に持つ flex ノードの id を集める（折りたたみ解除の対象） */
+/** Collects the ids of flex nodes that have any of targetIds among their descendants (candidates for uncollapsing) */
 function collectFlexAncestors(
   nodes: readonly LayerNode[],
   targetIds: ReadonlySet<string>,
@@ -37,7 +37,7 @@ function collectFlexAncestors(
 
 export function LayersPanel(props: {
   readonly store: EditorStore;
-  /** 行クリック時、選択・文脈切替の後に呼ぶ（ValidationDrawer と同じ契約） */
+  /** Called after selection/context switching on row click (same contract as ValidationDrawer) */
   readonly onReveal: (id: string) => void;
 }): ReactNode {
   const { store, onReveal } = props;
@@ -48,7 +48,7 @@ export function LayersPanel(props: {
   const bodyRef = useRef<HTMLDivElement>(null);
   const selection = useMemo(() => new Set(state.selection), [state.selection]);
 
-  // 折りたたみは「折りたたみ中の flex id」の集合。要素の追加・削除・undo で不在 id が残っても無害
+  // Collapsed state is a set of "currently collapsed flex ids". Stale ids left behind by element add/delete/undo are harmless
   const onToggle = useCallback((flexId: string): void => {
     setCollapsed((prev) => {
       const next = new Set(prev);
@@ -85,7 +85,7 @@ export function LayersPanel(props: {
     [store],
   );
 
-  // キャンバス選択に追随して、選択要素を隠している祖先 flex の折りたたみを解く
+  // Follows canvas selection, uncollapsing ancestor flex nodes that hide the selected element
   useEffect(() => {
     const targets = new Set(state.selection);
     if (targets.size === 0) {
@@ -107,7 +107,7 @@ export function LayersPanel(props: {
     });
   }, [state.selection, tree]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: 折りたたみ解除で行が DOM に現れた後に scrollIntoView するため collapsed の変化にも追随する
+  // biome-ignore lint/correctness/useExhaustiveDependencies: also follows changes to collapsed, since scrollIntoView must run after the row appears in the DOM once uncollapsed
   useEffect(() => {
     const first = state.selection[0];
     if (first === undefined) {
@@ -116,7 +116,7 @@ export function LayersPanel(props: {
     const row = bodyRef.current?.querySelector(
       `[data-apx-layer-id="${first}"]`,
     );
-    // jsdom は scrollIntoView を実装しないため、実 DOM でのみ呼ぶ
+    // jsdom does not implement scrollIntoView, so only call it on a real DOM
     if (
       row instanceof HTMLElement &&
       typeof row.scrollIntoView === "function"

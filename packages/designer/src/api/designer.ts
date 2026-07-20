@@ -22,34 +22,34 @@ export type { DesignerLocale };
 
 export const SAVE_FILE_NAME = "report-template.json";
 
-/** React ツリーから Designer の機能（テーマ・言語・保存・読込）に触る唯一の経路 */
+/** The sole channel from the React tree to reach Designer's capabilities (theme, locale, save, load) */
 export interface DesignerChrome {
-  /** 現在の解決済みテーマ（"auto" は解決後の値になる）。トグルの表示状態に使う */
+  /** The current resolved theme ("auto" becomes the resolved value). Used for the toggle's display state */
   readonly resolvedTheme: "light" | "dark";
-  /** resolvedTheme の反転を明示テーマとして設定する（"auto" 追従からは抜ける） */
+  /** Sets the inverse of resolvedTheme as the explicit theme (exits "auto" following) */
   readonly toggleTheme: () => void;
-  /** 保存ボタンの動作: onSaveRequest リスナーがあれば通知、なければ saveIr + ダウンロード */
+  /** Save button behavior: notifies onSaveRequest listeners if any are registered, otherwise saveIr + download */
   readonly requestSave: () => void;
-  /** 「開く」の読込。契約は公開 loadIr と同一（成功時は履歴クリア・onChange 発火） */
+  /** The load for "Open". Same contract as the public loadIr (on success, clears history and fires onChange) */
   readonly importIr: (json: string) => LoadIrResult;
-  /** 現在の解決済みロケール（"auto" は解決後の値になる）。切替ボタンの表示に使う */
+  /** The current resolved locale ("auto" becomes the resolved value). Used for the switch button's display */
   readonly locale: Locale;
-  /** 解決済みロケールの反転を明示ロケールとして設定する（"auto" 追従からは抜ける） */
+  /** Sets the inverse of the resolved locale as the explicit locale (exits "auto" following) */
   readonly toggleLocale: () => void;
 }
 
 export interface DesignerOptions {
-  /** IR v1 の JSON 文字列。省略時は白紙文書（A4 縦・同梱フォント組・elements: []） */
+  /** IR v1 JSON string. If omitted, a blank document (A4 portrait, bundled font set, elements: []) */
   readonly initialIr?: string;
-  /** サンプルデータのシナリオ一式の直列化文字列（getSampleData の返り値。封筒形式）
-      またはレガシー生 JSON。省略時は既定1件（空 json）。
-      不正な JSON も受理する（編集の常態。initialIr と異なり throw しない） */
+  /** A serialized string of the full set of sample-data scenarios (the return value of getSampleData,
+      envelope format), or legacy raw JSON. If omitted, defaults to a single entry (empty json).
+      Also accepts invalid JSON (a normal state while editing; unlike initialIr, this does not throw) */
   readonly initialSampleData?: string;
-  /** 選択中の書き出しターゲット（getExportTarget の返り値）。省略時は "pdfme" */
+  /** The currently selected export target (the return value of getExportTarget). Defaults to "pdfme" if omitted */
   readonly initialExportTarget?: CompatTargetId;
-  /** 省略時 "auto"（prefers-color-scheme 追従） */
+  /** Defaults to "auto" (follows prefers-color-scheme) */
   readonly theme?: DesignerTheme;
-  /** 省略時 "auto"（navigator.languages から ja/en を判定） */
+  /** Defaults to "auto" (determines ja/en from navigator.languages) */
   readonly locale?: DesignerLocale;
 }
 
@@ -95,7 +95,7 @@ export class Designer {
   private locale: DesignerLocale;
   private destroyed = false;
 
-  /** container の内容を占有してデザイナーを描画する。寸法はホストが container で制御する */
+  /** Takes over container's contents to render the designer. Dimensions are controlled by the host via container */
   constructor(container: HTMLElement, options?: DesignerOptions) {
     const initialDocument =
       options?.initialIr === undefined
@@ -114,8 +114,9 @@ export class Designer {
     this.lastGroups = this.store.getState().groups;
     this.lastSampleScenarios = this.store.getState().sampleScenarios;
     this.lastExportTarget = this.store.getState().selectedExportTarget;
-    // 選択・ズーム等の変更ではホストに通知しないため、参照比較で通知対象を絞る。
-    // group/ungroup は document を変えず groups だけを差し替えるため、両方を見る
+    // Notifications to the host are narrowed by reference comparison, since changes such as
+    // selection/zoom should not notify the host. group/ungroup replaces only groups without
+    // changing document, so both are checked
     this.unsubscribeStore = this.store.subscribe(() => {
       const state = this.store.getState();
       const documentChanged = state.document !== this.lastDocument;
@@ -160,8 +161,8 @@ export class Designer {
     this.render();
   }
 
-  /** IR JSON を読み込んで現在の文書を置き換える。失敗時は文書を変えず errors を返す。
-      成功時は undo/redo 履歴をクリアし、変更通知を発火する */
+  /** Loads IR JSON and replaces the current document. On failure, leaves the document unchanged
+      and returns errors. On success, clears the undo/redo history and fires the change notification */
   loadIr(json: string): LoadIrResult {
     this.assertAlive();
     const result = parseIr(json, { locale: this.getLocale() });
@@ -172,8 +173,8 @@ export class Designer {
     return { ok: true };
   }
 
-  /** 現在の文書を IR v1 JSON 文字列として返す（正規化済み = 任意属性のデフォルト明示済み）。
-      グループ（生存分のみ）を groups キーへ書き込んだうえで直列化する */
+  /** Returns the current document as an IR v1 JSON string (normalized = optional attributes have
+      explicit defaults filled in). Serializes after writing groups (surviving ones only) to the groups key */
   saveIr(): string {
     this.assertAlive();
     const state = this.store.getState();
@@ -182,8 +183,9 @@ export class Designer {
     return json;
   }
 
-  /** 文書変更（編集の確定・undo/redo・loadIr）またはグループ変更（group/ungroup）で
-      呼ばれるリスナーを登録し、解除関数を返す。選択・ズーム・ページ文脈の変更では発火しない */
+  /** Registers a listener called on document changes (committing an edit, undo/redo, loadIr) or
+      group changes (group/ungroup), and returns an unsubscribe function. Does not fire on
+      selection, zoom, or page-context changes */
   onChange(listener: () => void): () => void {
     this.assertAlive();
     this.changeListeners.add(listener);
@@ -192,9 +194,9 @@ export class Designer {
     };
   }
 
-  /** ツールバーの「保存」押下で呼ばれるリスナーを登録し、解除関数を返す。
-      リスナーが1つ以上登録されているあいだ、保存の既定動作（IR JSON の
-      ファイルダウンロード）は行われない */
+  /** Registers a listener called when the toolbar's "Save" is pressed, and returns an unsubscribe
+      function. While one or more listeners are registered, the default save behavior (downloading
+      the IR JSON as a file) does not happen */
   onSaveRequest(listener: () => void): () => void {
     this.assertAlive();
     this.saveRequestListeners.add(listener);
@@ -203,14 +205,14 @@ export class Designer {
     };
   }
 
-  /** シナリオ一式の直列化文字列（封筒形式）を返す。自動保存・ホスト永続化用 */
+  /** Returns a serialized string of the full set of scenarios (envelope format). For autosave / host persistence */
   getSampleData(): string {
     this.assertAlive();
     return serializeSampleDataStorage(this.store.getState().sampleScenarios);
   }
 
-  /** シナリオ一式を置き換える。封筒形式・レガシー生 JSON とも受理し throw しない。
-      undo 履歴・dirty・onChange には影響せず、onSampleDataChange を発火する */
+  /** Replaces the full set of scenarios. Accepts both envelope format and legacy raw JSON, and
+      does not throw. Does not affect undo history, dirty, or onChange; fires onSampleDataChange */
   setSampleData(json: string): void {
     this.assertAlive();
     this.store.setSampleScenarios(
@@ -218,8 +220,8 @@ export class Designer {
     );
   }
 
-  /** サンプルデータ変更（編集 UI・setSampleData）で呼ばれるリスナーを登録し、解除関数を返す。
-      文書変更では発火しない（onChange と発火が分かれる） */
+  /** Registers a listener called on sample-data changes (edit UI, setSampleData), and returns an
+      unsubscribe function. Does not fire on document changes (firing is separate from onChange) */
   onSampleDataChange(listener: () => void): () => void {
     this.assertAlive();
     this.sampleDataListeners.add(listener);
@@ -228,14 +230,14 @@ export class Designer {
     };
   }
 
-  /** 現在選択中の書き出しターゲット。ホスト側の永続化用 */
+  /** The currently selected export target. For host-side persistence */
   getExportTarget(): CompatTargetId {
     this.assertAlive();
     return this.store.getState().selectedExportTarget;
   }
 
-  /** 書き出しターゲットの選択変更（ツールバー・書き出しダイアログ）で呼ばれる
-      リスナーを登録し、解除関数を返す */
+  /** Registers a listener called on export target selection changes (toolbar, export dialog),
+      and returns an unsubscribe function */
   onExportTargetChange(listener: () => void): () => void {
     this.assertAlive();
     this.exportTargetListeners.add(listener);
@@ -244,14 +246,14 @@ export class Designer {
     };
   }
 
-  /** テーマを切り替える。"auto" は OS 設定に追従する */
+  /** Switches the theme. "auto" follows the OS setting */
   setTheme(theme: DesignerTheme): void {
     this.assertAlive();
     this.theme = theme;
     this.render();
   }
 
-  /** ロケールを切り替える。"auto" は navigator.languages に追従する */
+  /** Switches the locale. "auto" follows navigator.languages */
   setLocale(locale: DesignerLocale): void {
     this.assertAlive();
     const previousResolved = this.getLocale();
@@ -264,13 +266,13 @@ export class Designer {
     }
   }
 
-  /** 現在の解決済みロケール。ホスト側の永続化用 */
+  /** The current resolved locale. For host-side persistence */
   getLocale(): Locale {
     this.assertAlive();
     return resolveLocale(this.locale, navigator.languages);
   }
 
-  /** ロケール変更（切替ボタン・setLocale）で呼ばれるリスナーを登録し、解除関数を返す */
+  /** Registers a listener called on locale changes (switch button, setLocale), and returns an unsubscribe function */
   onLocaleChange(listener: () => void): () => void {
     this.assertAlive();
     this.localeChangeListeners.add(listener);
@@ -279,7 +281,7 @@ export class Designer {
     };
   }
 
-  /** React ツリーを破棄し container を空に戻す。冪等。destroy 後の他メソッド呼び出しは throw */
+  /** Unmounts the React tree and empties container. Idempotent. Calling other methods after destroy throws */
   destroy(): void {
     if (this.destroyed) {
       return;

@@ -18,7 +18,7 @@ test("脚注マークを自動採番し、プレビューと ReportLab 書き出
   await textField.fill("振込手数料{#fee}をご負担ください");
   await textField.blur();
 
-  // 要素の無い場所をクリックして選択を外し、文書設定パネル（脚注セクション）へ移る
+  // Click an empty area to deselect and move to the document settings panel (footnotes section)
   const paper = page.getByRole("application", { name: "キャンバス" });
   const paperBox = await paper.boundingBox();
   if (paperBox === null) {
@@ -60,7 +60,7 @@ test("脚注マークを自動採番し、プレビューと ReportLab 書き出
     throw new Error("zip に report.py がありません");
   }
   const code = report.data.toString("utf8");
-  // 既定幅 40mm には収まらず1文字単位の折り返しで2行に分かれる
+  // Does not fit within the default 40mm width, wraps character-by-character into 2 lines
   expect(code).toContain('["振込手数料*1をご負担く", "ださい"]');
   expect(code).toContain(`*1 ${NOTE_TEXT}`);
   expect(code).not.toContain("{#fee}");

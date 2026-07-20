@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import { useMessages } from "../../i18n/context";
 import type { CompatWarningGroup } from "../../state/export-warnings";
 
-/** 互換性判定1グループ（level + userMessage）のカード表示。書き出しダイアログと検証ペインで共有する */
+/** Card display for one compat-finding group (level + userMessage). Shared by the export
+    dialog and the validation pane */
 export function WarningGroupCard(props: {
   readonly group: CompatWarningGroup;
   readonly onJump: (id: string) => void;

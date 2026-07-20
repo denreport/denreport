@@ -7,7 +7,7 @@ import { useDraftValue } from "./useDraftValue";
 
 export type StrokeStyleLabels = Messages["properties"]["fields"]["strokeStyle"];
 
-/** line.strokeStyle・rect.borderStyle 共通の選択肢（表示順は実線→点線→破線→一点鎖線→二点鎖線） */
+/** Options shared by line.strokeStyle and rect.borderStyle (display order is solid → dotted → dashed → dashdot → dashdotdot) */
 export function strokeStyleOptions(
   labels: StrokeStyleLabels,
 ): readonly { readonly value: IrStrokeStyle; readonly label: string }[] {
@@ -22,19 +22,19 @@ export function strokeStyleOptions(
 
 export interface NumberFieldProps {
   readonly label: string;
-  /** null: 複数選択で値が混在（空欄 + placeholder「混在」表示） */
+  /** null: values are mixed across a multi-selection (shown as empty + "mixed" placeholder) */
   readonly value: number | null;
-  /** 単位サフィックスの表示のみ（換算はしない） */
+  /** Just displays the unit suffix (no conversion) */
   readonly unit?: "mm" | "pt" | "°" | undefined;
-  /** 量子化の刻み: mm / pt = 0.1、lineHeight = 0.01、整数 = 1 */
+  /** Quantization step: mm / pt = 0.1, lineHeight = 0.01, integer = 1 */
   readonly precision: number;
-  /** 量子化済みの値のみ渡る。非数値・空文字では呼ばれない。同値抑止は value が混在でないときのみ */
+  /** Only receives quantized values. Not called for non-numeric or empty input. Same-value suppression only applies when value isn't mixed */
   readonly onCommit: (value: number) => void;
   readonly error?: string | undefined;
 }
 
-// ceil（round ではなく）でないと precision が10のべき乗でない場合（例: 0.05）に
-// 桁数が足りず、値を変更せず blur しただけで quantize 後の値が丸まってずれる
+// Must use ceil (not round): when precision isn't a power of 10 (e.g. 0.05),
+// too few decimal places causes the quantized value to drift on a blur with no actual change
 function decimalsOf(precision: number): number {
   return Math.max(0, Math.ceil(Math.log10(1 / precision)));
 }
@@ -90,7 +90,7 @@ export function TextField(props: {
   readonly label: string;
   readonly value: string;
   readonly onCommit: (value: string) => void;
-  /** 識別子（bind・font.name・key）は mono 表示 */
+  /** Identifiers (bind, font.name, key) are shown in mono */
   readonly mono?: boolean | undefined;
   readonly suggestions?: readonly string[] | undefined;
   readonly error?: string | undefined;
@@ -166,10 +166,10 @@ export function TextAreaField(props: {
   );
 }
 
-/** enum 属性・モード切替。変更で即 onCommit する */
+/** For enum attributes / mode switches. Calls onCommit immediately on change */
 export function SegmentField<V extends string>(props: {
   readonly label: string;
-  /** null: 複数選択で値が混在（どのボタンも is-active にしない） */
+  /** null: values are mixed across a multi-selection (no button is made is-active) */
   readonly value: V | null;
   readonly options: readonly { readonly value: V; readonly label: string }[];
   readonly onCommit: (value: V) => void;
@@ -197,7 +197,7 @@ export function SegmentField<V extends string>(props: {
   );
 }
 
-/** 色の編集。allowNone 時は「なし」トグル付きで、なし = null を commit する */
+/** Color editing. When allowNone is set, includes a "none" toggle; none commits null */
 export function ColorField(props: {
   readonly label: string;
   readonly value: string | null;
@@ -240,7 +240,7 @@ export function ColorField(props: {
   );
 }
 
-/** ネイティブ select による単一選択（SegmentField は5択で幅超過するため） */
+/** Single selection via a native select (SegmentField would overflow its width with 5 options) */
 export function SelectField<V extends string>(props: {
   readonly label: string;
   readonly value: V;

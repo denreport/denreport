@@ -25,8 +25,8 @@ export interface CompatFinding {
 
 type CompatInstance = IrElement | IrFlexChild;
 
-// マトリクスは要素型 K ごとに CompatAttributeOf<K> で属性キーを制限するが、
-// ここは走査対象の要素型を静的に知らないため汎用形にゆるめて読む。
+// The matrix restricts attribute keys per element type K via CompatAttributeOf<K>,
+// but here we don't statically know the element type being scanned, so we relax it to a generic form.
 interface LooseElementCompat {
   readonly element: CompatEntry;
   readonly attributes?: {

@@ -3,8 +3,9 @@ import { useMessages } from "../../i18n/context";
 import type { SampleScenarioSet } from "../../state/sample-scenarios";
 import { useDraftValue } from "../properties/useDraftValue";
 
-/** シナリオ選択・名称変更・追加/複製/削除の操作列。表示のみで、状態遷移の判断
-    （削除確認・純関数の適用）は呼び出し側が行う */
+/** The action row for scenario selection, renaming, and add/duplicate/delete. Display only;
+    state-transition decisions (delete confirmation, applying the pure functions) are made by
+    the caller */
 export function ScenarioBar(props: {
   readonly scenarios: SampleScenarioSet;
   readonly onSelect: (id: string) => void;

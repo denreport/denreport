@@ -1,7 +1,7 @@
 import type { IrBarcodeSymbology } from "@denreport/core";
 import type { ReactNode } from "react";
 
-// 実バーコードは符号化しない模式パターン（値の走査可能性は保証しない）
+// A schematic pattern that does not actually encode the barcode (scannability of the value is not guaranteed)
 const BAR_SEGMENT_WEIGHTS: readonly number[] = [
   3, 2, 1, 2, 2, 1, 3, 1, 2, 3, 1, 2,
 ];
@@ -23,7 +23,7 @@ export function BarcodeSketch(props: {
         <span className="apx-bc-bars" aria-hidden="true">
           {BAR_SEGMENT_WEIGHTS.map((weight, i) => (
             <span
-              // biome-ignore lint/suspicious/noArrayIndexKey: 固定パターンで並び替えが起きない
+              // biome-ignore lint/suspicious/noArrayIndexKey: fixed pattern, no reordering occurs
               key={i}
               className={i % 2 === 0 ? "apx-bc-bar" : undefined}
               style={{ flexGrow: weight }}

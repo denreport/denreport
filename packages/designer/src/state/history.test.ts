@@ -58,7 +58,7 @@ describe("History", () => {
       undoCount += 1;
     }
     expect(undoCount).toBe(HISTORY_LIMIT);
-    // 最古の v0 は捨てられ、最後に戻れるのは v1
+    // The oldest v0 is discarded; the furthest we can go back is v1
     expect(last?.document.font.regular).toBe("v1");
   });
 

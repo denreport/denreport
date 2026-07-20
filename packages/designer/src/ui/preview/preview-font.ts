@@ -7,7 +7,7 @@ export interface PreviewFont {
   readonly charWidths: CharWidthEm;
 }
 
-/** 文書のフォント組をスロット別の PreviewFont に解決したもの。regular は必須 */
+/** A document's font set resolved into a per-slot PreviewFont. regular is required */
 export interface PreviewFontSet {
   readonly regular: PreviewFont;
   readonly bold?: PreviewFont;
@@ -25,10 +25,11 @@ function hasRegistered(doc: Document, family: string): boolean {
   return registered;
 }
 
-/** 同梱フォントを url から fetch し、FontFace を family（ホストページと衝突しない
-    apx- 接頭辞の一意名を呼び出し側が渡す）で doc.fonts に登録して計量とともに返す。
-    同一 doc に登録済みなら再登録しない（複数インスタンス・再オープンの重複防止）。
-    失敗（fetch 不能・計量読取不能）は reject し、呼び出し側がフォールバック表示する */
+/** Fetches the bundled font from the url, registers a FontFace to doc.fonts under family (the
+    caller passes a unique apx- prefixed name that won't collide with the host page), and returns
+    it together with its metrics. Does not re-register if already registered on the same doc
+    (prevents duplication across multiple instances / reopens). Failures (fetch failure, unreadable
+    metrics) reject, and the caller shows a fallback display */
 export async function loadPreviewFont(
   doc: Document,
   url: URL,
@@ -68,16 +69,17 @@ function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
   return true;
 }
 
-// name は sanitizeFontName の出力（非 ASCII 名は衝突しうる）のため、family の一致だけでは
-// 別フォントへの差し替えを見逃す。登録済みバイト列を doc ごとに保持し内容一致で判定する
+// Since name is the output of sanitizeFontName (non-ASCII names can collide), matching on family
+// alone would miss a swap to a different font. Keep the registered byte array per doc and decide by content match
 const registeredByDoc = new WeakMap<
   Document,
   Map<string, { readonly data: Uint8Array; readonly face: FontFace }>
 >();
 
-/** 任意バイト列を "apx-local-<name>" の family で doc.fonts に登録し family 名を返す。
-    同一 family に同一バイト列が登録済みなら再登録しない。バイト列が異なる場合は
-    （name の衝突であっても）差し替えて登録し直す */
+/** Registers an arbitrary byte array to doc.fonts under the family "apx-local-<name>" and
+    returns the family name. Does not re-register if the same byte array is already registered
+    under the same family. If the byte array differs (even on a name collision), swaps it and
+    registers anew */
 export async function registerPreviewFace(
   doc: Document,
   name: string,

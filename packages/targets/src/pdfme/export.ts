@@ -49,12 +49,12 @@ export type ExportPdfmeResult =
       readonly fontIssues: readonly FontIssue[];
     };
 
-/** rotate は 0 のときスキーマにキーを出さない（既存スキーマ形の安定のため） */
+/** Omits the key from the schema when rotate is 0 (to keep the existing schema shape stable). */
 function rotateAttr(rotate: number): { readonly rotate?: number } {
   return rotate === 0 ? {} : { rotate };
 }
 
-/** underline も false のときはキーを出さない（既存スキーマ形の安定のため） */
+/** Omits the key when underline is also false (to keep the existing schema shape stable). */
 function underlineAttr(underline: boolean): { readonly underline?: boolean } {
   return underline ? { underline } : {};
 }
@@ -65,7 +65,8 @@ function toStaticAlignment(
   return align === "justify" ? "left" : align;
 }
 
-// 全行 charSpacePt === 0（非 justify、または justify でも伸長不要）の1スキーマ経路
+// The single-schema path for when every line has charSpacePt === 0 (not
+// justify, or justify but no expansion needed).
 function textSchema(
   name: string,
   element: LoweredTextElement,
@@ -88,7 +89,7 @@ function textSchema(
   };
 }
 
-// justify で伸長が要る行を1行1スキーマに分割する経路
+// The path that splits lines requiring expansion under justify into one schema per line.
 function justifyLineSchema(
   name: string,
   element: LoweredTextElement,
@@ -97,12 +98,14 @@ function justifyLineSchema(
   lineIndex: number,
 ): PdfmeSchema {
   const lineHeightMm = element.lineHeight * element.fontSize * PT_TO_MM;
-  // characterSpacing は末尾グリフの後ろにも字間を足すため、width を字間分広げないと
-  // pdfme が内部再計測でこの行を再折り返ししてしまう
+  // characterSpacing also adds spacing after the trailing glyph, so unless
+  // width is widened by that spacing, pdfme's internal remeasurement will
+  // re-wrap this line.
   const width = element.w + line.charSpacePt * PT_TO_MM;
   const unrotated = { x: element.x, y: element.y + lineIndex * lineHeightMm };
-  // pdfme の回転はスキーマ中心周りのため、行スキーマの中心を要素中心周りに
-  // 回転写像した位置へ置けば、要素全体を1回で回すのと等価になる
+  // pdfme's rotation is around the schema's center, so mapping the line
+  // schema's center through a rotation around the element's center, and
+  // placing it there, is equivalent to rotating the whole element once.
   const center = rotatePointCw(
     { x: unrotated.x + width / 2, y: unrotated.y + lineHeightMm / 2 },
     { x: element.x + element.w / 2, y: element.y + element.h / 2 },
@@ -239,7 +242,7 @@ export function exportPdfme(
   const slotFor = (element: LoweredTextElement): IrFontSlot =>
     resolveFontSlot(font, element.fontWeight, element.fontStyle);
   const slotFontFor = (slot: IrFontSlot): ResolvedSlotFont =>
-    // effectiveFontOf により解決先スロットのデータ存在は保証される
+    // effectiveFontOf guarantees that data exists for the resolved slot
     fontSet.slots.get(slot) as ResolvedSlotFont;
 
   const lowered = result.document;

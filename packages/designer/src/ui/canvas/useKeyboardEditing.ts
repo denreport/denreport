@@ -26,11 +26,11 @@ export interface EditingKeyEvent {
   readonly target: EventTarget | null;
 }
 
-/** キー処理から呼び出す、store の外にある操作。DesignerRoot が組み立てる */
+/** Operations outside the store, invoked from key processing. Assembled by DesignerRoot */
 export interface EditingKeyCommands {
-  /** Ctrl/Cmd+S。DesignerChrome.requestSave を渡す */
+  /** Ctrl/Cmd+S. Passes DesignerChrome.requestSave */
   readonly requestSave: () => void;
-  /** 「?」/ F1。ショートカット一覧ダイアログを開く */
+  /** "?" / F1. Opens the shortcut list dialog */
   readonly openShortcutHelp: () => void;
 }
 
@@ -59,7 +59,7 @@ function topLevelIds(
   return ids.filter((id) => topLevel.has(id));
 }
 
-/** rest/last 文脈では table の縦移動は continuationY が担う（ドラッグと同じ意味論） */
+/** In the rest/last context, vertical movement of a table is handled by continuationY (same semantics as dragging) */
 function applyArrowMove(
   state: EditorState,
   ids: readonly string[],
@@ -101,7 +101,7 @@ function arrowDelta(
   if (!state.view.snapEnabled) {
     return { dx: direction.x, dy: direction.y };
   }
-  // 選択の外接箱の左上を次の 5mm グリッド線へ量子化して1段進める
+  // Quantize the top-left of the selection's bounding box to the next 5mm grid line and advance by one step
   const idSet = new Set(ids);
   const boxes = layoutDocument(state.document, state.view.pageContext)
     .filter((view) => idSet.has(view.id))
@@ -120,8 +120,8 @@ function arrowDelta(
 }
 
 /**
- * キーボード編集の本体。処理したとき true を返す（呼び出し側が preventDefault する）。
- * interactionActive 中の Escape はドラッグ側のキャンセルに譲る。
+ * The core of keyboard editing. Returns true when handled (the caller then calls preventDefault).
+ * Escape while interactionActive is deferred to the drag side's cancel.
  */
 export function applyEditingKey(
   store: EditorStore,

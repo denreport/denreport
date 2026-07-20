@@ -106,7 +106,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
         const keyError = errorMessageFor(errors, `columns[${i}].key`);
         const widthError = errorMessageFor(errors, `columns[${i}].width`);
         return (
-          // biome-ignore lint/suspicious/noArrayIndexKey: 列に安定 id がなく、key の重複は編集の常態のため index で識別する
+          // biome-ignore lint/suspicious/noArrayIndexKey: columns have no stable id, and duplicate keys while editing are a normal part of editing, so index is used to identify them
           <div key={i} className="apx-col-card">
             <div className="apx-col-row">
               <TextCell

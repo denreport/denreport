@@ -71,7 +71,7 @@ test("bind データのあるセルを上書きすると、プレビューは固
   await preview.getByRole("button", { name: "閉じる" }).click();
   await expect(preview).toBeHidden();
 
-  // キャンバスへフォーカスを戻してから undo する（選択は変えない）
+  // Return focus to the canvas before undoing (doesn't change the selection)
   await table.click();
   await page.keyboard.press("Control+z");
   await expect(cell).toHaveText("行A");

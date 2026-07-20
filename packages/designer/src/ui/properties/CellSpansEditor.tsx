@@ -85,7 +85,7 @@ export function CellSpansEditor(props: ElementFormProps): ReactNode {
         const error = spanErrorFor(errors, i);
         const isHeader = span.row === "header";
         return (
-          // biome-ignore lint/suspicious/noArrayIndexKey: 結合に安定 id がなく index で識別する
+          // biome-ignore lint/suspicious/noArrayIndexKey: merges have no stable id, so index is used to identify them
           <div key={i} className="apx-col-card">
             <div className="apx-col-row">
               <span className="apx-field">

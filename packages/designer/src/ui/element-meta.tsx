@@ -19,9 +19,9 @@ const STATIC_ICONS: Readonly<
   barcode: <span className="apx-pi-barcode" />,
 };
 
-/** 要素型のパレット・レイヤー行アイコン。表示名はロケール依存のため useMessages().elementTypes を使う */
+/** Palette / layer-row icon for an element type. Display names are locale-dependent, so use useMessages().elementTypes */
 export function elementTypeIcon(type: IrElementType, m: Messages): ReactNode {
-  // text だけは字形見本の1文字を描くため、ロケールの文字を使う
+  // Only "text" draws a single sample glyph, so use the locale's character
   return type === "text" ? (
     <span className="apx-pi-text">{m.textIconGlyph}</span>
   ) : (

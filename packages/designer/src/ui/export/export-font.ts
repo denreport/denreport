@@ -1,5 +1,5 @@
-/** 同梱フォントを url から fetch して Uint8Array で返す。失敗（非 2xx・ネットワーク）は reject。
-    キャッシュは持たない（ブラウザの HTTP キャッシュに委ねる） */
+/** Fetches the bundled font from the url and returns it as a Uint8Array. Rejects on failure
+    (non-2xx or network error). Keeps no cache of its own (relies on the browser's HTTP cache) */
 export async function fetchEmbeddedFontData(url: URL): Promise<Uint8Array> {
   const response = await fetch(url);
   if (!response.ok) {

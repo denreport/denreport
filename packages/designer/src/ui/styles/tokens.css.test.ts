@@ -2,13 +2,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// vitest はパッケージルートを cwd として実行される
+// vitest runs with the package root as cwd
 const css = readFileSync(
   join(process.cwd(), "src/ui/styles/tokens.css"),
   "utf-8",
 );
 
-/** テーマルート（`.apx-designer` または `.apx-designer[data-theme="dark"]`）の宣言ブロック本文を取り出す */
+/** Extract the declaration block body of a theme root (`.apx-designer` or `.apx-designer[data-theme="dark"]`) */
 function themeBody(selector: string): string {
   const escaped = selector.replace(/[.[\]="]/g, "\\$&");
   const match = css.match(new RegExp(`${escaped}\\s*\\{[^}]*\\}`));
@@ -16,8 +16,8 @@ function themeBody(selector: string): string {
   return match[0];
 }
 
-// CTA 色は --color-accent（フォーカスリング等 UI 全体で共用）と別トークンであること、
-// かつライト・ダーク両テーマで定義されていることを保証する
+// Ensure the CTA color is a token separate from --color-accent (shared across the UI for the focus ring etc.),
+// and that it's defined in both the light and dark themes
 describe("tokens.css の CTA 専用アクセントカラー", () => {
   it.each([".apx-designer", '.apx-designer[data-theme="dark"]'])(
     "%s に --color-cta 系トークンが定義される",

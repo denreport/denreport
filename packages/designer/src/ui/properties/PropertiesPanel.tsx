@@ -24,7 +24,7 @@ export function PropertiesPanel(props: {
     [state.document, state.view.pageContext],
   );
   const byId = new Map(layout.map((view) => [view.id, view]));
-  // 選択 id が文書に無い場合（undo 直後等）は非選択扱い
+  // Treated as unselected when the selected id is not in the document (e.g. right after undo)
   const selected = state.selection
     .map((id) => byId.get(id))
     .filter((view): view is PlacedElementView => view !== undefined);

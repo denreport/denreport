@@ -98,7 +98,7 @@ describe("EditorStore", () => {
     const store = new EditorStore(makeDocument());
     expect(store.getState().validationErrors).toEqual([]);
 
-    // x=500 は用紙幅 210mm を超えるため M02 になる
+    // x=500 exceeds the paper width of 210mm, so it becomes M02
     store.commit(makeDocument([textElement("t1", 500)]));
     const rules = store.getState().validationErrors.map((e) => e.rule);
     expect(rules).toContain("M02");

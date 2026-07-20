@@ -88,7 +88,7 @@ function attrSummary(
   return parts.length > 0 ? parts.join(" / ") : m.summary.empty;
 }
 
-/** 未使用の m.nameFor(n)（n は1から最小空き）を返す */
+/** Returns an unused m.nameFor(n) (n is the smallest unused number starting from 1) */
 function nextStyleName(
   styles: readonly IrNamedStyle[],
   m: StylesMessages,

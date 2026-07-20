@@ -532,16 +532,16 @@ describe("ストア操作: 全8要素型の 配置 → 選択 → 移動/リサ�
     it(`${type}: 一連の編集が undo/redo で往復する`, () => {
       const store = new EditorStore(blankDocument());
 
-      // 配置
+      // Place
       const el = createDefaultElement(store.getState().document, type, 20, 30);
       store.commit(addElement(store.getState().document, el), [el.id]);
       expect(store.getState().selection).toEqual([el.id]);
       expect(store.getState().document.elements).toHaveLength(1);
 
-      // 選択（履歴に積まれない）
+      // Select (not pushed to history)
       store.setSelection([el.id]);
 
-      // 移動
+      // Move
       store.commit(moveElements(store.getState().document, [el.id], 5, 5), [
         el.id,
       ]);
@@ -550,7 +550,7 @@ describe("ストア操作: 全8要素型の 配置 → 選択 → 移動/リサ�
         y: 35,
       });
 
-      // リサイズ（可能な型のみ）
+      // Resize (only for types that support it)
       if (RESIZABLE.includes(type)) {
         store.commit(
           resizeElement(store.getState().document, el.id, {
@@ -569,24 +569,24 @@ describe("ストア操作: 全8要素型の 配置 → 選択 → 移動/リサ�
         }
       }
 
-      // 削除
+      // Delete
       store.commit(deleteElements(store.getState().document, [el.id]), []);
       expect(store.getState().document.elements).toEqual([]);
 
-      // undo で全編集を巻き戻す
+      // undo rolls back all edits
       while (store.canUndo()) {
         store.undo();
       }
       expect(store.getState().document.elements).toEqual([]);
       expect(store.getState().selection).toEqual([]);
 
-      // redo で削除まで進む
+      // redo advances up to the deletion
       while (store.canRedo()) {
         store.redo();
       }
       expect(store.getState().document.elements).toEqual([]);
 
-      // 1回だけ undo すると削除前（要素あり）に戻る
+      // A single undo returns to just before the deletion (element present)
       store.undo();
       expect(store.getState().document.elements).toHaveLength(1);
       expect(store.getState().document.elements[0]?.id).toBe(el.id);

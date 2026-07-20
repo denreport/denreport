@@ -31,7 +31,8 @@ test("回転ハンドルのドラッグで IR に rotate が入り、キャン�
   if (box === null) throw new Error("矩形が表示されていません");
   const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 
-  // 上辺中央のハンドルから中心の真横まで = 時計回りに約 90°（Shift で 15° 刻みの 90° に確定）
+  // From the top-center handle to directly beside the center = about 90° clockwise
+  // (Shift snaps it to 90° in 15° increments)
   await handle.hover();
   await page.mouse.down();
   await page.keyboard.down("Shift");
@@ -89,7 +90,7 @@ test("プロパティパネルの角度入力で rotate が設定・解除され
   await preview.getByRole("button", { name: "閉じる" }).click();
   await expect(preview).toBeHidden();
 
-  // 0 に戻すと属性ごと除去される
+  // Resetting to 0 removes the attribute entirely
   await commitField(props.getByLabel("回転"), "0");
   await page.waitForFunction(() => {
     const raw = localStorage.getItem("denreport-designer.ir");
@@ -115,12 +116,12 @@ test("回転した要素では選択枠とハンドルが回転に追従する",
   const selBox = page.locator(".apx-sel-box");
   await expect(selBox).toHaveAttribute("style", /--rot: 90deg/);
 
-  // 回転は要素中心周りのため、AABB の寸法が変わっても中心は不変
+  // Rotation is around the element center, so the center stays fixed even when the AABB dimensions change
   const box = await rect.boundingBox();
   if (box === null) throw new Error("矩形が表示されていません");
   const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 
-  // 90° 回転で上辺中央のハンドルは要素中心の右側（同じ高さ）に移る
+  // With a 90° rotation, the top-center handle moves to the right of the element center (same height)
   const nHandle = page.locator('.apx-h[data-apx-handle="n"]');
   const nBox = await nHandle.boundingBox();
   if (nBox === null) throw new Error("n ハンドルが表示されていません");
@@ -128,7 +129,7 @@ test("回転した要素では選択枠とハンドルが回転に追従する",
   expect(nCenter.x).toBeGreaterThan(center.x + 5);
   expect(Math.abs(nCenter.y - center.y)).toBeLessThanOrEqual(2);
 
-  // 回転ハンドルは同じ方向にさらに浮いた位置にある
+  // The rotate handle sits further out in the same direction
   const rotateHandle = page.locator('[data-apx-handle="rotate"]');
   const rotateBox = await rotateHandle.boundingBox();
   if (rotateBox === null) throw new Error("回転ハンドルが表示されていません");
@@ -139,7 +140,7 @@ test("回転した要素では選択枠とハンドルが回転に追従する",
   expect(rotateCenter.x).toBeGreaterThan(nCenter.x);
   expect(Math.abs(rotateCenter.y - center.y)).toBeLessThanOrEqual(3);
 
-  // 0 に戻すと選択枠から --rot が消える
+  // Resetting to 0 removes --rot from the selection box
   await commitField(props.getByLabel("回転"), "0");
   await expect(selBox).not.toHaveAttribute("style", /--rot/);
 });
@@ -188,13 +189,13 @@ test("90° 回転した矩形のリサイズがドラッグ方向に追従し、
   const props = page.getByRole("complementary", { name: "プロパティ" });
   await commitField(props.getByLabel("回転"), "90");
   await expect(rect).toHaveAttribute("style", /--rot: 90deg/);
-  // グリッドスナップは非回転モデル箱基準（スコープ外）のため、ここではドラッグ量そのものを検証する
+  // Grid snapping is based on the unrotated model box (out of scope here), so verify the drag amount itself instead
   await page.getByRole("button", { name: "スナップ" }).click();
 
   const before = await rect.boundingBox();
   if (before === null) throw new Error("矩形が表示されていません");
 
-  // 90° 回転により、実体は e ハンドルだが見た目は下辺中央にある
+  // Due to the 90° rotation, the actual handle is "e" but it visually sits at the bottom-center
   const eHandle = page.locator(
     '.apx-h[data-apx-handle="e"][data-apx-id="rect1"]',
   );
@@ -216,7 +217,7 @@ test("90° 回転した矩形のリサイズがドラッグ方向に追従し、
   const after = await rect.boundingBox();
   if (after === null) throw new Error("矩形が表示されていません");
 
-  // 見た目の下方向へドラッグした分だけ高さが伸び、他の辺（アンカー）は不動
+  // The height grows by exactly the visually-downward drag distance, and the other edges (anchors) stay fixed
   expect(after.height - before.height).toBeGreaterThan(37);
   expect(after.height - before.height).toBeLessThan(43);
   expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(2);

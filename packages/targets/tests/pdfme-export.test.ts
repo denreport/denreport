@@ -448,7 +448,7 @@ describe("exportPdfme — rotate", () => {
         x: 10 + expectedWidth / 2,
         y: 20 + i * lineHeightMm + lineHeightMm / 2,
       };
-      // 90° 時計回り（y 下向き座標系）: (dx, dy) → (−dy, dx)
+      // 90° clockwise (y-down coordinate system): (dx, dy) -> (-dy, dx)
       const mapped = {
         x: center.x - (unrotated.y - center.y),
         y: center.y + (unrotated.x - center.x),
@@ -897,7 +897,7 @@ describe("exportPdfme — font slots and underline", () => {
   });
 
   it("wraps a bold element with the bold slot's widths, not the regular's", () => {
-    // 幅 6pt の箱: regular（1em/字）なら 6 字で 1 行、bold（2em/字）なら 3 字で折り返す
+    // A 6pt-wide box: with regular (1em/char) it's 6 chars per line, with bold (2em/char) it wraps at 3 chars
     const result = exportPdfme(
       styledText({ fontWeight: "bold" }),
       {},

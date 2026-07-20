@@ -1,5 +1,5 @@
 export interface ZipEntry {
-  /** エントリ名（UTF-8 フラグを立てて格納する） */
+  /** Entry name (stored with the UTF-8 flag set) */
   readonly name: string;
   readonly data: Uint8Array;
 }
@@ -14,7 +14,7 @@ const EOCD_SIGNATURE = 0x06054b50;
 
 const VERSION_2_0 = 20;
 const FLAG_UTF8_NAME = 0x0800;
-// DOS 日付の最小値 = 1980-01-01（year=0, month=1, day=1）。時刻は 00:00
+// Minimum DOS date value = 1980-01-01 (year=0, month=1, day=1). Time is 00:00
 const DOS_DATE_EPOCH = 0x21;
 
 const CRC_TABLE = ((): Uint32Array => {
@@ -37,9 +37,9 @@ function crc32(data: Uint8Array): number {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-/** 無圧縮（STORE）の zip アーカイブを組み立てる。タイムスタンプは固定値（DOS 形式の最小値 =
-    1980-01-01 00:00）とし、同一入力からバイト同一の出力を返す（決定性）。
-    ZIP64・暗号化・data descriptor は使わない */
+/** Assembles an uncompressed (STORE) zip archive. Uses a fixed timestamp (the minimum DOS
+    format value = 1980-01-01 00:00), so the same input always produces a byte-identical
+    output (determinism). Does not use ZIP64, encryption, or data descriptors */
 export function buildZip(
   entries: readonly ZipEntry[],
 ): Uint8Array<ArrayBuffer> {
@@ -71,13 +71,13 @@ export function buildZip(
     view.setUint16(offset + 4, VERSION_2_0, true);
     view.setUint16(offset + 6, FLAG_UTF8_NAME, true);
     view.setUint16(offset + 8, 0, true); // STORE
-    view.setUint16(offset + 10, 0, true); // 時刻 00:00
+    view.setUint16(offset + 10, 0, true); // time 00:00
     view.setUint16(offset + 12, DOS_DATE_EPOCH, true);
     view.setUint32(offset + 14, record.crc, true);
     view.setUint32(offset + 18, record.data.length, true);
     view.setUint32(offset + 22, record.data.length, true);
     view.setUint16(offset + 26, record.name.length, true);
-    view.setUint16(offset + 28, 0, true); // extra なし
+    view.setUint16(offset + 28, 0, true); // no extra field
     bytes.set(record.name, offset + LOCAL_HEADER_SIZE);
     bytes.set(record.data, offset + LOCAL_HEADER_SIZE + record.name.length);
     offset += LOCAL_HEADER_SIZE + record.name.length + record.data.length;
@@ -90,14 +90,14 @@ export function buildZip(
     view.setUint16(offset + 6, VERSION_2_0, true); // version needed
     view.setUint16(offset + 8, FLAG_UTF8_NAME, true);
     view.setUint16(offset + 10, 0, true); // STORE
-    view.setUint16(offset + 12, 0, true); // 時刻 00:00
+    view.setUint16(offset + 12, 0, true); // time 00:00
     view.setUint16(offset + 14, DOS_DATE_EPOCH, true);
     view.setUint32(offset + 16, record.crc, true);
     view.setUint32(offset + 20, record.data.length, true);
     view.setUint32(offset + 24, record.data.length, true);
     view.setUint16(offset + 28, record.name.length, true);
-    view.setUint16(offset + 30, 0, true); // extra なし
-    view.setUint16(offset + 32, 0, true); // comment なし
+    view.setUint16(offset + 30, 0, true); // no extra field
+    view.setUint16(offset + 32, 0, true); // no comment
     view.setUint16(offset + 34, 0, true); // disk 0
     view.setUint16(offset + 36, 0, true); // internal attributes
     view.setUint32(offset + 38, 0, true); // external attributes
@@ -108,12 +108,12 @@ export function buildZip(
 
   view.setUint32(offset, EOCD_SIGNATURE, true);
   view.setUint16(offset + 4, 0, true); // disk 0
-  view.setUint16(offset + 6, 0, true); // central directory の開始 disk
+  view.setUint16(offset + 6, 0, true); // disk where the central directory starts
   view.setUint16(offset + 8, records.length, true);
   view.setUint16(offset + 10, records.length, true);
   view.setUint32(offset + 12, centralSectionSize, true);
   view.setUint32(offset + 16, centralOffset, true);
-  view.setUint16(offset + 20, 0, true); // comment なし
+  view.setUint16(offset + 20, 0, true); // no comment
 
   return bytes;
 }

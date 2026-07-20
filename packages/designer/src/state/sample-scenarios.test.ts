@@ -89,7 +89,7 @@ describe("addScenario", () => {
     expect(next.items).toHaveLength(2);
     expect(next.activeId).toBe(next.items[1]?.id);
     expect(next.items[1]).toEqual({ id: "s2", name: "シナリオ 2", json: "" });
-    // 既存シナリオは変わらない
+    // Existing scenarios are unchanged
     expect(next.items[0]).toEqual(set.items[0]);
   });
 

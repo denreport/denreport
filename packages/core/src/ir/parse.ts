@@ -998,7 +998,7 @@ function checkEnumValues(
 ): IrError[] {
   const errors: IrError[] = [];
   for (const [key, domain] of Object.entries(ENUM_DOMAINS)) {
-    if (!allowed.includes(key)) continue; // その要素型では未知の属性（S09 の対象）は S10 で二重報告しない
+    if (!allowed.includes(key)) continue; // An attribute unknown to that element type (covered by S09) is not double-reported by S10
     if (!(key in value)) continue;
     const v = value[key];
     if (isString(v) && !domain.includes(v)) {
@@ -1039,8 +1039,8 @@ function checkFlexChildren(
   return errors;
 }
 
-// この関数は collectSyntaxErrors がエラーゼロを返した後にのみ呼ばれる前提で、
-// 各属性の型を再検証せず信頼して正規化する。
+// This function assumes it's called only after collectSyntaxErrors has returned zero errors,
+// so it normalizes trusting each attribute's type without re-validating it.
 function normalize(raw: Record<string, unknown>): IrDocument {
   const pageRaw = raw.page as Record<string, unknown>;
   const fontRaw = raw.font as Record<string, unknown>;
@@ -1071,7 +1071,7 @@ function normalize(raw: Record<string, unknown>): IrDocument {
   };
 }
 
-// 任意スロットは指定時のみキーを持たせる（undefined 埋めしない）
+// An optional slot only has its key set when specified (not filled with undefined)
 function normalizeFont(raw: Record<string, unknown>): IrFont {
   return {
     regular: raw.regular as string,
@@ -1081,7 +1081,7 @@ function normalizeFont(raw: Record<string, unknown>): IrFont {
   };
 }
 
-// groups の全属性は必須のため、S15 通過後はデフォルト補完なしでそのまま写す
+// All attributes of groups are required, so after passing S15 they're copied as-is with no default filling
 function normalizeGroups(raw: Record<string, unknown>[]): IrGroup[] {
   return raw.map((item) => ({
     id: item.id as string,
@@ -1089,7 +1089,7 @@ function normalizeGroups(raw: Record<string, unknown>[]): IrGroup[] {
   }));
 }
 
-// footnotes の全属性は必須のため、S/F01 通過後はデフォルト補完なしでそのまま写す
+// All attributes of footnotes are required, so after passing S/F01 they're copied as-is with no default filling
 function normalizeFootnotes(value: Record<string, unknown>): IrFootnotes {
   return {
     x: value.x as number,
@@ -1116,17 +1116,17 @@ function normalizeStyles(raw: Record<string, unknown>[]): IrNamedStyle[] {
   });
 }
 
-/** style は任意属性のため、指定時のみキーを持つオブジェクトを返す（`{}` へスプレッドする） */
+/** style is an optional attribute, so this returns an object that only has the key when specified (to be spread into `{}`) */
 function styleAttr(value: Record<string, unknown>): { style?: string } {
   return value.style !== undefined ? { style: value.style as string } : {};
 }
 
-/** name は任意属性のため、指定時のみキーを持つオブジェクトを返す（`{}` へスプレッドする） */
+/** name is an optional attribute, so this returns an object that only has the key when specified (to be spread into `{}`) */
 function nameAttr(value: Record<string, unknown>): { name?: string } {
   return value.name !== undefined ? { name: value.name as string } : {};
 }
 
-/** rotate は任意属性のため、指定時のみキーを持つオブジェクトを返す（0 埋めしない） */
+/** rotate is an optional attribute, so this returns an object that only has the key when specified (not filled with 0) */
 function rotateAttr(value: Record<string, unknown>): { rotate?: number } {
   return value.rotate !== undefined ? { rotate: value.rotate as number } : {};
 }

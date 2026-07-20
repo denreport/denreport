@@ -17,7 +17,7 @@ export type InlineEditTarget =
       readonly rowIndex: number;
     };
 
-/** ダブルクリックの DOM 解決結果（data-apx-id / data-apx-col / data-apx-row）から編集対象を決める */
+/** Determines the edit target from the double-click's resolved DOM data (data-apx-id / data-apx-col / data-apx-row) */
 export function resolveInlineEditTarget(args: {
   readonly layout: readonly PlacedElementView[];
   readonly selection: readonly string[];
@@ -40,7 +40,7 @@ export function resolveInlineEditTarget(args: {
     if (view.parentFlexId === null) {
       return { kind: "text", id: elementId };
     }
-    // 段階的階層選択との操作衝突を避けるため、flex 子は単独選択済みのときだけ対象にする
+    // To avoid interaction conflicts with progressive hierarchical selection, a flex child is only a target when it is already selected on its own
     return selection.length === 1 && selection[0] === elementId
       ? { kind: "text", id: elementId }
       : null;
@@ -53,7 +53,7 @@ export function resolveInlineEditTarget(args: {
     if (rowIndex === null) {
       return { kind: "tableHeader", id: elementId, columnIndex };
     }
-    // 継続ページの行がデータの何行目に当たるかはキャンバスでは確定できないため first のみ対象にする
+    // Which data row a continuation-page row corresponds to cannot be determined from the canvas, so only "first" is a target
     if (rowIndex >= 0 && pageContext === "first") {
       return { kind: "tableCell", id: elementId, columnIndex, rowIndex };
     }
@@ -74,7 +74,7 @@ function columnOffsetX(
   return x;
 }
 
-/** 列見出しセルの紙座標 mm 箱（x = 表の x + 先行列幅の和、h = headerHeight） */
+/** The column header cell's paper-coordinate mm box (x = table's x + sum of preceding column widths, h = headerHeight) */
 export function tableHeaderCellBox(
   table: IrTableElement,
   tableBox: MmBox,
@@ -88,7 +88,7 @@ export function tableHeaderCellBox(
   };
 }
 
-/** データ行セルの紙座標 mm 箱（y = 表の y + headerHeight + rowIndex × rowHeight） */
+/** The data row cell's paper-coordinate mm box (y = table's y + headerHeight + rowIndex × rowHeight) */
 export function tableCellBox(
   table: IrTableElement,
   tableBox: MmBox,

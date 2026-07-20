@@ -14,8 +14,8 @@ import type {
  */
 export type IrPlacedElement = Exclude<IrElement, IrFlexElement>;
 
-// resolveFlex と validateIr (M02/M12) の両方が必要とする、位置を持たない幾何入力の共通形。
-// トップレベルの flex（x/y/pages 持ち）と flex の子（持たない）の両方をそのまま渡せる。
+// Common shape for position-less geometric input, needed by both resolveFlex and validateIr (M02/M12).
+// Both a top-level flex (which has x/y/pages) and a flex child (which doesn't) can be passed as-is.
 type IrFlexGeometry = Pick<
   IrFlexElement,
   "direction" | "w" | "h" | "gap" | "justifyContent" | "alignItems" | "children"
@@ -60,7 +60,7 @@ function elementSize(el: IrFlexChild): Size {
   }
 }
 
-// 入れ子の flex は elementSize から再帰的に呼ばれるため、深さ優先で解決される。
+// Nested flex is called recursively from elementSize, so it resolves depth-first.
 export function measureFlex(flex: IrFlexGeometry): FlexMeasurement {
   const sizes = flex.children.map(elementSize);
   const mains = sizes.map((size) => mainOf(size, flex.direction));

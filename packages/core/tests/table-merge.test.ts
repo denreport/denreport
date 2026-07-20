@@ -155,8 +155,8 @@ describe("computeChunkMerges — データ駆動 mergeSameValue", () => {
       ["g2", "u", "w"],
     );
     const merges = computeChunkMerges(t, rows, 0, 4);
-    // a: 境界 t=1。b: 値の境界 t=2 + a 由来 t=1 → [1,2) は単独で結合なし、[2,4) が結合。
-    // c: 全行 "w" だが a・b の境界 t=1, t=2 で切れ、[2,4) のみ結合
+    // a: boundary t=1. b: value boundary t=2 + boundary t=1 inherited from a → [1,2) has no merge on its own, [2,4) merges.
+    // c: all rows are "w", but it's cut at boundaries t=1, t=2 from a/b, so only [2,4) merges
     expect(merges.rects).toEqual([
       { q: 1, col: 0, rowSpan: 3, colSpan: 1 },
       { q: 2, col: 1, rowSpan: 2, colSpan: 1 },

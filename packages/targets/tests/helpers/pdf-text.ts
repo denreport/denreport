@@ -22,7 +22,7 @@ export interface ExtractedPdf {
 const MM_PER_PT = 25.4 / 72;
 
 export async function extractPdf(data: Uint8Array): Promise<ExtractedPdf> {
-  // pdf.js は渡されたバッファを転送で無効化しうるため、呼び出し元の PDF バイト列を守るコピー
+  // pdf.js may invalidate the passed buffer via transfer, so copy it to protect the caller's PDF byte array
   const loadingTask = getDocument({ data: data.slice() });
   const doc = await loadingTask.promise;
   try {

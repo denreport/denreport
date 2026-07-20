@@ -37,7 +37,7 @@ function tableDirectory(data: Uint8Array): ReadonlyMap<string, TableRecord> {
   return directory;
 }
 
-// Windows (platformID 3) の UTF-16BE レコードだけ読む最小実装
+// A minimal implementation that reads only Windows (platformID 3) UTF-16BE records
 function nameStrings(
   data: Uint8Array,
   table: TableRecord,

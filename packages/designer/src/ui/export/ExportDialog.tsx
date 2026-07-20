@@ -59,7 +59,8 @@ const EMBEDDED_URLS: Readonly<Record<string, URL>> = {
   [EMBEDDED_BOLD_FONT_NAME]: EMBEDDED_BOLD_FONT_URL,
 };
 
-/** 解決済みスロットの実データを取得する。missing は呼び出し側が先に弾いている前提 */
+/** Fetches the actual data for a resolved slot. Assumes the caller has already filtered out
+    "missing" beforehand */
 async function fontDataFor(resolution: FontResolution): Promise<Uint8Array> {
   if (resolution.kind === "registered") {
     return resolution.font.data;
@@ -78,7 +79,7 @@ const RUN_IDLE: RunState = { kind: "idle" };
 export function ExportDialog(props: {
   readonly store: EditorStore;
   readonly onClose: () => void;
-  /** 要素ジャンプ時、選択・文脈切替の後に呼ぶ */
+  /** Called after selection/context switch when jumping to an element */
   readonly onReveal: (id: string) => void;
 }): ReactNode {
   const { store, onClose, onReveal } = props;
@@ -124,8 +125,9 @@ export function ExportDialog(props: {
     onReveal(id);
   };
 
-  // 生成物のダウンロードは欠落キー警告の有無によらず実行する。警告があれば
-  // ダイアログを開いたまま export-warning を表示し、なければ従来どおり閉じる
+  // Downloading the generated artifact happens regardless of missing-key warnings. If
+  // there are warnings, show export-warning while keeping the dialog open; otherwise close
+  // it as before
   const finishExport = (
     doc: Document,
     file: ExportFile,
@@ -342,7 +344,7 @@ export function ExportDialog(props: {
           {run.errors.length > 0 && (
             <ul className="apx-dialog-errors">
               {run.errors.map((error, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: 同一 rule / path のエラーが並び得るため index で識別する
+                // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same rule/path can appear side by side, so identify by index
                 <li key={i}>
                   <span className="apx-verr-rule">{error.rule}</span>
                   <span className="apx-verr-path">{error.path}</span>
@@ -354,7 +356,7 @@ export function ExportDialog(props: {
           {run.fontIssues.length > 0 && (
             <ul className="apx-export-font-issues">
               {run.fontIssues.map((issue, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: 同一 format のエラーが並び得るため index で識別する
+                // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same format can appear side by side, so identify by index
                 <li key={i}>
                   <span className="apx-verr-rule">{issue.format}</span>
                   <span>{issue.message}</span>
@@ -370,7 +372,7 @@ export function ExportDialog(props: {
           <p className="apx-dialog-note">{m.export.warningsProduced}</p>
           <ul className="apx-dialog-errors">
             {run.warnings.map((warning, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: 同一 rule / path の警告が並び得るため index で識別する
+              // biome-ignore lint/suspicious/noArrayIndexKey: warnings with the same rule/path can appear side by side, so identify by index
               <li key={i}>
                 <span className="apx-verr-rule">{warning.rule}</span>
                 <span className="apx-verr-path">{warning.path}</span>

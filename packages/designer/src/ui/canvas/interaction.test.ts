@@ -225,7 +225,7 @@ describe("グループ所属要素の選択展開", () => {
   it("マーキーの部分ヒットでもグループ全体が previewIds になる", () => {
     const ctx = makeCtx([], {}, ELEMENTS, GROUPS);
     const started = reduceInteraction(IDLE, down({ x: 5, y: 5 }, null), ctx);
-    // 矩形 (5,5)-(60,20) は a のみに交差し、b（x100〜140）は掠らない
+    // The rectangle (5,5)-(60,20) intersects only a; b (x100–140) is nowhere near it
     const moved = reduceInteraction(
       started.state,
       { kind: "pointerMove", shiftKey: false, at: { x: 60, y: 20 } },
@@ -268,7 +268,7 @@ describe("移動", () => {
     expect(moved.state.kind).toBe("moving");
     expect(moved.effect).toBeNull();
     if (moved.state.kind === "moving") {
-      // 素の dx=18 がグリッド（x=30）に吸着して 20 になる
+      // The raw dx=18 snaps to the grid (x=30), becoming 20
       expect(moved.state.offset.x).toBeCloseTo(20, 10);
       expect(moved.state.offset.y).toBeCloseTo(0, 10);
     }
@@ -298,7 +298,7 @@ describe("移動", () => {
   });
 
   it("ゴースト（現文脈外要素）はスナップ候補に入らない", () => {
-    // ghost g の左端 x=13.0 の近くへ動かしても、要素ガイドは出ずグリッドに吸着する
+    // Even when moved near ghost g's left edge x=13.0, no element guide appears and it snaps to the grid
     const ctx = makeCtx(["a"]);
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const moved = reduceInteraction(
@@ -532,14 +532,14 @@ describe("リサイズ", () => {
 });
 
 describe("回転要素のリサイズ", () => {
-  // b は x100 y10 w40 h20 → 中心 (120, 20)
+  // b is x100 y10 w40 h20 → center (120, 20)
   const B_ORIG = { x: 100, y: 10, w: 40, h: 20 };
 
   function withBRotate(rotate: number): readonly IrElement[] {
     return ELEMENTS.map((el) => (el.id === "b" ? { ...el, rotate } : el));
   }
 
-  // rotatePointDeg（SelectionOverlay）と同じ回転行列で、box 中心周りの点 p の画面座標を求める
+  // Computes the screen coordinates of point p around the box's center, using the same rotation matrix as rotatePointDeg (SelectionOverlay)
   function screenPoint(
     box: { x: number; y: number; w: number; h: number },
     p: { x: number; y: number },
@@ -862,7 +862,7 @@ describe("回転要素のリサイズ", () => {
 });
 
 describe("回転", () => {
-  // b は x100 y10 w40 h20 → 中心 (120, 20)。ハンドル押下点は上辺中央 (120, 10)
+  // b is x100 y10 w40 h20 → center (120, 20). The handle press point is the top edge's midpoint (120, 10)
   function pressRotate(ctx: InteractionContext) {
     return reduceInteraction(
       IDLE,
@@ -876,7 +876,7 @@ describe("回転", () => {
     const pressed = pressRotate(ctx);
     expect(pressed.state.kind).toBe("pressing");
 
-    // 中心の真上 (−90°) から真横 (0°) へ = 時計回りに 90°
+    // From directly above center (−90°) to directly beside it (0°) = 90° clockwise
     const moved = reduceInteraction(
       pressed.state,
       { kind: "pointerMove", shiftKey: false, at: { x: 130, y: 20 } },
@@ -914,7 +914,7 @@ describe("回転", () => {
   it("現在角は 0.1° に丸められ、Shift で 15° にスナップする", () => {
     const ctx = makeCtx(["b"]);
     const pressed = pressRotate(ctx);
-    // (130, 25) は中心から atan2(5, 10) ≈ 26.565° → 回転量 116.565°
+    // (130, 25) is atan2(5, 10) ≈ 26.565° from center → a rotation of 116.565°
     const free = reduceInteraction(
       pressed.state,
       { kind: "pointerMove", shiftKey: false, at: { x: 130, y: 25 } },
@@ -947,7 +947,7 @@ describe("回転", () => {
   it("回転量が無変化なら pointerUp で commit しない", () => {
     const ctx = makeCtx(["b"]);
     const pressed = pressRotate(ctx);
-    // 閾値は超えるが角度は押下時と同じ真上方向
+    // Exceeds the threshold, but the angle is still the same straight-up direction as at press time
     const moved = reduceInteraction(
       pressed.state,
       { kind: "pointerMove", shiftKey: false, at: { x: 120, y: 5 } },
@@ -1007,7 +1007,7 @@ describe("マーキー", () => {
       { kind: "pointerUp", at: { x: 62, y: 110 } },
       ctx,
     );
-    // 矩形 (5,5)-(62,110): a と flex コンテナ f に交差。ghost g は文脈外なので除外
+    // The rectangle (5,5)-(62,110) intersects a and the flex container f. ghost g is excluded, since it's outside the context
     expect(up.state).toEqual(IDLE);
     expect(up.effect?.selection).toEqual(["a", "f"]);
     expect(up.effect?.document).toBeUndefined();
@@ -1181,7 +1181,7 @@ describe("パレット配置", () => {
       ctx,
     );
     if (moved.state.kind === "placing") {
-      // ポインタ中心の箱 (30.4, 50.4) がグリッド (30, 50) に吸着
+      // The pointer-centered box (30.4, 50.4) snaps to the grid (30, 50)
       expect(moved.state.box).toMatchObject({ x: 30, y: 50, w: 40, h: 20 });
     } else {
       expect.unreachable();

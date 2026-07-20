@@ -42,7 +42,7 @@ const EMBEDDED_NAMES: ReadonlySet<string> = new Set([
   EMBEDDED_BOLD_FONT_NAME,
 ]);
 
-// ホストページの同名フォントと衝突しないよう、論理フォント名ではなく apx- 接頭辞の一意名で登録する
+// Register with a unique apx- prefixed name rather than the logical font name, to avoid colliding with a same-named font on the host page
 const EMBEDDED_PREVIEW_FONTS: Readonly<
   Record<string, { readonly url: URL; readonly family: string }>
 > = {
@@ -73,7 +73,7 @@ async function loadSlotPreviewFont(
     resolution.kind === "embedded"
       ? EMBEDDED_PREVIEW_FONTS[resolution.name]
       : undefined;
-  // missing（および未知の同梱名）は同梱 regular で代替表示する
+  // missing (and unknown bundled names) fall back to the bundled regular for display
   const fallback = EMBEDDED_PREVIEW_FONTS[EMBEDDED_FONT_NAME] as {
     readonly url: URL;
     readonly family: string;
@@ -98,7 +98,7 @@ function parseErrorOf(
   }
 }
 
-/** プレビューの全面オーバーレイ。左: ページ列（縦スクロール）、右: サンプルデータ欄 */
+/** Full-screen preview overlay. Left: page list (vertical scroll), right: sample data pane */
 export function PreviewDialog(props: {
   readonly store: EditorStore;
   readonly onClose: () => void;
@@ -126,7 +126,7 @@ export function PreviewDialog(props: {
     )
     .join(",");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: resolutionKey が解決結果の変化を代表する
+  // biome-ignore lint/correctness/useExhaustiveDependencies: resolutionKey represents changes to the resolution result
   useEffect(() => {
     const doc = rootRef.current?.ownerDocument;
     if (doc === undefined) {
@@ -269,7 +269,7 @@ export function PreviewDialog(props: {
               <p>{m.preview.cannotDisplay}</p>
               <ul className="apx-dialog-errors">
                 {preview.errors.map((error, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: 同一 rule / path のエラーが並び得るため index で識別する
+                  // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same rule / path can appear side by side, so identify by index
                   <li key={i}>
                     <span className="apx-verr-rule">{error.rule}</span>
                     <span className="apx-verr-path">{error.path}</span>
@@ -282,7 +282,7 @@ export function PreviewDialog(props: {
             <div className="apx-preview-loading">{m.preview.loadingFont}</div>
           ) : preview !== undefined ? (
             preview.document.pages.map((elements, pageIndex) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: ページは展開結果の並びそのもの
+              // biome-ignore lint/suspicious/noArrayIndexKey: the page order is exactly the order of the rendered output
               <figure className="apx-preview-sheet" key={pageIndex}>
                 <figcaption className="apx-preview-pageno">
                   {pageIndex + 1} / {preview.document.pageCount}

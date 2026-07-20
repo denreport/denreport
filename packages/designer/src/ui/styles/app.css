@@ -1,7 +1,7 @@
-/* ==== コンポーネントスタイル（.apx- 接頭辞・色は tokens.css のトークン参照のみ） ==== */
+/* ==== Component styles (.apx- prefix; colors reference tokens.css tokens only) ==== */
 
 .apx-designer {
-  /* プレビューの全面オーバーレイをウィジェット内に閉じ込める基準 */
+  /* Reference for confining the preview's full-cover overlay within the widget */
   position: relative;
   width: 100%;
   height: 100%;
@@ -34,7 +34,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ==== レイアウト ==== */
+/* ==== Layout ==== */
 
 .apx-layout {
   display: grid;
@@ -44,7 +44,7 @@
 }
 
 .apx-canvas-area {
-  /* サイドバーを display:none で隠しても自動配置が繰り上がって列がずれないよう、3列とも固定する */
+  /* Fix all three columns so that hiding the sidebar with display:none doesn't shift the columns via auto-placement */
   grid-column: 2;
   grid-row: 2;
   display: flex;
@@ -54,7 +54,7 @@
   background: var(--canvas-backdrop);
 }
 
-/* ==== ボタン ==== */
+/* ==== Buttons ==== */
 
 .apx-btn {
   height: 28px;
@@ -132,7 +132,7 @@
   flex: none;
 }
 
-/* ==== ツールバー ==== */
+/* ==== Toolbar ==== */
 
 .apx-toolbar {
   grid-column: 1 / -1;
@@ -186,7 +186,7 @@
   visibility: visible;
 }
 
-/* ==== サイドバー（パレット + レイヤー） ==== */
+/* ==== Sidebar (palette + layers) ==== */
 
 .apx-sidebar {
   grid-column: 1;
@@ -209,7 +209,7 @@
   background: var(--color-accent-subtle-bg);
 }
 
-/* ==== パレット ==== */
+/* ==== Palette ==== */
 
 .apx-palette {
   flex: none;
@@ -382,7 +382,7 @@
   );
 }
 
-/* ==== レイヤーパネル ==== */
+/* ==== Layer panel ==== */
 
 .apx-layers {
   flex: 1;
@@ -498,7 +498,7 @@
   color: var(--color-danger);
 }
 
-/* ==== キャンバスバー ==== */
+/* ==== Canvas bar ==== */
 
 .apx-canvasbar {
   height: var(--size-canvasbar);
@@ -559,7 +559,7 @@
   font-weight: 600;
 }
 
-/* ==== ビューポートと定規 ==== */
+/* ==== Viewport and ruler ==== */
 
 .apx-viewport {
   flex: 1;
@@ -670,7 +670,7 @@
   padding: 24px;
 }
 
-/* ==== 紙 ==== */
+/* ==== Paper ==== */
 
 .apx-paper {
   position: relative;
@@ -714,7 +714,7 @@
   pointer-events: none;
 }
 
-/* ==== キャンバス要素 ==== */
+/* ==== Canvas elements ==== */
 
 .apx-el {
   position: absolute;
@@ -763,7 +763,7 @@
     var(--lc, var(--paper-text));
 }
 
-/* 細線でも掴めるよう、画面基準で片側 4px の透明ヒット領域を持たせる */
+/* Give a 4px transparent hit area per side, in screen units, so even thin lines can be grabbed */
 .apx-el-line::after {
   content: "";
   position: absolute;
@@ -938,7 +938,7 @@
   opacity: 1;
 }
 
-/* ==== 表の編集ビュー ==== */
+/* ==== Table edit view ==== */
 
 .apx-tbl-stripe {
   position: absolute;
@@ -995,7 +995,7 @@
   top: calc(var(--ty) * var(--mm));
   left: calc(var(--cx) * var(--mm));
   width: calc(var(--cw) * var(--mm));
-  /* 空セル（bind 欠落・上書きなし）でも高さ0でダブルクリック不能にならないよう最低限の行高を確保する */
+  /* Ensure a minimum row height so an empty cell (missing bind, no override) doesn't become double-click-proof at height 0 */
   min-height: calc(var(--fs, 10) * var(--pt) * 1.25);
   font-size: calc(var(--fs, 10) * var(--pt));
   line-height: 1.25;
@@ -1019,7 +1019,7 @@
   font-family: var(--font-mono);
   font-size: var(--text-xs);
   line-height: 1.4;
-  /* 全セル空の間はデータ行と縦位置が重なるため、下のセルのダブルクリックを妨げないようにする */
+  /* While all cells are empty, this overlaps the data row's vertical position, so don't block double-click on the cell beneath */
   pointer-events: none;
 }
 
@@ -1042,7 +1042,7 @@
   white-space: pre-wrap;
 }
 
-/* ==== オーバーレイ（選択・ガイド・マーキー・エラー） ==== */
+/* ==== Overlay (selection, guides, marquee, errors) ==== */
 
 .apx-overlay {
   position: absolute;
@@ -1072,7 +1072,7 @@
   transform: rotate(var(--rot, 0deg));
 }
 
-/* チップは水平のまま読めるよう、枠の回転を打ち消す（枠内の左上位置は不変） */
+/* Counteract the frame's rotation so the chip stays readable horizontally (the top-left position within the frame is unchanged) */
 .apx-sel-box > .apx-el-chip {
   transform: rotate(calc(-1 * var(--rot, 0deg)));
 }
@@ -1129,12 +1129,12 @@
   transform: rotate(var(--rot, 0deg));
 }
 
-/* 選択枠上辺中央の少し上に浮かせた円形の回転ハンドル。
-   --hx/--hy は回転後の上辺中央のため、浮きは回転後のローカル上方向への translateY で表す */
+/* A circular rotation handle floated slightly above the top-center of the selection box.
+   Since --hx/--hy give the post-rotation top-center, the offset is expressed as a translateY toward the post-rotation local "up" direction */
 .apx-h--rotate {
   border-radius: 50%;
   transform: rotate(var(--rot, 0deg)) translateY(-16px);
-  /* CSS に回転専用カーソルは無いため、黒フチ白フィルの円弧矢印を SVG data URI で自作（両テーマで視認可） */
+  /* CSS has no dedicated rotation cursor, so a black-outlined, white-filled arc arrow is hand-built as an SVG data URI (visible in both themes) */
   cursor:
     url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath d='M14.54,6.56 A6,6 0 1,1 9.46,6.56' fill='none' stroke='black' stroke-width='3.2' stroke-linecap='round'/%3E%3Cpath d='M14.54,6.56 A6,6 0 1,1 9.46,6.56' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round'/%3E%3Cpolygon points='9.46,1.06 10.76,5.06 8.16,5.06' fill='white' stroke='black' stroke-width='1.1' stroke-linejoin='round' transform='rotate(65 9.46 6.56)'/%3E%3C/svg%3E")
     12 12,
@@ -1307,7 +1307,7 @@
   z-index: 2;
 }
 
-/* ==== プロパティパネル ==== */
+/* ==== Property panel ==== */
 
 .apx-props {
   grid-column: 3;
@@ -1537,7 +1537,7 @@
   white-space: nowrap;
 }
 
-/* ==== 表の列エディタ ==== */
+/* ==== Table column editor ==== */
 
 .apx-col-card {
   border: 1px solid var(--color-border);
@@ -1648,7 +1648,7 @@
   background: var(--color-accent-subtle-bg);
 }
 
-/* ==== 検証ドロワー ==== */
+/* ==== Validation drawer ==== */
 
 .apx-drawer {
   flex: none;
@@ -1763,7 +1763,7 @@
   border-top: 1px solid var(--color-border);
 }
 
-/* ==== ステータスバー ==== */
+/* ==== Status bar ==== */
 
 .apx-statusbar {
   flex: none;
@@ -1787,7 +1787,7 @@
   flex: 1;
 }
 
-/* ==== ダイアログ（開くフローの確認・エラー一覧） ==== */
+/* ==== Dialog (open-flow confirmation, error list) ==== */
 
 .apx-dialog-scrim {
   position: fixed;
@@ -1858,7 +1858,7 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-/* ==== 書き出しダイアログ ==== */
+/* ==== Export dialog ==== */
 
 .apx-dialog-wide {
   width: 560px;
@@ -2042,7 +2042,7 @@
   align-self: center;
 }
 
-/* ==== フォント選択ダイアログ ==== */
+/* ==== Font selection dialog ==== */
 
 .apx-font-search {
   width: 100%;
@@ -2103,7 +2103,7 @@
   gap: var(--space-2);
 }
 
-/* ==== ショートカット一覧ダイアログ ==== */
+/* ==== Shortcut list dialog ==== */
 
 .apx-shortcuts-group {
   display: flex;
@@ -2135,7 +2135,7 @@
   white-space: nowrap;
 }
 
-/* ==== プレビュー ==== */
+/* ==== Preview ==== */
 
 .apx-preview {
   position: absolute;
@@ -2283,7 +2283,7 @@
   line-height: 1.4;
 }
 
-/* ==== キャンバスの右クリックコンテキストメニュー ==== */
+/* ==== Canvas right-click context menu ==== */
 
 .apx-context-menu {
   position: fixed;
@@ -2333,11 +2333,11 @@
   color: var(--color-text-disabled);
 }
 
-/* ==== レイアウトモディファイア（パネル開閉・高さ調整） ==== */
+/* ==== Layout modifiers (panel open/close, height adjustment) ==== */
 
 .apx-sidebar.has-split .apx-palette {
   height: var(--apx-palette-h);
-  /* JS の再クランプなしでウィンドウ縮小時もレイヤー側の最低高さを守る */
+  /* Keep the layer panel's minimum height even on window shrink, without JS re-clamping */
   max-height: calc(100% - 101px);
 }
 

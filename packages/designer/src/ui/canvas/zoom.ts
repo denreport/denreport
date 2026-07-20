@@ -10,17 +10,17 @@ function clampZoom(zoom: number): number {
   return Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, zoom));
 }
 
-/** ZOOM_STEPS 上で current より大きい最小の段。上端なら null */
+/** The smallest step on ZOOM_STEPS that is greater than current. null if already at the top */
 export function zoomStepIn(current: number): number | null {
   return ZOOM_STEPS.find((z) => z > current + 1e-9) ?? null;
 }
 
-/** ZOOM_STEPS 上で current より小さい最大の段。下端なら null */
+/** The largest step on ZOOM_STEPS that is less than current. null if already at the bottom */
 export function zoomStepOut(current: number): number | null {
   return [...ZOOM_STEPS].reverse().find((z) => z < current - 1e-9) ?? null;
 }
 
-/** ページ全体がビューポートに収まる倍率。計算不能（可用領域が 0 以下）なら null */
+/** The zoom ratio at which the entire page fits in the viewport. null if uncomputable (available area is 0 or less) */
 export function fitPageZoom(input: {
   readonly viewportWidth: number;
   readonly viewportHeight: number;
@@ -43,11 +43,11 @@ export function fitPageZoom(input: {
   );
 }
 
-// Firefox の line モードは deltaY が「行数」単位で来るため px 相当に近似する
+// In Firefox's line mode, deltaY arrives in units of "number of lines", so approximate it as the px equivalent
 const LINE_HEIGHT_PX = 16;
 const WHEEL_SENSITIVITY = 0.002;
 
-/** ホイール 1 イベント後の倍率。deltaY > 0 で縮小。ZOOM_MIN..ZOOM_MAX にクランプ */
+/** Zoom ratio after one wheel event. Zooms out when deltaY > 0. Clamped to ZOOM_MIN..ZOOM_MAX */
 export function nextWheelZoom(
   current: number,
   deltaY: number,
@@ -57,7 +57,7 @@ export function nextWheelZoom(
   return clampZoom(current * Math.exp(-delta * WHEEL_SENSITIVITY));
 }
 
-/** アンカー点（ビューポート可視座標の px）直下の紙上 mm を維持するスクロール位置 */
+/** Scroll position that keeps the paper mm directly under the anchor point (px in viewport-visible coordinates) fixed */
 export function anchoredScroll(input: {
   readonly prevZoom: number;
   readonly nextZoom: number;

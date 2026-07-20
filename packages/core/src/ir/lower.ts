@@ -188,8 +188,8 @@ function toIrError(p: DataProblem): IrError {
   return { rule: p.rule, path: p.path, message: p.message };
 }
 
-// 欠落キー（severity: warning）のみを補完する。C01→C02 の順に代入するため
-// text と table が同一キーを共有する場合は table（空配列）が後勝ちで残る
+// Fills in only missing keys (severity: warning). Since assignment happens in C01 → C02 order,
+// if text and table share the same key, table's value (an empty array) wins by being assigned last
 function applyMissingKeyDefaults(
   data: IrData,
   problems: readonly DataProblem[],
@@ -298,7 +298,7 @@ function lowerTableChunk(
   const rectByOrigin = new Map<string, TableMergeRect>(
     merges.rects.map((rect) => [`${rect.q}:${rect.col}`, rect]),
   );
-  // 垂直罫線の区間端 → y 座標（-1 はヘッダ帯の上端 = 表の上端）
+  // Vertical rule interval endpoint → y coordinate (-1 is the top edge of the header band = the top edge of the table)
   const rowEdgeY = (edge: number): number =>
     edge < 0 ? y0 : y0 + table.headerHeight + edge * table.rowHeight;
 

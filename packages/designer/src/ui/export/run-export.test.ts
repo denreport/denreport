@@ -12,13 +12,13 @@ import {
   parseExportData,
 } from "./run-export";
 
-// jsdom 下では import.meta.url 由来の URL が http://localhost:3000/@fs/... になる
+// Under jsdom, the URL derived from import.meta.url becomes http://localhost:3000/@fs/...
 const EMBEDDED_FONT = new Uint8Array(
   readFileSync(EMBEDDED_FONT_URL.pathname.replace(/^\/@fs/, "")),
 );
 const FONT_SET = { regular: EMBEDDED_FONT };
 
-// OTTO ヘッダ + CFF テーブルだけの合成フォント。形式判定はディレクトリしか読まない
+// A synthetic font with just an OTTO header + CFF table. Format detection only reads the directory
 function syntheticCff(): Uint8Array {
   const bytes = new Uint8Array(12 + 16);
   const view = new DataView(bytes.buffer);
@@ -270,7 +270,7 @@ describe("buildReportlabArtifact", () => {
     const zip = new Uint8Array(await result.file.blob.arrayBuffer());
     const entries = listZipEntries(zip);
     expect(entries.map((e) => e.name)).toEqual(["report.py", "NotoSansJP.ttf"]);
-    // 数 MB の Uint8Array を toEqual で全走査するとタイムアウトするため Buffer で比較する
+    // Fully scanning a several-MB Uint8Array with toEqual would time out, so compare via Buffer instead
     expect(
       Buffer.from(entries[1]?.data ?? []).equals(Buffer.from(EMBEDDED_FONT)),
     ).toBe(true);

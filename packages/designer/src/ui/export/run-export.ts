@@ -16,7 +16,7 @@ import { buildZip } from "./zip";
 
 export type { FontIssue };
 
-// 生成物のファイル名（固定。IR に文書名は存在しない）
+// File names for generated artifacts (fixed; the IR has no document name)
 export const PDFME_EXPORT_FILE_NAME = "report-pdfme.json";
 export const REPORTLAB_EXPORT_FILE_NAME = "report-reportlab.zip";
 export const REPORTLAB_CODE_FILE_NAME = "report.py";
@@ -28,10 +28,12 @@ export type ParseExportDataResult =
   | { readonly ok: true; readonly mode: "template" }
   | { readonly ok: false; readonly message: string };
 
-/** サンプルデータ JSON の厳格パース。書き出しは補完しない。
-    空文字列（trim 後）は雛形モード。非空は厳格パースし、JSON.parse 不能 /
-    トップレベルが非オブジェクト（配列・null 含む）はエラー。
-    message は利用者向け文言（プレビューのサンプルデータ欄への誘導を含む） */
+/** Strict parse of the sample data JSON. Export does not fill in missing values.
+    An empty string (after trim) means template mode. A non-empty string is parsed
+    strictly; a JSON.parse failure or a top-level value that isn't an object
+    (including arrays and null) is an error.
+    message is user-facing text (including guidance pointing to the preview's sample
+    data field) */
 export function parseExportData(
   json: string,
   m: ExportMessages,
@@ -68,7 +70,7 @@ export type BuildPdfmeArtifactResult =
       readonly fontIssues: readonly FontIssue[];
     };
 
-/** 文書の宣言スロットの論理名（出現順・重複なし） */
+/** Logical names of the document's declared slots (in order of appearance, no duplicates) */
 function declaredFontNames(document: IrDocument): readonly string[] {
   const names: string[] = [];
   for (const name of [
@@ -84,10 +86,11 @@ function declaredFontNames(document: IrDocument): readonly string[] {
   return names;
 }
 
-/** exportPdfme を呼び、{ template, inputs } を1つの JSON（2スペースインデント）にした
-    ExportFile を返す。C 群エラー・FontIssue は透過、欠落キーの警告も透過。
-    fontSubset が false のときのみ、利用側へ全体埋め込みを伝える font ブロック
-    （宣言スロットの全論理名）を JSON に含める */
+/** Calls exportPdfme and returns an ExportFile with { template, inputs } combined into a
+    single JSON (2-space indent). C-group errors and FontIssues pass through unchanged, as
+    do missing-key warnings.
+    Only when fontSubset is false does the JSON include a font block (all logical names of
+    the declared slots) telling the consumer to fully embed the font */
 export function buildPdfmeArtifact(
   document: IrDocument,
   data: IrData,
@@ -118,8 +121,9 @@ export function buildPdfmeArtifact(
   };
 }
 
-/** サンプルデータ未入力時の pdfme 書き出し。emptyDataFor で C01/C02 を満たす空データを
-    合成し、既存の buildPdfmeArtifact にそのまま通す */
+/** pdfme export for when no sample data has been entered. Synthesizes empty data that
+    satisfies C01/C02 via emptyDataFor and passes it straight through to the existing
+    buildPdfmeArtifact */
 export function buildPdfmeTemplateArtifact(
   document: IrDocument,
   fonts: FontSetData,
@@ -173,9 +177,10 @@ function bundleReportlabResult(
   };
 }
 
-/** exportReportlab を呼び、code（REPORTLAB_CODE_FILE_NAME）と fontFiles（宣言スロット分）を
-    buildZip で束ねた ExportFile を返す。C 群エラー・FontIssue は透過（両方同時にあり得る）。
-    欠落キーの警告も透過（雛形系ビルダーは常に空） */
+/** Calls exportReportlab and returns an ExportFile that bundles code
+    (REPORTLAB_CODE_FILE_NAME) and fontFiles (one per declared slot) via buildZip. C-group
+    errors and FontIssues pass through unchanged (both can occur at the same time).
+    Missing-key warnings also pass through (always empty for template-mode builders) */
 export function buildReportlabArtifact(
   document: IrDocument,
   data: IrData,
@@ -187,8 +192,9 @@ export function buildReportlabArtifact(
   );
 }
 
-/** サンプルデータ未入力時の ReportLab 書き出し。exportReportlabTemplate を同じ zip 構成で包む。
-    errors は常に空（データ検証は生成コードの実行時に移る） */
+/** ReportLab export for when no sample data has been entered. Wraps exportReportlabTemplate
+    in the same zip layout.
+    errors is always empty (data validation moves to runtime of the generated code) */
 export function buildReportlabTemplateArtifact(
   document: IrDocument,
   fonts: FontSetData,

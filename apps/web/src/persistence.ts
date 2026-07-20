@@ -13,8 +13,9 @@ export const AUTOSAVE_DEBOUNCE_MS = 500;
 const VALID_EXPORT_TARGETS: readonly CompatTargetId[] = ["pdfme", "reportlab"];
 const VALID_LOCALES: readonly DesignerLocale[] = ["ja", "en"];
 
-/** 起動時の IR 復元。値なし → "blank"、成功 → "restored"、破損・バージョン不一致 → "invalid"。
-    "invalid" でも保存値は消さない（次の自動保存で上書きされるまで救出の機会を残す） */
+/** IR restoration at startup. No stored value -> "blank", success -> "restored",
+    corrupted or version mismatch -> "invalid".
+    Even on "invalid" the stored value is not cleared (leaving a chance for recovery until the next autosave overwrites it) */
 export function restoreIr(
   designer: Pick<Designer, "loadIr">,
   storage: Storage,
@@ -26,8 +27,8 @@ export function restoreIr(
   return designer.loadIr(stored).ok ? "restored" : "invalid";
 }
 
-/** 起動時の書き出しターゲット復元。値なし・不正値は undefined を返し、
-    Designer 既定（"pdfme"）へのフォールバックに委ねる */
+/** Export target restoration at startup. Returns undefined when there is no stored value or it is invalid,
+    leaving the fallback to the Designer default ("pdfme") */
 export function restoreExportTarget(
   storage: Storage,
 ): CompatTargetId | undefined {
@@ -35,15 +36,16 @@ export function restoreExportTarget(
   return VALID_EXPORT_TARGETS.find((id) => id === stored);
 }
 
-/** 起動時の言語復元。値なし・不正値は undefined を返し、Designer 既定（"auto"）へのフォールバックに委ねる */
+/** Locale restoration at startup. Returns undefined when there is no stored value or it is invalid,
+    leaving the fallback to the Designer default ("auto") */
 export function restoreLocale(storage: Storage): DesignerLocale | undefined {
   const stored = storage.getItem(LOCALE_STORAGE_KEY);
   return VALID_LOCALES.find((locale) => locale === stored);
 }
 
-/** 変更通知を 500ms トレーリングデバウンスで localStorage へ書く自動保存の配線。
-    setItem の失敗（QuotaExceededError 等）は onError に渡し、編集は妨げない。
-    返り値はリスナー・タイマー・pagehide ハンドラを外す解除関数 */
+/** Wiring for autosave that writes change notifications to localStorage with a 500ms trailing debounce.
+    A setItem failure (e.g. QuotaExceededError) is passed to onError and does not block editing.
+    The return value is a detach function that removes the listeners, timers, and the pagehide handler */
 export function attachAutosave(
   designer: Pick<
     Designer,
@@ -124,8 +126,8 @@ export function attachAutosave(
     });
   }
 
-  // デバウンスだけでは最後の編集から 500ms 以内のタブ閉じで直近の編集が失われるため、
-  // pagehide で未書き込み分を即時書き込む
+  // Debouncing alone would lose the most recent edit if the tab is closed within 500ms of the last edit,
+  // so pagehide writes out any unwritten changes immediately
   const onPageHide = (): void => {
     for (const flush of flushes) {
       flush();

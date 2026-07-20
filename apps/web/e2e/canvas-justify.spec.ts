@@ -21,7 +21,7 @@ test("text 要素の整列を均等にすると、キャンバスの行に字間
     .getByRole("button", { name: "均等" })
     .click();
 
-  // フォント計量の非同期到着を expect のポーリングで吸収する
+  // Absorb the asynchronous arrival of font metrics via expect's polling
   const line = textEl.locator(".apx-text-line").first();
   await expect(line).toBeVisible();
   await expect.poll(() => letterSpacingPx(line)).toBeGreaterThan(0);

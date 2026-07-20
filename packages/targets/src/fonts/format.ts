@@ -26,8 +26,8 @@ const TAG_CFF2 = 0x43464632;
  * format. Returns "unknown" if `data` is too short or its table directory is
  * truncated.
  */
-// sfntVersion でなくテーブルタグでアウトライン種別を判定する。CFF2 を
-// 0x00010000 でラップした非準拠フォントでも正しく報告するため。
+// Determine the outline kind from the table tags rather than sfntVersion, so
+// that non-conformant fonts wrapping CFF2 in 0x00010000 are still reported correctly.
 export function detectFontFormat(data: Uint8Array): FontFormat {
   if (data.length < HEADER_SIZE) return "unknown";
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);

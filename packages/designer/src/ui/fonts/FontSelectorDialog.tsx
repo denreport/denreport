@@ -27,25 +27,29 @@ type ConfirmState =
   | { readonly kind: "loading" }
   | { readonly kind: "failed"; readonly issues: readonly FontIssue[] };
 
-/** スロットに同梱フォントがある場合のみ、その論理名（「同梱フォントに戻す」行の表示対象） */
+/** The logical name of the bundled font, only when one exists for the slot (target of the
+    "revert to bundled font" row) */
 const EMBEDDED_NAME_BY_SLOT: Readonly<Partial<Record<IrFontSlot, string>>> = {
   regular: EMBEDDED_FONT_NAME,
   bold: EMBEDDED_BOLD_FONT_NAME,
 };
 
-/** Dialog 部品（ui/dialog/Dialog.tsx）に載せる、対象スロットのフォント選択ダイアログ。
-    一覧取得はマウント時に listLocalFonts（開くボタンのクリックがユーザー操作起点）。
-    確定時に loadData → buildRegisteredFont を実行し、非 TTF は issues をダイアログ内に表示して閉じない */
+/** Font selection dialog for the target slot, mounted on the Dialog component
+    (ui/dialog/Dialog.tsx). The list is fetched via listLocalFonts on mount (the click of the
+    opening button is the user-initiated action). On confirm, runs loadData -> buildRegisteredFont;
+    non-TTF shows issues inside the dialog and does not close it */
 export function FontSelectorDialog(props: {
-  /** 選択対象のスロット（同梱行の有無・「未設定に戻す」行の有無を決める） */
+  /** The target slot for selection (determines whether the bundled row and the "revert to
+      unset" row are shown) */
   readonly slot: IrFontSlot;
-  /** スロットの現在の論理名（一覧内の該当行の選択状態表示に使う）。未設定スロットは undefined */
+  /** The slot's current logical name (used to show the selected state of the matching row in
+      the list). undefined for an unset slot */
   readonly currentName: string | undefined;
-  /** 検証済みフォントで確定（呼び出し側が registerFont + スロット setter の commit を行う） */
+  /** Confirm with a validated font (the caller performs registerFont + commits the slot setter) */
   readonly onSelect: (font: RegisteredFont) => void;
-  /** 同梱フォントで確定。スロットに同梱フォントがある場合のみ行を表示する */
+  /** Confirm with the bundled font. The row is shown only when the slot has a bundled font */
   readonly onSelectEmbedded: (name: string) => void;
-  /** スロットを未設定に戻す。regular 以外のみ行を表示する */
+  /** Revert the slot to unset. The row is shown only for slots other than regular */
   readonly onClear: () => void;
   readonly onClose: () => void;
 }): ReactNode {
@@ -70,7 +74,7 @@ export function FontSelectorDialog(props: {
     });
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: マウント時の1回だけ実行する。再試行はボタン操作で行う
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs exactly once on mount; retry is done via a button action
   useEffect(() => {
     load();
   }, []);
@@ -232,7 +236,7 @@ export function FontSelectorDialog(props: {
       {confirm.kind === "failed" && (
         <div className="apx-font-notice" role="alert">
           {confirm.issues.map((issue, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: 同一 format のエラーが並び得るため index で識別する
+            // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same format can appear side by side, so identify by index
             <p key={i}>{issue.message}</p>
           ))}
         </div>

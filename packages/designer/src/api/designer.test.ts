@@ -137,7 +137,7 @@ function storeOf(designer: Designer): EditorStore {
   return (designer as unknown as { readonly store: EditorStore }).store;
 }
 
-// jsdom は matchMedia 未実装のため、常に不一致（= ライト解決）の最小スタブを与える
+// jsdom doesn't implement matchMedia, so provide a minimal stub that always mismatches (= resolves to light)
 beforeAll(() => {
   vi.stubGlobal(
     "matchMedia",
@@ -151,7 +151,7 @@ beforeAll(() => {
         dispatchEvent: () => false,
       }) as unknown as MediaQueryList,
   );
-  // jsdom の URL には createObjectURL / revokeObjectURL が無い
+  // jsdom's URL lacks createObjectURL / revokeObjectURL
   Object.assign(URL, {
     createObjectURL: () => "blob:denreport-test",
     revokeObjectURL: () => {},
@@ -161,7 +161,8 @@ beforeAll(() => {
 let containers: HTMLElement[] = [];
 let designers: Designer[] = [];
 
-// jsdom の既定言語は en-US のため、locale 省略時のテストが英語表示に倒れないよう ja を既定にする
+// jsdom's default language is en-US, so default to ja here so that tests with locale omitted
+// don't fall back to an English display
 function mount(options?: DesignerOptions): {
   container: HTMLElement;
   designer: Designer;
@@ -683,8 +684,8 @@ describe("テーマトグル", () => {
     expect(toggle.getAttribute("aria-pressed")).toBe("false");
 
     click(toggle);
-    // auto のままなら light に解決される（matchMedia スタブは常に不一致）ため、
-    // dark になったこと自体が明示テーマへ移った証拠になる
+    // If it stayed on auto it would resolve to light (the matchMedia stub always mismatches),
+    // so becoming dark is itself evidence that it moved to an explicit theme
     expect(rootEl?.getAttribute("data-theme")).toBe("dark");
     await vi.waitFor(() => {
       expect(toggle.getAttribute("aria-pressed")).toBe("true");
@@ -840,8 +841,8 @@ describe("公開面の型（React 非漏洩）", () => {
   });
 
   it("公開シグネチャは DOM 標準型・プリミティブ・core の型だけで閉じる", () => {
-    // HTMLElement の全属性を展開する expectTypeOf の深い等価比較は現実的でないため、
-    // コンストラクタは代入可能性（コンパイル時検査）で担保する
+    // A deep equality comparison via expectTypeOf that expands every attribute of HTMLElement
+    // isn't practical, so the constructor is verified via assignability (a compile-time check) instead
     const construct: new (
       container: HTMLElement,
       options?: DesignerOptions,

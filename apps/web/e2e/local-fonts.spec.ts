@@ -11,8 +11,8 @@ test.describe("PC 内フォントからの選択（許可済み環境）", () =>
     const dialog = page.getByRole("dialog", { name: "標準のフォントを選択" });
     await expect(dialog).toBeVisible();
 
-    // fonts-liberation は CI（playwright install --with-deps）・開発コンテナの双方に
-    // インストール済みで、TrueType（glyf）アウトラインのため validateFont を必ず通る
+    // fonts-liberation is installed on both CI (playwright install --with-deps) and the dev
+    // container, and being a TrueType (glyf) outline it always passes validateFont
     await dialog.getByLabel("フォント名で検索").fill("Liberation");
     const candidate = dialog.locator(".apx-font-name").first();
     await expect(candidate).toBeVisible();

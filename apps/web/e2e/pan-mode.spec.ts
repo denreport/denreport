@@ -51,7 +51,8 @@ test("移動モードのドラッグはビューをパンし、要素は動か�
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   await expect(viewport).toHaveClass(/is-panning/);
-  // 上下左右に十分な残りスクロール量があるため上左方向へ動かす（下右だと 0 でクランプし得る）
+  // Move up-left since there's plenty of remaining scroll room in every direction
+  // (moving down-right could clamp at 0)
   await page.mouse.move(startX - 40, startY - 40, { steps: 8 });
   await page.mouse.up();
   await expect(viewport).not.toHaveClass(/is-panning/);

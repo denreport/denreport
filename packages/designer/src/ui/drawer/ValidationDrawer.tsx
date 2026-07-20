@@ -12,7 +12,7 @@ import { useEditorState } from "../useEditorState";
 
 export function ValidationDrawer(props: {
   readonly store: EditorStore;
-  /** 行クリック時、選択・文脈切替の後に呼ぶ */
+  /** Called after selection/context switch on row click */
   readonly onReveal: (id: string) => void;
 }): ReactNode {
   const { store, onReveal } = props;
@@ -65,7 +65,8 @@ export function ValidationDrawer(props: {
 
   const onRowClick = (error: IrError): void => {
     const [id] = errorElementIds(store.getState().document, [error]);
-    // ルート・page の違反は要素に対応しない。文書設定はパネルの非選択状態で常に到達できる
+    // Root/page violations don't correspond to an element. Document settings are always
+    // reachable via the panel's unselected state
     if (id === undefined) {
       return;
     }

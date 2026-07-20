@@ -6,7 +6,7 @@ import invoiceFixture from "./fixtures/invoice.json";
 import invoiceMultipageFixture from "./fixtures/invoice-multipage.json";
 import tableMergeFixture from "./fixtures/table-merge.json";
 
-// biome-ignore lint/suspicious/noExplicitAny: 不正フィクスチャは仕様外の値も組み立てる必要がある
+// biome-ignore lint/suspicious/noExplicitAny: invalid fixtures need to construct out-of-spec values too
 type Raw = any;
 
 function baseDoc(): Raw {

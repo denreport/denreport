@@ -63,7 +63,7 @@ export function OpenIrButton(props: {
         hidden
         onChange={(event) => {
           const file = event.currentTarget.files?.[0];
-          // 同じファイルを選び直しても change が発火するよう毎回リセットする
+          // Reset every time so that change fires even when the same file is picked again
           event.currentTarget.value = "";
           if (file !== undefined) {
             readFile(file);
@@ -115,7 +115,7 @@ export function OpenIrButton(props: {
           ) : (
             <ul className="apx-dialog-errors">
               {flow.errors.map((error, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: 同一 rule / path のエラーが並び得るため index で識別する
+                // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same rule / path can appear side by side, so identify by index
                 <li key={i}>
                   <span className="apx-verr-rule">{error.rule}</span>
                   <span className="apx-verr-path">{error.path}</span>

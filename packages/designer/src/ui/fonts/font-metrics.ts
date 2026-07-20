@@ -16,7 +16,7 @@ import { useEffect, useState } from "react";
 import type { FontResolution, RegisteredFont } from "../../state/fonts";
 import { resolveFontSet } from "../../state/fonts";
 
-/** スロット別の字幅関数の組。regular は必須 */
+/** A set of per-slot char-width functions. regular is required */
 export interface FontMetricsSet {
   readonly regular: CharWidthEm;
   readonly bold?: CharWidthEm;
@@ -34,7 +34,7 @@ const EMBEDDED_METRICS_URLS: Readonly<Record<string, URL>> = {
   [EMBEDDED_BOLD_FONT_NAME]: EMBEDDED_BOLD_FONT_URL,
 };
 
-/** 要素の weight/style を core の劣化規則でスロットに落として字幅関数を返す */
+/** Resolves an element's weight/style down to a slot using core's degradation rules and returns the char-width function */
 export function charWidthsFor(
   set: FontMetricsSet,
   fontWeight: IrFontWeight = "normal",
@@ -66,7 +66,7 @@ function loadEmbeddedWidths(url: URL): Promise<CharWidthEm> {
     }
     return widths;
   });
-  // 一時的なネットワーク失敗を固定化しない
+  // Don't let a transient network failure become permanent
   promise.catch(() => {
     embeddedCache.delete(url.href);
   });
@@ -90,8 +90,9 @@ function embeddedUrlFor(name: string): URL {
   return EMBEDDED_METRICS_URLS[name] ?? EMBEDDED_FONT_URL;
 }
 
-/** resolveFontSet の解決結果1件を字幅関数の Promise にする。missing・未知の同梱名は
-    同梱 regular で代替し、registered の計量読取不能も同梱 regular へフォールバックする */
+/** Turns a single resolveFontSet resolution result into a Promise of a char-width function.
+    missing and unknown bundled names fall back to the bundled regular, and unreadable metrics
+    for registered fonts also fall back to the bundled regular */
 function loadResolutionWidths(
   resolution: FontResolution,
 ): Promise<CharWidthEm> {
@@ -105,8 +106,8 @@ function loadResolutionWidths(
   return loadEmbeddedWidths(embeddedUrlFor(resolution.name));
 }
 
-/** 文書のフォント宣言を字幅関数の組に解決する。フォント取得中・失敗中は null（呼び出し側は
-    現行描画にフォールバックする） */
+/** Resolves the document's font declaration into a set of char-width functions. null while
+    fetching or on failure (the caller falls back to the current rendering) */
 export function useFontMetrics(
   font: IrFont,
   registry: ReadonlyMap<string, RegisteredFont>,
@@ -122,7 +123,7 @@ export function useFontMetrics(
     )
     .join(",");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: resolutionKey が解決結果の変化を代表する
+  // biome-ignore lint/correctness/useExhaustiveDependencies: resolutionKey represents changes to the resolution result
   useEffect(() => {
     let cancelled = false;
     const entries = [...resolutions.entries()];
@@ -154,7 +155,7 @@ export function useFontMetrics(
         });
       },
       () => {
-        // fetch reject を未処理のまま漏らさない。到着待ちの間は呼び出し側のフォールバック表示に任せる
+        // Don't let a fetch rejection leak as unhandled. While waiting for it to arrive, defer to the caller's fallback display
         if (!cancelled) {
           setMetrics(null);
         }

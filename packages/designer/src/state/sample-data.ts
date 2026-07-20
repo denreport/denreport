@@ -1,8 +1,8 @@
 export type SampleJsonWarning = "notObject" | "invalidJson";
 
-/** サンプル JSON の寛容パース。空文字列 → 空データ（警告なし）、不正 JSON /
-    非オブジェクト → 空データ + 警告理由。
-    文言ではなく理由コードを返すのは、警告を捨てる呼び出し元にカタログを配線させないため */
+/** A lenient parse of the sample JSON. Empty string -> empty data (no warning); invalid JSON /
+    non-object -> empty data + a warning reason.
+    Returns a reason code rather than wording so callers that discard the warning don't need the message catalog wired in */
 export function parseSampleJson(sampleJson: string): {
   readonly data: Record<string, unknown>;
   readonly warning: SampleJsonWarning | undefined;

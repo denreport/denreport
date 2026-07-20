@@ -4,13 +4,13 @@ import { useState } from "react";
 export interface DraftHandlers {
   readonly draft: string;
   readonly onChange: (raw: string) => void;
-  /** 確定を試みる */
+  /** Attempts to commit */
   readonly onBlur: () => void;
-  /** Enter = 確定、Escape = 破棄して committed に戻す */
+  /** Enter = commit, Escape = discard and revert to committed */
   readonly onKeyDown: (e: KeyboardEvent) => void;
 }
 
-/** 入力中ドラフトの保持。committed が外部（undo 等）で変わったらドラフトを破棄して追従する */
+/** Holds the in-progress draft value. Discards the draft and follows along if committed changes externally (e.g. undo) */
 export function useDraftValue(
   committed: string,
   commit: (raw: string) => void,
@@ -34,7 +34,7 @@ export function useDraftValue(
     onKeyDown: (e) => {
       if (e.key === "Enter" && !(e.target instanceof HTMLTextAreaElement)) {
         if (e.nativeEvent.isComposing) {
-          // IME の変換確定の Enter を入力確定と誤認しない
+          // Don't mistake the Enter that confirms an IME conversion for input confirmation
           return;
         }
         finalize();

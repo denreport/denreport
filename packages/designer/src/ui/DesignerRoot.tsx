@@ -32,7 +32,7 @@ export function DesignerRoot(props: {
   const messages = getMessages(locale);
   const interaction = useCanvasInteraction(store);
   const layoutRef = useRef<HTMLDivElement | null>(null);
-  // 一覧を閉じた直後もショートカットを受けられるよう、閉じたら layout へフォーカスを戻す
+  // So the shortcut list still receives shortcuts right after closing, return focus to layout on close
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const onCloseShortcuts = useCallback((): void => {
     setShortcutsOpen(false);
@@ -50,12 +50,12 @@ export function DesignerRoot(props: {
     interaction.interaction,
     editingCommands,
   );
-  // スクロール要求は一過性の UI 命令なので store に入れず ref で Canvas と結ぶ
+  // A reveal request is a transient UI command, so keep it out of the store and wire it to Canvas via a ref
   const revealRef = useRef<((id: string) => void) | null>(null);
   const onReveal = useCallback((id: string): void => {
     revealRef.current?.(id);
   }, []);
-  // プレビューの開閉は編集状態ではないため store に入れない
+  // Preview open/close isn't editing state, so keep it out of the store
   const [previewOpen, setPreviewOpen] = useState(false);
   const onPreview = useCallback((): void => {
     setPreviewOpen(true);
@@ -63,7 +63,7 @@ export function DesignerRoot(props: {
   const onClosePreview = useCallback((): void => {
     setPreviewOpen(false);
   }, []);
-  // 書き出しの開閉もプレビューと同じく編集状態ではない
+  // Export open/close, like preview, isn't editing state either
   const [exportOpen, setExportOpen] = useState(false);
   const onExport = useCallback((): void => {
     setExportOpen(true);
@@ -71,7 +71,7 @@ export function DesignerRoot(props: {
   const onCloseExport = useCallback((): void => {
     setExportOpen(false);
   }, []);
-  // スタイル管理の開閉も編集状態ではない
+  // Style management open/close isn't editing state either
   const [stylesOpen, setStylesOpen] = useState(false);
   const onManageStyles = useCallback((): void => {
     setStylesOpen(true);
@@ -79,7 +79,7 @@ export function DesignerRoot(props: {
   const onCloseStyles = useCallback((): void => {
     setStylesOpen(false);
   }, []);
-  // パネルの開閉も編集状態ではないため store に入れない
+  // Panel open/close isn't editing state either, so keep it out of the store
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [propsOpen, setPropsOpen] = useState(true);
   const onToggleSidebar = useCallback((): void => {
@@ -93,8 +93,8 @@ export function DesignerRoot(props: {
       const document = store.getState().document;
       const element = createCenteredElement(document, type);
       store.commit(addElement(document, element), [element.id]);
-      // ボタンの pointerdown が preventDefault されておりクリックでは
-      // フォーカスが body から動かないため、undo 等を受けられる位置へ明示的に移す
+      // The button's pointerdown calls preventDefault, so a click never moves focus off
+      // body — explicitly move it somewhere that can receive undo etc.
       layoutRef.current?.focus();
     },
     [store],
@@ -102,7 +102,7 @@ export function DesignerRoot(props: {
   return (
     <MessagesContext.Provider value={messages}>
       <LocaleContext.Provider value={locale}>
-        {/* biome-ignore lint/a11y/noStaticElementInteractions: キー操作はルートで束ね、フォーム要素は無視する */}
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: key handling is bundled at the root; form elements are ignored */}
         <div
           className={
             "apx-layout" +

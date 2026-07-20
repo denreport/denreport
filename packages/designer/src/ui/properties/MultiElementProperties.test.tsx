@@ -339,7 +339,7 @@ describe("MultiElementProperties", () => {
     expect(fontSizeInput.value).toBe("");
     expect(fontSizeInput.placeholder).toBe("混在");
 
-    // t1 の元値（10）と同じ値でも、混在からの確定なので両方に適用される
+    // Even though it's the same as t1's original value (10), it applies to both since it's a commit from a mixed state
     setValue(fontSizeInput, "10");
     blur(fontSizeInput);
     expect(elementById(store, "t1")).toMatchObject({ fontSize: 10 });

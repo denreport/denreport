@@ -249,7 +249,7 @@ describe("exportReportlabTemplate — bound document", () => {
     expect(result.code).toContain("if page == 1:");
     expect(result.code).toContain("if page == page_count:");
     expect(result.code).toContain("if page >= 2:");
-    // "all" (title のトークン) は無条件 — ガードなしで直接呼ばれる
+    // "all" (title's token) is unconditional — called directly, with no guard
     expect(result.code).toContain(
       '    _text(c, "NotoSansJP", 0, 0, 100, 10, 12, "left", 1.2, (0, 0, 0), 0, False, _wrap("NotoSansJP", 12, 100, _interpolate(data, "{title}")))',
     );
@@ -425,7 +425,7 @@ describe("exportReportlabTemplate — cell merges", () => {
     expect(result.code).toContain(
       "for s, e in _kept(-1, chunk_size, v_skips.get(1, [])):",
     );
-    // ヘッダで name+amount が結合されるため、その間の垂直罫線だけヘッダ帯を除く
+    // Since name+amount are merged in the header, only the vertical gridline between them is excluded from the header band
     expect(result.code).toContain(
       "for s, e in _kept(-1, chunk_size, v_skips.get(2, []) + [(-1, 0)]):",
     );
@@ -439,7 +439,7 @@ describe("exportReportlabTemplate — cell merges", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).not.toContain('["金額"]');
-    // 品目ヘッダの幅 = (50 + 30) − 2×1.5
+    // Width of the item header = (50 + 30) - 2x1.5
     expect(result.code).toContain('77, 8.2, 10, "center", 1.25');
   });
 
@@ -942,7 +942,7 @@ describe("exportReportlabTemplate — font gate", () => {
 });
 
 describe("exportReportlabTemplate — page count parity with the data-mode chunking rule", () => {
-  // lowerIr の computeTableSpan と同じ算術（乖離があればここで検出する）
+  // The same arithmetic as computeTableSpan in lowerIr (any divergence is detected here)
   function chunkSizesJs(
     rowCount: number,
     minRows: number,
@@ -1031,7 +1031,7 @@ describe("exportReportlabTemplate — footnotes", () => {
     );
     expect(result.code).toContain("*1 本体価格は税抜表示です");
     expect(result.code).not.toContain("{#");
-    // Python 側に脚注専用のロジックを複製しない（採番・注記合成は core 側で解決済み）
+    // Don't duplicate footnote-specific logic on the Python side (numbering and note composition are already resolved on the core side)
     expect(result.code).not.toContain("footnote");
     expect(result.code).not.toContain("_bind_str(");
     expect(result.code).not.toContain("_interpolate(");

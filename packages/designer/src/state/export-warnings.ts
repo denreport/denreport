@@ -1,6 +1,6 @@
 import type { CompatFinding, CompatTargetId } from "@denreport/core";
 
-/** UI で選べる書き出しターゲットの全量。表示順もこの並び */
+/** The full set of export targets selectable in the UI. This order is also the display order */
 export const EXPORT_TARGET_IDS: readonly CompatTargetId[] = [
   "pdfme",
   "reportlab",
@@ -8,11 +8,11 @@ export const EXPORT_TARGET_IDS: readonly CompatTargetId[] = [
 
 export interface CompatWarningGroup {
   readonly level: "approximated" | "unsupported";
-  /** グループのキー。マトリクスの平易文そのまま */
+  /** The group's key. The matrix's plain-language text as-is */
   readonly userMessage: string;
-  /** findings の出現順（= 文書順）・重複なし */
+  /** In the order findings appear (= document order), deduplicated */
   readonly elementIds: readonly string[];
-  /** グループ内の判定件数（属性判定を含む延べ数） */
+  /** The number of findings within the group (a total count including attribute-level findings) */
   readonly findingCount: number;
 }
 
@@ -24,8 +24,8 @@ interface MutableGroup {
   findingCount: number;
 }
 
-/** (level, userMessage) でグループ化する。unsupported のグループを先に、
-    同レベル内はグループの初出順（= 文書順）に並べる */
+/** Groups by (level, userMessage). unsupported groups come first, and within the same level,
+    groups are ordered by first appearance (= document order) */
 export function groupCompatFindings(
   findings: readonly CompatFinding[],
 ): readonly CompatWarningGroup[] {

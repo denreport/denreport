@@ -28,7 +28,7 @@ import { useEditorState } from "../useEditorState";
 import { FootnotesSection } from "./FootnotesSection";
 import { NumberField, SelectField, TextField } from "./fields";
 
-/** どのプリセットとも寸法が一致しないときの select 表示値 */
+/** Select display value when the dimensions don't match any preset */
 const CUSTOM_PAPER_PRESET = "custom";
 
 const FONT_SLOTS: readonly IrFontSlot[] = [

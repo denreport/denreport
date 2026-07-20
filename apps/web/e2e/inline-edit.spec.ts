@@ -15,8 +15,8 @@ test("text 要素のダブルクリック編集は blur で確定し、Ctrl+Z 1�
   await expect(editor).toHaveValue("text1");
   await editor.fill("新しい文言");
 
-  // 余白（紙の外側の padding）をクリックして blur → 確定。paper のポインタ処理を
-  // 経由しないため選択状態は変わらない
+  // Click the margin (padding outside the paper) to blur → commit. Since this doesn't go
+  // through paper's pointer handling, the selection state doesn't change
   await page.locator(".apx-canvas-content").click({ position: { x: 2, y: 2 } });
   await expect(editor).toBeHidden();
   await expect(textEl).toHaveText("新しい文言");
@@ -26,7 +26,7 @@ test("text 要素のダブルクリック編集は blur で確定し、Ctrl+Z 1�
       .getByLabel("テキスト", { exact: true }),
   ).toHaveValue("新しい文言");
 
-  // レイアウト内へフォーカスを戻す（選択済み要素の再クリックは選択・文書を変えない）
+  // Return focus into the layout (re-clicking an already-selected element doesn't change the selection or the document)
   await textEl.click();
   await page.keyboard.press("Control+z");
   await expect(textEl).toHaveText("text1");

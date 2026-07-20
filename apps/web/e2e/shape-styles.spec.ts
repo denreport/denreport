@@ -47,7 +47,8 @@ test("矩形の角丸・破線・塗りがプレビューの SVG 属性と IR �
   await preview.getByRole("button", { name: "閉じる" }).click();
   await expect(preview).toBeHidden();
 
-  // 角丸と非実線の併用は禁止（M17）のため、角丸を戻してから線種を切り替える
+  // Combining rounded corners with a non-solid line style is forbidden (M17),
+  // so reset the corner radius before switching the line style
   await commitField(props.getByLabel("角丸半径"), "0");
   await props.getByLabel("線種").selectOption("dashed");
 

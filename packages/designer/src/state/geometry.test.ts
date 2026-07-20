@@ -87,11 +87,11 @@ describe("layoutDocument: flex", () => {
   it("入れ子コンテナの箱: 導出寸法（幅 10+1+0、高さ max(8,12)）と親内の配置", () => {
     const views = layoutDocument(makeDocument([NESTED_FLEX]), "first");
     const inner = views.find((v) => v.id === "inner");
-    // 内容高 = 6 + 2 + 12 = 20、主軸 50 の center → オフセット 15
+    // content height = 6 + 2 + 12 = 20, center within main axis 50 -> offset 15
     expect(inner?.box.w).toBeCloseTo(11, 10);
     expect(inner?.box.h).toBeCloseTo(12, 10);
     expect(inner?.box.y).toBeCloseTo(40 + 15 + 6 + 2, 10);
-    // 交差軸 center: (60 - 11) / 2
+    // cross axis center: (60 - 11) / 2
     expect(inner?.box.x).toBeCloseTo(20 + 24.5, 10);
     expect(inner?.parentFlexId).toBe("outer");
     expect(inner?.childIndex).toBe(1);
@@ -127,7 +127,7 @@ describe("layoutDocument: table", () => {
   it("first 文脈: y 起点・幅 Σ列幅・min(minRows, k_first) 行", () => {
     const views = layoutDocument(makeDocument([TABLE]), "first");
     const view = views.find((v) => v.id === "items");
-    // k_first = floor((240-90-9)/9) = 16 → 行数は minRows の 10
+    // k_first = floor((240-90-9)/9) = 16 -> the row count is minRows's 10
     expect(view?.box).toEqual({ x: 15, y: 90, w: 125, h: 9 + 10 * 9 });
     expect(view?.pages).toBeNull();
   });
@@ -183,13 +183,13 @@ describe("flexMainContentSize", () => {
     if (NESTED_FLEX.type !== "flex") {
       throw new Error("フィクスチャが flex でない");
     }
-    // outer(column): 6 + 2 + 12（inner の導出高） = 20
+    // outer(column): 6 + 2 + 12 (inner's derived height) = 20
     expect(flexMainContentSize(NESTED_FLEX)).toBeCloseTo(20, 10);
     const inner = NESTED_FLEX.children[1];
     if (inner?.type !== "flex") {
       throw new Error("フィクスチャに入れ子 flex がない");
     }
-    // inner(row): 10 + 1 + 0（垂直 line の幅） = 11
+    // inner(row): 10 + 1 + 0 (the width of the vertical line) = 11
     expect(flexMainContentSize(inner)).toBeCloseTo(11, 10);
   });
 

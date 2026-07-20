@@ -10,7 +10,7 @@ describe("triggerDownload", () => {
   it("a[download] を生成して click し、Blob URL を revoke する", () => {
     const createObjectURL = vi.fn((_blob: Blob) => "blob:denreport-test");
     const revokeObjectURL = vi.fn();
-    // jsdom の URL には createObjectURL / revokeObjectURL が無いためスタブする
+    // jsdom's URL lacks createObjectURL / revokeObjectURL, so stub it
     vi.stubGlobal("URL", { createObjectURL, revokeObjectURL });
     const clicked: HTMLAnchorElement[] = [];
     vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (

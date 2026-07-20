@@ -101,7 +101,7 @@ describe.skipIf(reportlabPdfDir === undefined || reportlabPdfDir === "")(
     const MM_PER_PT = 25.4 / 72;
     const EMBEDDED_ASCENT_PER_EM = 1.16;
 
-    // IR の rotate（時計回り・外接箱中心）で回転したテキストの、規範ベースライン原点の写像先
+    // Where the normative baseline origin maps to for text rotated by the IR's rotate (clockwise, about the bounding box center)
     function rotatedBaselineOrigin(
       el: { x: number; y: number; w: number; h: number },
       fontSize: number,

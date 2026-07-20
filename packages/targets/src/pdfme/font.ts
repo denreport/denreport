@@ -5,9 +5,9 @@ import { FONT_SLOTS } from "../fonts/set";
 /** A single pdfme font map entry. pdfme requires exactly one fallback entry per map. */
 export interface PdfmeFontEntry {
   readonly data: Uint8Array;
-  // pdfme は fallback: true のエントリをちょうど1つ要求する（regular のみ true）
+  // pdfme requires exactly one entry with fallback: true (only regular is true)
   readonly fallback: boolean;
-  // 省略時は pdfme の既定（サブセット埋め込み）。false のときのみ出力する
+  // When omitted, pdfme's default (subset embedding) applies. Only emitted when false.
   readonly subset?: false;
 }
 
@@ -30,7 +30,8 @@ export function buildPdfmeFontMap(
     const name = font[slot];
     const data = fonts[slot];
     if (name === undefined || data === undefined) continue;
-    // 同一論理名が複数スロットに現れた場合は先勝ち（regular の fallback を上書きで失わない）
+    // First occurrence wins when the same logical name appears in multiple
+    // slots (so regular's fallback isn't lost to an overwrite).
     if (name in map) continue;
     map[name] =
       subset === false
