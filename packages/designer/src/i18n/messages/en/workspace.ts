@@ -1,6 +1,6 @@
 export const workspaceEn = {
   canvas: {
-    editPage: "Edit page",
+    editPage: "Editing page",
     pageContext: "Page context",
     pageContextFirst: "Page 1",
     pageContextRest: "Continuation pages",
