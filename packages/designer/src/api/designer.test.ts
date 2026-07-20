@@ -675,27 +675,23 @@ describe("保存ボタンと onSaveRequest", () => {
 });
 
 describe("テーマトグル", () => {
-  it("トグルで data-theme と aria-pressed が裏返り、auto から明示テーマに移る", async () => {
+  it("その他の操作メニューのテーマ項目で data-theme が裏返り、auto から明示テーマに移る", async () => {
     const { container } = mount();
     const rootEl = container.querySelector(".dr-designer");
     expect(rootEl?.getAttribute("data-theme")).toBe("light");
 
-    const toggle = await toolbarButton(container, "テーマ");
-    expect(toggle.getAttribute("aria-pressed")).toBe("false");
-
-    click(toggle);
+    click(await toolbarButton(container, "その他の操作"));
+    click(await toolbarButton(container, "テーマを切り替え（現在: ライト）"));
     // If it stayed on auto it would resolve to light (the matchMedia stub always mismatches),
     // so becoming dark is itself evidence that it moved to an explicit theme
-    expect(rootEl?.getAttribute("data-theme")).toBe("dark");
     await vi.waitFor(() => {
-      expect(toggle.getAttribute("aria-pressed")).toBe("true");
-      expect(toggle.classList.contains("is-on")).toBe(true);
+      expect(rootEl?.getAttribute("data-theme")).toBe("dark");
     });
 
-    click(toggle);
-    expect(rootEl?.getAttribute("data-theme")).toBe("light");
+    click(await toolbarButton(container, "その他の操作"));
+    click(await toolbarButton(container, "テーマを切り替え（現在: ダーク）"));
     await vi.waitFor(() => {
-      expect(toggle.getAttribute("aria-pressed")).toBe("false");
+      expect(rootEl?.getAttribute("data-theme")).toBe("light");
     });
   });
 });

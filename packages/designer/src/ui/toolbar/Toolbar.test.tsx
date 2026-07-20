@@ -97,34 +97,30 @@ describe("Toolbar", () => {
     expect(chrome.requestSave).toHaveBeenCalledOnce();
   });
 
-  it("テーマボタンの aria-pressed と is-on は resolvedTheme に追従する", async () => {
-    await renderToolbar(makeChrome({ resolvedTheme: "light" }));
-    const light = buttonByText("テーマ");
-    expect(light.getAttribute("aria-pressed")).toBe("false");
-    expect(light.classList.contains("is-on")).toBe(false);
-    expect(light.title).toBe("テーマを切り替え（現在: ライト）");
-    const lightSvg = light.querySelector("svg");
-    expect(lightSvg?.getAttribute("aria-hidden")).toBe("true");
-    expect(light.querySelectorAll("svg")).toHaveLength(1);
-
+  it("その他の操作ボタンでメニューが開き、resolvedTheme に応じたテーマ項目が表示される", async () => {
     await renderToolbar(makeChrome({ resolvedTheme: "dark" }));
+    const trigger = buttonByText("その他の操作");
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    click(trigger);
     await vi.waitFor(() => {
-      const dark = buttonByText("テーマ");
-      expect(dark.getAttribute("aria-pressed")).toBe("true");
-      expect(dark.classList.contains("is-on")).toBe(true);
-      expect(dark.title).toBe("テーマを切り替え（現在: ダーク）");
+      expect(trigger.getAttribute("aria-expanded")).toBe("true");
     });
-    const dark = buttonByText("テーマ");
-    const darkSvg = dark.querySelector("svg");
-    expect(darkSvg?.getAttribute("aria-hidden")).toBe("true");
-    expect(dark.querySelectorAll("svg")).toHaveLength(1);
+    const themeItem = buttonByText("テーマを切り替え（現在: ダーク）");
+    expect(themeItem.getAttribute("role")).toBe("menuitem");
   });
 
-  it("テーマクリックで chrome.toggleTheme が呼ばれる", async () => {
+  it("テーマ項目のクリックで chrome.toggleTheme が呼ばれ、メニューが閉じる", async () => {
     const chrome = makeChrome();
     await renderToolbar(chrome);
-    click(buttonByText("テーマ"));
+    click(buttonByText("その他の操作"));
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="menu"]')).not.toBeNull();
+    });
+    click(buttonByText("テーマを切り替え（現在: ライト）"));
     expect(chrome.toggleTheme).toHaveBeenCalledOnce();
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="menu"]')).toBeNull();
+    });
   });
 
   it("プレビュークリックで onPreview が1回呼ばれる", async () => {
@@ -159,7 +155,7 @@ describe("Toolbar", () => {
     expect(onManageStyles).toHaveBeenCalledOnce();
   });
 
-  it("ショートカット一覧クリックで onShowShortcuts が1回呼ばれる", async () => {
+  it("ショートカット項目のクリックで onShowShortcuts が1回呼ばれる", async () => {
     const onShowShortcuts = vi.fn();
     await renderToolbar(
       makeChrome(),
@@ -168,6 +164,10 @@ describe("Toolbar", () => {
       new EditorStore(BLANK),
       onShowShortcuts,
     );
+    click(buttonByText("その他の操作"));
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="menu"]')).not.toBeNull();
+    });
     click(buttonByText("ショートカット一覧"));
     expect(onShowShortcuts).toHaveBeenCalledOnce();
   });
@@ -308,12 +308,38 @@ describe("Toolbar", () => {
     expect(onToggleProps).toHaveBeenCalledOnce();
   });
 
-  it("言語ボタンは chrome.locale を表示し、クリックで toggleLocale が呼ばれる", async () => {
-    const chrome = makeChrome({ locale: "en" });
+  it("Esc でメニューが閉じ、トリガーへフォーカスが戻る", async () => {
+    await renderToolbar(makeChrome());
+    const trigger = buttonByText("その他の操作");
+    click(trigger);
+    const menu = await vi.waitFor(() => {
+      const el = container.querySelector('[role="menu"]');
+      if (el === null) {
+        throw new Error("メニューが未描画");
+      }
+      return el;
+    });
+    menu.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="menu"]')).toBeNull();
+      expect(document.activeElement).toBe(trigger);
+    });
+  });
+
+  it("言語項目のクリックで toggleLocale が呼ばれる", async () => {
+    const chrome = makeChrome();
     await renderToolbar(chrome);
-    const button = buttonByText("言語");
-    expect(button.textContent).toBe("EN");
-    click(button);
+    click(buttonByText("その他の操作"));
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="menu"]')).not.toBeNull();
+    });
+    click(buttonByText("言語を切り替え（現在: 日本語）"));
     expect(chrome.toggleLocale).toHaveBeenCalledOnce();
   });
 

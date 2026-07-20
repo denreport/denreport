@@ -1,6 +1,7 @@
 import type { CompatTargetId } from "@denreport/core";
 import { COMPAT_MATRICES } from "@denreport/core";
 import type { ReactNode } from "react";
+import { useRef, useState } from "react";
 import type { DesignerChrome } from "../../api/designer";
 import { useMessages } from "../../i18n/context";
 import { EXPORT_TARGET_IDS } from "../../state/export-warnings";
@@ -8,6 +9,8 @@ import type { EditorStore } from "../../state/store";
 import { useEditorState } from "../useEditorState";
 import { BrandLogo } from "./BrandLogo";
 import { OpenIrButton } from "./OpenIrButton";
+import type { ToolbarMenuItem } from "./ToolbarMenu";
+import { ToolbarMenu } from "./ToolbarMenu";
 
 export function Toolbar(props: {
   readonly store: EditorStore;
@@ -36,6 +39,28 @@ export function Toolbar(props: {
   const state = useEditorState(store);
   const m = useMessages();
   const isDark = chrome.resolvedTheme === "dark";
+  const moreButtonRef = useRef<HTMLButtonElement | null>(null);
+  const [moreMenu, setMoreMenu] = useState<{
+    readonly x: number;
+    readonly y: number;
+  } | null>(null);
+  const closeMoreMenu = (): void => {
+    setMoreMenu(null);
+    moreButtonRef.current?.focus();
+  };
+  const moreMenuItems: readonly ToolbarMenuItem[] = [
+    {
+      id: "theme",
+      label: m.toolbar.themeTitle(isDark),
+      onSelect: chrome.toggleTheme,
+    },
+    {
+      id: "locale",
+      label: m.toolbar.localeTitle,
+      onSelect: chrome.toggleLocale,
+    },
+    { id: "shortcuts", label: m.toolbar.shortcuts, onSelect: onShowShortcuts },
+  ];
   return (
     <header className="dr-toolbar">
       <button
@@ -112,66 +137,45 @@ export function Toolbar(props: {
       </fieldset>
       <span className="dr-toolbar-spacer" />
       <button
-        type="button"
-        className={`dr-tbtn${isDark ? " is-on" : ""}`}
-        aria-pressed={isDark}
-        aria-label={m.toolbar.theme}
-        title={m.toolbar.themeTitle(isDark)}
-        onClick={chrome.toggleTheme}
-      >
-        {isDark ? (
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path
-              strokeWidth="1.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M13.5 9.7A6 6 0 0 1 6.3 2.5a6 6 0 1 0 7.2 7.2z"
-            />
-          </svg>
-        ) : (
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 16 16"
-            fill="none"
-            stroke="currentColor"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <circle cx="8" cy="8" r="3" strokeWidth="1.3" />
-            <path
-              strokeWidth="1.3"
-              strokeLinecap="round"
-              d="M8 1v1.5M8 13.5V15M15 8h-1.5M2.5 8H1M12.9 3.1l-1.1 1.1M4.2 11.8l-1.1 1.1M12.9 12.9l-1.1-1.1M4.2 4.2 3.1 3.1"
-            />
-          </svg>
-        )}
-      </button>
-      <button
+        ref={moreButtonRef}
         type="button"
         className="dr-tbtn"
-        aria-label={m.toolbar.locale}
-        title={m.toolbar.localeTitle}
-        onClick={chrome.toggleLocale}
+        aria-label={m.toolbar.moreOptions}
+        aria-haspopup="menu"
+        aria-expanded={moreMenu !== null}
+        onClick={() => {
+          if (moreMenu !== null) {
+            closeMoreMenu();
+            return;
+          }
+          const rect = moreButtonRef.current?.getBoundingClientRect();
+          if (rect === undefined) {
+            return;
+          }
+          setMoreMenu({ x: rect.left, y: rect.bottom + 4 });
+        }}
       >
-        {chrome.locale === "ja" ? "JA" : "EN"}
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="currentColor"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <circle cx="3.5" cy="8" r="1.4" />
+          <circle cx="8" cy="8" r="1.4" />
+          <circle cx="12.5" cy="8" r="1.4" />
+        </svg>
       </button>
-      <button
-        type="button"
-        className="dr-tbtn"
-        aria-label={m.toolbar.shortcuts}
-        onClick={onShowShortcuts}
-      >
-        ?
-      </button>
+      {moreMenu !== null && (
+        <ToolbarMenu
+          x={moreMenu.x}
+          y={moreMenu.y}
+          items={moreMenuItems}
+          onClose={closeMoreMenu}
+        />
+      )}
       <span className="dr-toolbar-sep" />
       <OpenIrButton dirty={state.dirty} importIr={chrome.importIr} />
       <button

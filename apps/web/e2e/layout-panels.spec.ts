@@ -86,6 +86,47 @@ test("右パネルを閉じてもキャンバスは幅を保って表示され�
   ).toBeVisible();
 });
 
+test("960px で上部ツールバーに横スクロールが出ず、右パネルトグルがクリックできる", async ({
+  page,
+}) => {
+  const overflowing = await page.evaluate(() => {
+    const el = document.querySelector(".dr-toolbar");
+    return el !== null && el.scrollWidth > el.clientWidth;
+  });
+  expect(overflowing).toBe(false);
+
+  const toggleRight = page.getByRole("button", { name: "右パネルを開閉" });
+  await expect(toggleRight).toBeVisible();
+  await toggleRight.click();
+  await expect(
+    page.getByRole("complementary", { name: "プロパティ" }),
+  ).toBeHidden();
+});
+
+test("960px でキャンバスバーの封筒窓ガイド select が潰れず表示テキストを保つ", async ({
+  page,
+}) => {
+  const envelopeSelect = page.getByRole("combobox", { name: "封筒窓ガイド" });
+  const box = await envelopeSelect.boundingBox();
+  if (box === null) {
+    throw new Error("封筒窓ガイド select が表示されていません");
+  }
+  // Before the min-width fix, this collapsed to a few px wide and the label disappeared entirely
+  expect(box.width).toBeGreaterThan(60);
+});
+
+test("その他の操作メニューが開閉できる", async ({ page }) => {
+  const trigger = page.getByRole("button", { name: "その他の操作" });
+  await trigger.click();
+  const menu = page.getByRole("menu");
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole("menuitem")).toHaveCount(3);
+
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
 test("スプリッターをキーボードで操作するとパレット領域の高さが減る", async ({
   page,
 }) => {

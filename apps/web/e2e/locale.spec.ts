@@ -2,7 +2,10 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 async function switchToEnglish(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "言語" }).click();
+  await page.getByRole("button", { name: "その他の操作" }).click();
+  await page
+    .getByRole("menuitem", { name: "言語を切り替え（現在: 日本語）" })
+    .click();
   await expect(page).toHaveTitle("Report Designer");
 }
 
@@ -44,7 +47,10 @@ test("en から ja へ戻すと日本語表示に復帰し、それもリロー�
     page.getByRole("navigation", { name: "Element palette" }),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "Language" }).click();
+  await page.getByRole("button", { name: "More options" }).click();
+  await page
+    .getByRole("menuitem", { name: "Switch language (currently: English)" })
+    .click();
   await expect(page).toHaveTitle("帳票デザイナー");
   expect(await page.evaluate(() => document.documentElement.lang)).toBe("ja");
   await expect(page.getByRole("button", { name: "元に戻す" })).toBeVisible();

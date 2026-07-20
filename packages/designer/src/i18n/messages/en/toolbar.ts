@@ -19,6 +19,7 @@ export const toolbarEn = {
     locale: "Language",
     localeTitle: "Switch language (currently: English)",
     shortcuts: "Keyboard shortcuts",
+    moreOptions: "More options",
     open: "Open",
     save: "Save",
     manageStyles: "Styles",

@@ -19,6 +19,7 @@ export const toolbarJa = {
     locale: "言語",
     localeTitle: "言語を切り替え（現在: 日本語）",
     shortcuts: "ショートカット一覧",
+    moreOptions: "その他の操作",
     open: "開く",
     save: "保存",
     manageStyles: "スタイル",
