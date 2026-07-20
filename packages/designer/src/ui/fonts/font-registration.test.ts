@@ -36,6 +36,7 @@ describe("buildRegisteredFont", () => {
       EMBEDDED_FONT,
       { fullName: "Noto Sans JP" },
       ja.fonts,
+      "ja",
     );
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
@@ -50,6 +51,7 @@ describe("buildRegisteredFont", () => {
       syntheticCff(),
       { fullName: "Test CFF" },
       ja.fonts,
+      "ja",
     );
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");
@@ -67,6 +69,7 @@ describe("buildRegisteredFont", () => {
       ttfMissingMetrics(),
       { fullName: "Broken" },
       ja.fonts,
+      "ja",
     );
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");

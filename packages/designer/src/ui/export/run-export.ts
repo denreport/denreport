@@ -10,6 +10,7 @@ import {
   exportReportlab,
   exportReportlabTemplate,
 } from "@denreport/targets";
+import type { Locale } from "../../i18n/locale";
 import type { Messages } from "../../i18n/messages";
 import { buildZip } from "./zip";
 
@@ -91,9 +92,10 @@ export function buildPdfmeArtifact(
   document: IrDocument,
   data: IrData,
   fonts: FontSetData,
+  locale: Locale,
   fontSubset?: boolean,
 ): BuildPdfmeArtifactResult {
-  const result = exportPdfme(document, data, fonts);
+  const result = exportPdfme(document, data, fonts, { locale });
   if (!result.ok) {
     return { ok: false, errors: result.errors, fontIssues: result.fontIssues };
   }
@@ -121,12 +123,14 @@ export function buildPdfmeArtifact(
 export function buildPdfmeTemplateArtifact(
   document: IrDocument,
   fonts: FontSetData,
+  locale: Locale,
   fontSubset?: boolean,
 ): BuildPdfmeArtifactResult {
   return buildPdfmeArtifact(
     document,
     emptyDataFor(document),
     fonts,
+    locale,
     fontSubset,
   );
 }
@@ -176,8 +180,11 @@ export function buildReportlabArtifact(
   document: IrDocument,
   data: IrData,
   fonts: FontSetData,
+  locale: Locale,
 ): BuildReportlabArtifactResult {
-  return bundleReportlabResult(exportReportlab(document, data, fonts));
+  return bundleReportlabResult(
+    exportReportlab(document, data, fonts, { locale }),
+  );
 }
 
 /** サンプルデータ未入力時の ReportLab 書き出し。exportReportlabTemplate を同じ zip 構成で包む。
@@ -185,6 +192,9 @@ export function buildReportlabArtifact(
 export function buildReportlabTemplateArtifact(
   document: IrDocument,
   fonts: FontSetData,
+  locale: Locale,
 ): BuildReportlabArtifactResult {
-  return bundleReportlabResult(exportReportlabTemplate(document, fonts));
+  return bundleReportlabResult(
+    exportReportlabTemplate(document, fonts, { locale }),
+  );
 }

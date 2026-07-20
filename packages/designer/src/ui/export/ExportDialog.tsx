@@ -5,7 +5,7 @@ import { EMBEDDED_BOLD_FONT_URL, EMBEDDED_FONT_URL } from "@denreport/targets";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 import { triggerDownload } from "../../api/download";
-import { useMessages } from "../../i18n/context";
+import { useLocale, useMessages } from "../../i18n/context";
 import {
   EXPORT_TARGET_IDS,
   groupCompatFindings,
@@ -83,6 +83,7 @@ export function ExportDialog(props: {
 }): ReactNode {
   const { store, onClose, onReveal } = props;
   const m = useMessages();
+  const locale = useLocale();
   const state = useEditorState(store);
   const target = state.selectedExportTarget;
   const [run, setRun] = useState<RunState>(RUN_IDLE);
@@ -90,8 +91,10 @@ export function ExportDialog(props: {
 
   const groups = useMemo(
     () =>
-      groupCompatFindings(checkCompat(state.document, COMPAT_MATRICES[target])),
-    [state.document, target],
+      groupCompatFindings(
+        checkCompat(state.document, COMPAT_MATRICES[target], { locale }),
+      ),
+    [state.document, target, locale],
   );
   const findingTotal = groups.reduce(
     (total, group) => total + group.findingCount,
@@ -154,17 +157,24 @@ export function ExportDialog(props: {
             ? buildPdfmeTemplateArtifact(
                 current.document,
                 fonts,
+                locale,
                 !fullEmbedFont,
               )
             : buildPdfmeArtifact(
                 current.document,
                 parsed.data,
                 fonts,
+                locale,
                 !fullEmbedFont,
               )
           : parsed.mode === "template"
-            ? buildReportlabTemplateArtifact(current.document, fonts)
-            : buildReportlabArtifact(current.document, parsed.data, fonts);
+            ? buildReportlabTemplateArtifact(current.document, fonts, locale)
+            : buildReportlabArtifact(
+                current.document,
+                parsed.data,
+                fonts,
+                locale,
+              );
       if (!built.ok) {
         setRun({
           kind: "export-error",

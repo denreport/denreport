@@ -107,6 +107,34 @@ describe("EditorStore", () => {
     expect(store.getState().validationErrors).toEqual([]);
   });
 
+  it("setLocale は現在の文書で検証をやり直し、購読者へ通知する", () => {
+    const store = new EditorStore(makeDocument([textElement("t1", 500)]));
+    let notified = 0;
+    store.subscribe(() => {
+      notified += 1;
+    });
+    const jaMessage = store.getState().validationErrors[0]?.message;
+
+    store.setLocale("en");
+    expect(notified).toBe(1);
+    const enMessage = store.getState().validationErrors[0]?.message;
+    expect(enMessage).toBeDefined();
+    expect(enMessage).not.toBe(jaMessage);
+
+    store.setLocale("en");
+    expect(notified).toBe(1);
+  });
+
+  it("setLocale 後の commit も切り替えた言語で検証する", () => {
+    const store = new EditorStore(makeDocument());
+    store.setLocale("en");
+    store.commit(makeDocument([textElement("t1", 500)]));
+    const enMessage = store.getState().validationErrors[0]?.message;
+
+    const jaStore = new EditorStore(makeDocument([textElement("t1", 500)]));
+    expect(enMessage).not.toBe(jaStore.getState().validationErrors[0]?.message);
+  });
+
   it("commit / replaceDocument / undo で validationWarnings が再計算される", () => {
     const store = new EditorStore(makeInvoiceDocument());
     expect(store.getState().validationWarnings.length).toBe(6);
