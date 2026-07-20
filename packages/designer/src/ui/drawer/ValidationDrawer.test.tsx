@@ -18,7 +18,7 @@ function makeDocument(
   return {
     version: "1.0",
     page,
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -42,6 +42,19 @@ function text(id: string, overrides: Partial<IrElement> = {}): IrElement {
     lineHeight: 1.25,
     ...overrides,
   } as IrElement;
+}
+
+function imageEl(id: string): IrElement {
+  return {
+    type: "image",
+    id,
+    x: 10,
+    y: 30,
+    pages: "first",
+    w: 40,
+    h: 20,
+    src: "data:image/png;base64,AAAA",
+  };
 }
 
 let container: HTMLElement;
@@ -73,7 +86,7 @@ function click(el: Element): void {
 }
 
 function openDrawer(): void {
-  const bar = container.querySelector(".apx-drawer-bar");
+  const bar = container.querySelector(".dr-drawer-bar");
   if (bar === null) {
     throw new Error("ドロワーバーがない");
   }
@@ -82,12 +95,14 @@ function openDrawer(): void {
 
 describe("折畳バー", () => {
   it("エラーなしでは ✓ 問題なし を表示する", () => {
-    const store = new EditorStore(makeDocument([text("t1")]));
+    // text elements always get an "approximated" note for vertical overflow behavior,
+    // so use a document with no elements to also get zero compat findings
+    const store = new EditorStore(makeDocument([]));
     render(<ValidationDrawer store={store} onReveal={() => {}} />);
-    expect(container.querySelector(".apx-badge-ok")?.textContent).toContain(
+    expect(container.querySelector(".dr-badge-ok")?.textContent).toContain(
       "問題なし",
     );
-    expect(container.querySelector(".apx-drawer-body")).toBeNull();
+    expect(container.querySelector(".dr-drawer-body")).toBeNull();
   });
 
   it("エラーがあると件数バッジに切り替わり、展開で一覧が出る", () => {
@@ -95,9 +110,9 @@ describe("折畳バー", () => {
       makeDocument([text("t1", { fontSize: 300 })]),
     );
     render(<ValidationDrawer store={store} onReveal={() => {}} />);
-    expect(container.querySelector(".apx-badge-err")?.textContent).toBe("1");
+    expect(container.querySelector(".dr-badge-err")?.textContent).toBe("1");
     openDrawer();
-    const row = container.querySelector(".apx-verr");
+    const row = container.querySelector(".dr-verr");
     expect(row?.textContent).toContain("M04");
     expect(row?.textContent).toContain("elements[0].fontSize");
   });
@@ -105,14 +120,23 @@ describe("折畳バー", () => {
   it("警告のみのときは警告バッジと一覧を表示する", () => {
     const store = new EditorStore(makeInvoiceDocument([]));
     render(<ValidationDrawer store={store} onReveal={() => {}} />);
-    expect(container.querySelector(".apx-badge-warn")?.textContent).toBe("6");
-    expect(container.querySelector(".apx-badge-err")).toBeNull();
+    expect(container.querySelector(".dr-badge-warn")?.textContent).toBe("6");
+    expect(container.querySelector(".dr-badge-err")).toBeNull();
     openDrawer();
-    const rows = container.querySelectorAll(".apx-verr");
+    const rows = container.querySelectorAll(".dr-verr");
     expect(rows).toHaveLength(6);
     expect([...rows].every((row) => row.textContent?.includes("Q01"))).toBe(
       true,
     );
+  });
+
+  it("検証エラー・警告がなくても互換性判定があれば問題なしにせず件数を出す", () => {
+    const store = new EditorStore(makeDocument([imageEl("img1")]));
+    store.setSelectedExportTarget("reportlab");
+    render(<ValidationDrawer store={store} onReveal={() => {}} />);
+    expect(container.querySelector(".dr-badge-ok")).toBeNull();
+    expect(container.querySelector(".dr-badge-warn")?.textContent).toBe("1");
+    expect(container.querySelector(".dr-drawer-body")).toBeNull();
   });
 
   it("エラーと警告が混在するとき、エラーバッジの件数に警告は混ざらず両方の一覧が並ぶ", () => {
@@ -120,10 +144,10 @@ describe("折畳バー", () => {
       makeInvoiceDocument([text("t1", { fontSize: 300 })]),
     );
     render(<ValidationDrawer store={store} onReveal={() => {}} />);
-    expect(container.querySelector(".apx-badge-err")?.textContent).toBe("1");
-    expect(container.querySelector(".apx-badge-warn")).toBeNull();
+    expect(container.querySelector(".dr-badge-err")?.textContent).toBe("1");
+    expect(container.querySelector(".dr-badge-warn")).toBeNull();
     openDrawer();
-    const lists = container.querySelectorAll(".apx-verr-list");
+    const lists = container.querySelectorAll(".dr-verr-list");
     expect(lists).toHaveLength(2);
     expect(lists[0]?.textContent).toContain("M04");
     expect(lists[1]?.textContent).toContain("Q01");
@@ -138,7 +162,7 @@ describe("行クリックのナビゲーション", () => {
     const onReveal = vi.fn();
     render(<ValidationDrawer store={store} onReveal={onReveal} />);
     openDrawer();
-    const row = container.querySelector(".apx-verr");
+    const row = container.querySelector(".dr-verr");
     if (row === null) {
       throw new Error("エラー行がない");
     }
@@ -153,7 +177,7 @@ describe("行クリックのナビゲーション", () => {
     );
     render(<ValidationDrawer store={store} onReveal={() => {}} />);
     openDrawer();
-    const row = container.querySelector(".apx-verr");
+    const row = container.querySelector(".dr-verr");
     if (row === null) {
       throw new Error("エラー行がない");
     }
@@ -169,7 +193,7 @@ describe("行クリックのナビゲーション", () => {
     const onReveal = vi.fn();
     render(<ValidationDrawer store={store} onReveal={onReveal} />);
     openDrawer();
-    const row = container.querySelector(".apx-verr");
+    const row = container.querySelector(".dr-verr");
     if (row === null) {
       throw new Error("エラー行がない");
     }
@@ -207,12 +231,61 @@ describe("行クリックのナビゲーション", () => {
     const onReveal = vi.fn();
     render(<ValidationDrawer store={store} onReveal={onReveal} />);
     openDrawer();
-    const row = container.querySelector(".apx-verr");
+    const row = container.querySelector(".dr-verr");
     if (row === null) {
       throw new Error("エラー行がない");
     }
     click(row);
     expect(store.getState().selection).toEqual(["c1"]);
     expect(onReveal).toHaveBeenCalledExactlyOnceWith("c1");
+  });
+});
+
+describe("書き出し互換性の常時表示", () => {
+  it("既定ターゲット（pdfme）で問題がなければ案内文言を表示する", () => {
+    const store = new EditorStore(makeDocument([imageEl("img1")]));
+    render(<ValidationDrawer store={store} onReveal={() => {}} />);
+    openDrawer();
+    expect(container.querySelector(".dr-warn-card")).toBeNull();
+    expect(container.textContent).toContain(
+      "✓ 選択中のターゲットですべての要素を書き出せます。",
+    );
+  });
+
+  it("選択中ターゲットの互換性判定をカードで表示する", () => {
+    const store = new EditorStore(makeDocument([imageEl("img1")]));
+    store.setSelectedExportTarget("reportlab");
+    render(<ValidationDrawer store={store} onReveal={() => {}} />);
+    openDrawer();
+    const card = container.querySelector(".dr-warn-card");
+    expect(card?.classList.contains("is-approximated")).toBe(true);
+    expect(card?.querySelector(".dr-chip")?.textContent).toBe("img1");
+  });
+
+  it("互換性チップのクリックで該当要素を選択して onReveal を呼ぶ", () => {
+    const store = new EditorStore(makeDocument([imageEl("img1")]));
+    store.setSelectedExportTarget("reportlab");
+    const onReveal = vi.fn();
+    render(<ValidationDrawer store={store} onReveal={onReveal} />);
+    openDrawer();
+    const chip = container.querySelector<HTMLButtonElement>(".dr-chip");
+    if (chip === null) {
+      throw new Error("互換性チップがない");
+    }
+    click(chip);
+    expect(store.getState().selection).toEqual(["img1"]);
+    expect(onReveal).toHaveBeenCalledExactlyOnceWith("img1");
+  });
+
+  it("ターゲット切替で一覧が再計算される", () => {
+    const store = new EditorStore(makeDocument([imageEl("img1")]));
+    render(<ValidationDrawer store={store} onReveal={() => {}} />);
+    openDrawer();
+    expect(container.querySelector(".dr-warn-card")).toBeNull();
+
+    act(() => {
+      store.setSelectedExportTarget("reportlab");
+    });
+    expect(container.querySelector(".dr-warn-card")).not.toBeNull();
   });
 });

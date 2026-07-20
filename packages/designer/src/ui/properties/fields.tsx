@@ -1,35 +1,42 @@
 import type { IrStrokeStyle } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId } from "react";
+import { useMessages } from "../../i18n/context";
+import type { Messages } from "../../i18n/messages";
 import { useDraftValue } from "./useDraftValue";
 
-/** line.strokeStyle・rect.borderStyle 共通の選択肢（表示順は実線→点線→破線→一点鎖線→二点鎖線） */
-export const STROKE_STYLE_OPTIONS: readonly {
-  readonly value: IrStrokeStyle;
-  readonly label: string;
-}[] = [
-  { value: "solid", label: "実線" },
-  { value: "dotted", label: "点線" },
-  { value: "dashed", label: "破線" },
-  { value: "dashdot", label: "一点鎖線" },
-  { value: "dashdotdot", label: "二点鎖線" },
-];
+export type StrokeStyleLabels = Messages["properties"]["fields"]["strokeStyle"];
+
+/** Options shared by line.strokeStyle and rect.borderStyle (display order is solid → dotted → dashed → dashdot → dashdotdot) */
+export function strokeStyleOptions(
+  labels: StrokeStyleLabels,
+): readonly { readonly value: IrStrokeStyle; readonly label: string }[] {
+  return [
+    { value: "solid", label: labels.solid },
+    { value: "dotted", label: labels.dotted },
+    { value: "dashed", label: labels.dashed },
+    { value: "dashdot", label: labels.dashdot },
+    { value: "dashdotdot", label: labels.dashdotdot },
+  ];
+}
 
 export interface NumberFieldProps {
   readonly label: string;
-  /** null: 複数選択で値が混在（空欄 + placeholder「混在」表示） */
+  /** null: values are mixed across a multi-selection (shown as empty + "mixed" placeholder) */
   readonly value: number | null;
-  /** 単位サフィックスの表示のみ（換算はしない） */
-  readonly unit?: "mm" | "pt" | undefined;
-  /** 量子化の刻み: mm / pt = 0.1、lineHeight = 0.01、整数 = 1 */
+  /** Just displays the unit suffix (no conversion) */
+  readonly unit?: "mm" | "pt" | "°" | undefined;
+  /** Quantization step: mm / pt = 0.1, lineHeight = 0.01, integer = 1 */
   readonly precision: number;
-  /** 量子化済みの値のみ渡る。非数値・空文字では呼ばれない。同値抑止は value が混在でないときのみ */
+  /** Only receives quantized values. Not called for non-numeric or empty input. Same-value suppression only applies when value isn't mixed */
   readonly onCommit: (value: number) => void;
   readonly error?: string | undefined;
 }
 
+// Must use ceil (not round): when precision isn't a power of 10 (e.g. 0.05),
+// too few decimal places causes the quantized value to drift on a blur with no actual change
 function decimalsOf(precision: number): number {
-  return Math.max(0, Math.round(Math.log10(1 / precision)));
+  return Math.max(0, Math.ceil(Math.log10(1 / precision)));
 }
 
 function quantize(value: number, precision: number): number {
@@ -39,6 +46,7 @@ function quantize(value: number, precision: number): number {
 
 export function NumberField(props: NumberFieldProps): ReactNode {
   const { label, value, unit, precision, onCommit, error } = props;
+  const m = useMessages();
   const handlers = useDraftValue(
     value === null ? "" : value.toFixed(decimalsOf(precision)),
     (raw) => {
@@ -58,22 +66,22 @@ export function NumberField(props: NumberFieldProps): ReactNode {
   );
   const id = useId();
   return (
-    <div className="apx-frow">
+    <div className="dr-frow">
       <label htmlFor={id}>{label}</label>
-      <span className={`apx-field${error !== undefined ? " is-error" : ""}`}>
+      <span className={`dr-field${error !== undefined ? " is-error" : ""}`}>
         <input
           id={id}
-          className="apx-num"
+          className="dr-num"
           inputMode="decimal"
-          placeholder={value === null ? "混在" : undefined}
+          placeholder={value === null ? m.properties.fields.mixed : undefined}
           value={handlers.draft}
           onChange={(e) => handlers.onChange(e.currentTarget.value)}
           onBlur={handlers.onBlur}
           onKeyDown={handlers.onKeyDown}
         />
-        {unit !== undefined && <span className="apx-unit">{unit}</span>}
+        {unit !== undefined && <span className="dr-unit">{unit}</span>}
       </span>
-      {error !== undefined && <span className="apx-ferr">{error}</span>}
+      {error !== undefined && <span className="dr-ferr">{error}</span>}
     </div>
   );
 }
@@ -82,7 +90,7 @@ export function TextField(props: {
   readonly label: string;
   readonly value: string;
   readonly onCommit: (value: string) => void;
-  /** 識別子（bind・font.name・key）は mono 表示 */
+  /** Identifiers (bind, font.name, key) are shown in mono */
   readonly mono?: boolean | undefined;
   readonly suggestions?: readonly string[] | undefined;
   readonly error?: string | undefined;
@@ -97,12 +105,12 @@ export function TextField(props: {
   const id = useId();
   const listId = `${id}-list`;
   return (
-    <div className="apx-frow">
+    <div className="dr-frow">
       <label htmlFor={id}>{label}</label>
-      <span className={`apx-field${error !== undefined ? " is-error" : ""}`}>
+      <span className={`dr-field${error !== undefined ? " is-error" : ""}`}>
         <input
           id={id}
-          className={mono === true ? "apx-mono" : undefined}
+          className={mono === true ? "dr-mono" : undefined}
           value={handlers.draft}
           list={suggestions !== undefined ? listId : undefined}
           onChange={(e) => handlers.onChange(e.currentTarget.value)}
@@ -117,8 +125,8 @@ export function TextField(props: {
           </datalist>
         )}
       </span>
-      {error !== undefined && <span className="apx-ferr">{error}</span>}
-      {hint !== undefined && <span className="apx-fhint">{hint}</span>}
+      {error !== undefined && <span className="dr-ferr">{error}</span>}
+      {hint !== undefined && <span className="dr-fhint">{hint}</span>}
     </div>
   );
 }
@@ -127,8 +135,10 @@ export function TextAreaField(props: {
   readonly label: string;
   readonly value: string;
   readonly onCommit: (value: string) => void;
+  readonly error?: string | undefined;
+  readonly hint?: string | undefined;
 }): ReactNode {
-  const { label, value, onCommit } = props;
+  const { label, value, onCommit, error, hint } = props;
   const handlers = useDraftValue(value, (raw) => {
     if (raw !== value) {
       onCommit(raw);
@@ -136,9 +146,11 @@ export function TextAreaField(props: {
   });
   const id = useId();
   return (
-    <div className="apx-frow">
+    <div className="dr-frow">
       <label htmlFor={id}>{label}</label>
-      <span className="apx-field apx-field-multi">
+      <span
+        className={`dr-field dr-field-multi${error !== undefined ? " is-error" : ""}`}
+      >
         <textarea
           id={id}
           rows={3}
@@ -148,22 +160,24 @@ export function TextAreaField(props: {
           onKeyDown={handlers.onKeyDown}
         />
       </span>
+      {error !== undefined && <span className="dr-ferr">{error}</span>}
+      {hint !== undefined && <span className="dr-fhint">{hint}</span>}
     </div>
   );
 }
 
-/** enum 属性・モード切替。変更で即 onCommit する */
+/** For enum attributes / mode switches. Calls onCommit immediately on change */
 export function SegmentField<V extends string>(props: {
   readonly label: string;
-  /** null: 複数選択で値が混在（どのボタンも is-active にしない） */
+  /** null: values are mixed across a multi-selection (no button is made is-active) */
   readonly value: V | null;
   readonly options: readonly { readonly value: V; readonly label: string }[];
   readonly onCommit: (value: V) => void;
 }): ReactNode {
   return (
-    <div className="apx-frow">
-      <span className="apx-frow-label">{props.label}</span>
-      <fieldset className="apx-seg" aria-label={props.label}>
+    <div className="dr-frow">
+      <span className="dr-frow-label">{props.label}</span>
+      <fieldset className="dr-seg" aria-label={props.label}>
         {props.options.map((option) => (
           <button
             key={option.value}
@@ -183,7 +197,7 @@ export function SegmentField<V extends string>(props: {
   );
 }
 
-/** 色の編集。allowNone 時は「なし」トグル付きで、なし = null を commit する */
+/** Color editing. When allowNone is set, includes a "none" toggle; none commits null */
 export function ColorField(props: {
   readonly label: string;
   readonly value: string | null;
@@ -192,24 +206,25 @@ export function ColorField(props: {
   readonly onCommit: (value: string | null) => void;
 }): ReactNode {
   const { label, value, allowNone = false, onCommit } = props;
-  const noneLabel = props.noneLabel ?? "なし";
+  const m = useMessages();
+  const noneLabel = props.noneLabel ?? m.properties.fields.none;
   const id = useId();
   const isNone = value === null;
   const swatch = value ?? "#000000";
   return (
-    <div className="apx-frow">
+    <div className="dr-frow">
       <label htmlFor={id}>{label}</label>
-      <span className="apx-field apx-field-color">
+      <span className="dr-field dr-field-color">
         <input
           id={id}
           type="color"
-          className="apx-color-input"
+          className="dr-color-input"
           value={swatch}
           disabled={allowNone && isNone}
           onChange={(e) => onCommit(e.currentTarget.value)}
         />
         {allowNone && (
-          <label className="apx-color-none">
+          <label className="dr-color-none">
             <input
               type="checkbox"
               checked={isNone}
@@ -225,7 +240,7 @@ export function ColorField(props: {
   );
 }
 
-/** ネイティブ select による単一選択（SegmentField は5択で幅超過するため） */
+/** Single selection via a native select (SegmentField would overflow its width with 5 options) */
 export function SelectField<V extends string>(props: {
   readonly label: string;
   readonly value: V;
@@ -235,9 +250,9 @@ export function SelectField<V extends string>(props: {
   const { label, value, options, onCommit } = props;
   const id = useId();
   return (
-    <div className="apx-frow">
+    <div className="dr-frow">
       <label htmlFor={id}>{label}</label>
-      <span className="apx-field">
+      <span className="dr-field">
         <select
           id={id}
           value={value}

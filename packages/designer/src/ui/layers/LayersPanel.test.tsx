@@ -16,7 +16,7 @@ function makeDocument(elements: readonly IrElement[]): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -118,7 +118,7 @@ function click(el: Element): void {
 }
 
 function rowEl(id: string): HTMLElement {
-  const row = container.querySelector(`[data-apx-layer-id="${id}"]`);
+  const row = container.querySelector(`[data-dr-layer-id="${id}"]`);
   if (!(row instanceof HTMLElement)) {
     throw new Error(`行がない: ${id}`);
   }
@@ -126,7 +126,7 @@ function rowEl(id: string): HTMLElement {
 }
 
 function rowMain(id: string): HTMLElement {
-  const main = rowEl(id).querySelector(".apx-layer-main");
+  const main = rowEl(id).querySelector(".dr-layer-main");
   if (!(main instanceof HTMLElement)) {
     throw new Error(`行本体がない: ${id}`);
   }
@@ -139,7 +139,7 @@ describe("ツリー描画", () => {
     render(<LayersPanel store={store} onReveal={() => {}} />);
     for (const id of ["f1", "c1", "f2", "c2", "t1", "tbl1"]) {
       expect(
-        container.querySelector(`[data-apx-layer-id="${id}"]`),
+        container.querySelector(`[data-dr-layer-id="${id}"]`),
       ).not.toBeNull();
     }
   });
@@ -147,25 +147,25 @@ describe("ツリー描画", () => {
   it("flex 行のキャレット操作で子行が消え/現れる", () => {
     const store = makeStore();
     render(<LayersPanel store={store} onReveal={() => {}} />);
-    const caret = rowEl("f1").querySelector(".apx-layer-caret");
+    const caret = rowEl("f1").querySelector(".dr-layer-caret");
     if (caret === null) {
       throw new Error("キャレットがない");
     }
-    expect(container.querySelector('[data-apx-layer-id="c1"]')).not.toBeNull();
+    expect(container.querySelector('[data-dr-layer-id="c1"]')).not.toBeNull();
     click(caret);
-    expect(container.querySelector('[data-apx-layer-id="c1"]')).toBeNull();
+    expect(container.querySelector('[data-dr-layer-id="c1"]')).toBeNull();
     click(caret);
-    expect(container.querySelector('[data-apx-layer-id="c1"]')).not.toBeNull();
+    expect(container.querySelector('[data-dr-layer-id="c1"]')).not.toBeNull();
   });
 
   it("要素追加（commit）で行が増える", () => {
     const store = makeStore([TABLE]);
     render(<LayersPanel store={store} onReveal={() => {}} />);
-    expect(container.querySelectorAll(".apx-layer-row").length).toBe(1);
+    expect(container.querySelectorAll(".dr-layer-row").length).toBe(1);
     act(() => {
       store.commit(addElement(store.getState().document, REST_TEXT));
     });
-    expect(container.querySelectorAll(".apx-layer-row").length).toBe(2);
+    expect(container.querySelectorAll(".dr-layer-row").length).toBe(2);
   });
 });
 
@@ -198,18 +198,18 @@ describe("選択同期", () => {
   it("setSelection で該当行に is-selected が付き、折りたたみ中の親 flex が自動展開される", () => {
     const store = makeStore();
     render(<LayersPanel store={store} onReveal={() => {}} />);
-    const caret = rowEl("f1").querySelector(".apx-layer-caret");
+    const caret = rowEl("f1").querySelector(".dr-layer-caret");
     if (caret === null) {
       throw new Error("キャレットがない");
     }
     click(caret);
-    expect(container.querySelector('[data-apx-layer-id="c1"]')).toBeNull();
+    expect(container.querySelector('[data-dr-layer-id="c1"]')).toBeNull();
 
     act(() => {
       store.setSelection(["c1"]);
     });
     expect(rowEl("c1").className).toContain("is-selected");
-    expect(container.querySelector('[data-apx-layer-id="c1"]')).not.toBeNull();
+    expect(container.querySelector('[data-dr-layer-id="c1"]')).not.toBeNull();
   });
 });
 
@@ -220,13 +220,13 @@ describe("削除", () => {
     act(() => {
       store.setSelection(["c1"]);
     });
-    const del = rowEl("c1").querySelector(".apx-layer-del");
+    const del = rowEl("c1").querySelector(".dr-layer-del");
     if (del === null) {
       throw new Error("削除ボタンがない");
     }
     click(del);
     expect(store.getState().selection).toEqual([]);
-    expect(container.querySelector('[data-apx-layer-id="c1"]')).toBeNull();
+    expect(container.querySelector('[data-dr-layer-id="c1"]')).toBeNull();
     const flex = store
       .getState()
       .document.elements.find((el) => el.id === "f1");

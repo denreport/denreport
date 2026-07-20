@@ -1,9 +1,9 @@
 import type { IrDocument } from "@denreport/core";
 
 export interface ElementGroup {
-  /** "group1" 形式。セッション内一意 */
+  /** "group1" format. Unique within the session */
   readonly id: string;
-  /** トップレベル要素 id のみ。文書に実在しない id を含みうる（遅延解決） */
+  /** Top-level element ids only. May contain ids that don't actually exist in the document (lazily resolved) */
   readonly memberIds: readonly string[];
 }
 
@@ -11,8 +11,8 @@ function topLevelIds(document: IrDocument): ReadonlySet<string> {
   return new Set(document.elements.map((el) => el.id));
 }
 
-/** 現在の document で生きているグループだけを返す。
-    メンバーをトップレベル実在要素に絞り、生存メンバー 2 未満のグループを除く */
+/** Returns only the groups that are alive in the current document.
+    Narrows members to top-level elements that actually exist, and excludes groups with fewer than 2 living members */
 export function livingGroups(
   groups: readonly ElementGroup[],
   document: IrDocument,
@@ -28,7 +28,24 @@ export function livingGroups(
   return living;
 }
 
-/** id が属する生存グループ（なければ null） */
+/** Writes living groups into document for serialization. If there are no living groups, the
+    key is removed entirely (never leaves groups: []) */
+export function embedGroups(
+  document: IrDocument,
+  groups: readonly ElementGroup[],
+): IrDocument {
+  const living = livingGroups(groups, document);
+  if (living.length === 0) {
+    if (document.groups === undefined) {
+      return document;
+    }
+    const { groups: _groups, ...rest } = document;
+    return rest;
+  }
+  return { ...document, groups: living };
+}
+
+/** The living group id belongs to (null if none) */
 export function groupContaining(
   groups: readonly ElementGroup[],
   document: IrDocument,
@@ -42,7 +59,7 @@ export function groupContaining(
   return null;
 }
 
-/** ids をグループ単位に展開した id 集合（重複除去、元の順序を優先し追加分は後置） */
+/** The id set with ids expanded to their group members (deduplicated, original order preserved, additions appended after) */
 export function expandIdsToGroups(
   groups: readonly ElementGroup[],
   document: IrDocument,
@@ -81,8 +98,9 @@ function claimGroupId(groups: readonly ElementGroup[]): string {
   return `group${n}`;
 }
 
-/** memberIds で新グループを作る。既存グループに属すメンバーは旧グループから抜く。
-    id は "group<n>" の最小空き番号（既存リスト基準） */
+/** Creates a new group from memberIds. Members belonging to an existing group are removed
+    from that old group.
+    id is the smallest free "group<n>" number (based on the existing list) */
 export function createGroupFrom(
   groups: readonly ElementGroup[],
   memberIds: readonly string[],
@@ -98,7 +116,7 @@ export function createGroupFrom(
   return [...trimmed, { id, memberIds }];
 }
 
-/** ids と交差するグループを取り除く */
+/** Removes groups that intersect with ids */
 export function dissolveGroupsOf(
   groups: readonly ElementGroup[],
   ids: readonly string[],

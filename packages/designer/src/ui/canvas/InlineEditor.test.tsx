@@ -165,7 +165,7 @@ describe("InlineEditor", () => {
     const onParentPointerDown = vi.fn();
     const onParentDoubleClick = vi.fn();
     render(
-      // biome-ignore lint/a11y/noStaticElementInteractions: 伝播検証用の親要素（テスト専用）
+      // biome-ignore lint/a11y/noStaticElementInteractions: parent element for propagation verification (test-only)
       <div
         onPointerDown={onParentPointerDown}
         onDoubleClick={onParentDoubleClick}

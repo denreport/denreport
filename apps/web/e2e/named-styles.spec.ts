@@ -16,7 +16,7 @@ function stylesDialog(page: Page) {
 }
 
 async function selectLayer(page: Page, id: string): Promise<void> {
-  await page.locator(`[data-apx-layer-id="${id}"] .apx-layer-main`).click();
+  await page.locator(`[data-dr-layer-id="${id}"] .dr-layer-main`).click();
 }
 
 test("スタイル作成 → 複数要素へ適用 → 定義変更の一括反映 → 保存・再読込後も参照が維持される", async ({
@@ -24,13 +24,13 @@ test("スタイル作成 → 複数要素へ適用 → 定義変更の一括反�
 }) => {
   await page.goto("/");
 
-  // text1・text2 の2要素を配置する
+  // Place two elements, text1 and text2
   await paletteButton(page).click();
-  await expect(page.locator('.apx-el[data-apx-id="text1"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text1"]')).toBeVisible();
   await paletteButton(page).click();
-  await expect(page.locator('.apx-el[data-apx-id="text2"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="text2"]')).toBeVisible();
 
-  // スタイルを作成し、名前を付ける
+  // Create a style and give it a name
   await page.getByRole("button", { name: "スタイル" }).click();
   const dialog = stylesDialog(page);
   await expect(dialog).toBeVisible();
@@ -40,7 +40,7 @@ test("スタイル作成 → 複数要素へ適用 → 定義変更の一括反�
   await dialog.getByRole("button", { name: "閉じる" }).click();
   await expect(dialog).not.toBeVisible();
 
-  // text1・text2 の両方へ適用する
+  // Apply it to both text1 and text2
   await selectLayer(page, "text1");
   await propsPanel(page)
     .getByLabel("スタイル")
@@ -53,7 +53,7 @@ test("スタイル作成 → 複数要素へ適用 → 定義変更の一括反�
     propsPanel(page).getByLabel("文字サイズ", { exact: true }),
   ).toHaveValue("10.0");
 
-  // 定義の文字サイズを変更すると、両要素へ一括反映される
+  // Changing the definition's font size applies to both elements at once
   await page.getByRole("button", { name: "スタイル" }).click();
   await expect(dialog).toBeVisible();
   const fontSizeField = dialog.getByRole("textbox", { name: "文字サイズ" });
@@ -70,7 +70,7 @@ test("スタイル作成 → 複数要素へ適用 → 定義変更の一括反�
     propsPanel(page).getByLabel("文字サイズ", { exact: true }),
   ).toHaveValue("24.0");
 
-  // 保存・再読込後も参照が維持され、再度の一括更新が効く
+  // The reference is preserved after save and reload, and a repeated bulk update still works
   await page.waitForFunction(() =>
     (localStorage.getItem("denreport-designer.ir") ?? "").includes(
       '"style":"見出し"',

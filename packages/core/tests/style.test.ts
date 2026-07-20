@@ -3,6 +3,7 @@ import {
   resolveEllipseStyle,
   resolveLineStyle,
   resolveRectStyle,
+  resolveTextStyle,
   STROKE_DASH_MM,
 } from "../src/ir/style";
 
@@ -66,6 +67,33 @@ describe("resolveEllipseStyle", () => {
       fillColor: "#dddddd",
       borderStyle: "solid",
       cornerRadius: 0,
+    });
+  });
+});
+
+describe("resolveTextStyle", () => {
+  it("defaults to black, normal weight/style and no underline when all fields are absent", () => {
+    expect(resolveTextStyle({})).toEqual({
+      color: "#000000",
+      fontWeight: "normal",
+      fontStyle: "normal",
+      underline: false,
+    });
+  });
+
+  it("passes explicit values through unchanged", () => {
+    expect(
+      resolveTextStyle({
+        color: "#ff00aa",
+        fontWeight: "bold",
+        fontStyle: "italic",
+        underline: true,
+      }),
+    ).toEqual({
+      color: "#ff00aa",
+      fontWeight: "bold",
+      fontStyle: "italic",
+      underline: true,
     });
   });
 });

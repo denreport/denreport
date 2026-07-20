@@ -7,6 +7,9 @@ import type {
 import { IMAGE_PLACEHOLDER_SRC } from "./constants";
 import { roundMm } from "./geometry";
 
+// A document's initial content is user data and must not depend on locale
+const DEFAULT_TEXT = "text1";
+
 function collectIds(document: IrDocument): Set<string> {
   const ids = new Set<string>();
   function visit(el: IrElement | IrFlexChild): void {
@@ -23,7 +26,7 @@ function collectIds(document: IrDocument): Set<string> {
   return ids;
 }
 
-/** 文書内（flex 子孫含む）で未使用の "<type><n>"（n は 1 から最小空き）を返す */
+/** Returns "<type><n>" unused within the document (including flex descendants), where n is the smallest free number starting from 1 */
 export function nextElementId(
   document: IrDocument,
   type: IrElementType,
@@ -36,7 +39,7 @@ export function nextElementId(
   return `${type}${n}`;
 }
 
-/** パレット表示・配置ゴーストに使う型別の初期寸法（mm）。line は length×0 相当 */
+/** Initial dimensions (mm) per type, used for palette display and placement ghosts. line is equivalent to length x 0 */
 export function defaultSizeMm(type: IrElementType): {
   readonly w: number;
   readonly h: number;
@@ -64,8 +67,9 @@ export function defaultSizeMm(type: IrElementType): {
 }
 
 /**
- * 左上 (x, y) に置く正規化済み完全形（任意属性のデフォルト明示済み）の新規要素を返す。
- * flex は text 子1個つきで生成する（子 id も document から採番）。
+ * Returns a new element in normalized full form (all optional attributes given explicit
+ * defaults), placed with its top-left at (x, y).
+ * flex is generated with one text child (whose id is also numbered from document).
  */
 export function createDefaultElement(
   document: IrDocument,
@@ -86,7 +90,7 @@ export function createDefaultElement(
         pages: "first",
         w: 40,
         h: 8,
-        text: "テキスト",
+        text: DEFAULT_TEXT,
         fontSize: 10,
         align: "left",
         lineHeight: 1.25,
@@ -132,8 +136,8 @@ export function createDefaultElement(
         y: py,
         bind: "items",
         columns: [
-          { key: "col1", label: "列1", width: 40, align: "left" },
-          { key: "col2", label: "列2", width: 40, align: "left" },
+          { key: "col1", label: "column1", width: 40, align: "left" },
+          { key: "col2", label: "column2", width: 40, align: "left" },
         ],
         rowHeight: 8,
         headerHeight: 8,
@@ -159,7 +163,7 @@ export function createDefaultElement(
         id: nextElementId(document, "text"),
         w: 40,
         h: 8,
-        text: "テキスト",
+        text: DEFAULT_TEXT,
         fontSize: 10,
         align: "left",
         lineHeight: 1.25,
@@ -206,7 +210,7 @@ export function createDefaultElement(
   }
 }
 
-/** ページ中央に defaultSizeMm で置く新規要素。左上座標は 0 未満にしない（極小用紙対策） */
+/** A new element placed at the page center, sized via defaultSizeMm. The top-left coordinate is never negative (a safeguard for very small paper) */
 export function createCenteredElement(
   document: IrDocument,
   type: IrElementType,

@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
+import type { Messages } from "../../i18n/messages";
 import type { AlignKind, DistributeAxis } from "../../state/alignment";
 import { alignSelection, distributeSelection } from "../../state/commands";
 import type { EditorStore } from "../../state/store";
@@ -6,12 +8,10 @@ import { useEditorState } from "../useEditorState";
 
 const ALIGN_BUTTONS: readonly {
   readonly kind: AlignKind;
-  readonly label: string;
   readonly icon: ReactNode;
 }[] = [
   {
     kind: "left",
-    label: "左端揃え",
     icon: (
       <>
         <path strokeWidth="1.3" d="M2 1.5v13" />
@@ -36,7 +36,6 @@ const ALIGN_BUTTONS: readonly {
   },
   {
     kind: "hcenter",
-    label: "水平中央揃え",
     icon: (
       <>
         <path strokeWidth="1.3" d="M8 1.5v13" />
@@ -61,7 +60,6 @@ const ALIGN_BUTTONS: readonly {
   },
   {
     kind: "right",
-    label: "右端揃え",
     icon: (
       <>
         <path strokeWidth="1.3" d="M14 1.5v13" />
@@ -86,7 +84,6 @@ const ALIGN_BUTTONS: readonly {
   },
   {
     kind: "top",
-    label: "上端揃え",
     icon: (
       <>
         <path strokeWidth="1.3" d="M1.5 2h13" />
@@ -111,7 +108,6 @@ const ALIGN_BUTTONS: readonly {
   },
   {
     kind: "vcenter",
-    label: "垂直中央揃え",
     icon: (
       <>
         <path strokeWidth="1.3" d="M1.5 8h13" />
@@ -136,7 +132,6 @@ const ALIGN_BUTTONS: readonly {
   },
   {
     kind: "bottom",
-    label: "下端揃え",
     icon: (
       <>
         <path strokeWidth="1.3" d="M1.5 14h13" />
@@ -163,12 +158,10 @@ const ALIGN_BUTTONS: readonly {
 
 const DISTRIBUTE_BUTTONS: readonly {
   readonly axis: DistributeAxis;
-  readonly label: string;
   readonly icon: ReactNode;
 }[] = [
   {
     axis: "horizontal",
-    label: "水平方向に等間隔",
     icon: (
       <>
         <rect
@@ -200,7 +193,6 @@ const DISTRIBUTE_BUTTONS: readonly {
   },
   {
     axis: "vertical",
-    label: "垂直方向に等間隔",
     icon: (
       <>
         <rect
@@ -248,11 +240,30 @@ function Icon(props: { readonly children: ReactNode }): ReactNode {
   );
 }
 
+function alignLabels(m: Messages): Record<AlignKind, string> {
+  return {
+    left: m.canvas.alignLeft,
+    hcenter: m.canvas.alignHCenter,
+    right: m.canvas.alignRight,
+    top: m.canvas.alignTop,
+    vcenter: m.canvas.alignVCenter,
+    bottom: m.canvas.alignBottom,
+  };
+}
+
+function distributeLabels(m: Messages): Record<DistributeAxis, string> {
+  return {
+    horizontal: m.canvas.distributeHorizontal,
+    vertical: m.canvas.distributeVertical,
+  };
+}
+
 export function AlignmentButtons(props: {
   readonly store: EditorStore;
 }): ReactNode {
   const { store } = props;
   const state = useEditorState(store);
+  const m = useMessages();
   const idSet = new Set(state.selection);
   const topLevelCount = state.document.elements.filter((el) =>
     idSet.has(el.id),
@@ -261,15 +272,17 @@ export function AlignmentButtons(props: {
     return null;
   }
   const canDistribute = topLevelCount >= 3;
+  const alignLabel = alignLabels(m);
+  const distributeLabel = distributeLabels(m);
   return (
     <>
       {ALIGN_BUTTONS.map((btn) => (
         <button
           key={btn.kind}
           type="button"
-          className="apx-tbtn"
-          aria-label={btn.label}
-          title={btn.label}
+          className="dr-tbtn"
+          aria-label={alignLabel[btn.kind]}
+          title={alignLabel[btn.kind]}
           onClick={() => alignSelection(store, btn.kind)}
         >
           <Icon>{btn.icon}</Icon>
@@ -279,16 +292,16 @@ export function AlignmentButtons(props: {
         <button
           key={btn.axis}
           type="button"
-          className="apx-tbtn"
-          aria-label={btn.label}
-          title={btn.label}
+          className="dr-tbtn"
+          aria-label={distributeLabel[btn.axis]}
+          title={distributeLabel[btn.axis]}
           disabled={!canDistribute}
           onClick={() => distributeSelection(store, btn.axis)}
         >
           <Icon>{btn.icon}</Icon>
         </button>
       ))}
-      <span className="apx-toolbar-sep" />
+      <span className="dr-toolbar-sep" />
     </>
   );
 }

@@ -23,7 +23,7 @@ test("移動モードのドラッグはビューをパンし、要素は動か�
 }) => {
   await page.goto("/");
   await paletteButton(page).click();
-  const element = page.locator('.apx-el[data-apx-id="text1"]');
+  const element = page.locator('.dr-el[data-dr-id="text1"]');
   await expect(element).toBeVisible();
 
   const props = propsPanel(page);
@@ -35,7 +35,7 @@ test("移動モードのドラッグはビューをパンし、要素は動か�
   await zoomToMax(page);
   await page.getByRole("button", { name: "移動" }).click();
 
-  const viewport = page.locator(".apx-viewport");
+  const viewport = page.locator(".dr-viewport");
   await expect(viewport).toHaveClass(/is-pan/);
   const scrollBefore = await viewport.evaluate((el) => ({
     left: el.scrollLeft,
@@ -51,7 +51,8 @@ test("移動モードのドラッグはビューをパンし、要素は動か�
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   await expect(viewport).toHaveClass(/is-panning/);
-  // 上下左右に十分な残りスクロール量があるため上左方向へ動かす（下右だと 0 でクランプし得る）
+  // Move up-left since there's plenty of remaining scroll room in every direction
+  // (moving down-right could clamp at 0)
   await page.mouse.move(startX - 40, startY - 40, { steps: 8 });
   await page.mouse.up();
   await expect(viewport).not.toHaveClass(/is-panning/);
@@ -68,7 +69,7 @@ test("移動モードのドラッグはビューをパンし、要素は動か�
   await page.getByRole("button", { name: "選択" }).click();
   await expect(viewport).not.toHaveClass(/is-pan/);
 
-  await page.locator('[data-apx-layer-id="text1"] .apx-layer-main').click();
+  await page.locator('[data-dr-layer-id="text1"] .dr-layer-main').click();
   const elBox = await element.boundingBox();
   if (elBox === null) {
     throw new Error("要素が表示されていません");

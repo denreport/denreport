@@ -1,9 +1,10 @@
 import type { CSSProperties, ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { visibleInContext } from "../../state/geometry";
 import type { LayerNode } from "../../state/layers";
 import { layerLabel } from "../../state/layers";
 import type { PageContext } from "../../state/types";
-import { ELEMENT_TYPE_META } from "../element-meta";
+import { elementTypeIcon } from "../element-meta";
 
 export function LayerRow(props: {
   readonly node: LayerNode;
@@ -25,11 +26,12 @@ export function LayerRow(props: {
     onSelect,
     onDelete,
   } = props;
+  const m = useMessages();
   const isFlex = node.children !== null;
   const isCollapsed = isFlex && collapsed.has(node.id);
-  const meta = ELEMENT_TYPE_META[node.element.type];
+  const icon = elementTypeIcon(node.element.type, m);
 
-  const classes = ["apx-layer-row"];
+  const classes = ["dr-layer-row"];
   if (selection.has(node.id)) {
     classes.push("is-selected");
   }
@@ -42,43 +44,49 @@ export function LayerRow(props: {
       <div
         className={classes.join(" ")}
         style={{ "--depth": depth } as CSSProperties}
-        data-apx-layer-id={node.id}
+        data-dr-layer-id={node.id}
       >
         {isFlex ? (
           <button
             type="button"
-            className="apx-layer-caret"
+            className="dr-layer-caret"
             aria-expanded={!isCollapsed}
-            aria-label={isCollapsed ? "展開" : "折りたたむ"}
+            aria-label={isCollapsed ? m.layers.expand : m.layers.collapse}
             onClick={() => onToggle(node.id)}
           >
             {isCollapsed ? "▸" : "▾"}
           </button>
         ) : (
-          <span className="apx-layer-caret-spacer" aria-hidden="true" />
+          <span className="dr-layer-caret-spacer" aria-hidden="true" />
         )}
         <button
           type="button"
-          className="apx-layer-main"
+          className="dr-layer-main"
           title={node.id}
           onClick={() => onSelect(node)}
         >
-          <span className="apx-layer-icon" aria-hidden="true">
-            {meta.icon}
+          <span className="dr-layer-icon" aria-hidden="true">
+            {icon}
           </span>
-          <span className="apx-layer-label">{layerLabel(node.element)}</span>
+          <span className="dr-layer-label">
+            {layerLabel(
+              node.element,
+              m.elementTypes,
+              m.layers.imagePlaceholder,
+            )}
+          </span>
         </button>
         <button
           type="button"
-          className="apx-layer-del"
-          aria-label="削除"
+          className="dr-layer-del"
+          aria-label={m.layers.delete}
           onClick={() => onDelete(node.id)}
         >
           ×
         </button>
       </div>
       {isFlex && !isCollapsed && node.children !== null && (
-        <ul className="apx-layer-children">
+        <ul className="dr-layer-children">
           {node.children.map((child) => (
             <LayerRow
               key={child.id}

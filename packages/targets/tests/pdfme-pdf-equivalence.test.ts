@@ -20,7 +20,7 @@ const outputDir = fileURLToPath(new URL("output", import.meta.url));
 const fontData = new Uint8Array(readFileSync(EMBEDDED_FONT_URL));
 
 const MM_PER_PT = 25.4 / 72;
-// 同梱 Noto Sans JP の hhea.ascender / head.unitsPerEm（fonts-metrics.test.ts で機械検証済み）
+// The bundled Noto Sans JP's hhea.ascender / head.unitsPerEm (mechanically verified in fonts-metrics.test.ts)
 const EMBEDDED_ASCENT_PER_EM = 1.16;
 
 function normativeBaselineY(
@@ -60,7 +60,7 @@ describe("extractPdf — pt→mm・左上原点への正規化", () => {
     const document = parseInline({
       version: "1.0",
       page: { width: 210, height: 297 },
-      font: { name: "NotoSansJP" },
+      font: { regular: "NotoSansJP" },
       elements: [
         {
           type: "text",
@@ -75,7 +75,7 @@ describe("extractPdf — pt→mm・左上原点への正規化", () => {
       ],
     });
     const pdf = await extractPdf(
-      await generatePdfmePdf(document, {}, fontData),
+      await generatePdfmePdf(document, {}, { regular: fontData }),
     );
 
     expect(pdf.pageCount).toBe(1);
@@ -98,7 +98,7 @@ describe("extractPdf — pt→mm・左上原点への正規化", () => {
     const document = parseInline({
       version: "1.0",
       page: { width: 210, height: 297 },
-      font: { name: "NotoSansJP" },
+      font: { regular: "NotoSansJP" },
       elements: [
         {
           type: "ellipse",
@@ -114,7 +114,7 @@ describe("extractPdf — pt→mm・左上原点への正規化", () => {
       ],
     });
     const pdf = await extractPdf(
-      await generatePdfmePdf(document, {}, fontData),
+      await generatePdfmePdf(document, {}, { regular: fontData }),
     );
     expect(pdf.pageCount).toBe(1);
   });
@@ -125,7 +125,7 @@ describe("buildReferenceExpectation — 参照意味論からの期待行導出"
     const document = parseInline({
       version: "1.0",
       page: { width: 210, height: 297 },
-      font: { name: "NotoSansJP" },
+      font: { regular: "NotoSansJP" },
       elements: [
         {
           type: "text",
@@ -154,7 +154,7 @@ describe("buildReferenceExpectation — 参照意味論からの期待行導出"
     const expectation = buildReferenceExpectation(document, data, fontData);
 
     expect(expectation.pageCount).toBe(1);
-    // minRows=3・データ2行: 明細セルはデータ行のぶんだけ（2行×2列）
+    // minRows=3, 2 data rows: detail cells are only for the data rows (2 rows x 2 columns)
     const cellTexts = expectation.lines.filter((line) =>
       /^商品|^[\d,]+$/.test(line.text),
     );
@@ -179,10 +179,10 @@ describe("buildReferenceExpectation — 参照意味論からの期待行導出"
       [2, "2 / 3"],
       [3, "3 / 3"],
     ]);
-    // ヘッダは各ページで再表示される
+    // The header redisplays on every page
     const headers = expectation.lines.filter((line) => line.text === "品目");
     expect(headers.map((line) => line.page)).toEqual([1, 2, 3]);
-    // pages: "last" の合計欄は最終ページのみ
+    // The pages: "last" total field is on the final page only
     const totals = expectation.lines.filter(
       (line) => line.text === "合計(税込)",
     );
@@ -278,6 +278,67 @@ describe("checkAgainstReference / checkCrossTarget — 照合器の境界", () =
   });
 });
 
+// Where the normative baseline origin maps to for text rotated by the IR's rotate (clockwise, about the bounding box center)
+function rotatedBaselineOrigin(
+  el: { x: number; y: number; w: number; h: number },
+  fontSize: number,
+  lineHeight: number,
+  deg: number,
+): { x: number; y: number } {
+  const origin = {
+    x: el.x,
+    y: normativeBaselineY(el.y, fontSize, lineHeight, 0),
+  };
+  const center = { x: el.x + el.w / 2, y: el.y + el.h / 2 };
+  const rad = (deg * Math.PI) / 180;
+  const dx = origin.x - center.x;
+  const dy = origin.y - center.y;
+  return {
+    x: center.x + dx * Math.cos(rad) - dy * Math.sin(rad),
+    y: center.y + dx * Math.sin(rad) + dy * Math.cos(rad),
+  };
+}
+
+function findItem(
+  pdf: ExtractedPdf,
+  text: string,
+): { x: number; baselineY: number } {
+  const item = pdf.pages[0]?.textItems.find((i) => i.str.trim() === text);
+  if (item === undefined) throw new Error(`text item "${text}" not found`);
+  return item;
+}
+
+describe("pdfme 実 PDF — 回転の向きと中心", () => {
+  it("rotation: 回転テキストの原点が要素中心周りの時計回り写像に一致する", async () => {
+    const { document, data } = loadFixture(
+      "rotation.json",
+      "rotation-data.json",
+    );
+    const pdfBytes = await generatePdfmePdf(document, data, {
+      regular: fontData,
+    });
+    mkdirSync(outputDir, { recursive: true });
+    writeFileSync(`${outputDir}/pdfme-rotation.pdf`, pdfBytes);
+    const pdf = await extractPdf(pdfBytes);
+
+    // Confirm the extraction pipeline itself is sound using an unrotated reference element
+    const flat = findItem(pdf, "水平");
+    expect(flat.x).toBeCloseTo(20, 0);
+    expect(flat.baselineY).toBeCloseTo(normativeBaselineY(20, 12, 1.25, 0), 0);
+
+    const cases = [
+      { text: "R", el: { x: 20, y: 100, w: 60, h: 10 }, deg: 90 },
+      { text: "U", el: { x: 100, y: 100, w: 60, h: 10 }, deg: 180 },
+    ];
+    for (const { text, el, deg } of cases) {
+      const expected = rotatedBaselineOrigin(el, 12, 1.25, deg);
+      const item = findItem(pdf, text);
+      expect(Math.abs(item.x - expected.x)).toBeLessThan(1);
+      expect(Math.abs(item.baselineY - expected.y)).toBeLessThan(1);
+    }
+  });
+});
+
 describe("pdfme 実 PDF — 参照適合", () => {
   it.each([
     {
@@ -292,7 +353,9 @@ describe("pdfme 実 PDF — 参照適合", () => {
     },
   ])("$name", async ({ name, irFile, dataFile }) => {
     const { document, data } = loadFixture(irFile, dataFile);
-    const pdfBytes = await generatePdfmePdf(document, data, fontData);
+    const pdfBytes = await generatePdfmePdf(document, data, {
+      regular: fontData,
+    });
     mkdirSync(outputDir, { recursive: true });
     writeFileSync(`${outputDir}/pdfme-${name}.pdf`, pdfBytes);
 

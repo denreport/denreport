@@ -16,9 +16,9 @@ const CONTENT_TYPES = {
   ".map": "application/json; charset=utf-8",
 };
 
-/** URL パスを rootDir 配下の実ファイルパスへ解決する。
- *  正規化後に rootDir の外へ出るパス（トラバーサル）と NUL 混入は null を返す。
- *  "/" は "/index.html" として解決する。
+/** Resolves a URL path to an actual file path under rootDir.
+ *  After normalization, a path that escapes rootDir (traversal) or contains a NUL byte returns null.
+ *  "/" resolves to "/index.html".
  * @param {string} rootDir  @param {string} urlPath  @returns {string | null} */
 export function resolveFilePath(rootDir, urlPath) {
   const withoutQuery = urlPath.split(/[?#]/)[0];
@@ -43,8 +43,8 @@ export function resolveFilePath(rootDir, urlPath) {
   return resolved;
 }
 
-/** 拡張子から Content-Type を返す。対応: .html .js .css .json .png .svg .ttf .txt .map。
- *  未知の拡張子は "application/octet-stream"。
+/** Returns the Content-Type for an extension. Supported: .html .js .css .json .png .svg .ttf .txt .map.
+ *  An unknown extension returns "application/octet-stream".
  * @param {string} filePath  @returns {string} */
 export function contentTypeFor(filePath) {
   const ext = extname(filePath).toLowerCase();
@@ -62,10 +62,10 @@ function sendNotFound(res, method) {
   res.end(method === "HEAD" ? undefined : "Not Found");
 }
 
-/** リクエストハンドラを作る。GET/HEAD のみ許可（他は 405）。
- *  "/healthz" → 200 text/plain "ok"。ファイル未存在 → 404。
- *  Cache-Control: "/assets/" 配下は public, max-age=31536000, immutable（ハッシュ付きファイル名）、
- *  それ以外（index.html 等）は no-cache。
+/** Creates a request handler. Only GET/HEAD are allowed (others get 405).
+ *  "/healthz" -> 200 text/plain "ok". Nonexistent file -> 404.
+ *  Cache-Control: under "/assets/" it is public, max-age=31536000, immutable (hashed file names);
+ *  otherwise (index.html etc.) it is no-cache.
  * @param {{ rootDir: string }} options
  * @returns {(req: import("node:http").IncomingMessage, res: import("node:http").ServerResponse) => void} */
 export function createHandler(options) {

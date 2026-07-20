@@ -1,32 +1,44 @@
 import type { IrData, IrDocument, IrError } from "@denreport/core";
 import { emptyDataFor } from "@denreport/core";
-import type { ExportReportlabResult, FontIssue } from "@denreport/targets";
+import type {
+  ExportReportlabResult,
+  FontIssue,
+  FontSetData,
+} from "@denreport/targets";
 import {
   exportPdfme,
   exportReportlab,
   exportReportlabTemplate,
 } from "@denreport/targets";
+import type { Locale } from "../../i18n/locale";
+import type { Messages } from "../../i18n/messages";
 import { buildZip } from "./zip";
 
 export type { FontIssue };
 
-// 生成物のファイル名（固定。IR に文書名は存在しない）
+// File names for generated artifacts (fixed; the IR has no document name)
 export const PDFME_EXPORT_FILE_NAME = "report-pdfme.json";
 export const REPORTLAB_EXPORT_FILE_NAME = "report-reportlab.zip";
 export const REPORTLAB_CODE_FILE_NAME = "report.py";
+export const REPORTLAB_LICENSE_FILE_NAME = "OFL.txt";
 
-const DATA_EDIT_GUIDE = "プレビューのサンプルデータ欄で入力・生成できます。";
+export type ExportMessages = Messages["export"];
 
 export type ParseExportDataResult =
   | { readonly ok: true; readonly mode: "data"; readonly data: IrData }
   | { readonly ok: true; readonly mode: "template" }
   | { readonly ok: false; readonly message: string };
 
-/** サンプルデータ JSON の厳格パース。書き出しは補完しない。
-    空文字列（trim 後）は雛形モード。非空は厳格パースし、JSON.parse 不能 /
-    トップレベルが非オブジェクト（配列・null 含む）はエラー。
-    message は利用者向け文言（プレビューのサンプルデータ欄への誘導を含む） */
-export function parseExportData(json: string): ParseExportDataResult {
+/** Strict parse of the sample data JSON. Export does not fill in missing values.
+    An empty string (after trim) means template mode. A non-empty string is parsed
+    strictly; a JSON.parse failure or a top-level value that isn't an object
+    (including arrays and null) is an error.
+    message is user-facing text (including guidance pointing to the preview's sample
+    data field) */
+export function parseExportData(
+  json: string,
+  m: ExportMessages,
+): ParseExportDataResult {
   if (json.trim() === "") {
     return { ok: true, mode: "template" };
   }
@@ -34,16 +46,10 @@ export function parseExportData(json: string): ParseExportDataResult {
   try {
     parsed = JSON.parse(json);
   } catch {
-    return {
-      ok: false,
-      message: `サンプルデータを JSON として解釈できません。${DATA_EDIT_GUIDE}`,
-    };
+    return { ok: false, message: m.jsonParseError };
   }
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    return {
-      ok: false,
-      message: `サンプルデータのトップレベルがオブジェクトではありません。${DATA_EDIT_GUIDE}`,
-    };
+    return { ok: false, message: m.notObjectError };
   }
   return { ok: true, mode: "data", data: parsed as IrData };
 }
@@ -65,16 +71,35 @@ export type BuildPdfmeArtifactResult =
       readonly fontIssues: readonly FontIssue[];
     };
 
-/** exportPdfme を呼び、{ template, inputs } を1つの JSON（2スペースインデント）にした
-    ExportFile を返す。C 群エラー・FontIssue は透過、欠落キーの警告も透過。
-    fontSubset が false のときのみ、利用側へ全体埋め込みを伝える font ブロックを JSON に含める */
+/** Logical names of the document's declared slots (in order of appearance, no duplicates) */
+function declaredFontNames(document: IrDocument): readonly string[] {
+  const names: string[] = [];
+  for (const name of [
+    document.font.regular,
+    document.font.bold,
+    document.font.italic,
+    document.font.boldItalic,
+  ]) {
+    if (name !== undefined && !names.includes(name)) {
+      names.push(name);
+    }
+  }
+  return names;
+}
+
+/** Calls exportPdfme and returns an ExportFile with { template, inputs } combined into a
+    single JSON (2-space indent). C-group errors and FontIssues pass through unchanged, as
+    do missing-key warnings.
+    Only when fontSubset is false does the JSON include a font block (all logical names of
+    the declared slots) telling the consumer to fully embed the font */
 export function buildPdfmeArtifact(
   document: IrDocument,
   data: IrData,
-  fontData: Uint8Array,
+  fonts: FontSetData,
+  locale: Locale,
   fontSubset?: boolean,
 ): BuildPdfmeArtifactResult {
-  const result = exportPdfme(document, data, fontData);
+  const result = exportPdfme(document, data, fonts, { locale });
   if (!result.ok) {
     return { ok: false, errors: result.errors, fontIssues: result.fontIssues };
   }
@@ -83,7 +108,7 @@ export function buildPdfmeArtifact(
       ? {
           template: result.template,
           inputs: result.inputs,
-          font: { name: document.font.name, subset: false },
+          font: { names: declaredFontNames(document), subset: false },
         }
       : { template: result.template, inputs: result.inputs };
   const json = JSON.stringify(envelope, null, 2);
@@ -97,17 +122,20 @@ export function buildPdfmeArtifact(
   };
 }
 
-/** サンプルデータ未入力時の pdfme 書き出し。emptyDataFor で C01/C02 を満たす空データを
-    合成し、既存の buildPdfmeArtifact にそのまま通す */
+/** pdfme export for when no sample data has been entered. Synthesizes empty data that
+    satisfies C01/C02 via emptyDataFor and passes it straight through to the existing
+    buildPdfmeArtifact */
 export function buildPdfmeTemplateArtifact(
   document: IrDocument,
-  fontData: Uint8Array,
+  fonts: FontSetData,
+  locale: Locale,
   fontSubset?: boolean,
 ): BuildPdfmeArtifactResult {
   return buildPdfmeArtifact(
     document,
     emptyDataFor(document),
-    fontData,
+    fonts,
+    locale,
     fontSubset,
   );
 }
@@ -126,6 +154,7 @@ export type BuildReportlabArtifactResult =
 
 function bundleReportlabResult(
   result: ExportReportlabResult,
+  embeddedFontLicense: Uint8Array | undefined,
 ): BuildReportlabArtifactResult {
   if (!result.ok) {
     return { ok: false, errors: result.errors, fontIssues: result.fontIssues };
@@ -135,7 +164,13 @@ function bundleReportlabResult(
       name: REPORTLAB_CODE_FILE_NAME,
       data: new TextEncoder().encode(result.code),
     },
-    { name: result.fontFile.filename, data: result.fontFile.data },
+    ...result.fontFiles.map((fontFile) => ({
+      name: fontFile.filename,
+      data: fontFile.data,
+    })),
+    ...(embeddedFontLicense === undefined
+      ? []
+      : [{ name: REPORTLAB_LICENSE_FILE_NAME, data: embeddedFontLicense }]),
   ]);
   return {
     ok: true,
@@ -147,22 +182,35 @@ function bundleReportlabResult(
   };
 }
 
-/** exportReportlab を呼び、code（REPORTLAB_CODE_FILE_NAME）と fontFile（fontFile.filename）を
-    buildZip で束ねた ExportFile を返す。C 群エラー・FontIssue は透過（両方同時にあり得る）。
-    欠落キーの警告も透過（雛形系ビルダーは常に空） */
+/** Calls exportReportlab and returns an ExportFile that bundles code
+    (REPORTLAB_CODE_FILE_NAME), fontFiles (one per declared slot), and — when
+    embeddedFontLicense is passed — REPORTLAB_LICENSE_FILE_NAME (OFL.txt) at the zip root, via
+    buildZip. C-group errors and FontIssues pass through unchanged (both can occur at the same
+    time). Missing-key warnings also pass through (always empty for template-mode builders) */
 export function buildReportlabArtifact(
   document: IrDocument,
   data: IrData,
-  fontData: Uint8Array,
+  fonts: FontSetData,
+  locale: Locale,
+  embeddedFontLicense?: Uint8Array,
 ): BuildReportlabArtifactResult {
-  return bundleReportlabResult(exportReportlab(document, data, fontData));
+  return bundleReportlabResult(
+    exportReportlab(document, data, fonts, { locale }),
+    embeddedFontLicense,
+  );
 }
 
-/** サンプルデータ未入力時の ReportLab 書き出し。exportReportlabTemplate を同じ zip 構成で包む。
-    errors は常に空（データ検証は生成コードの実行時に移る） */
+/** ReportLab export for when no sample data has been entered. Wraps exportReportlabTemplate
+    in the same zip layout.
+    errors is always empty (data validation moves to runtime of the generated code) */
 export function buildReportlabTemplateArtifact(
   document: IrDocument,
-  fontData: Uint8Array,
+  fonts: FontSetData,
+  locale: Locale,
+  embeddedFontLicense?: Uint8Array,
 ): BuildReportlabArtifactResult {
-  return bundleReportlabResult(exportReportlabTemplate(document, fontData));
+  return bundleReportlabResult(
+    exportReportlabTemplate(document, fonts, { locale }),
+    embeddedFontLicense,
+  );
 }

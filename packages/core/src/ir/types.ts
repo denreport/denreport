@@ -3,7 +3,7 @@
  * `version` field (e.g. `"1.0"`); parseIr accepts any version sharing the
  * same major and a minor at or below this value.
  */
-export const IR_VERSION: "1.1" = "1.1";
+export const IR_VERSION: "1.0" = "1.0";
 
 /** Horizontal text alignment. */
 export type IrAlign = "left" | "center" | "right" | "justify";
@@ -25,6 +25,13 @@ export type IrStrokeStyle =
   | "dashdot"
   | "dashdotdot";
 
+/** A logical font slot of IrFont. */
+export type IrFontSlot = "regular" | "bold" | "italic" | "boldItalic";
+/** Requested font weight of a text element. */
+export type IrFontWeight = "normal" | "bold";
+/** Requested font style of a text element. */
+export type IrFontStyle = "normal" | "italic";
+
 /**
  * Attribute values a named style (IrNamedStyle) can set. Each element type
  * only applies the subset of keys listed for it in STYLEABLE_ATTRS.
@@ -33,6 +40,9 @@ export interface IrStyleAttrs {
   readonly fontSize?: number;
   readonly align?: IrAlign;
   readonly lineHeight?: number;
+  readonly fontWeight?: IrFontWeight;
+  readonly fontStyle?: IrFontStyle;
+  readonly underline?: boolean;
   readonly borderWidth?: number;
   readonly thickness?: number;
 }
@@ -52,27 +62,44 @@ export interface IrPage {
   readonly height: number;
 }
 
-/** The document's single font, identified by name (a target resolves the name to actual font data). */
+/**
+ * The document's font as a set of logical names, one per slot (a target
+ * resolves each name to actual font data). `regular` is required; slots left
+ * undefined degrade per resolveFontSlot.
+ */
 export interface IrFont {
-  readonly name: string;
+  readonly regular: string;
+  readonly bold?: string;
+  readonly italic?: string;
+  readonly boldItalic?: string;
 }
 
-/** A table column: its data key, header label, width (mm), and text alignment. */
+/**
+ * A table column: its data key, header label, width (mm), and text alignment.
+ * When `mergeSameValue` is true, runs of detail rows with the same
+ * (override-applied) non-empty cell value merge into one vertical cell,
+ * cut at group boundaries of any `mergeSameValue` column to its left.
+ */
 export interface IrColumn {
   readonly key: string;
   readonly label: string;
   readonly width: number;
   readonly align: IrAlign;
+  readonly mergeSameValue?: boolean;
 }
 
 interface IrElementCommon {
   readonly id: string;
+  /** Display-only label (no identifier pattern, may repeat). See ELEMENT_NAME_MAX_LENGTH. */
+  readonly name?: string;
 }
 
 interface IrPositioned {
   readonly x: number;
   readonly y: number;
   readonly pages: IrPages;
+  /** Clockwise rotation, in degrees, about the element's bounding-box center (a line's segment midpoint). Defaults to 0. */
+  readonly rotate?: number;
 }
 
 /** A text box element. `text` may contain `{key}` interpolation tokens and, at top level only, `{#id}` footnote marks. */
@@ -85,6 +112,10 @@ export type IrTextElement = IrElementCommon &
     readonly fontSize: number;
     readonly align: IrAlign;
     readonly lineHeight: number;
+    readonly fontWeight?: IrFontWeight;
+    readonly fontStyle?: IrFontStyle;
+    readonly underline?: boolean;
+    readonly color?: string;
     readonly style?: string;
   };
 
@@ -129,6 +160,19 @@ export interface IrTableCellOverride {
   readonly value: string;
 }
 
+/**
+ * A static cell merge: starting at (`row`, `key`), `rowSpan` rows × `colSpan`
+ * columns (each defaulting to 1) are drawn as a single cell. `row: "header"`
+ * merges header cells horizontally (then `rowSpan` must be 1). Rule M20
+ * constrains ranges; merges are cut at page-chunk boundaries.
+ */
+export interface IrTableCellSpan {
+  readonly row: number | "header";
+  readonly key: string;
+  readonly rowSpan?: number;
+  readonly colSpan?: number;
+}
+
 /** A data-bound table that can expand across multiple pages (see rule M09 for pagination geometry constraints). */
 export interface IrTableElement extends IrElementCommon {
   readonly type: "table";
@@ -142,7 +186,12 @@ export interface IrTableElement extends IrElementCommon {
   readonly maxY: number;
   readonly continuationY: number;
   readonly minRows: number;
+  readonly frameWidth?: number;
+  readonly gridWidth?: number;
+  readonly frameStyle?: IrStrokeStyle;
+  readonly gridStyle?: IrStrokeStyle;
   readonly cellOverrides?: readonly IrTableCellOverride[];
+  readonly cellSpans?: readonly IrTableCellSpan[];
   readonly stripeColor?: string;
   readonly style?: string;
 }
@@ -200,6 +249,7 @@ export interface IrPageNumberElement extends IrElementCommon, IrPositioned {
   readonly fontSize: number;
   readonly align: IrAlign;
   readonly lineHeight: number;
+  readonly color?: string;
   readonly style?: string;
 }
 
@@ -254,6 +304,16 @@ export interface IrFootnotes {
   readonly notes: readonly IrFootnoteNote[];
 }
 
+/**
+ * A named subset of top-level element ids, used by editing UIs to select and
+ * move all members with one click. Not an element and not read by resolveFlex,
+ * lowerIr, or any target exporter — a display/editing convenience only.
+ */
+export interface IrGroup {
+  readonly id: string;
+  readonly memberIds: readonly string[];
+}
+
 /** A parsed and normalized IR document, as returned by parseIr. */
 export interface IrDocument {
   readonly version: string;
@@ -263,4 +323,5 @@ export interface IrDocument {
   readonly elements: readonly IrElement[];
   readonly docType?: IrDocType;
   readonly footnotes?: IrFootnotes;
+  readonly groups?: readonly IrGroup[];
 }

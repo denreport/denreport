@@ -56,7 +56,7 @@ function makeStore(count: number): EditorStore {
   const document: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
   const store = new EditorStore(document);

@@ -4,6 +4,7 @@ dist/
 coverage/
 *.log
 packages/targets/tests/output/
+__pycache__/
 apps/web/test-results/
 apps/web/playwright-report/
 .DS_Store

@@ -1,27 +1,33 @@
 import type {
-  CharWidthEm,
   IrData,
   IrDocument,
+  IrFont,
+  IrFontSlot,
   LoweredDocument,
   LoweredElement,
   LoweredTextElement,
 } from "@denreport/core";
-import { layoutTextLines, lowerIr } from "@denreport/core";
-import { detectFontFormat } from "../fonts/format";
-import { readAscentPerEm } from "../fonts/metrics";
-import type { FontIssue } from "../fonts/validate";
-import { validateFont } from "../fonts/validate";
-import { readCharWidths } from "../fonts/widths";
-import { pyNumber, pyString } from "./python";
+import { layoutTextLines, lowerIr, resolveFontSlot } from "@denreport/core";
+import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
+import { effectiveFontOf, resolveFontSetData } from "../fonts/set";
+import {
+  getMessages,
+  type MessageLocale,
+  type Messages,
+} from "../i18n/messages";
+import { pyNumber } from "./python";
+import type { ReportlabFontEntry } from "./snippets";
 import {
   BARCODE_FN,
+  buildFontsConstant,
   buildImports,
   ELLIPSE_FN,
+  fontEntriesFor,
   IMAGE_FN,
   LINE_FN,
   MAIN_BLOCK,
   RECT_FN,
-  REGISTER_FONT_FN,
+  registerFontsFn,
   statementFor,
   TEXT_FN,
 } from "./snippets";
@@ -37,28 +43,29 @@ function usedTypes(
   return types;
 }
 
-function buildHeader(hasImage: boolean): string {
+function buildHeader(messages: Messages, hasImage: boolean): string {
   const requirement = hasImage
-    ? "実行要件: Python 3, reportlab, Pillow（画像の描画に使用）"
-    : "実行要件: Python 3, reportlab";
+    ? messages.reportlab.header.requirementWithImage
+    : messages.reportlab.header.requirement;
   return [
-    '"""生成物であり、手編集を想定しない。',
+    `"""${messages.reportlab.header.notice}`,
     "",
     requirement,
     "",
-    "フォント: 書き出し時に併せて出力されるフォントファイル（FONT_FILE）を",
-    "このファイルと同じディレクトリに置くこと。見つからない場合はエラー終了する。",
+    messages.reportlab.header.fontNoticeLine1,
+    messages.reportlab.header.fontNoticeLine2,
     "",
-    "使い方: python <このファイル> [出力.pdf]（省略時 output.pdf）",
+    messages.reportlab.header.usage,
     '"""',
   ].join("\n");
 }
 
-function buildConstants(lowered: LoweredDocument, ascentPerEm: number): string {
+function buildConstants(
+  lowered: LoweredDocument,
+  entries: readonly ReportlabFontEntry[],
+): string {
   return [
-    `FONT_NAME = ${pyString(lowered.font.name)}`,
-    `FONT_FILE = ${pyString(`${lowered.font.name}.ttf`)}`,
-    `FONT_ASCENT_EM = ${pyNumber(ascentPerEm)}`,
+    buildFontsConstant(entries),
     `PAGE_WIDTH = ${pyNumber(lowered.page.width)} * mm`,
     `PAGE_HEIGHT = ${pyNumber(lowered.page.height)} * mm`,
     `PAGE_COUNT = ${pyNumber(lowered.pageCount)}`,
@@ -69,24 +76,25 @@ function buildPageFunction(
   index: number,
   elements: readonly LoweredElement[],
   layoutLines: (el: LoweredTextElement) => readonly string[],
+  font: IrFont,
 ): string {
   const body =
     elements.length === 0
       ? "    pass"
       : elements
-          .map((element) => `    ${statementFor(element, layoutLines)}`)
+          .map((element) => `    ${statementFor(element, layoutLines, font)}`)
           .join("\n");
-  return `def _page_${index + 1}(c, font):\n${body}`;
+  return `def _page_${index + 1}(c):\n${body}`;
 }
 
 function buildBuildFunction(pageCount: number): string {
   const lines = [
     "def build(output_path):",
-    "    font = _register_font()",
+    "    _register_fonts()",
     "    c = Canvas(output_path, pagesize=(PAGE_WIDTH, PAGE_HEIGHT))",
   ];
   for (let p = 1; p <= pageCount; p++) {
-    lines.push(`    _page_${p}(c, font)`);
+    lines.push(`    _page_${p}(c)`);
     lines.push("    c.showPage()");
   }
   lines.push("    c.save()");
@@ -95,15 +103,17 @@ function buildBuildFunction(pageCount: number): string {
 
 function buildSource(
   lowered: LoweredDocument,
-  ascentPerEm: number,
-  charWidthEm: CharWidthEm,
+  font: IrFont,
+  slots: ReadonlyMap<IrFontSlot, ResolvedSlotFont>,
+  entries: readonly ReportlabFontEntry[],
+  messages: Messages,
 ): string {
   const types = usedTypes(lowered.pages);
   const hasImage = types.has("image");
   const hasBarcode = types.has("barcode");
 
   const helperFns = [
-    REGISTER_FONT_FN,
+    registerFontsFn(messages),
     ...(types.has("text") ? [TEXT_FN] : []),
     ...(types.has("line") ? [LINE_FN] : []),
     ...(types.has("rect") ? [RECT_FN] : []),
@@ -111,24 +121,28 @@ function buildSource(
     ...(hasImage ? [IMAGE_FN] : []),
     ...(hasBarcode ? [BARCODE_FN] : []),
   ];
-  const layoutLines = (el: LoweredTextElement): readonly string[] =>
-    layoutTextLines(
+  const layoutLines = (el: LoweredTextElement): readonly string[] => {
+    const slot = resolveFontSlot(font, el.fontWeight, el.fontStyle);
+    // effectiveFontOf guarantees that data exists for the resolved slot
+    const slotFont = slots.get(slot) as ResolvedSlotFont;
+    return layoutTextLines(
       {
         content: el.content,
         widthMm: el.w,
         fontSize: el.fontSize,
         align: el.align,
       },
-      charWidthEm,
+      slotFont.charWidthEm,
     ).map((line) => line.text);
+  };
   const pageFns = lowered.pages.map((elements, index) =>
-    buildPageFunction(index, elements, layoutLines),
+    buildPageFunction(index, elements, layoutLines, font),
   );
 
   const sections = [
-    buildHeader(hasImage),
+    buildHeader(messages, hasImage),
     buildImports(hasImage, false, hasBarcode),
-    buildConstants(lowered, ascentPerEm),
+    buildConstants(lowered, entries),
     helperFns.join("\n\n"),
     pageFns.join("\n\n"),
     buildBuildFunction(lowered.pageCount),
@@ -140,49 +154,45 @@ function buildSource(
 
 /**
  * Lowers `document` with `data` and generates a standalone reportlab Python
- * script with the interpolated data baked in, plus the font file it
- * references. `fontData` must be a valid TTF; otherwise export fails with
- * fontIssues explaining why. Assumes `document` is the output of parseIr and
- * already passed validateIr, matching lowerIr's precondition.
+ * script with the interpolated data baked in, plus the font files it
+ * references (one per declared slot). Every slot in `fonts` must be a valid
+ * TTF with readable metrics; otherwise export fails with fontIssues
+ * explaining why. Assumes `document` is the output of parseIr and already
+ * passed validateIr, matching lowerIr's precondition. `options.locale`
+ * (default "ja") selects the language of the generated script's comments
+ * and error messages.
  */
 export function exportReportlab(
   document: IrDocument,
   data: IrData,
-  fontData: Uint8Array,
+  fonts: FontSetData,
+  options?: { readonly locale?: MessageLocale },
 ): ExportReportlabResult {
-  const fontIssues: FontIssue[] = [...validateFont(fontData)];
-  const ascentPerEm = readAscentPerEm(fontData);
-  const charWidthEm = readCharWidths(fontData);
-  if (fontIssues.length === 0 && ascentPerEm === null) {
-    fontIssues.push({
-      format: detectFontFormat(fontData),
-      message:
-        "フォントの計量（head / hhea テーブル）を読み取れないため、テキストのベースライン位置を確定できません。別の TTF フォントを使用してください。",
-    });
+  const locale = options?.locale ?? "ja";
+  const fontSet = resolveFontSetData(fonts, { locale });
+  const result = lowerIr(document, data, { locale });
+  if (!fontSet.ok || !result.ok) {
+    return {
+      ok: false,
+      errors: result.ok ? [] : result.errors,
+      fontIssues: fontSet.ok ? [] : fontSet.issues,
+    };
   }
-  if (fontIssues.length === 0 && charWidthEm === null) {
-    fontIssues.push({
-      format: detectFontFormat(fontData),
-      message:
-        "フォントの字幅（cmap / hmtx テーブル）を読み取れないため、テキストの折り返し・均等割付を計算できません。別の TTF フォントを使用してください。",
-    });
-  }
-  const result = lowerIr(document, data);
-  if (
-    fontIssues.length > 0 ||
-    ascentPerEm === null ||
-    charWidthEm === null ||
-    !result.ok
-  ) {
-    return { ok: false, errors: result.ok ? [] : result.errors, fontIssues };
-  }
+  const font = effectiveFontOf(document.font, fonts);
+  const entries = fontEntriesFor(font, fonts, fontSet.slots);
   return {
     ok: true,
-    code: buildSource(result.document, ascentPerEm, charWidthEm),
-    fontFile: {
-      filename: `${result.document.font.name}.ttf`,
-      data: fontData,
-    },
+    code: buildSource(
+      result.document,
+      font,
+      fontSet.slots,
+      entries,
+      getMessages(locale),
+    ),
+    fontFiles: entries.map((entry) => ({
+      filename: entry.filename,
+      data: entry.data,
+    })),
     warnings: result.warnings,
   };
 }

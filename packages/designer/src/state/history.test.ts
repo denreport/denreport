@@ -7,7 +7,7 @@ function doc(marker: string): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: marker },
+    font: { regular: marker },
     elements: [],
   };
 }
@@ -58,8 +58,8 @@ describe("History", () => {
       undoCount += 1;
     }
     expect(undoCount).toBe(HISTORY_LIMIT);
-    // 最古の v0 は捨てられ、最後に戻れるのは v1
-    expect(last?.document.font.name).toBe("v1");
+    // The oldest v0 is discarded; the furthest we can go back is v1
+    expect(last?.document.font.regular).toBe("v1");
   });
 
   it("空スタックの undo / redo は undefined を返し状態を壊さない", () => {

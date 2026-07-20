@@ -9,8 +9,8 @@ export interface ZipEntryData {
   readonly data: Buffer;
 }
 
-/** STORE のみの zip（コメントなし・単一ディスク）を central directory から読み戻す。
-    圧縮方式 0 以外のエントリがあれば throw する（前提の破れの早期検出） */
+/** Reads back a STORE-only zip (no comment, single disk) from its central directory.
+    Throws if any entry has a compression method other than 0 (early detection of a broken assumption) */
 export function readStoreZip(buffer: Buffer): readonly ZipEntryData[] {
   const eocdOffset = buffer.length - EOCD_SIZE;
   if (eocdOffset < 0 || buffer.readUInt32LE(eocdOffset) !== EOCD_SIGNATURE) {

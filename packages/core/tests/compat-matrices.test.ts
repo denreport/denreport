@@ -13,7 +13,7 @@ describe("COMPAT_MATRICES data invariants", () => {
         expect(matrix.target).toBe(target as CompatTargetId);
       });
 
-      it("gives a non-empty note to every approximated/unsupported entry", () => {
+      it("gives a non-empty note and userMessage (ja and en) to every approximated/unsupported entry", () => {
         for (const [elementType, elementCompat] of Object.entries(
           matrix.elements,
         )) {
@@ -27,6 +27,12 @@ describe("COMPAT_MATRICES data invariants", () => {
               entry.note.length,
               `${target}.${elementType}: empty note for level "${entry.level}"`,
             ).toBeGreaterThan(0);
+            for (const locale of ["ja", "en"] as const) {
+              expect(
+                entry.userMessage(locale).length,
+                `${target}.${elementType}: empty ${locale} userMessage for level "${entry.level}"`,
+              ).toBeGreaterThan(0);
+            }
           }
         }
       });

@@ -1,53 +1,30 @@
 import type { IrElementType } from "@denreport/core";
 import type { ReactNode } from "react";
-import { ELEMENT_TYPE_LABEL } from "../state/element-labels";
+import type { Messages } from "../i18n/messages";
 
-export interface ElementTypeMeta {
-  readonly label: string;
-  readonly icon: ReactNode;
-}
-
-export const ELEMENT_TYPE_META: Readonly<
-  Record<IrElementType, ElementTypeMeta>
+const STATIC_ICONS: Readonly<
+  Record<Exclude<IrElementType, "text">, ReactNode>
 > = {
-  text: {
-    label: ELEMENT_TYPE_LABEL.text,
-    icon: <span className="apx-pi-text">あ</span>,
-  },
-  line: {
-    label: ELEMENT_TYPE_LABEL.line,
-    icon: <span className="apx-pi-line" />,
-  },
-  rect: {
-    label: ELEMENT_TYPE_LABEL.rect,
-    icon: <span className="apx-pi-rect" />,
-  },
-  ellipse: {
-    label: ELEMENT_TYPE_LABEL.ellipse,
-    icon: <span className="apx-pi-ellipse" />,
-  },
-  table: {
-    label: ELEMENT_TYPE_LABEL.table,
-    icon: <span className="apx-pi-table" />,
-  },
-  image: {
-    label: ELEMENT_TYPE_LABEL.image,
-    icon: <span className="apx-pi-image" />,
-  },
-  flex: {
-    label: ELEMENT_TYPE_LABEL.flex,
-    icon: (
-      <span className="apx-pi-flex">
-        <i />
-      </span>
-    ),
-  },
-  pageNumber: {
-    label: ELEMENT_TYPE_LABEL.pageNumber,
-    icon: <span className="apx-pi-pageno">n/N</span>,
-  },
-  barcode: {
-    label: ELEMENT_TYPE_LABEL.barcode,
-    icon: <span className="apx-pi-barcode" />,
-  },
+  line: <span className="dr-pi-line" />,
+  rect: <span className="dr-pi-rect" />,
+  ellipse: <span className="dr-pi-ellipse" />,
+  table: <span className="dr-pi-table" />,
+  image: <span className="dr-pi-image" />,
+  flex: (
+    <span className="dr-pi-flex">
+      <i />
+    </span>
+  ),
+  pageNumber: <span className="dr-pi-pageno">n/N</span>,
+  barcode: <span className="dr-pi-barcode" />,
 };
+
+/** Palette / layer-row icon for an element type. Display names are locale-dependent, so use useMessages().elementTypes */
+export function elementTypeIcon(type: IrElementType, m: Messages): ReactNode {
+  // Only "text" draws a single sample glyph, so use the locale's character
+  return type === "text" ? (
+    <span className="dr-pi-text">{m.textIconGlyph}</span>
+  ) : (
+    STATIC_ICONS[type]
+  );
+}

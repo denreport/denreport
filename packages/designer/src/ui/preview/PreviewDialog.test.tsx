@@ -8,15 +8,17 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { generateSampleData } from "../../state/preview";
 import { activeSampleJson } from "../../state/sample-scenarios";
 import { EditorStore } from "../../state/store";
 import { PreviewDialog } from "./PreviewDialog";
 import { registerPreviewFace } from "./preview-font";
 
-// jsdom は document.fonts / FontFace を実装しないため、実際の登録先である
-// registerPreviewFace は PreviewDialog の配線を検証する対象としてモックする
-// （その登録処理自体は preview-font.test.ts が擬似 doc.fonts で検証済み）
+// jsdom doesn't implement document.fonts / FontFace, so registerPreviewFace — the actual
+// registration target — is mocked here to verify PreviewDialog's wiring
+// (the registration logic itself is already verified in preview-font.test.ts with a fake doc.fonts)
 vi.mock("./preview-font", async (importOriginal) => {
   const actual = await importOriginal<typeof import("./preview-font")>();
   return { ...actual, registerPreviewFace: vi.fn() };
@@ -26,8 +28,8 @@ vi.mock("./preview-font", async (importOriginal) => {
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
 ).IS_REACT_ACT_ENVIRONMENT = true;
 
-// readCharWidths が読める最小の TTF（head.unitsPerEm + hhea.numberOfHMetrics +
-// hmtx 1本 + 空の cmap format4 サブテーブル）
+// A minimal TTF that readCharWidths can read (head.unitsPerEm + hhea.numberOfHMetrics +
+// one hmtx entry + an empty cmap format4 subtable)
 function syntheticTtf(): Uint8Array {
   const headOffset = 12 + 4 * 16;
   const headLength = 20;
@@ -36,7 +38,7 @@ function syntheticTtf(): Uint8Array {
   const hmtxOffset = hheaOffset + hheaLength;
   const hmtxLength = 4;
   const cmapOffset = hmtxOffset + hmtxLength;
-  const cmapSubtableLength = 24; // format4、segCount=1（終端セグメントのみ）
+  const cmapSubtableLength = 24; // format4, segCount=1 (terminal segment only)
   const cmapLength = 12 + cmapSubtableLength;
   const bytes = new Uint8Array(cmapOffset + cmapLength);
   const view = new DataView(bytes.buffer);
@@ -65,11 +67,11 @@ function syntheticTtf(): Uint8Array {
   view.setUint16(cmapOffset + 2, 1); // numTables
   view.setUint16(cmapOffset + 4, 3); // platformId
   view.setUint16(cmapOffset + 6, 1); // encodingId
-  view.setUint32(cmapOffset + 8, 12); // subtable offset（cmap 先頭からの相対位置）
+  view.setUint32(cmapOffset + 8, 12); // subtable offset (relative to the start of cmap)
   const subtableAbs = cmapOffset + 12;
   view.setUint16(subtableAbs, 4); // format
   view.setUint16(subtableAbs + 2, cmapSubtableLength);
-  view.setUint16(subtableAbs + 6, 2); // segCountX2（segCount=1）
+  view.setUint16(subtableAbs + 6, 2); // segCountX2 (segCount=1)
   view.setUint16(subtableAbs + 14, 0xffff); // endCode[0]
   view.setUint16(subtableAbs + 18, 0xffff); // startCode[0]
   view.setInt16(subtableAbs + 20, 1); // idDelta[0]
@@ -83,7 +85,7 @@ function makeDocument(
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: fontName },
+    font: { regular: fontName },
     elements,
   };
 }
@@ -104,7 +106,7 @@ function boundText(id: string, key: string): IrTextElement {
   };
 }
 
-// 先頭ページ容量 = 継続ページ容量 = 9 行
+// First-page capacity = continuation-page capacity = 9 rows
 function itemsTable(overrides: Partial<IrTableElement> = {}): IrTableElement {
   return {
     type: "table",
@@ -143,7 +145,7 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
-  // jsdom に FontFace がないため、フォント読込は失敗（システムフォント代替）経路で決定させる
+  // jsdom has no FontFace, so we force font loading down the failure (system-font fallback) path
   fetchMock = vi.fn(() => Promise.reject(new Error("フォントなし")));
   vi.stubGlobal("fetch", fetchMock);
 });
@@ -163,7 +165,7 @@ async function renderDialog(
   await act(async () => {
     root.render(<PreviewDialog store={store} onClose={onClose} />);
   });
-  // フォント読込の reject を消化して表示状態を確定させる
+  // Flush the font-loading rejection to settle the display state
   await act(async () => {});
 }
 
@@ -206,7 +208,7 @@ function commitSample(json: string): void {
 }
 
 function svgPages(): NodeListOf<Element> {
-  return container.querySelectorAll(".apx-preview-svg");
+  return container.querySelectorAll(".dr-preview-svg");
 }
 
 function scenarioSelect(): HTMLSelectElement {
@@ -256,7 +258,7 @@ function commitName(value: string): void {
 
 describe("PreviewDialog", () => {
   it("検証エラーがあるとページを描画せずエラー状態を表示する", async () => {
-    // x=500 は用紙幅 210mm を超えるため M02 になる
+    // x=500 exceeds the paper width of 210mm, so this becomes M02
     const store = new EditorStore(
       makeDocument([{ ...boundText("t1", "customerName"), x: 500 }]),
     );
@@ -290,11 +292,11 @@ describe("PreviewDialog", () => {
       "{}",
     );
     await renderDialog(store);
-    const banner = container.querySelector(".apx-preview-warnings");
+    const banner = container.querySelector(".dr-preview-warnings");
     expect(banner).not.toBeNull();
     expect(banner?.textContent).toContain("customerName");
     expect(banner?.textContent).toContain("items");
-    // 補完済みなのでページ自体は描画される
+    // The page itself is still rendered since the data has been completed
     expect(svgPages()).toHaveLength(1);
   });
 
@@ -304,8 +306,8 @@ describe("PreviewDialog", () => {
       sampleWithRows(2),
     );
     await renderDialog(store);
-    const banner = container.querySelector(".apx-preview-warnings");
-    // jsdom ではフォント読込失敗の警告のみが残る
+    const banner = container.querySelector(".dr-preview-warnings");
+    // In jsdom, only the font-load-failure warning remains
     expect(banner?.textContent).toContain("フォント");
     expect(banner?.textContent).not.toContain("items");
   });
@@ -329,7 +331,7 @@ describe("PreviewDialog", () => {
     );
     await renderDialog(store);
     expect(svgPages()).toHaveLength(0);
-    expect(container.querySelector(".apx-verr-rule")?.textContent).toBe("C03");
+    expect(container.querySelector(".dr-verr-rule")?.textContent).toBe("C03");
   });
 
   it("サンプルが空なら生成ボタンで即座に generateSampleData の結果になる", async () => {
@@ -342,7 +344,7 @@ describe("PreviewDialog", () => {
       generateSampleData(document_),
     );
     expect(textarea().value).toBe(generateSampleData(document_));
-    expect(container.querySelector(".apx-dialog")).toBeNull();
+    expect(container.querySelector(".dr-dialog")).toBeNull();
   });
 
   it("既存サンプルがあるときは確認を挟み、キャンセルなら変更しない", async () => {
@@ -351,13 +353,13 @@ describe("PreviewDialog", () => {
     await renderDialog(store);
 
     click(buttonByText("bind キーから生成"));
-    expect(container.querySelector(".apx-dialog")).not.toBeNull();
+    expect(container.querySelector(".dr-dialog")).not.toBeNull();
     expect(activeSampleJson(store.getState().sampleScenarios)).toBe(
       sampleWithRows(1),
     );
 
     click(buttonByText("キャンセル"));
-    expect(container.querySelector(".apx-dialog")).toBeNull();
+    expect(container.querySelector(".dr-dialog")).toBeNull();
     expect(activeSampleJson(store.getState().sampleScenarios)).toBe(
       sampleWithRows(1),
     );
@@ -375,8 +377,8 @@ describe("PreviewDialog", () => {
 
     commitSample("{oops");
     expect(activeSampleJson(store.getState().sampleScenarios)).toBe("{oops");
-    expect(container.querySelector(".apx-sample-err")).not.toBeNull();
-    // 空データに補完されてページは出続ける
+    expect(container.querySelector(".dr-sample-err")).not.toBeNull();
+    // The data is completed to empty, so the page keeps rendering
     expect(svgPages()).toHaveLength(1);
   });
 
@@ -461,7 +463,7 @@ describe("シナリオ操作", () => {
     expect(store.getState().sampleScenarios.items).toHaveLength(2);
 
     click(buttonByText("削除"));
-    expect(container.querySelector(".apx-dialog")).not.toBeNull();
+    expect(container.querySelector(".dr-dialog")).not.toBeNull();
     expect(store.getState().sampleScenarios.items).toHaveLength(2);
 
     click(buttonByText("削除する"));
@@ -489,7 +491,7 @@ describe("シナリオ操作", () => {
 describe("フォント解決の反映", () => {
   it("registered 解決では選択フォントの family が描画に使われ、fetch は呼ばれない", async () => {
     vi.mocked(registerPreviewFace).mockResolvedValueOnce(
-      "apx-local-MyLocalFont",
+      "dr-local-MyLocalFont",
     );
     const font = {
       name: "MyLocalFont",
@@ -505,8 +507,8 @@ describe("フォント解決の反映", () => {
     await renderDialog(store);
 
     await vi.waitFor(() => {
-      const text = container.querySelector(".apx-preview-svg text");
-      expect(text?.getAttribute("font-family")).toBe("apx-local-MyLocalFont");
+      const text = container.querySelector(".dr-preview-svg text");
+      expect(text?.getAttribute("font-family")).toBe("dr-local-MyLocalFont");
     });
     expect(registerPreviewFace).toHaveBeenCalledWith(
       expect.anything(),
@@ -523,10 +525,53 @@ describe("フォント解決の反映", () => {
     );
     await renderDialog(store);
 
-    const banner = container.querySelector(".apx-preview-warnings");
+    const banner = container.querySelector(".dr-preview-warnings");
     expect(banner?.textContent).toContain(
       "フォント「GoneFont」の実データが未選択のため",
     );
-    expect(banner?.textContent).toContain("PC のフォントから選択");
+    expect(banner?.textContent).toContain("文書設定のフォント欄");
+  });
+});
+
+describe("en の MessagesContext", () => {
+  async function renderEn(): Promise<void> {
+    const store = new EditorStore(
+      makeDocument([itemsTable()]),
+      sampleWithRows(1),
+    );
+    await act(async () => {
+      root.render(
+        <MessagesContext.Provider value={en}>
+          <PreviewDialog store={store} onClose={() => {}} />
+        </MessagesContext.Provider>,
+      );
+    });
+    await act(async () => {});
+  }
+
+  it("文言が英語で描画される", async () => {
+    await renderEn();
+    expect(container.querySelector(".dr-preview-title")?.textContent).toBe(
+      "Preview",
+    );
+    expect(buttonByText("Close")).not.toBeNull();
+  });
+
+  it("シナリオ操作・サンプルデータ欄・ページも英語で描画される", async () => {
+    await renderEn();
+    expect(buttonByText("Add")).not.toBeNull();
+    expect(buttonByText("Duplicate")).not.toBeNull();
+    expect(buttonByText("Delete")).not.toBeNull();
+    expect(buttonByText("Generate from bind keys")).not.toBeNull();
+    expect(
+      container.querySelector('select[aria-label="Sample data scenario"]'),
+    ).not.toBeNull();
+    expect(
+      container.querySelector('input[aria-label="Scenario name"]'),
+    ).not.toBeNull();
+    expect(container.querySelector(".dr-sample .dr-sect-h")?.textContent).toBe(
+      "Sample data (JSON)",
+    );
+    expect(svgPages()[0]?.getAttribute("aria-label")).toBe("Preview page");
   });
 });

@@ -2,15 +2,22 @@ import type {
   IrData,
   IrDocument,
   IrError,
+  IrFontSlot,
   LaidOutLine,
   LoweredElement,
   LoweredTextElement,
 } from "@denreport/core";
-import { layoutTextLines, lowerIr, PT_TO_MM } from "@denreport/core";
-import { detectFontFormat } from "../fonts/format";
+import {
+  layoutTextLines,
+  lowerIr,
+  PT_TO_MM,
+  resolveFontSlot,
+} from "@denreport/core";
+import type { FontSetData, ResolvedSlotFont } from "../fonts/set";
+import { effectiveFontOf, resolveFontSetData } from "../fonts/set";
 import type { FontIssue } from "../fonts/validate";
-import { readCharWidths } from "../fonts/widths";
-import { expandStrokes } from "./dash";
+import type { MessageLocale } from "../i18n/messages";
+import { expandStrokes, rotatePointCw } from "./dash";
 import type {
   PdfmeBarcodeSchema,
   PdfmeEllipseSchema,
@@ -42,13 +49,24 @@ export type ExportPdfmeResult =
       readonly fontIssues: readonly FontIssue[];
     };
 
+/** Omits the key from the schema when rotate is 0 (to keep the existing schema shape stable). */
+function rotateAttr(rotate: number): { readonly rotate?: number } {
+  return rotate === 0 ? {} : { rotate };
+}
+
+/** Omits the key when underline is also false (to keep the existing schema shape stable). */
+function underlineAttr(underline: boolean): { readonly underline?: boolean } {
+  return underline ? { underline } : {};
+}
+
 function toStaticAlignment(
   align: LoweredTextElement["align"],
 ): "left" | "center" | "right" {
   return align === "justify" ? "left" : align;
 }
 
-// 全行 charSpacePt === 0（非 justify、または justify でも伸長不要）の1スキーマ経路
+// The single-schema path for when every line has charSpacePt === 0 (not
+// justify, or justify but no expansion needed).
 function textSchema(
   name: string,
   element: LoweredTextElement,
@@ -62,13 +80,16 @@ function textSchema(
     height: element.h,
     fontSize: element.fontSize,
     fontName,
+    fontColor: element.color,
     alignment: toStaticAlignment(element.align),
     verticalAlignment: "top",
     lineHeight: element.lineHeight,
+    ...underlineAttr(element.underline),
+    ...rotateAttr(element.rotate),
   };
 }
 
-// justify で伸長が要る行を1行1スキーマに分割する経路
+// The path that splits lines requiring expansion under justify into one schema per line.
 function justifyLineSchema(
   name: string,
   element: LoweredTextElement,
@@ -77,20 +98,34 @@ function justifyLineSchema(
   lineIndex: number,
 ): PdfmeSchema {
   const lineHeightMm = element.lineHeight * element.fontSize * PT_TO_MM;
+  // characterSpacing also adds spacing after the trailing glyph, so unless
+  // width is widened by that spacing, pdfme's internal remeasurement will
+  // re-wrap this line.
+  const width = element.w + line.charSpacePt * PT_TO_MM;
+  const unrotated = { x: element.x, y: element.y + lineIndex * lineHeightMm };
+  // pdfme's rotation is around the schema's center, so mapping the line
+  // schema's center through a rotation around the element's center, and
+  // placing it there, is equivalent to rotating the whole element once.
+  const center = rotatePointCw(
+    { x: unrotated.x + width / 2, y: unrotated.y + lineHeightMm / 2 },
+    { x: element.x + element.w / 2, y: element.y + element.h / 2 },
+    element.rotate,
+  );
   return {
     type: "text",
     name,
-    position: { x: element.x, y: element.y + lineIndex * lineHeightMm },
-    // characterSpacing は末尾グリフの後ろにも字間を足すため、width を字間分広げないと
-    // pdfme が内部再計測でこの行を再折り返ししてしまう
-    width: element.w + line.charSpacePt * PT_TO_MM,
+    position: { x: center.x - width / 2, y: center.y - lineHeightMm / 2 },
+    width,
     height: lineHeightMm,
     fontSize: element.fontSize,
     fontName,
+    fontColor: element.color,
     alignment: "left",
     verticalAlignment: "top",
     lineHeight: element.lineHeight,
     characterSpacing: line.charSpacePt,
+    ...underlineAttr(element.underline),
+    ...rotateAttr(element.rotate),
   };
 }
 
@@ -117,6 +152,7 @@ function toSchema(
             ? element.thickness
             : element.length,
         color: element.color,
+        ...rotateAttr(element.rotate),
       };
       return { schema };
     }
@@ -131,6 +167,7 @@ function toSchema(
         borderColor: element.borderColor,
         color: element.fillColor ?? "",
         ...(element.cornerRadius > 0 ? { radius: element.cornerRadius } : {}),
+        ...rotateAttr(element.rotate),
       };
       return { schema };
     }
@@ -144,6 +181,7 @@ function toSchema(
         borderWidth: element.borderWidth,
         borderColor: element.borderColor,
         color: element.fillColor ?? "",
+        ...rotateAttr(element.rotate),
       };
       return { schema };
     }
@@ -154,6 +192,7 @@ function toSchema(
         position,
         width: element.w,
         height: element.h,
+        ...rotateAttr(element.rotate),
       };
       return { schema, input: [name, element.src] };
     }
@@ -167,41 +206,44 @@ function toSchema(
         backgroundColor: "#ffffff",
         barColor: "#000000",
         ...(element.symbology === "ean13" ? { includetext: true } : {}),
+        ...rotateAttr(element.rotate),
       };
       return { schema, input: [name, element.content] };
     }
   }
 }
 
-const FONT_WIDTH_ISSUE_MESSAGE =
-  "フォントの字幅（cmap / hmtx テーブル）を読み取れないため、テキストの折り返し・均等割付を計算できません。別の TTF フォントを使用してください。";
-
 /**
  * Lowers `document` with `data` and converts the result into a pdfme
- * template plus its single input record, using `fontData` to measure text
- * for wrapping and justification. `fontData` must be a valid TTF (see
- * validateFont) with readable cmap/hmtx tables; otherwise export fails with a
- * fontIssues entry explaining why.
+ * template plus its single input record, using `fonts` to measure text for
+ * wrapping and justification — each element measures with the font of its
+ * resolved slot. Every slot in `fonts` must be a valid TTF (see validateFont)
+ * with readable metrics; otherwise export fails with fontIssues explaining
+ * why, in `options.locale` (default "ja").
  */
 export function exportPdfme(
   document: IrDocument,
   data: IrData,
-  fontData: Uint8Array,
+  fonts: FontSetData,
+  options?: { readonly locale?: MessageLocale },
 ): ExportPdfmeResult {
-  const charWidthEm = readCharWidths(fontData);
-  const result = lowerIr(document, data);
-  if (charWidthEm === null || !result.ok) {
-    const fontIssues: FontIssue[] =
-      charWidthEm === null
-        ? [
-            {
-              format: detectFontFormat(fontData),
-              message: FONT_WIDTH_ISSUE_MESSAGE,
-            },
-          ]
-        : [];
-    return { ok: false, errors: result.ok ? [] : result.errors, fontIssues };
+  const locale = options?.locale ?? "ja";
+  const fontSet = resolveFontSetData(fonts, { locale });
+  const result = lowerIr(document, data, { locale });
+  if (!fontSet.ok || !result.ok) {
+    return {
+      ok: false,
+      errors: result.ok ? [] : result.errors,
+      fontIssues: fontSet.ok ? [] : fontSet.issues,
+    };
   }
+
+  const font = effectiveFontOf(document.font, fonts);
+  const slotFor = (element: LoweredTextElement): IrFontSlot =>
+    resolveFontSlot(font, element.fontWeight, element.fontStyle);
+  const slotFontFor = (slot: IrFontSlot): ResolvedSlotFont =>
+    // effectiveFontOf guarantees that data exists for the resolved slot
+    fontSet.slots.get(slot) as ResolvedSlotFont;
 
   const lowered = result.document;
   const inputs: Record<string, string> = {};
@@ -219,6 +261,8 @@ export function exportPdfme(
         if (input) inputs[input[0]] = input[1];
         return [schema];
       }
+      const slot = slotFor(element);
+      const fontName = font[slot] as string;
       const lines = layoutTextLines(
         {
           content: element.content,
@@ -226,23 +270,17 @@ export function exportPdfme(
           fontSize: element.fontSize,
           align: element.align,
         },
-        charWidthEm,
+        slotFontFor(slot).charWidthEm,
       );
       if (lines.every((line) => line.charSpacePt === 0)) {
         const name = nextName(element.sourceId);
         inputs[name] = lines.map((line) => line.text).join("\n");
-        return [textSchema(name, element, lowered.font.name)];
+        return [textSchema(name, element, fontName)];
       }
       return lines.map((line, lineIndex) => {
         const name = nextName(element.sourceId);
         inputs[name] = line.text;
-        return justifyLineSchema(
-          name,
-          element,
-          lowered.font.name,
-          line,
-          lineIndex,
-        );
+        return justifyLineSchema(name, element, fontName, line, lineIndex);
       });
     });
   });

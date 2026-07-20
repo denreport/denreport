@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ja } from "../i18n/messages/ja";
 import type { SampleScenarioSet } from "./sample-scenarios";
 import {
   activeSampleJson,
@@ -20,13 +21,29 @@ function setOf(
   return { items, activeId };
 }
 
+function scenarioSet(json = ""): SampleScenarioSet {
+  return defaultScenarioSet(json, ja.scenarioNames);
+}
+
+function add(set: SampleScenarioSet): SampleScenarioSet {
+  return addScenario(set, ja.scenarioNames);
+}
+
+function duplicate(set: SampleScenarioSet): SampleScenarioSet {
+  return duplicateActiveScenario(set, ja.scenarioNames);
+}
+
+function parseStorage(raw: string): SampleScenarioSet {
+  return parseSampleDataStorage(raw, ja.scenarioNames);
+}
+
 describe("defaultScenarioSet", () => {
   it("既定は「シナリオ 1」1件で、指定した json を引き継ぐ", () => {
-    expect(defaultScenarioSet()).toEqual({
+    expect(scenarioSet()).toEqual({
       items: [{ id: "s1", name: "シナリオ 1", json: "" }],
       activeId: "s1",
     });
-    expect(defaultScenarioSet('{"a": 1}')).toEqual({
+    expect(scenarioSet('{"a": 1}')).toEqual({
       items: [{ id: "s1", name: "シナリオ 1", json: '{"a": 1}' }],
       activeId: "s1",
     });
@@ -67,12 +84,12 @@ describe("selectScenario", () => {
 
 describe("addScenario", () => {
   it("空 json の新規シナリオを作りアクティブにする", () => {
-    const set = defaultScenarioSet('{"a": 1}');
-    const next = addScenario(set);
+    const set = scenarioSet('{"a": 1}');
+    const next = add(set);
     expect(next.items).toHaveLength(2);
     expect(next.activeId).toBe(next.items[1]?.id);
     expect(next.items[1]).toEqual({ id: "s2", name: "シナリオ 2", json: "" });
-    // 既存シナリオは変わらない
+    // Existing scenarios are unchanged
     expect(next.items[0]).toEqual(set.items[0]);
   });
 
@@ -84,7 +101,7 @@ describe("addScenario", () => {
       ],
       "s1",
     );
-    const next = addScenario(set);
+    const next = add(set);
     expect(next.items[2]?.name).toBe("シナリオ 2");
   });
 
@@ -96,7 +113,7 @@ describe("addScenario", () => {
       ],
       "s1",
     );
-    const next = addScenario(set);
+    const next = add(set);
     expect(next.items[2]?.id).toBe("s2");
   });
 });
@@ -110,7 +127,7 @@ describe("duplicateActiveScenario", () => {
       ],
       "s2",
     );
-    const next = duplicateActiveScenario(set);
+    const next = duplicate(set);
     expect(next.items).toHaveLength(3);
     expect(next.activeId).toBe(next.items[2]?.id);
     expect(next.items[2]).toEqual({
@@ -123,7 +140,7 @@ describe("duplicateActiveScenario", () => {
 
 describe("removeScenario", () => {
   it("最後の1件は no-op（同一参照）", () => {
-    const set = defaultScenarioSet();
+    const set = scenarioSet();
     expect(removeScenario(set, "s1")).toBe(set);
   });
 
@@ -227,21 +244,17 @@ describe("parseSampleDataStorage / serializeSampleDataStorage", () => {
       ],
       "s2",
     );
-    expect(parseSampleDataStorage(serializeSampleDataStorage(set))).toEqual(
-      set,
-    );
+    expect(parseStorage(serializeSampleDataStorage(set))).toEqual(set);
   });
 
   it("レガシー生 JSON をシナリオ1件へ移行する", () => {
     const raw = '{"customerName": "甲"}';
-    expect(parseSampleDataStorage(raw)).toEqual(defaultScenarioSet(raw));
+    expect(parseStorage(raw)).toEqual(scenarioSet(raw));
   });
 
   it("不正 JSON・空文字列もシナリオ1件へ移行する", () => {
-    expect(parseSampleDataStorage("{oops")).toEqual(
-      defaultScenarioSet("{oops"),
-    );
-    expect(parseSampleDataStorage("")).toEqual(defaultScenarioSet(""));
+    expect(parseStorage("{oops")).toEqual(scenarioSet("{oops"));
+    expect(parseStorage("")).toEqual(scenarioSet(""));
   });
 
   it("format・version が一致しない JSON はレガシー扱いで移行する", () => {
@@ -249,7 +262,7 @@ describe("parseSampleDataStorage / serializeSampleDataStorage", () => {
       format: "denreport-sample-scenarios",
       version: 2,
     });
-    expect(parseSampleDataStorage(raw)).toEqual(defaultScenarioSet(raw));
+    expect(parseStorage(raw)).toEqual(scenarioSet(raw));
   });
 
   it("形状不正な封筒（scenarios 空・activeId 不在等）は既定セットに落ちる", () => {
@@ -259,9 +272,7 @@ describe("parseSampleDataStorage / serializeSampleDataStorage", () => {
       activeId: "s1",
       scenarios: [],
     });
-    expect(parseSampleDataStorage(emptyScenarios)).toEqual(
-      defaultScenarioSet(),
-    );
+    expect(parseStorage(emptyScenarios)).toEqual(scenarioSet());
 
     const danglingActiveId = JSON.stringify({
       format: "denreport-sample-scenarios",
@@ -269,9 +280,7 @@ describe("parseSampleDataStorage / serializeSampleDataStorage", () => {
       activeId: "s9",
       scenarios: [{ id: "s1", name: "シナリオ 1", json: "" }],
     });
-    expect(parseSampleDataStorage(danglingActiveId)).toEqual(
-      defaultScenarioSet(),
-    );
+    expect(parseStorage(danglingActiveId)).toEqual(scenarioSet());
 
     const malformedItem = JSON.stringify({
       format: "denreport-sample-scenarios",
@@ -279,6 +288,6 @@ describe("parseSampleDataStorage / serializeSampleDataStorage", () => {
       activeId: "s1",
       scenarios: [{ id: "s1", name: "シナリオ 1" }],
     });
-    expect(parseSampleDataStorage(malformedItem)).toEqual(defaultScenarioSet());
+    expect(parseStorage(malformedItem)).toEqual(scenarioSet());
   });
 });

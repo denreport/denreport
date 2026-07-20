@@ -1,3 +1,4 @@
+import type { MessageLocale } from "../i18n/messages";
 import type {
   IrDocument,
   IrElement,
@@ -19,12 +20,13 @@ export interface CompatFinding {
   readonly path: string;
   readonly attribute?: string;
   readonly note: string;
+  readonly userMessage: string;
 }
 
 type CompatInstance = IrElement | IrFlexChild;
 
-// マトリクスは要素型 K ごとに CompatAttributeOf<K> で属性キーを制限するが、
-// ここは走査対象の要素型を静的に知らないため汎用形にゆるめて読む。
+// The matrix restricts attribute keys per element type K via CompatAttributeOf<K>,
+// but here we don't statically know the element type being scanned, so we relax it to a generic form.
 interface LooseElementCompat {
   readonly element: CompatEntry;
   readonly attributes?: {
@@ -36,15 +38,18 @@ interface LooseElementCompat {
  * Walks every element in `document` (including flex descendants) against
  * `matrix` and collects a finding for each element or attribute that is
  * approximated or unsupported by the target. Returns an empty array when the
- * document is fully supported.
+ * document is fully supported. `options.locale` controls the resolved
+ * `userMessage` language (default "ja").
  */
 export function checkCompat(
   document: IrDocument,
   matrix: TargetCompatMatrix,
+  options?: { readonly locale?: MessageLocale },
 ): readonly CompatFinding[] {
+  const locale = options?.locale ?? "ja";
   const findings: CompatFinding[] = [];
   document.elements.forEach((element, i) => {
-    walk(element, `elements[${i}]`, matrix, findings);
+    walk(element, `elements[${i}]`, matrix, locale, findings);
   });
   return findings;
 }
@@ -53,10 +58,19 @@ function walk(
   instance: CompatInstance,
   path: string,
   matrix: TargetCompatMatrix,
+  locale: MessageLocale,
   findings: CompatFinding[],
 ): void {
   const compat = matrix.elements[instance.type] as LooseElementCompat;
-  report(findings, matrix.target, instance, path, undefined, compat.element);
+  report(
+    findings,
+    matrix.target,
+    instance,
+    path,
+    undefined,
+    compat.element,
+    locale,
+  );
   if (compat.element.level === "unsupported") return;
 
   const attributes = compat.attributes;
@@ -70,6 +84,7 @@ function walk(
           `${path}.${attribute}`,
           attribute,
           entry,
+          locale,
         );
       }
     }
@@ -77,7 +92,7 @@ function walk(
 
   if (instance.type === "flex") {
     instance.children.forEach((child, i) => {
-      walk(child, `${path}.children[${i}]`, matrix, findings);
+      walk(child, `${path}.children[${i}]`, matrix, locale, findings);
     });
   }
 }
@@ -89,6 +104,7 @@ function report(
   path: string,
   attribute: string | undefined,
   entry: CompatEntry,
+  locale: MessageLocale,
 ): void {
   if (entry.level === "supported") return;
   findings.push({
@@ -99,5 +115,6 @@ function report(
     path,
     ...(attribute !== undefined ? { attribute } : {}),
     note: entry.note,
+    userMessage: entry.userMessage(locale),
   });
 }

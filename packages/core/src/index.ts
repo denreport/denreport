@@ -17,11 +17,12 @@ export {
   TABLE_GRID_WIDTH,
   TABLE_HEADER_TEXT_OFFSET_Y,
 } from "./ir/constants";
-export type { DataProblem, IrData } from "./ir/data";
+export type { DataProblem, IrData, IrTableRow } from "./ir/data";
 export { analyzeData, emptyDataFor, validateData } from "./ir/data";
 export type { IrError, IrRuleId } from "./ir/errors";
 export type { IrPlacedElement } from "./ir/flex";
 export { resolveFlex } from "./ir/flex";
+export { resolveFontSlot } from "./ir/font";
 export { resolveFootnotes } from "./ir/footnotes";
 export { textTemplateKeys } from "./ir/interpolate";
 export { checkQualifiedInvoice } from "./ir/invoice";
@@ -39,14 +40,25 @@ export type {
 export { lowerIr } from "./ir/lower";
 export type { ParseIrResult } from "./ir/parse";
 export { parseIr } from "./ir/parse";
-export type { ResolvedShapeStyle, ResolvedStroke } from "./ir/style";
+export type {
+  ResolvedShapeStyle,
+  ResolvedStroke,
+  ResolvedTextStyle,
+} from "./ir/style";
 export {
   resolveEllipseStyle,
   resolveLineStyle,
   resolveRectStyle,
+  resolveTextStyle,
   STROKE_DASH_MM,
 } from "./ir/style";
 export { applicableStyleAttrs, STYLEABLE_ATTRS } from "./ir/styles";
+export type {
+  SkipRange,
+  TableChunkMerges,
+  TableMergeRect,
+} from "./ir/table-merge";
+export { computeChunkMerges, subtractSkips } from "./ir/table-merge";
 export type {
   CharWidthEm,
   LaidOutLine,
@@ -68,8 +80,12 @@ export type {
   IrFlexDirection,
   IrFlexElement,
   IrFont,
+  IrFontSlot,
+  IrFontStyle,
+  IrFontWeight,
   IrFootnoteNote,
   IrFootnotes,
+  IrGroup,
   IrImageElement,
   IrLineElement,
   IrNamedStyle,
@@ -81,6 +97,7 @@ export type {
   IrStrokeStyle,
   IrStyleAttrs,
   IrTableCellOverride,
+  IrTableCellSpan,
   IrTableElement,
   IrTextElement,
   StyleAttrKey,

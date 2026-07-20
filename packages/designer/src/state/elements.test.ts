@@ -16,6 +16,7 @@ import {
   reorderFlexChild,
   resizeElement,
   resizeFlexChild,
+  rotateElement,
   setTableContinuationY,
   toFlexChild,
   toTopLevelElement,
@@ -26,7 +27,7 @@ function blankDocument(): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [],
   };
 }
@@ -160,6 +161,62 @@ describe("resizeElement", () => {
     const next = resizeElement(doc, table.id, { x: 20, y: 95, w: 999, h: 999 });
     expect(next.elements[0]).toMatchObject({ x: 20, y: 95 });
     expect(next.elements[0]).not.toHaveProperty("w");
+  });
+});
+
+describe("rotateElement", () => {
+  function docWithText(): IrDocument {
+    return { ...blankDocument(), elements: [textElement("t1")] };
+  }
+
+  it("0.1° 単位に丸めて設定する", () => {
+    const next = rotateElement(docWithText(), "t1", 45.04);
+    expect(next.elements[0]).toMatchObject({ rotate: 45 });
+    const next2 = rotateElement(docWithText(), "t1", -30.55);
+    expect(next2.elements[0]).toMatchObject({ rotate: -30.5 });
+  });
+
+  it("丸め後 0 なら属性を除去する", () => {
+    const rotated = rotateElement(docWithText(), "t1", 45);
+    const cleared = rotateElement(rotated, "t1", 0.04);
+    expect(cleared.elements[0]).not.toHaveProperty("rotate");
+  });
+
+  it("rotate なしの要素へ 0 を設定しても文書をそのまま返す", () => {
+    const doc = docWithText();
+    expect(rotateElement(doc, "t1", 0)).toBe(doc);
+  });
+
+  it("同値の設定では文書をそのまま返す", () => {
+    const rotated = rotateElement(docWithText(), "t1", 45);
+    expect(rotateElement(rotated, "t1", 45)).toBe(rotated);
+  });
+
+  it("table / flex・未知 id では文書をそのまま返す", () => {
+    const doc: IrDocument = {
+      ...blankDocument(),
+      elements: [
+        createDefaultElement(blankDocument(), "table", 0, 0),
+        flexElement("f", ["c1"]),
+      ],
+    };
+    expect(rotateElement(doc, doc.elements[0]?.id ?? "", 45)).toBe(doc);
+    expect(rotateElement(doc, "f", 45)).toBe(doc);
+    expect(rotateElement(doc, "missing", 45)).toBe(doc);
+  });
+
+  it("flex 子にも作用する", () => {
+    const doc: IrDocument = {
+      ...blankDocument(),
+      elements: [flexElement("f", ["c1"])],
+    };
+    const next = rotateElement(doc, "c1", 90);
+    const flex = next.elements[0];
+    if (flex?.type === "flex") {
+      expect(flex.children[0]).toMatchObject({ rotate: 90 });
+    } else {
+      expect.unreachable();
+    }
   });
 });
 
@@ -475,16 +532,16 @@ describe("ストア操作: 全8要素型の 配置 → 選択 → 移動/リサ�
     it(`${type}: 一連の編集が undo/redo で往復する`, () => {
       const store = new EditorStore(blankDocument());
 
-      // 配置
+      // Place
       const el = createDefaultElement(store.getState().document, type, 20, 30);
       store.commit(addElement(store.getState().document, el), [el.id]);
       expect(store.getState().selection).toEqual([el.id]);
       expect(store.getState().document.elements).toHaveLength(1);
 
-      // 選択（履歴に積まれない）
+      // Select (not pushed to history)
       store.setSelection([el.id]);
 
-      // 移動
+      // Move
       store.commit(moveElements(store.getState().document, [el.id], 5, 5), [
         el.id,
       ]);
@@ -493,7 +550,7 @@ describe("ストア操作: 全8要素型の 配置 → 選択 → 移動/リサ�
         y: 35,
       });
 
-      // リサイズ（可能な型のみ）
+      // Resize (only for types that support it)
       if (RESIZABLE.includes(type)) {
         store.commit(
           resizeElement(store.getState().document, el.id, {
@@ -512,24 +569,24 @@ describe("ストア操作: 全8要素型の 配置 → 選択 → 移動/リサ�
         }
       }
 
-      // 削除
+      // Delete
       store.commit(deleteElements(store.getState().document, [el.id]), []);
       expect(store.getState().document.elements).toEqual([]);
 
-      // undo で全編集を巻き戻す
+      // undo rolls back all edits
       while (store.canUndo()) {
         store.undo();
       }
       expect(store.getState().document.elements).toEqual([]);
       expect(store.getState().selection).toEqual([]);
 
-      // redo で削除まで進む
+      // redo advances up to the deletion
       while (store.canRedo()) {
         store.redo();
       }
       expect(store.getState().document.elements).toEqual([]);
 
-      // 1回だけ undo すると削除前（要素あり）に戻る
+      // A single undo returns to just before the deletion (element present)
       store.undo();
       expect(store.getState().document.elements).toHaveLength(1);
       expect(store.getState().document.elements[0]?.id).toBe(el.id);

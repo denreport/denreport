@@ -1,11 +1,16 @@
 import type { IrAlign } from "@denreport/core";
+import type { Messages } from "../../i18n/messages";
 
-export const ALIGN_OPTIONS: readonly {
-  readonly value: IrAlign;
-  readonly label: string;
-}[] = [
-  { value: "left", label: "左" },
-  { value: "center", label: "中央" },
-  { value: "right", label: "右" },
-  { value: "justify", label: "均等" },
-];
+export type AlignLabels = Messages["properties"]["align"];
+
+/** List of IrAlign options. The caller passes in locale-resolved labels. */
+export function alignOptions(
+  labels: AlignLabels,
+): readonly { readonly value: IrAlign; readonly label: string }[] {
+  return [
+    { value: "left", label: labels.left },
+    { value: "center", label: labels.center },
+    { value: "right", label: labels.right },
+    { value: "justify", label: labels.justify },
+  ];
+}

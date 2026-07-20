@@ -1,7 +1,16 @@
-import { readCharWidths } from "@denreport/targets";
+import type { IrFontSlot } from "@denreport/core";
+import {
+  EMBEDDED_BOLD_FONT_NAME,
+  EMBEDDED_BOLD_FONT_URL,
+  EMBEDDED_FONT_URL,
+  readCharWidths,
+} from "@denreport/targets";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { resolveFont } from "../../state/fonts";
+import { useLocale, useMessages } from "../../i18n/context";
+import type { Messages } from "../../i18n/messages";
+import type { FontResolution } from "../../state/fonts";
+import { resolveFontSet } from "../../state/fonts";
 import { buildPreview, generateSampleData } from "../../state/preview";
 import {
   activeSampleJson,
@@ -16,17 +25,67 @@ import type { EditorStore } from "../../state/store";
 import { EMBEDDED_FONT_NAME } from "../fonts/font-registration";
 import { useEditorState } from "../useEditorState";
 import { PreviewPage } from "./PreviewPage";
-import type { PreviewFont } from "./preview-font";
+import type { PreviewFont, PreviewFontSet } from "./preview-font";
 import { loadPreviewFont, registerPreviewFace } from "./preview-font";
 import { SampleDataEditor } from "./SampleDataEditor";
 import { ScenarioBar } from "./ScenarioBar";
 
+type PreviewMessages = Messages["preview"];
+
 type FontState =
   | { readonly kind: "loading" }
-  | { readonly kind: "ready"; readonly font: PreviewFont }
+  | { readonly kind: "ready"; readonly fonts: PreviewFontSet }
   | { readonly kind: "failed" };
 
-function parseErrorOf(sampleData: string): string | undefined {
+const EMBEDDED_NAMES: ReadonlySet<string> = new Set([
+  EMBEDDED_FONT_NAME,
+  EMBEDDED_BOLD_FONT_NAME,
+]);
+
+// Register with a unique dr- prefixed name rather than the logical font name, to avoid colliding with a same-named font on the host page
+const EMBEDDED_PREVIEW_FONTS: Readonly<
+  Record<string, { readonly url: URL; readonly family: string }>
+> = {
+  [EMBEDDED_FONT_NAME]: {
+    url: EMBEDDED_FONT_URL,
+    family: "dr-embedded-notosansjp",
+  },
+  [EMBEDDED_BOLD_FONT_NAME]: {
+    url: EMBEDDED_BOLD_FONT_URL,
+    family: "dr-embedded-notosansjp-bold",
+  },
+};
+
+async function loadSlotPreviewFont(
+  doc: Document,
+  resolution: FontResolution,
+): Promise<PreviewFont> {
+  if (resolution.kind === "registered") {
+    const font = resolution.font;
+    const charWidths = readCharWidths(font.data);
+    if (charWidths === null) {
+      throw new Error("フォントの字幅を読み取れません");
+    }
+    const family = await registerPreviewFace(doc, font.name, font.data);
+    return { family, ascentPerEm: font.ascentPerEm, charWidths };
+  }
+  const embedded =
+    resolution.kind === "embedded"
+      ? EMBEDDED_PREVIEW_FONTS[resolution.name]
+      : undefined;
+  // missing (and unknown bundled names) fall back to the bundled regular for display
+  const fallback = EMBEDDED_PREVIEW_FONTS[EMBEDDED_FONT_NAME] as {
+    readonly url: URL;
+    readonly family: string;
+  };
+  const target = embedded ?? fallback;
+  return loadPreviewFont(doc, target.url, target.family);
+}
+
+function parseErrorOf(
+  sampleData: string,
+  m: PreviewMessages,
+): string | undefined {
   if (sampleData.trim() === "") {
     return undefined;
   }
@@ -35,16 +94,18 @@ function parseErrorOf(sampleData: string): string | undefined {
     return undefined;
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    return `JSON として解釈できません: ${detail}`;
+    return m.jsonParseError(detail);
   }
 }
 
-/** プレビューの全面オーバーレイ。左: ページ列（縦スクロール）、右: サンプルデータ欄 */
+/** Full-screen preview overlay. Left: page list (vertical scroll), right: sample data pane */
 export function PreviewDialog(props: {
   readonly store: EditorStore;
   readonly onClose: () => void;
 }): ReactNode {
   const { store, onClose } = props;
+  const m = useMessages();
+  const locale = useLocale();
   const state = useEditorState(store);
   const activeJson = activeSampleJson(state.sampleScenarios);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -52,57 +113,63 @@ export function PreviewDialog(props: {
   const [confirmingGenerate, setConfirmingGenerate] = useState(false);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
 
-  const resolution = resolveFont(
-    state.document.font.name,
+  const resolutions = resolveFontSet(
+    state.document.font,
     state.fontRegistry,
-    EMBEDDED_FONT_NAME,
+    EMBEDDED_NAMES,
   );
-  const resolutionKey =
-    resolution.kind === "registered" ? resolution.font.name : resolution.kind;
+  const resolutionKey = [...resolutions.entries()]
+    .map(([slot, resolution]) =>
+      resolution.kind === "registered"
+        ? `${slot}:registered:${resolution.font.name}`
+        : `${slot}:${resolution.kind}:${resolution.name}`,
+    )
+    .join(",");
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: resolutionKey が解決結果の変化を代表する
+  // biome-ignore lint/correctness/useExhaustiveDependencies: resolutionKey represents changes to the resolution result
   useEffect(() => {
     const doc = rootRef.current?.ownerDocument;
     if (doc === undefined) {
       return;
     }
     let cancelled = false;
-    if (resolution.kind === "registered") {
-      const font = resolution.font;
-      const charWidths = readCharWidths(font.data);
-      if (charWidths === null) {
-        setFontState({ kind: "failed" });
-      } else {
-        registerPreviewFace(doc, font.name, font.data).then(
-          (family) => {
-            if (!cancelled) {
-              setFontState({
-                kind: "ready",
-                font: { family, ascentPerEm: font.ascentPerEm, charWidths },
-              });
-            }
+    const entries = [...resolutions.entries()];
+    Promise.all(
+      entries.map(([slot, resolution]) =>
+        loadSlotPreviewFont(doc, resolution).then(
+          (font) => [slot, font] as const,
+        ),
+      ),
+    ).then(
+      (loaded) => {
+        if (cancelled) {
+          return;
+        }
+        const bySlot = new Map<IrFontSlot, PreviewFont>(loaded);
+        const regular = bySlot.get("regular");
+        if (regular === undefined) {
+          setFontState({ kind: "failed" });
+          return;
+        }
+        const bold = bySlot.get("bold");
+        const italic = bySlot.get("italic");
+        const boldItalic = bySlot.get("boldItalic");
+        setFontState({
+          kind: "ready",
+          fonts: {
+            regular,
+            ...(bold !== undefined ? { bold } : {}),
+            ...(italic !== undefined ? { italic } : {}),
+            ...(boldItalic !== undefined ? { boldItalic } : {}),
           },
-          () => {
-            if (!cancelled) {
-              setFontState({ kind: "failed" });
-            }
-          },
-        );
-      }
-    } else {
-      loadPreviewFont(doc).then(
-        (font) => {
-          if (!cancelled) {
-            setFontState({ kind: "ready", font });
-          }
-        },
-        () => {
-          if (!cancelled) {
-            setFontState({ kind: "failed" });
-          }
-        },
-      );
-    }
+        });
+      },
+      () => {
+        if (!cancelled) {
+          setFontState({ kind: "failed" });
+        }
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -113,20 +180,20 @@ export function PreviewDialog(props: {
     () =>
       hasValidationErrors
         ? undefined
-        : buildPreview(state.document, activeJson),
-    [hasValidationErrors, state.document, activeJson],
+        : buildPreview(state.document, activeJson, locale),
+    [hasValidationErrors, state.document, activeJson, locale],
   );
 
   const bannerMessages: string[] = [];
   if (fontState.kind === "failed") {
-    bannerMessages.push(
-      "同梱フォントを読み込めなかったため、システムフォントで表示しています",
-    );
+    bannerMessages.push(m.preview.fontLoadFailed);
   }
-  if (resolution.kind === "missing") {
-    bannerMessages.push(
-      `フォント「${resolution.name}」の実データが未選択のため、同梱フォントで表示しています。文書設定の「PC のフォントから選択」で選び直せます`,
-    );
+  for (const [slot, resolution] of resolutions) {
+    if (resolution.kind === "missing") {
+      bannerMessages.push(
+        m.preview.fontMissing(m.fonts.slotLabels[slot], resolution.name),
+      );
+    }
   }
   if (preview?.ok === true) {
     bannerMessages.push(...preview.warnings.map((warning) => warning.message));
@@ -159,31 +226,31 @@ export function PreviewDialog(props: {
   return (
     <div
       ref={rootRef}
-      className="apx-preview"
+      className="dr-preview"
       role="dialog"
       aria-modal="true"
-      aria-label="プレビュー"
+      aria-label={m.preview.title}
     >
-      <header className="apx-preview-bar">
-        <span className="apx-preview-title">プレビュー</span>
+      <header className="dr-preview-bar">
+        <span className="dr-preview-title">{m.preview.title}</span>
         {preview?.ok === true && (
-          <span className="apx-preview-count">
-            {preview.document.pageCount} ページ
+          <span className="dr-preview-count">
+            {m.preview.pageCount(preview.document.pageCount)}
           </span>
         )}
-        <span className="apx-toolbar-spacer" />
+        <span className="dr-toolbar-spacer" />
         <button
           type="button"
-          className="apx-btn apx-btn-secondary"
+          className="dr-btn dr-btn-secondary"
           onClick={onClose}
         >
-          閉じる
+          {m.preview.close}
         </button>
       </header>
-      <div className="apx-preview-body">
-        <div className="apx-preview-pages">
+      <div className="dr-preview-body">
+        <div className="dr-preview-pages">
           {bannerMessages.length > 0 && (
-            <div className="apx-preview-warnings" role="status">
+            <div className="dr-preview-warnings" role="status">
               <ul>
                 {bannerMessages.map((message) => (
                   <li key={message}>{message}</li>
@@ -192,49 +259,46 @@ export function PreviewDialog(props: {
             </div>
           )}
           {hasValidationErrors ? (
-            <div className="apx-preview-error">
+            <div className="dr-preview-error">
               <p>
-                検証エラーが {state.validationErrors.length}{" "}
-                件あります。検証エラーを解消してください。
+                {m.preview.validationErrorsNote(state.validationErrors.length)}
               </p>
             </div>
           ) : preview !== undefined && !preview.ok ? (
-            <div className="apx-preview-error">
-              <p>プレビューを表示できません。</p>
-              <ul className="apx-dialog-errors">
+            <div className="dr-preview-error">
+              <p>{m.preview.cannotDisplay}</p>
+              <ul className="dr-dialog-errors">
                 {preview.errors.map((error, i) => (
-                  // biome-ignore lint/suspicious/noArrayIndexKey: 同一 rule / path のエラーが並び得るため index で識別する
+                  // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same rule / path can appear side by side, so identify by index
                   <li key={i}>
-                    <span className="apx-verr-rule">{error.rule}</span>
-                    <span className="apx-verr-path">{error.path}</span>
+                    <span className="dr-verr-rule">{error.rule}</span>
+                    <span className="dr-verr-path">{error.path}</span>
                     <span>{error.message}</span>
                   </li>
                 ))}
               </ul>
             </div>
           ) : preview !== undefined && fontState.kind === "loading" ? (
-            <div className="apx-preview-loading">
-              フォントを読み込んでいます…
-            </div>
+            <div className="dr-preview-loading">{m.preview.loadingFont}</div>
           ) : preview !== undefined ? (
             preview.document.pages.map((elements, pageIndex) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: ページは展開結果の並びそのもの
-              <figure className="apx-preview-sheet" key={pageIndex}>
-                <figcaption className="apx-preview-pageno">
+              // biome-ignore lint/suspicious/noArrayIndexKey: the page order is exactly the order of the rendered output
+              <figure className="dr-preview-sheet" key={pageIndex}>
+                <figcaption className="dr-preview-pageno">
                   {pageIndex + 1} / {preview.document.pageCount}
                 </figcaption>
-                <div className="apx-preview-page">
+                <div className="dr-preview-page">
                   <PreviewPage
                     elements={elements}
                     page={preview.document.page}
-                    font={fontState.kind === "ready" ? fontState.font : null}
+                    fonts={fontState.kind === "ready" ? fontState.fonts : null}
                   />
                 </div>
               </figure>
             ))
           ) : null}
         </div>
-        <aside className="apx-preview-side">
+        <aside className="dr-preview-side">
           <ScenarioBar
             scenarios={state.sampleScenarios}
             onSelect={(id) =>
@@ -243,11 +307,13 @@ export function PreviewDialog(props: {
               )
             }
             onAdd={() =>
-              store.setSampleScenarios(addScenario(state.sampleScenarios))
+              store.setSampleScenarios(
+                addScenario(state.sampleScenarios, m.scenarioNames),
+              )
             }
             onDuplicate={() =>
               store.setSampleScenarios(
-                duplicateActiveScenario(state.sampleScenarios),
+                duplicateActiveScenario(state.sampleScenarios, m.scenarioNames),
               )
             }
             onRemove={() => setConfirmingRemove(true)}
@@ -269,69 +335,71 @@ export function PreviewDialog(props: {
               )
             }
             onGenerate={onGenerate}
-            parseError={parseErrorOf(activeJson)}
+            parseError={parseErrorOf(activeJson, m.preview)}
           />
         </aside>
       </div>
       {confirmingRemove && (
-        <div className="apx-dialog-scrim">
+        <div className="dr-dialog-scrim">
           <div
-            className="apx-dialog"
+            className="dr-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="シナリオの削除"
+            aria-label={m.preview.removeScenario.ariaLabel}
           >
-            <div className="apx-dialog-h">シナリオの削除</div>
-            <div className="apx-dialog-b">
-              <p>現在のシナリオを削除します。続行しますか？</p>
+            <div className="dr-dialog-h">
+              {m.preview.removeScenario.heading}
             </div>
-            <div className="apx-dialog-f">
+            <div className="dr-dialog-b">
+              <p>{m.preview.removeScenario.body}</p>
+            </div>
+            <div className="dr-dialog-f">
               <button
                 type="button"
-                className="apx-btn apx-btn-secondary"
+                className="dr-btn dr-btn-secondary"
                 onClick={() => setConfirmingRemove(false)}
               >
-                キャンセル
+                {m.preview.removeScenario.cancel}
               </button>
               <button
                 type="button"
-                className="apx-btn apx-btn-primary"
+                className="dr-btn dr-btn-primary"
                 onClick={confirmRemove}
               >
-                削除する
+                {m.preview.removeScenario.confirm}
               </button>
             </div>
           </div>
         </div>
       )}
       {confirmingGenerate && (
-        <div className="apx-dialog-scrim">
+        <div className="dr-dialog-scrim">
           <div
-            className="apx-dialog"
+            className="dr-dialog"
             role="dialog"
             aria-modal="true"
-            aria-label="サンプルデータの上書き"
+            aria-label={m.preview.regenerateSample.ariaLabel}
           >
-            <div className="apx-dialog-h">サンプルデータの上書き</div>
-            <div className="apx-dialog-b">
-              <p>
-                現在のサンプルデータを生成した内容で置き換えます。続行しますか？
-              </p>
+            <div className="dr-dialog-h">
+              {m.preview.regenerateSample.heading}
             </div>
-            <div className="apx-dialog-f">
+            <div className="dr-dialog-b">
+              <p>{m.preview.regenerateSample.body}</p>
+            </div>
+            <div className="dr-dialog-f">
               <button
                 type="button"
-                className="apx-btn apx-btn-secondary"
+                className="dr-btn dr-btn-secondary"
                 onClick={() => setConfirmingGenerate(false)}
               >
-                キャンセル
+                {m.preview.regenerateSample.cancel}
               </button>
               <button
                 type="button"
-                className="apx-btn apx-btn-primary"
+                className="dr-btn dr-btn-primary"
                 onClick={applyGenerated}
               >
-                置き換える
+                {m.preview.regenerateSample.confirm}
               </button>
             </div>
           </div>

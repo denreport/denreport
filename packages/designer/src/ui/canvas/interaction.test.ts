@@ -1,5 +1,6 @@
 import type { IrDocument, IrElement, IrFlexElement } from "@denreport/core";
 import { describe, expect, it } from "vitest";
+import { ja } from "../../i18n/messages/ja";
 import { layoutDocument } from "../../state/geometry";
 import type { ElementGroup } from "../../state/groups";
 import type { CustomGuide } from "../../state/guides";
@@ -100,7 +101,7 @@ function makeCtx(
   const document: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
   const state: EditorState = {
@@ -117,10 +118,11 @@ function makeCtx(
     validationErrors: [],
     validationWarnings: [],
     dirty: false,
-    sampleScenarios: defaultScenarioSet(),
+    sampleScenarios: defaultScenarioSet("", ja.scenarioNames),
     fontRegistry: new Map(),
     customGuides,
     envelopePresetId: null,
+    selectedExportTarget: "pdfme",
     groups,
   };
   return {
@@ -223,10 +225,10 @@ describe("グループ所属要素の選択展開", () => {
   it("マーキーの部分ヒットでもグループ全体が previewIds になる", () => {
     const ctx = makeCtx([], {}, ELEMENTS, GROUPS);
     const started = reduceInteraction(IDLE, down({ x: 5, y: 5 }, null), ctx);
-    // 矩形 (5,5)-(60,20) は a のみに交差し、b（x100〜140）は掠らない
+    // The rectangle (5,5)-(60,20) intersects only a; b (x100–140) is nowhere near it
     const moved = reduceInteraction(
       started.state,
-      { kind: "pointerMove", at: { x: 60, y: 20 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 60, y: 20 } },
       ctx,
     );
     expect(moved.state.kind).toBe("marquee");
@@ -242,7 +244,7 @@ describe("グループ所属要素の選択展開", () => {
 
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 30, y: 12 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 12 } },
       ctx,
     );
     expect(moved.state.kind).toBe("moving");
@@ -260,13 +262,13 @@ describe("移動", () => {
 
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 30, y: 12 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 12 } },
       ctx,
     );
     expect(moved.state.kind).toBe("moving");
     expect(moved.effect).toBeNull();
     if (moved.state.kind === "moving") {
-      // 素の dx=18 がグリッド（x=30）に吸着して 20 になる
+      // The raw dx=18 snaps to the grid (x=30), becoming 20
       expect(moved.state.offset.x).toBeCloseTo(20, 10);
       expect(moved.state.offset.y).toBeCloseTo(0, 10);
     }
@@ -287,7 +289,7 @@ describe("移動", () => {
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 30, y: 12 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 12 } },
       ctx,
     );
     const cancelled = reduceInteraction(moved.state, { kind: "cancel" }, ctx);
@@ -296,12 +298,12 @@ describe("移動", () => {
   });
 
   it("ゴースト（現文脈外要素）はスナップ候補に入らない", () => {
-    // ghost g の左端 x=13.0 の近くへ動かしても、要素ガイドは出ずグリッドに吸着する
+    // Even when moved near ghost g's left edge x=13.0, no element guide appears and it snaps to the grid
     const ctx = makeCtx(["a"]);
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 15.8, y: 12 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 15.8, y: 12 } },
       ctx,
     );
     if (moved.state.kind === "moving") {
@@ -323,7 +325,7 @@ describe("移動", () => {
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 31, y: 12 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 31, y: 12 } },
       ctx,
     );
     if (moved.state.kind === "moving") {
@@ -358,7 +360,7 @@ describe("移動", () => {
     const pressed = reduceInteraction(IDLE, down({ x: 50, y: 40 }, "tbl"), ctx);
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 53, y: 47 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 53, y: 47 } },
       ctx,
     );
     const up = reduceInteraction(
@@ -391,7 +393,7 @@ describe("移動", () => {
     const pressed = reduceInteraction(IDLE, down({ x: 50, y: 40 }, "tbl"), ctx);
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 53, y: 47 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 53, y: 47 } },
       ctx,
     );
     const up = reduceInteraction(
@@ -430,7 +432,7 @@ describe("移動", () => {
     const pressed = reduceInteraction(IDLE, down({ x: 50, y: 40 }, "tbl"), ctx);
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 53, y: 47 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 53, y: 47 } },
       ctx,
     );
     const up = reduceInteraction(
@@ -455,7 +457,7 @@ describe("リサイズ", () => {
 
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 150, y: 40 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 150, y: 40 } },
       ctx,
     );
     expect(moved.state.kind).toBe("resizing");
@@ -481,13 +483,13 @@ describe("リサイズ", () => {
     );
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 150, y: 40 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 150, y: 40 } },
       ctx,
     );
     expect(moved.state.kind).toBe("resizing");
     const movedBack = reduceInteraction(
       moved.state,
-      { kind: "pointerMove", at: { x: 140, y: 30 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 140, y: 30 } },
       ctx,
     );
     expect(movedBack.state.kind).toBe("resizing");
@@ -517,7 +519,7 @@ describe("リサイズ", () => {
     );
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 90, y: 20 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 90, y: 20 } },
       ctx,
     );
     if (moved.state.kind === "resizing") {
@@ -529,13 +531,475 @@ describe("リサイズ", () => {
   });
 });
 
+describe("回転要素のリサイズ", () => {
+  // b is x100 y10 w40 h20 → center (120, 20)
+  const B_ORIG = { x: 100, y: 10, w: 40, h: 20 };
+
+  function withBRotate(rotate: number): readonly IrElement[] {
+    return ELEMENTS.map((el) => (el.id === "b" ? { ...el, rotate } : el));
+  }
+
+  // Computes the screen coordinates of point p around the box's center, using the same rotation matrix as rotatePointDeg (SelectionOverlay)
+  function screenPoint(
+    box: { x: number; y: number; w: number; h: number },
+    p: { x: number; y: number },
+    deg: number,
+  ): { x: number; y: number } {
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.h / 2;
+    const rad = (deg * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    return {
+      x: cx + (p.x - cx) * cos - (p.y - cy) * sin,
+      y: cy + (p.x - cx) * sin + (p.y - cy) * cos,
+    };
+  }
+
+  it("rot=90・e ハンドル（見た目の下辺）・縦ドラッグで幅が伸びる", () => {
+    const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 120, y: 40 }, "b", { handle: "e" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 120, y: 50 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(95, 10);
+      expect(moved.state.box.y).toBeCloseTo(15, 10);
+      expect(moved.state.box.w).toBeCloseTo(50, 10);
+      expect(moved.state.box.h).toBeCloseTo(20, 10);
+
+      const anchorOrig = screenPoint(B_ORIG, { x: 100, y: 20 }, 90);
+      const anchorNew = screenPoint(
+        moved.state.box,
+        { x: moved.state.box.x, y: moved.state.box.y + moved.state.box.h / 2 },
+        90,
+      );
+      expect(anchorNew.x).toBeCloseTo(anchorOrig.x, 9);
+      expect(anchorNew.y).toBeCloseTo(anchorOrig.y, 9);
+    }
+
+    const up = reduceInteraction(
+      moved.state,
+      { kind: "pointerUp", at: { x: 120, y: 50 } },
+      ctx,
+    );
+    const el = up.effect?.document?.elements.find((e) => e.id === "b");
+    expect(el).toMatchObject({ x: 95, y: 15, w: 50, h: 20 });
+  });
+
+  it("rot=90・e ハンドル・横ドラッグではサイズ不変（回転前の生差分は写像されない）", () => {
+    const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 120, y: 40 }, "b", { handle: "e" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 130, y: 40 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(100, 10);
+      expect(moved.state.box.y).toBeCloseTo(10, 10);
+      expect(moved.state.box.w).toBeCloseTo(40, 10);
+      expect(moved.state.box.h).toBeCloseTo(20, 10);
+    }
+
+    const up = reduceInteraction(
+      moved.state,
+      { kind: "pointerUp", at: { x: 130, y: 40 } },
+      ctx,
+    );
+    expect(up.effect).toBeNull();
+  });
+
+  it("rot=90・n ハンドル（見た目の右辺）・横ドラッグで反対側の辺が固定される", () => {
+    const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 130, y: 20 }, "b", { handle: "n" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 138, y: 20 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(104, 10);
+      expect(moved.state.box.y).toBeCloseTo(6, 10);
+      expect(moved.state.box.w).toBeCloseTo(40, 10);
+      expect(moved.state.box.h).toBeCloseTo(28, 10);
+
+      const anchorOrig = screenPoint(B_ORIG, { x: 120, y: 30 }, 90);
+      const anchorNew = screenPoint(
+        moved.state.box,
+        {
+          x: moved.state.box.x + moved.state.box.w / 2,
+          y: moved.state.box.y + moved.state.box.h,
+        },
+        90,
+      );
+      expect(anchorNew.x).toBeCloseTo(anchorOrig.x, 9);
+      expect(anchorNew.y).toBeCloseTo(anchorOrig.y, 9);
+    }
+  });
+
+  it("rot=45・se ハンドル・ローカル +x 方向ドラッグでアンカー（nw）が画面上不動", () => {
+    const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(45));
+    const seHandle = { x: 127.07106781186548, y: 41.21320343559643 };
+    const pressed = reduceInteraction(
+      IDLE,
+      down(seHandle, "b", { handle: "se" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      {
+        kind: "pointerMove",
+        shiftKey: false,
+        at: {
+          x: seHandle.x + 7.071067811865476,
+          y: seHandle.y + 7.071067811865476,
+        },
+      },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(98.53553390593274, 6);
+      expect(moved.state.box.y).toBeCloseTo(13.535533905932738, 6);
+      expect(moved.state.box.w).toBeCloseTo(50, 6);
+      expect(moved.state.box.h).toBeCloseTo(20, 6);
+
+      const anchorOrig = screenPoint(B_ORIG, { x: 100, y: 10 }, 45);
+      const anchorNew = screenPoint(
+        moved.state.box,
+        { x: moved.state.box.x, y: moved.state.box.y },
+        45,
+      );
+      expect(anchorNew.x).toBeCloseTo(anchorOrig.x, 9);
+      expect(anchorNew.y).toBeCloseTo(anchorOrig.y, 9);
+    }
+  });
+
+  it("回転あり・元に戻して離す → effect なし", () => {
+    const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 120, y: 40 }, "b", { handle: "e" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 120, y: 50 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    const movedBack = reduceInteraction(
+      moved.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 120, y: 40 } },
+      ctx,
+    );
+    expect(movedBack.state.kind).toBe("resizing");
+    if (movedBack.state.kind === "resizing") {
+      expect(movedBack.state.box.x).toBeCloseTo(100, 10);
+      expect(movedBack.state.box.y).toBeCloseTo(10, 10);
+      expect(movedBack.state.box.w).toBeCloseTo(40, 10);
+      expect(movedBack.state.box.h).toBeCloseTo(20, 10);
+    }
+    const up = reduceInteraction(
+      movedBack.state,
+      { kind: "pointerUp", at: { x: 120, y: 40 } },
+      ctx,
+    );
+    expect(up.state).toEqual(IDLE);
+    expect(up.effect).toBeNull();
+  });
+
+  it("クランプで w が最小寸法に切られても、掴んでいない辺は画面上不動", () => {
+    const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 120, y: 40 }, "b", { handle: "e" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 120, y: -5 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(119.5, 9);
+      expect(moved.state.box.y).toBeCloseTo(-9.5, 9);
+      expect(moved.state.box.w).toBeCloseTo(1, 9);
+      expect(moved.state.box.h).toBeCloseTo(20, 9);
+
+      const anchorOrig = screenPoint(B_ORIG, { x: 100, y: 20 }, 90);
+      const anchorNew = screenPoint(
+        moved.state.box,
+        { x: moved.state.box.x, y: moved.state.box.y + moved.state.box.h / 2 },
+        90,
+      );
+      expect(anchorNew.x).toBeCloseTo(anchorOrig.x, 9);
+      expect(anchorNew.y).toBeCloseTo(anchorOrig.y, 9);
+    }
+  });
+
+  it("スナップはモデル箱基準のまま働き、回転補正は後段に乗る", () => {
+    const ctx = makeCtx(["b"], {}, withBRotate(90));
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 120, y: 40 }, "b", { handle: "e" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 120, y: 49.3 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(95, 6);
+      expect(moved.state.box.y).toBeCloseTo(15, 6);
+      expect(moved.state.box.w).toBeCloseTo(50, 6);
+      expect(moved.state.box.h).toBeCloseTo(20, 6);
+      expect(moved.state.guides).toEqual([]);
+    }
+  });
+
+  it("回転した line（退化箱）は交差軸成分が常に 0 で成立する", () => {
+    const lineEl: IrElement = {
+      type: "line",
+      id: "ln",
+      x: 20,
+      y: 50,
+      pages: "first",
+      orientation: "horizontal",
+      length: 30,
+      thickness: 0.3,
+      rotate: 90,
+    };
+    const ctx = makeCtx(["ln"], { snapEnabled: false }, [...ELEMENTS, lineEl]);
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 35, y: 65 }, "ln", { handle: "line-end" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 35, y: 75 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box.x).toBeCloseTo(15, 9);
+      expect(moved.state.box.y).toBeCloseTo(55, 9);
+      expect(moved.state.box.w).toBeCloseTo(40, 9);
+      expect(moved.state.box.h).toBeCloseTo(0, 9);
+    }
+
+    const up = reduceInteraction(
+      moved.state,
+      { kind: "pointerUp", at: { x: 35, y: 75 } },
+      ctx,
+    );
+    const el = up.effect?.document?.elements.find((e) => e.id === "ln");
+    expect(el).toMatchObject({ x: 15, y: 55, length: 40 });
+  });
+
+  it("回転した flex 子は逆回転のみ適用され、x/y は書かれない", () => {
+    const elements = ELEMENTS.map((el) =>
+      el.id === "f" && el.type === "flex"
+        ? {
+            ...el,
+            children: el.children.map((c) =>
+              c.id === "ct1" ? { ...c, rotate: 90 } : c,
+            ),
+          }
+        : el,
+    );
+    const ctx = makeCtx(["ct1"], {}, elements);
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 40, y: 124 }, "ct1", { handle: "e" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 40, y: 134 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("resizing");
+    if (moved.state.kind === "resizing") {
+      expect(moved.state.box).toMatchObject({ x: 20, y: 100, w: 50, h: 8 });
+    }
+
+    const up = reduceInteraction(
+      moved.state,
+      { kind: "pointerUp", at: { x: 40, y: 134 } },
+      ctx,
+    );
+    const flex = up.effect?.document?.elements.find((e) => e.id === "f");
+    if (flex?.type === "flex") {
+      expect(flex.children[0]).toMatchObject({ w: 50, h: 8 });
+      expect(flex.children[0]).not.toHaveProperty("x");
+    } else {
+      expect.unreachable();
+    }
+  });
+});
+
+describe("回転", () => {
+  // b is x100 y10 w40 h20 → center (120, 20). The handle press point is the top edge's midpoint (120, 10)
+  function pressRotate(ctx: InteractionContext) {
+    return reduceInteraction(
+      IDLE,
+      down({ x: 120, y: 10 }, "b", { handle: "rotate" }),
+      ctx,
+    );
+  }
+
+  it("ハンドル押下 → 閾値超過で rotating、pointerUp で rotate が文書に入る", () => {
+    const ctx = makeCtx(["b"]);
+    const pressed = pressRotate(ctx);
+    expect(pressed.state.kind).toBe("pressing");
+
+    // From directly above center (−90°) to directly beside it (0°) = 90° clockwise
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 130, y: 20 } },
+      ctx,
+    );
+    expect(moved.state).toMatchObject({
+      kind: "rotating",
+      id: "b",
+      center: { x: 120, y: 20 },
+      baseRotate: 0,
+      rotate: 90,
+    });
+
+    const up = reduceInteraction(
+      moved.state,
+      { kind: "pointerUp", at: { x: 130, y: 20 } },
+      ctx,
+    );
+    expect(up.state).toEqual(IDLE);
+    const el = up.effect?.document?.elements.find((e) => e.id === "b");
+    expect(el).toMatchObject({ rotate: 90 });
+  });
+
+  it("閾値未満では pressing のまま", () => {
+    const ctx = makeCtx(["b"]);
+    const pressed = pressRotate(ctx);
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 120.5, y: 10.5 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("pressing");
+  });
+
+  it("現在角は 0.1° に丸められ、Shift で 15° にスナップする", () => {
+    const ctx = makeCtx(["b"]);
+    const pressed = pressRotate(ctx);
+    // (130, 25) is atan2(5, 10) ≈ 26.565° from center → a rotation of 116.565°
+    const free = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 130, y: 25 } },
+      ctx,
+    );
+    expect(free.state).toMatchObject({ kind: "rotating", rotate: 116.6 });
+
+    const snapped = reduceInteraction(
+      free.state,
+      { kind: "pointerMove", shiftKey: true, at: { x: 130, y: 25 } },
+      ctx,
+    );
+    expect(snapped.state).toMatchObject({ kind: "rotating", rotate: 120 });
+  });
+
+  it("既存の rotate を基点に回転する", () => {
+    const elements = ELEMENTS.map((el) =>
+      el.id === "b" ? { ...el, rotate: 30 } : el,
+    );
+    const ctx = makeCtx(["b"], {}, elements);
+    const pressed = pressRotate(ctx);
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 130, y: 20 } },
+      ctx,
+    );
+    expect(moved.state).toMatchObject({ kind: "rotating", rotate: 120 });
+  });
+
+  it("回転量が無変化なら pointerUp で commit しない", () => {
+    const ctx = makeCtx(["b"]);
+    const pressed = pressRotate(ctx);
+    // Exceeds the threshold, but the angle is still the same straight-up direction as at press time
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 120, y: 5 } },
+      ctx,
+    );
+    expect(moved.state).toMatchObject({ kind: "rotating", rotate: 0 });
+    const up = reduceInteraction(
+      moved.state,
+      { kind: "pointerUp", at: { x: 120, y: 5 } },
+      ctx,
+    );
+    expect(up.state).toEqual(IDLE);
+    expect(up.effect).toBeNull();
+  });
+
+  it("Esc で rotating がキャンセルされ effect なし", () => {
+    const ctx = makeCtx(["b"]);
+    const pressed = pressRotate(ctx);
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 130, y: 20 } },
+      ctx,
+    );
+    expect(moved.state.kind).toBe("rotating");
+    const cancelled = reduceInteraction(moved.state, { kind: "cancel" }, ctx);
+    expect(cancelled.state).toEqual(IDLE);
+    expect(cancelled.effect).toBeNull();
+  });
+
+  it("flex への rotate ハンドル操作は idle に落ちる", () => {
+    const ctx = makeCtx(["f"]);
+    const pressed = reduceInteraction(
+      IDLE,
+      down({ x: 40, y: 100 }, "f", { handle: "rotate" }),
+      ctx,
+    );
+    const moved = reduceInteraction(
+      pressed.state,
+      { kind: "pointerMove", shiftKey: false, at: { x: 60, y: 120 } },
+      ctx,
+    );
+    expect(moved.state).toEqual(IDLE);
+  });
+});
+
 describe("マーキー", () => {
   it("矩形交差でトップレベル要素のみ選択される（flex 子・ゴースト除外）", () => {
     const ctx = makeCtx();
     const started = reduceInteraction(IDLE, down({ x: 5, y: 5 }, null), ctx);
     const moved = reduceInteraction(
       started.state,
-      { kind: "pointerMove", at: { x: 62, y: 110 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 62, y: 110 } },
       ctx,
     );
     const up = reduceInteraction(
@@ -543,7 +1007,7 @@ describe("マーキー", () => {
       { kind: "pointerUp", at: { x: 62, y: 110 } },
       ctx,
     );
-    // 矩形 (5,5)-(62,110): a と flex コンテナ f に交差。ghost g は文脈外なので除外
+    // The rectangle (5,5)-(62,110) intersects a and the flex container f. ghost g is excluded, since it's outside the context
     expect(up.state).toEqual(IDLE);
     expect(up.effect?.selection).toEqual(["a", "f"]);
     expect(up.effect?.document).toBeUndefined();
@@ -556,7 +1020,7 @@ describe("マーキーのプレビュー", () => {
     const started = reduceInteraction(IDLE, down({ x: 5, y: 5 }, null), ctx);
     const moved = reduceInteraction(
       started.state,
-      { kind: "pointerMove", at: { x: 62, y: 110 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 62, y: 110 } },
       ctx,
     );
     expect(moved.state.kind).toBe("marquee");
@@ -570,7 +1034,7 @@ describe("マーキーのプレビュー", () => {
     const started = reduceInteraction(IDLE, down({ x: 5, y: 5 }, null), ctx);
     const moved = reduceInteraction(
       started.state,
-      { kind: "pointerMove", at: { x: 5.5, y: 5.3 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 5.5, y: 5.3 } },
       ctx,
     );
     expect(moved.state.kind).toBe("marquee");
@@ -584,7 +1048,7 @@ describe("マーキーのプレビュー", () => {
     const started = reduceInteraction(IDLE, down({ x: 5, y: 5 }, null), ctx);
     const moved = reduceInteraction(
       started.state,
-      { kind: "pointerMove", at: { x: 62, y: 110 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 62, y: 110 } },
       ctx,
     );
     const up = reduceInteraction(
@@ -688,7 +1152,7 @@ describe("パレット配置", () => {
     expect(started.state.kind).toBe("placing");
     const moved = reduceInteraction(
       started.state,
-      { kind: "pointerMove", at: { x: -5, y: -5 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: -5, y: -5 } },
       ctx,
     );
     if (moved.state.kind === "placing") {
@@ -713,11 +1177,11 @@ describe("パレット配置", () => {
     );
     const moved = reduceInteraction(
       started.state,
-      { kind: "pointerMove", at: { x: 50.4, y: 60.4 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 50.4, y: 60.4 } },
       ctx,
     );
     if (moved.state.kind === "placing") {
-      // ポインタ中心の箱 (30.4, 50.4) がグリッド (30, 50) に吸着
+      // The pointer-centered box (30.4, 50.4) snaps to the grid (30, 50)
       expect(moved.state.box).toMatchObject({ x: 30, y: 50, w: 40, h: 20 });
     } else {
       expect.unreachable();
@@ -741,7 +1205,7 @@ describe("パレット配置", () => {
     );
     const moved = reduceInteraction(
       started.state,
-      { kind: "pointerMove", at: { x: 30, y: 104 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 104 } },
       ctx,
     );
     if (moved.state.kind === "placing") {
@@ -775,7 +1239,7 @@ describe("パレット配置", () => {
     );
     const moved = reduceInteraction(
       started.state,
-      { kind: "pointerMove", at: { x: 30, y: 104 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 104 } },
       ctx,
     );
     if (moved.state.kind === "placing") {
@@ -800,7 +1264,7 @@ describe("flex 子の並び替え", () => {
 
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 30, y: 115 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 115 } },
       ctx,
     );
     expect(moved.state.kind).toBe("reordering");
@@ -832,7 +1296,7 @@ describe("flex 子の並び替え", () => {
     );
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 30, y: 105.5 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 105.5 } },
       ctx,
     );
     expect(moved.state.kind).toBe("reordering");
@@ -914,7 +1378,7 @@ describe("#5 既存要素のドラッグ挿入", () => {
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 30, y: 104 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 104 } },
       ctx,
     );
     expect(moved.state.kind).toBe("moving");
@@ -930,12 +1394,12 @@ describe("#5 既存要素のドラッグ挿入", () => {
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const onFlex = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 30, y: 104 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 104 } },
       ctx,
     );
     const off = reduceInteraction(
       onFlex.state,
-      { kind: "pointerMove", at: { x: 30, y: 12 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 12 } },
       ctx,
     );
     if (off.state.kind === "moving") {
@@ -950,7 +1414,7 @@ describe("#5 既存要素のドラッグ挿入", () => {
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 30, y: 104 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 104 } },
       ctx,
     );
     const up = reduceInteraction(
@@ -990,7 +1454,7 @@ describe("#5 既存要素のドラッグ挿入", () => {
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "tbl"), ctx);
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 30, y: 104 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 104 } },
       ctx,
     );
     if (moved.state.kind === "moving") {
@@ -1005,7 +1469,7 @@ describe("#5 既存要素のドラッグ挿入", () => {
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 30, y: 104 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 30, y: 104 } },
       ctx,
     );
     if (moved.state.kind === "moving") {
@@ -1057,7 +1521,7 @@ describe("#5 既存要素のドラッグ挿入", () => {
     );
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 160, y: 155 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 160, y: 155 } },
       ctx,
     );
     if (moved.state.kind === "moving") {
@@ -1078,7 +1542,7 @@ describe("#5 flex からの取り出し・移し替え", () => {
     );
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 100, y: 50 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 100, y: 50 } },
       ctx,
     );
     expect(moved.state.kind).toBe("reordering");
@@ -1096,7 +1560,7 @@ describe("#5 flex からの取り出し・移し替え", () => {
     );
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 100, y: 50 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 100, y: 50 } },
       ctx,
     );
     const up = reduceInteraction(
@@ -1124,7 +1588,7 @@ describe("#5 flex からの取り出し・移し替え", () => {
     );
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: -10, y: 50 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: -10, y: 50 } },
       ctx,
     );
     const up = reduceInteraction(
@@ -1168,7 +1632,7 @@ describe("#5 flex からの取り出し・移し替え", () => {
     );
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 155, y: 104 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 155, y: 104 } },
       ctx,
     );
     expect(moved.state.kind).toBe("reordering");
@@ -1206,7 +1670,7 @@ describe("#15 flex 子のリサイズ", () => {
     expect(pressed.state.kind).toBe("pressing");
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 70, y: 120 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 70, y: 120 } },
       ctx,
     );
     expect(moved.state.kind).toBe("resizing");
@@ -1237,12 +1701,12 @@ describe("#15 flex 子のリサイズ", () => {
     );
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 70, y: 120 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 70, y: 120 } },
       ctx,
     );
     const movedBack = reduceInteraction(
       moved.state,
-      { kind: "pointerMove", at: { x: 60, y: 108 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 60, y: 108 } },
       ctx,
     );
     const up = reduceInteraction(
@@ -1263,7 +1727,7 @@ describe("#15 flex 子のリサイズ", () => {
     );
     const moved = reduceInteraction(
       pressed.state,
-      { kind: "pointerMove", at: { x: 15, y: 98 } },
+      { kind: "pointerMove", shiftKey: false, at: { x: 15, y: 98 } },
       ctx,
     );
     if (moved.state.kind === "resizing") {

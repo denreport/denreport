@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import type { SampleScenarioSet } from "../../state/sample-scenarios";
 import { useDraftValue } from "../properties/useDraftValue";
 
-/** シナリオ選択・名称変更・追加/複製/削除の操作列。表示のみで、状態遷移の判断
-    （削除確認・純関数の適用）は呼び出し側が行う */
+/** The action row for scenario selection, renaming, and add/duplicate/delete. Display only;
+    state-transition decisions (delete confirmation, applying the pure functions) are made by
+    the caller */
 export function ScenarioBar(props: {
   readonly scenarios: SampleScenarioSet;
   readonly onSelect: (id: string) => void;
@@ -13,6 +15,7 @@ export function ScenarioBar(props: {
   readonly onRename: (name: string) => void;
 }): ReactNode {
   const { scenarios, onSelect, onAdd, onDuplicate, onRemove, onRename } = props;
+  const m = useMessages().scenarios;
   const activeName =
     scenarios.items.find((item) => item.id === scenarios.activeId)?.name ?? "";
   const nameHandlers = useDraftValue(activeName, (raw) => {
@@ -22,10 +25,10 @@ export function ScenarioBar(props: {
   });
 
   return (
-    <div className="apx-scenariobar">
-      <span className="apx-field apx-scenariobar-select">
+    <div className="dr-scenariobar">
+      <span className="dr-field dr-scenariobar-select">
         <select
-          aria-label="サンプルデータのシナリオ"
+          aria-label={m.selectAriaLabel}
           value={scenarios.activeId}
           onChange={(e) => onSelect(e.currentTarget.value)}
         >
@@ -36,36 +39,32 @@ export function ScenarioBar(props: {
           ))}
         </select>
       </span>
-      <span className="apx-field apx-scenariobar-name">
+      <span className="dr-field dr-scenariobar-name">
         <input
-          aria-label="シナリオ名"
+          aria-label={m.nameAriaLabel}
           value={nameHandlers.draft}
           onChange={(e) => nameHandlers.onChange(e.currentTarget.value)}
           onBlur={nameHandlers.onBlur}
           onKeyDown={nameHandlers.onKeyDown}
         />
       </span>
-      <button
-        type="button"
-        className="apx-btn apx-btn-secondary"
-        onClick={onAdd}
-      >
-        追加
+      <button type="button" className="dr-btn dr-btn-secondary" onClick={onAdd}>
+        {m.add}
       </button>
       <button
         type="button"
-        className="apx-btn apx-btn-secondary"
+        className="dr-btn dr-btn-secondary"
         onClick={onDuplicate}
       >
-        複製
+        {m.duplicate}
       </button>
       <button
         type="button"
-        className="apx-btn apx-btn-secondary"
+        className="dr-btn dr-btn-secondary"
         disabled={scenarios.items.length === 1}
         onClick={onRemove}
       >
-        削除
+        {m.remove}
       </button>
     </div>
   );

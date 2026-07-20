@@ -1,10 +1,16 @@
+import type { IrFontSlot } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { useLocale, useMessages } from "../../i18n/context";
 import type { RegisteredFont } from "../../state/fonts";
 import { sanitizeFontName } from "../../state/fonts";
 import { Dialog } from "../dialog/Dialog";
 import type { FontIssue } from "./font-registration";
-import { buildRegisteredFont, EMBEDDED_FONT_NAME } from "./font-registration";
+import {
+  buildRegisteredFont,
+  EMBEDDED_BOLD_FONT_NAME,
+  EMBEDDED_FONT_NAME,
+} from "./font-registration";
 import type { LocalFontCandidate } from "./local-fonts";
 import { listLocalFonts } from "./local-fonts";
 
@@ -21,33 +27,41 @@ type ConfirmState =
   | { readonly kind: "loading" }
   | { readonly kind: "failed"; readonly issues: readonly FontIssue[] };
 
-const REASON_MESSAGES: Readonly<
-  Record<"unsupported" | "denied" | "error", string>
-> = {
-  unsupported:
-    "お使いのブラウザは PC 内フォントの一覧取得に対応していません（Chromium 系ブラウザで利用できます）",
-  denied:
-    "フォントへのアクセスが許可されませんでした。ブラウザのサイト設定から許可できます",
-  error: "フォント一覧を取得できませんでした。",
+/** The logical name of the bundled font, only when one exists for the slot (target of the
+    "revert to bundled font" row) */
+const EMBEDDED_NAME_BY_SLOT: Readonly<Partial<Record<IrFontSlot, string>>> = {
+  regular: EMBEDDED_FONT_NAME,
+  bold: EMBEDDED_BOLD_FONT_NAME,
 };
 
-/** Dialog 部品（ui/dialog/Dialog.tsx）に載せる選択ダイアログ。
-    一覧取得はマウント時に listLocalFonts（開くボタンのクリックがユーザー操作起点）。
-    確定時に loadData → buildRegisteredFont を実行し、非 TTF は issues をダイアログ内に表示して閉じない */
+/** Font selection dialog for the target slot, mounted on the Dialog component
+    (ui/dialog/Dialog.tsx). The list is fetched via listLocalFonts on mount (the click of the
+    opening button is the user-initiated action). On confirm, runs loadData -> buildRegisteredFont;
+    non-TTF shows issues inside the dialog and does not close it */
 export function FontSelectorDialog(props: {
-  /** 現在の font.name（一覧内の該当行の選択状態表示に使う） */
-  readonly currentName: string;
-  /** 検証済みフォントで確定（呼び出し側が registerFont + setFontName の commit を行う） */
+  /** The target slot for selection (determines whether the bundled row and the "revert to
+      unset" row are shown) */
+  readonly slot: IrFontSlot;
+  /** The slot's current logical name (used to show the selected state of the matching row in
+      the list). undefined for an unset slot */
+  readonly currentName: string | undefined;
+  /** Confirm with a validated font (the caller performs registerFont + commits the slot setter) */
   readonly onSelect: (font: RegisteredFont) => void;
-  /** 「同梱フォントに戻す」（呼び出し側が setFontName(EMBEDDED_FONT_NAME) を commit する） */
-  readonly onSelectEmbedded: () => void;
+  /** Confirm with the bundled font. The row is shown only when the slot has a bundled font */
+  readonly onSelectEmbedded: (name: string) => void;
+  /** Revert the slot to unset. The row is shown only for slots other than regular */
+  readonly onClear: () => void;
   readonly onClose: () => void;
 }): ReactNode {
-  const { currentName, onSelect, onSelectEmbedded, onClose } = props;
+  const { slot, currentName, onSelect, onSelectEmbedded, onClear, onClose } =
+    props;
+  const m = useMessages();
+  const locale = useLocale();
   const [list, setList] = useState<ListState>({ kind: "loading" });
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<LocalFontCandidate | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState>({ kind: "idle" });
+  const embeddedName = EMBEDDED_NAME_BY_SLOT[slot];
 
   const load = (): void => {
     setList({ kind: "loading" });
@@ -60,7 +74,7 @@ export function FontSelectorDialog(props: {
     });
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: マウント時の1回だけ実行する。再試行はボタン操作で行う
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs exactly once on mount; retry is done via a button action
   useEffect(() => {
     load();
   }, []);
@@ -83,9 +97,12 @@ export function FontSelectorDialog(props: {
     setConfirm({ kind: "loading" });
     candidate.loadData().then(
       (data) => {
-        const built = buildRegisteredFont(data, {
-          fullName: candidate.fullName,
-        });
+        const built = buildRegisteredFont(
+          data,
+          { fullName: candidate.fullName },
+          m.fonts,
+          locale,
+        );
         if (!built.ok) {
           setConfirm({ kind: "failed", issues: built.issues });
           return;
@@ -98,7 +115,7 @@ export function FontSelectorDialog(props: {
           issues: [
             {
               format: "unknown",
-              message: "フォントデータを取得できませんでした。",
+              message: m.fonts.loadDataFailed,
             },
           ],
         });
@@ -108,42 +125,72 @@ export function FontSelectorDialog(props: {
 
   return (
     <Dialog
-      title="PC のフォントから選択"
+      title={m.fonts.selectTitle(m.fonts.slotLabels[slot])}
       onClose={onClose}
       footer={
         <>
-          <span className="apx-dialog-note">
-            選択したフォントは書き出し物に埋め込まれます。フォントのライセンスをご確認ください。
-          </span>
+          <span className="dr-dialog-note">{m.fonts.licenseNote}</span>
           <button
             type="button"
-            className="apx-btn apx-btn-secondary"
+            className="dr-btn dr-btn-secondary"
             onClick={onClose}
           >
-            キャンセル
+            {m.fonts.cancel}
           </button>
           <button
             type="button"
-            className="apx-btn apx-btn-primary"
+            className="dr-btn dr-btn-primary"
             disabled={selected === null || confirm.kind === "loading"}
             onClick={confirmSelection}
           >
-            このフォントを使う
+            {m.fonts.useThisFont}
           </button>
         </>
       }
     >
-      {list.kind === "loading" && <p>フォント一覧を取得しています…</p>}
+      <ul className="dr-font-list">
+        {embeddedName !== undefined && (
+          <li>
+            <button
+              type="button"
+              aria-pressed={selected === null && currentName === embeddedName}
+              className="dr-font-row"
+              onClick={() => {
+                setSelected(null);
+                onSelectEmbedded(embeddedName);
+              }}
+            >
+              {m.fonts.revertToEmbedded(embeddedName)}
+            </button>
+          </li>
+        )}
+        {slot !== "regular" && (
+          <li>
+            <button
+              type="button"
+              aria-pressed={selected === null && currentName === undefined}
+              className="dr-font-row"
+              onClick={() => {
+                setSelected(null);
+                onClear();
+              }}
+            >
+              {m.fonts.clearToDefault}
+            </button>
+          </li>
+        )}
+      </ul>
+      {list.kind === "loading" && <p>{m.fonts.loadingList}</p>}
       {list.kind === "failed" && (
-        <div className="apx-font-notice" role="alert">
-          <p>{REASON_MESSAGES[list.reason]}</p>
+        <div className="dr-font-notice" role="alert">
+          <p>{m.fonts.reasons[list.reason]}</p>
           {list.reason === "error" && (
             <button
               type="button"
-              className="apx-btn apx-btn-secondary"
+              className="dr-btn dr-btn-secondary"
               onClick={load}
             >
-              再試行
+              {m.fonts.retry}
             </button>
           )}
         </div>
@@ -152,28 +199,13 @@ export function FontSelectorDialog(props: {
         <>
           <input
             type="search"
-            className="apx-font-search"
-            placeholder="フォント名で検索"
-            aria-label="フォント名で検索"
+            className="dr-font-search"
+            placeholder={m.fonts.searchPlaceholder}
+            aria-label={m.fonts.searchPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.currentTarget.value)}
           />
-          <ul className="apx-font-list">
-            <li>
-              <button
-                type="button"
-                aria-pressed={
-                  selected === null && currentName === EMBEDDED_FONT_NAME
-                }
-                className="apx-font-row"
-                onClick={() => {
-                  setSelected(null);
-                  onSelectEmbedded();
-                }}
-              >
-                同梱フォント（{EMBEDDED_FONT_NAME}）に戻す
-              </button>
-            </li>
+          <ul className="dr-font-list">
             {filtered.map((font) => {
               const isCurrent =
                 selected !== null
@@ -184,14 +216,14 @@ export function FontSelectorDialog(props: {
                   <button
                     type="button"
                     aria-pressed={isCurrent}
-                    className="apx-font-row"
+                    className="dr-font-row"
                     onClick={() => {
                       setSelected(font);
                       setConfirm({ kind: "idle" });
                     }}
                   >
-                    <span className="apx-font-name">{font.fullName}</span>
-                    <span className="apx-font-sub">
+                    <span className="dr-font-name">{font.fullName}</span>
+                    <span className="dr-font-sub">
                       {font.family} / {font.style}
                     </span>
                   </button>
@@ -202,9 +234,9 @@ export function FontSelectorDialog(props: {
         </>
       )}
       {confirm.kind === "failed" && (
-        <div className="apx-font-notice" role="alert">
+        <div className="dr-font-notice" role="alert">
           {confirm.issues.map((issue, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: 同一 format のエラーが並び得るため index で識別する
+            // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same format can appear side by side, so identify by index
             <p key={i}>{issue.message}</p>
           ))}
         </div>

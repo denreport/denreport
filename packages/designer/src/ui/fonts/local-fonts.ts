@@ -1,4 +1,4 @@
-// lib.dom.d.ts に queryLocalFonts / FontData がまだ無いため、ここに閉じたローカル型で扱う。
+// queryLocalFonts / FontData are not yet in lib.dom.d.ts, so we handle them with a local type scoped here.
 interface LocalFontData {
   readonly postscriptName: string;
   readonly fullName: string;
@@ -16,11 +16,11 @@ export interface LocalFontCandidate {
   readonly fullName: string;
   readonly family: string;
   readonly style: string;
-  /** FontData.blob() → arrayBuffer() → Uint8Array。失敗は reject */
+  /** FontData.blob() -> arrayBuffer() -> Uint8Array. Rejects on failure */
   readonly loadData: () => Promise<Uint8Array>;
 }
 
-/** "queryLocalFonts" in window の機能検出 */
+/** Feature detection for "queryLocalFonts" in window */
 export function isLocalFontAccessSupported(win: Window): boolean {
   return "queryLocalFonts" in win;
 }
@@ -40,8 +40,9 @@ function toCandidate(data: LocalFontData): LocalFontCandidate {
   };
 }
 
-/** queryLocalFonts() を呼び、fullName 昇順の候補列を返す。ユーザー操作起点で呼ぶこと
-    （transient user activation が必要）。NotAllowedError → "denied"、その他の失敗 → "error" */
+/** Calls queryLocalFonts() and returns the candidate list sorted by fullName ascending. Must be
+    called from a user-initiated action (requires transient user activation). NotAllowedError ->
+    "denied", other failures -> "error" */
 export async function listLocalFonts(
   win: Window,
 ): Promise<ListLocalFontsResult> {

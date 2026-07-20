@@ -165,6 +165,21 @@ describe("NumberField", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(5);
   });
 
+  it("precision 0.05 は10の累乗でない刻みでも表示と量子化が一致し、無編集の blur では commit しない", () => {
+    const onCommit = vi.fn();
+    render(
+      <NumberField
+        label="gridWidth"
+        value={0.25}
+        precision={0.05}
+        onCommit={onCommit}
+      />,
+    );
+    expect(input().value).toBe("0.25");
+    blur(input());
+    expect(onCommit).not.toHaveBeenCalled();
+  });
+
   it("外部変更（undo 等）でドラフトを破棄して追従する", () => {
     render(
       <NumberField label="x" value={12} precision={0.1} onCommit={() => {}} />,
@@ -186,8 +201,8 @@ describe("NumberField", () => {
         onCommit={() => {}}
       />,
     );
-    expect(container.querySelector(".apx-field.is-error")).not.toBeNull();
-    expect(container.querySelector(".apx-ferr")?.textContent).toBe(
+    expect(container.querySelector(".dr-field.is-error")).not.toBeNull();
+    expect(container.querySelector(".dr-ferr")?.textContent).toBe(
       "用紙の幅を超えています",
     );
   });
@@ -268,6 +283,35 @@ describe("TextAreaField", () => {
     setValue(textarea, "a\nb");
     blur(textarea);
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("a\nb");
+  });
+
+  it("error があるとフィールドがエラー表示になる", () => {
+    render(
+      <TextAreaField
+        label="テキスト"
+        value="a"
+        error="参照先の注記が定義されていません"
+        onCommit={() => {}}
+      />,
+    );
+    expect(container.querySelector(".dr-field.is-error")).not.toBeNull();
+    expect(container.querySelector(".dr-ferr")?.textContent).toBe(
+      "参照先の注記が定義されていません",
+    );
+  });
+
+  it("hint があると案内文を表示する", () => {
+    render(
+      <TextAreaField
+        label="テキスト"
+        value="a"
+        hint="{#id} で脚注を参照"
+        onCommit={() => {}}
+      />,
+    );
+    expect(container.querySelector(".dr-fhint")?.textContent).toBe(
+      "{#id} で脚注を参照",
+    );
   });
 });
 

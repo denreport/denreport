@@ -1,9 +1,18 @@
-/** Name of the font bundled with this package, for use as `name` in buildPdfmeFont or as the default IR `font.name`. */
+/** Logical name of the bundled regular font, for use as the default IR `font.regular`. */
 export const EMBEDDED_FONT_NAME = "NotoSansJP";
 
 /** File URL of the bundled NotoSansJP Regular TTF, resolved relative to this package's install location. */
 export const EMBEDDED_FONT_URL = new URL(
   "../../assets/fonts/NotoSansJP-Regular.ttf",
+  import.meta.url,
+);
+
+/** Logical name of the bundled bold font, for use as the default IR `font.bold`. */
+export const EMBEDDED_BOLD_FONT_NAME = "NotoSansJPBold";
+
+/** File URL of the bundled NotoSansJP Bold TTF, resolved relative to this package's install location. */
+export const EMBEDDED_BOLD_FONT_URL = new URL(
+  "../../assets/fonts/NotoSansJP-Bold.ttf",
   import.meta.url,
 );
 

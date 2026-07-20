@@ -28,6 +28,11 @@ describe("exportPdfme — golden fixture snapshots", () => {
       irFile: "invoice-multipage.json",
       dataFile: "invoice-multipage-data.json",
     },
+    {
+      name: "rotation",
+      irFile: "rotation.json",
+      dataFile: "rotation-data.json",
+    },
   ])("$name", async ({ name, irFile, dataFile }) => {
     const parsed = parseIr(
       readFileSync(`${coreFixturesDir}/${irFile}`, "utf-8"),
@@ -36,7 +41,7 @@ describe("exportPdfme — golden fixture snapshots", () => {
     if (!parsed.ok) throw new Error("expected valid IR fixture");
     const data = readJson<IrData>(fixturesDir, dataFile);
 
-    const result = exportPdfme(parsed.document, data, fontData);
+    const result = exportPdfme(parsed.document, data, { regular: fontData });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
 

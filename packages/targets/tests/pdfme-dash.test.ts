@@ -20,6 +20,7 @@ function lineOf(
     thickness: 0.3,
     color: "#000000",
     strokeStyle: "solid",
+    rotate: 0,
     ...overrides,
   };
 }
@@ -39,6 +40,7 @@ function rectOf(
     fillColor: null,
     borderStyle: "solid",
     cornerRadius: 0,
+    rotate: 0,
     ...overrides,
   };
 }
@@ -53,6 +55,7 @@ const ellipseEl: LoweredEllipseElement = {
   borderWidth: 0.3,
   borderColor: "#000000",
   fillColor: null,
+  rotate: 0,
 };
 
 const textEl: LoweredTextElement = {
@@ -66,6 +69,11 @@ const textEl: LoweredTextElement = {
   fontSize: 10,
   align: "left",
   lineHeight: 1.25,
+  color: "#000000",
+  fontWeight: "normal",
+  fontStyle: "normal",
+  underline: false,
+  rotate: 0,
 };
 
 describe("expandStrokes — pass-through", () => {
@@ -128,6 +136,46 @@ describe("expandStrokes — line dash expansion", () => {
   });
 });
 
+describe("expandStrokes — rotated dash expansion", () => {
+  it("maps rotated dashed line segments' midpoints around the line midpoint", () => {
+    // pattern dashed = [2, 1], length 7 -> unrotated on-segments: [0,2] [3,5] [6,7], line midpoint (3.5, 0)
+    const el = lineOf({
+      orientation: "horizontal",
+      length: 7,
+      strokeStyle: "dashed",
+      rotate: 90,
+    });
+    const segments = expandStrokes([el]) as LoweredLineElement[];
+    // A 90° clockwise rotation maps midpoint (cx, 0) -> (3.5, cx - 3.5), and x is shifted back by length/2
+    expect(segments.map((s) => [s.x, s.y, s.length, s.rotate])).toEqual([
+      [2.5, -2.5, 2, 90],
+      [2.5, 0.5, 2, 90],
+      [3, 3, 1, 90],
+    ]);
+  });
+
+  it("maps rotated dashed rect edges around the rect center and keeps the fill in place", () => {
+    const el = rectOf({
+      w: 10,
+      h: 6,
+      fillColor: "#eeeeee",
+      borderStyle: "dashed",
+      rotate: 180,
+    });
+    const [fill, ...edges] = expandStrokes([el]);
+    expect(fill).toMatchObject({ type: "rect", x: 0, y: 0, rotate: 180 });
+    const lines = edges as LoweredLineElement[];
+    expect(lines.every((l) => l.rotate === 180)).toBe(true);
+    // A 180° rotation is point symmetry about center (5, 3): the top edge's first on-segment [0,2] (midpoint (1, 0)) -> midpoint (9, 6)
+    expect(lines[0]).toMatchObject({
+      orientation: "horizontal",
+      x: 8,
+      y: 6,
+      length: 2,
+    });
+  });
+});
+
 describe("expandStrokes — rect dash expansion", () => {
   it("splits a dashed filled rect into a borderless fill and 4 dashed edges", () => {
     const el = rectOf({
@@ -147,9 +195,9 @@ describe("expandStrokes — rect dash expansion", () => {
     });
     expect(edges.every((e) => e.type === "line")).toBe(true);
     const lines = edges as LoweredLineElement[];
-    // 4辺それぞれ独立に位相リセットされる（辺ごとに新たな dashed 展開）
+    // Each of the 4 edges independently resets its phase (a fresh dashed expansion per edge)
     const totalOnLength = lines.reduce((sum, l) => sum + l.length, 0);
-    // 各辺は独立に位相0から敷かれる: w=10 → on 2+2+2+1=7（上下）、h=6 → on 2+2=4（左右）
+    // Each edge is laid out independently starting from phase 0: w=10 -> on 2+2+2+1=7 (top/bottom), h=6 -> on 2+2=4 (left/right)
     expect(totalOnLength).toBe(7 + 7 + 4 + 4);
   });
 

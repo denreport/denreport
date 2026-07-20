@@ -20,7 +20,7 @@ function baseDocument(): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [
       {
         type: "text",
@@ -247,7 +247,7 @@ describe("validateIr", () => {
       const elements = doc.elements.map((el) =>
         el.id === "flex1" ? { ...el, x: 200 } : el,
       );
-      // column 方向のコンテナ幅は交差軸導出（子の w の最大値 = 10）なので x=200 で 200+10=210 に収まる
+      // For a column-direction container, width is derived from the cross axis (the max of the children's w = 10), so at x=200 it fits within 200+10=210
       expectNoRule(validateIr(withElements(doc, elements)), "M02");
     });
 
@@ -312,6 +312,25 @@ describe("validateIr", () => {
         "elements[8].y",
       );
     });
+
+    it("judges the unrotated box: rotate neither causes nor cures an M02 error", () => {
+      const doc = baseDocument();
+      // A position that would overflow the page if rotated, but the unrotated box fits
+      const inside = doc.elements.map((el) =>
+        el.id === "r1" ? { ...el, x: 160, w: 50, rotate: 45 } : el,
+      );
+      expectNoRule(validateIr(withElements(doc, inside)), "M02");
+
+      // A position that would fit the page if rotated, but the unrotated box overflows
+      const outside = doc.elements.map((el) =>
+        el.id === "r1" ? { ...el, x: 161, w: 50, rotate: 90 } : el,
+      );
+      expectRule(
+        validateIr(withElements(doc, outside)),
+        "M02",
+        "elements[2].x",
+      );
+    });
   });
 
   describe("M03", () => {
@@ -363,7 +382,7 @@ describe("validateIr", () => {
       );
       const zeroErrors = validateIr(withElements(doc, zero));
       expectRule(zeroErrors, "M03", "elements[5].h");
-      // 内容寸法 11 に対し明示値 0 は下回るため、全件列挙により M12 も同時に報告される
+      // Since the explicit value 0 is below the content dimension of 11, M12 is also reported at the same time because all violations are enumerated
       expectRule(zeroErrors, "M12", "elements[5].h");
 
       const negative = doc.elements.map((el) =>
@@ -416,6 +435,31 @@ describe("validateIr", () => {
         validateIr(withElements(doc, elements)),
         "M03",
         "elements[7].w",
+      );
+    });
+
+    it("allows a table with frameWidth/gridWidth omitted", () => {
+      expectNoRule(validateIr(baseDocument()), "M03");
+    });
+
+    it("rejects a non-positive table frameWidth or gridWidth", () => {
+      const doc = baseDocument();
+      const zeroFrame = doc.elements.map((el) =>
+        el.type === "table" ? { ...el, frameWidth: 0 } : el,
+      );
+      expectRule(
+        validateIr(withElements(doc, zeroFrame)),
+        "M03",
+        "elements[3].frameWidth",
+      );
+
+      const negativeGrid = doc.elements.map((el) =>
+        el.type === "table" ? { ...el, gridWidth: -0.1 } : el,
+      );
+      expectRule(
+        validateIr(withElements(doc, negativeGrid)),
+        "M03",
+        "elements[3].gridWidth",
       );
     });
   });
@@ -512,9 +556,19 @@ describe("validateIr", () => {
       expectRule(errors, "M07", "elements[3].columns[0].key");
     });
 
-    it("rejects a font.name that is not a valid identifier", () => {
-      const doc = { ...baseDocument(), font: { name: "日本語!" } };
-      expectRule(validateIr(doc), "M07", "font.name");
+    it("rejects a font.regular that is not a valid identifier", () => {
+      const doc = { ...baseDocument(), font: { regular: "日本語!" } };
+      expectRule(validateIr(doc), "M07", "font.regular");
+    });
+
+    it("rejects an optional slot name that is not a valid identifier", () => {
+      const doc = {
+        ...baseDocument(),
+        font: { regular: "NotoSansJP", bold: "1bad", italic: "スラント" },
+      };
+      const errors = validateIr(doc);
+      expectRule(errors, "M07", "font.bold");
+      expectRule(errors, "M07", "font.italic");
     });
   });
 
@@ -649,7 +703,7 @@ describe("validateIr", () => {
 
     it("accepts the boundary where the explicit dimension equals the content dimension", () => {
       const doc = baseDocument();
-      // children: h=5 + h=5 + gap(1) = 11 の内容寸法ちょうど
+      // children: h=5 + h=5 + gap(1) = 11, exactly the content dimension
       const elements = doc.elements.map((el) =>
         el.type === "flex" ? { ...el, h: 11 } : el,
       );
@@ -895,6 +949,18 @@ describe("validateIr", () => {
       expectRule(errors, "M16", "elements[7].borderColor");
       expectRule(errors, "M16", "elements[3].stripeColor");
     });
+
+    it("rejects an invalid text color and pageNumber color", () => {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) => {
+        if (el.id === "t1") return { ...el, color: "blue" };
+        if (el.id === "pn1") return { ...el, color: "#abc" };
+        return el;
+      });
+      const errors = validateIr(withElements(doc, elements));
+      expectRule(errors, "M16", "elements[0].color");
+      expectRule(errors, "M16", "elements[6].color");
+    });
   });
 
   describe("M15", () => {
@@ -991,6 +1057,238 @@ describe("validateIr", () => {
           : el,
       );
       expectNoRule(validateIr(withElements(doc, elements)), "M17");
+    });
+  });
+
+  describe("M18", () => {
+    it("accepts a document without any name", () => {
+      expectNoRule(validateIr(baseDocument()), "M18");
+    });
+
+    it("accepts a name at the 64-character boundary", () => {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.id === "r1" ? { ...el, name: "あ".repeat(64) } : el,
+      );
+      expectNoRule(validateIr(withElements(doc, elements)), "M18");
+    });
+
+    it("rejects a name over 64 characters", () => {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.id === "r1" ? { ...el, name: "あ".repeat(65) } : el,
+      );
+      expectRule(
+        validateIr(withElements(doc, elements)),
+        "M18",
+        "elements[2].name",
+      );
+    });
+
+    it("does not require non-empty or uniqueness (unlike style names)", () => {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.type === "text" || el.type === "line" ? { ...el, name: "" } : el,
+      );
+      expectNoRule(validateIr(withElements(doc, elements)), "M18");
+
+      const duplicated = doc.elements.map((el) =>
+        el.id === "t1" || el.id === "l1" ? { ...el, name: "同じ" } : el,
+      );
+      expectNoRule(validateIr(withElements(doc, duplicated)), "M18");
+    });
+
+    it("applies to flex descendants", () => {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.type === "flex"
+          ? {
+              ...el,
+              children: el.children.map((child) => ({
+                ...child,
+                name: "あ".repeat(65),
+              })),
+            }
+          : el,
+      );
+      const errors = validateIr(withElements(doc, elements));
+      expectRule(errors, "M18", "elements[5].children[0].name");
+      expectRule(errors, "M18", "elements[5].children[1].name");
+    });
+  });
+
+  describe("M19", () => {
+    function withRotate(rotate: number): IrDocument {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.id === "r1" ? { ...el, rotate } : el,
+      );
+      return withElements(doc, elements);
+    }
+
+    it("accepts a document without any rotate", () => {
+      expectNoRule(validateIr(baseDocument()), "M19");
+    });
+
+    it.each([360, -360, 0, 15.5])("accepts rotate = %d", (rotate) => {
+      expectNoRule(validateIr(withRotate(rotate)), "M19");
+    });
+
+    it.each([360.1, -360.1, Number.NaN, Number.POSITIVE_INFINITY])(
+      "rejects rotate = %d",
+      (rotate) => {
+        expectRule(validateIr(withRotate(rotate)), "M19", "elements[2].rotate");
+      },
+    );
+
+    it("applies to flex descendants", () => {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.type === "flex"
+          ? {
+              ...el,
+              children: el.children.map((child) => ({ ...child, rotate: 400 })),
+            }
+          : el,
+      );
+      const errors = validateIr(withElements(doc, elements));
+      expectRule(errors, "M19", "elements[5].children[0].rotate");
+      expectRule(errors, "M19", "elements[5].children[1].rotate");
+    });
+  });
+
+  describe("M20", () => {
+    function withTableMerge(
+      overrides: Partial<Extract<IrElement, { type: "table" }>>,
+    ): IrDocument {
+      const doc = baseDocument();
+      const elements = doc.elements.map((el) =>
+        el.type === "table"
+          ? {
+              ...el,
+              columns: [
+                { key: "a", label: "A", width: 20, align: "left" as const },
+                { key: "b", label: "B", width: 20, align: "left" as const },
+                { key: "c", label: "C", width: 20, align: "left" as const },
+              ],
+              ...overrides,
+            }
+          : el,
+      );
+      return withElements(doc, elements);
+    }
+
+    it("accepts a document without cellSpans", () => {
+      expectNoRule(validateIr(baseDocument()), "M20");
+    });
+
+    it("accepts valid header/body spans alongside mergeSameValue on other columns", () => {
+      const doc = withTableMerge({
+        columns: [
+          {
+            key: "a",
+            label: "A",
+            width: 20,
+            align: "left",
+            mergeSameValue: true,
+          },
+          { key: "b", label: "B", width: 20, align: "left" },
+          { key: "c", label: "C", width: 20, align: "left" },
+        ],
+        cellSpans: [
+          { row: "header", key: "b", colSpan: 2 },
+          { row: 0, key: "b", rowSpan: 2, colSpan: 2 },
+        ],
+      });
+      expectNoRule(validateIr(doc), "M20");
+    });
+
+    it.each([-1, 1.5])("rejects row = %d", (row) => {
+      const doc = withTableMerge({
+        cellSpans: [{ row, key: "a", rowSpan: 2 }],
+      });
+      expectRule(validateIr(doc), "M20", "cellSpans[0].row");
+    });
+
+    it("rejects a key that is not a column key", () => {
+      const doc = withTableMerge({
+        cellSpans: [{ row: 0, key: "zzz", rowSpan: 2 }],
+      });
+      expectRule(validateIr(doc), "M20", "cellSpans[0].key");
+    });
+
+    it("rejects non-positive or non-integer rowSpan/colSpan", () => {
+      const doc = withTableMerge({
+        cellSpans: [{ row: 0, key: "a", rowSpan: 0, colSpan: 1.5 }],
+      });
+      const errors = validateIr(doc);
+      expectRule(errors, "M20", "cellSpans[0].rowSpan");
+      expectRule(errors, "M20", "cellSpans[0].colSpan");
+    });
+
+    it("rejects a 1×1 span", () => {
+      const doc = withTableMerge({ cellSpans: [{ row: 0, key: "a" }] });
+      expectRule(validateIr(doc), "M20", "cellSpans[0]");
+    });
+
+    it('rejects rowSpan > 1 on the "header" row', () => {
+      const doc = withTableMerge({
+        cellSpans: [{ row: "header", key: "a", rowSpan: 2, colSpan: 2 }],
+      });
+      expectRule(validateIr(doc), "M20", "cellSpans[0].rowSpan");
+    });
+
+    it("rejects a colSpan extending past the last column", () => {
+      const doc = withTableMerge({
+        cellSpans: [{ row: 0, key: "b", colSpan: 3 }],
+      });
+      expectRule(validateIr(doc), "M20", "cellSpans[0].colSpan");
+    });
+
+    it("rejects overlapping span ranges (body×body, header×header)", () => {
+      const body = withTableMerge({
+        cellSpans: [
+          { row: 0, key: "a", rowSpan: 3 },
+          { row: 2, key: "a", rowSpan: 2 },
+        ],
+      });
+      expectRule(validateIr(body), "M20", "cellSpans[1]");
+
+      const header = withTableMerge({
+        cellSpans: [
+          { row: "header", key: "a", colSpan: 2 },
+          { row: "header", key: "b", colSpan: 2 },
+        ],
+      });
+      expectRule(validateIr(header), "M20", "cellSpans[1]");
+    });
+
+    it("accepts a header span and a body span on the same columns (no row overlap)", () => {
+      const doc = withTableMerge({
+        cellSpans: [
+          { row: "header", key: "a", colSpan: 2 },
+          { row: 0, key: "a", colSpan: 2 },
+        ],
+      });
+      expectNoRule(validateIr(doc), "M20");
+    });
+
+    it("rejects a span covering a mergeSameValue column", () => {
+      const doc = withTableMerge({
+        columns: [
+          { key: "a", label: "A", width: 20, align: "left" },
+          {
+            key: "b",
+            label: "B",
+            width: 20,
+            align: "left",
+            mergeSameValue: true,
+          },
+          { key: "c", label: "C", width: 20, align: "left" },
+        ],
+        cellSpans: [{ row: 0, key: "a", colSpan: 2 }],
+      });
+      expectRule(validateIr(doc), "M20", "cellSpans[0]");
     });
   });
 

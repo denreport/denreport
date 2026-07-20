@@ -4,11 +4,11 @@ import type { MmBox } from "./geometry";
 
 export interface SnapContext {
   readonly page: IrPage;
-  /** 編集中要素を除いたトップレベル要素の箱 */
+  /** Boxes of the top-level elements excluding the one being edited */
   readonly otherBoxes: readonly MmBox[];
   readonly toleranceMm: number;
   readonly gridEnabled: boolean;
-  /** カスタムガイド（CustomGuide[] をそのまま渡せる） */
+  /** Custom guides (CustomGuide[] can be passed as-is) */
   readonly guideLines: readonly SnapGuide[];
 }
 
@@ -29,7 +29,7 @@ interface Candidate {
   readonly kind: CandidateKind;
 }
 
-// 同距離のときの優先: カスタムガイド（ユーザーが明示的に置いた線）> 要素端 > 紙端 > グリッド
+// Priority at equal distance: custom guides (lines explicitly placed by the user) > element edges > paper edges > grid
 const KIND_RANK: Record<CandidateKind, number> = {
   guide: 0,
   element: 1,
@@ -40,7 +40,7 @@ const EPSILON = 1e-9;
 
 interface SnapResult {
   readonly delta: number;
-  /** null はグリッド吸着（ガイドを出さない） */
+  /** null means a grid snap (no guide is shown) */
   readonly guide: number | null;
 }
 
@@ -115,7 +115,7 @@ function bestSnap(
   return { delta: found.delta, guide: found.guide };
 }
 
-/** 箱全体の平行移動に対するスナップ（左右上下端＋中心が候補に吸着） */
+/** Snapping for translating the whole box (left/right/top/bottom edges plus center are candidates) */
 export function snapForMove(box: MmBox, ctx: SnapContext): SnapAdjustment {
   const xResult = bestSnap(
     [box.x, box.x + box.w / 2, box.x + box.w],
@@ -152,7 +152,7 @@ export interface MovingEdges {
   readonly bottom?: boolean;
 }
 
-/** リサイズで動いている辺だけに対するスナップ */
+/** Snapping only for the edge(s) moving during a resize */
 export function snapForResize(
   box: MmBox,
   edges: MovingEdges,
@@ -194,7 +194,7 @@ export function snapForResize(
   return { box: { x, y, w, h }, guides };
 }
 
-/** スナップ有効時の矢印キー移動先: 移動方向の次の 5mm グリッド線の座標 */
+/** The arrow-key move destination when snap is enabled: the coordinate of the next 5mm grid line in the direction of movement */
 export function gridArrowTarget(value: number, direction: 1 | -1): number {
   return direction === 1
     ? (Math.floor(value / GRID_STEP_MM + EPSILON) + 1) * GRID_STEP_MM

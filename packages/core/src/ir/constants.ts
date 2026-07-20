@@ -1,11 +1,14 @@
 export const IDENTIFIER_PATTERN = /^[A-Za-z_][A-Za-z0-9_]*$/;
 export const IDENTIFIER_MAX_LENGTH = 64;
 export const STYLE_NAME_MAX_LENGTH = 64;
+export const ELEMENT_NAME_MAX_LENGTH = 64;
 
 export const PAGE_NUMBER_DEFAULT_FORMAT = "{n} / {N}";
 
 export const FONT_SIZE_MAX = 200;
 export const LINE_HEIGHT_MAX = 5;
+/** Maximum absolute value, in degrees, of an element's `rotate` attribute (rule M19). */
+export const ROTATE_MAX = 360;
 export const PAGE_DIMENSION_MIN = 1;
 export const PAGE_DIMENSION_MAX = 5000;
 /** Maximum number of pages a lowered document may expand to (rule C04). */
@@ -20,9 +23,9 @@ export const TABLE_CELL_PADDING_X = 1.5;
 export const TABLE_HEADER_TEXT_OFFSET_Y = 1.8;
 /** Vertical offset, in mm, from a table body row's top edge to its text anchor. */
 export const TABLE_CELL_TEXT_OFFSET_Y = 2.0;
-/** Stroke width, in mm, of a table's outer frame. */
+/** Default stroke width, in mm, of a table's outer frame (its `frameWidth` attribute). */
 export const TABLE_FRAME_WIDTH = 0.4;
-/** Stroke width, in mm, of a table's row and column grid lines. */
+/** Default stroke width, in mm, of a table's row and column grid lines (its `gridWidth` attribute). */
 export const TABLE_GRID_WIDTH = 0.25;
 
 export const DATA_URI_PATTERN = /^data:([^;,]+);base64,([A-Za-z0-9+/]*={0,2})$/;

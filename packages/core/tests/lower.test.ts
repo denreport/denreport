@@ -207,7 +207,7 @@ function docOf(...elements: readonly IrElement[]): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -368,7 +368,7 @@ describe("lowerIr — footnotes", () => {
     if (!result.ok) throw new Error("expected success");
     expect(result.document.pageCount).toBe(2);
     const isNoteBlock = (el: { sourceId: string }): boolean =>
-      el.sourceId === "apxFootnotes";
+      el.sourceId === "drFootnotes";
     expect(result.document.pages[0]?.some(isNoteBlock)).toBe(false);
     expect(result.document.pages[1]?.some(isNoteBlock)).toBe(true);
   });
@@ -840,7 +840,7 @@ describe("lowerIr — cellOverrides", () => {
   });
 
   it("applies an override whose row lands on a continuation-page chunk", () => {
-    // headerHeight=10, rowHeight=10, maxY=100 → kFirst=9, kCont(continuationY=40)=5. row 10 は2ページ目
+    // headerHeight=10, rowHeight=10, maxY=100 → kFirst=9, kCont(continuationY=40)=5. row 10 is on page 2
     const doc = docOf(
       table({
         maxY: 100,
@@ -899,6 +899,239 @@ describe("lowerIr — cellOverrides", () => {
   });
 });
 
+describe("lowerIr — cell merges", () => {
+  const MERGE_COLUMNS: readonly IrColumn[] = [
+    {
+      key: "name",
+      label: "品目",
+      width: 90,
+      align: "left",
+      mergeSameValue: true,
+    },
+    { key: "amount", label: "金額", width: 35, align: "right" },
+  ];
+
+  function textsOf(page: readonly LoweredElement[], content: string) {
+    return page.filter((el) => el.type === "text" && el.content === content);
+  }
+
+  function linesOf(page: readonly LoweredElement[]) {
+    return page.filter(
+      (el): el is Extract<LoweredElement, { type: "line" }> =>
+        el.type === "line",
+    );
+  }
+
+  it("produces a deeply equal result to a plain table when cellSpans is empty and mergeSameValue is false (regression)", () => {
+    const withAttributes = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        columns: COLUMNS.map((col) => ({ ...col, mergeSameValue: false })),
+        cellSpans: [],
+      }),
+    );
+    const without = docOf(
+      table({ maxY: 100, headerHeight: 10, rowHeight: 10 }),
+    );
+    const data: IrData = { items: rowsOf(3) };
+    const resultWith = lowerIr(withAttributes, data);
+    const resultWithout = lowerIr(without, data);
+    expect(resultWith.ok).toBe(true);
+    if (!resultWith.ok || !resultWithout.ok)
+      throw new Error("expected success");
+    expect(resultWith.document).toEqual(resultWithout.document);
+  });
+
+  it("merges consecutive equal values: one origin text, taller box, and a split horizontal line", () => {
+    const doc = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        columns: MERGE_COLUMNS,
+      }),
+    );
+    const result = lowerIr(doc, {
+      items: [
+        { name: "A", amount: "1" },
+        { name: "A", amount: "2" },
+        { name: "B", amount: "3" },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const page = result.document.pages[0] ?? [];
+    const origins = textsOf(page, "A");
+    expect(origins).toHaveLength(1);
+    expect(origins[0]).toMatchObject({
+      y: 10 + 2.0,
+      h: 2 * 10 - 2.0,
+      w: 90 - 2 * 1.5,
+    });
+    expect(textsOf(page, "1")).toHaveLength(1);
+    expect(textsOf(page, "2")).toHaveLength(1);
+
+    const horizontal = linesOf(page).filter(
+      (l) => l.orientation === "horizontal",
+    );
+    // The row boundary y=20 inside the merge remains only for the amount column
+    const atMergedBoundary = horizontal.filter((l) => l.y === 20);
+    expect(atMergedBoundary).toEqual([
+      expect.objectContaining({ x: 15 + 90, length: 35 }),
+    ]);
+    const atHeaderLine = horizontal.filter((l) => l.y === 10);
+    expect(atHeaderLine).toEqual([
+      expect.objectContaining({ x: 15, length: 125 }),
+    ]);
+  });
+
+  it("merges header cells with a static colSpan and shortens the vertical line to the body", () => {
+    const doc = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        cellSpans: [{ row: "header", key: "name", colSpan: 2 }],
+      }),
+    );
+    const result = lowerIr(doc, { items: rowsOf(2) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const page = result.document.pages[0] ?? [];
+    expect(textsOf(page, "金額")).toHaveLength(0);
+    expect(textsOf(page, "品目")).toEqual([
+      expect.objectContaining({ w: 125 - 2 * 1.5 }),
+    ]);
+    const vertical = linesOf(page).filter((l) => l.orientation === "vertical");
+    expect(vertical).toEqual([
+      expect.objectContaining({ x: 15 + 90, y: 10, length: 2 * 10 }),
+    ]);
+  });
+
+  it("merges body cells horizontally with a static colSpan (covered cell draws no text)", () => {
+    const doc = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        cellSpans: [{ row: 0, key: "name", colSpan: 2 }],
+      }),
+    );
+    const result = lowerIr(doc, { items: rowsOf(2) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const page = result.document.pages[0] ?? [];
+    expect(textsOf(page, "item0")).toEqual([
+      expect.objectContaining({ w: 125 - 2 * 1.5 }),
+    ]);
+    expect(textsOf(page, "0")).toHaveLength(0);
+    expect(textsOf(page, "1")).toHaveLength(1);
+    const vertical = linesOf(page).filter((l) => l.orientation === "vertical");
+    // Only the inside of row 0 is cut, leaving the header band and row 1
+    expect(vertical).toEqual([
+      expect.objectContaining({ x: 105, y: 0, length: 10 }),
+      expect.objectContaining({ x: 105, y: 20, length: 10 }),
+    ]);
+  });
+
+  it("re-draws the merged value on the continuation page (content duplication across the page break)", () => {
+    // kFirst=9, kCont(continuationY=40)=5. The same value across 11 rows splits into 9+2, creating a merge origin on both pages
+    const doc = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        continuationY: 40,
+        columns: MERGE_COLUMNS,
+      }),
+    );
+    const items = Array.from({ length: 11 }, (_, i) => ({
+      name: "同一値",
+      amount: `${i}`,
+    }));
+    const result = lowerIr(doc, { items });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.document.pageCount).toBe(2);
+    const page1 = result.document.pages[0] ?? [];
+    const page2 = result.document.pages[1] ?? [];
+    expect(textsOf(page1, "同一値")).toEqual([
+      expect.objectContaining({ h: 9 * 10 - 2.0 }),
+    ]);
+    expect(textsOf(page2, "同一値")).toEqual([
+      expect.objectContaining({ y: 40 + 10 + 2.0, h: 2 * 10 - 2.0 }),
+    ]);
+  });
+
+  it("keeps pageCount and stripe rects unchanged by merges", () => {
+    const data: IrData = {
+      items: Array.from({ length: 11 }, () => ({ name: "X", amount: "1" })),
+    };
+    const merged = lowerIr(
+      docOf(
+        table({
+          maxY: 100,
+          headerHeight: 10,
+          rowHeight: 10,
+          continuationY: 40,
+          columns: MERGE_COLUMNS,
+          stripeColor: "#eeeeee",
+        }),
+      ),
+      data,
+    );
+    const plain = lowerIr(
+      docOf(
+        table({
+          maxY: 100,
+          headerHeight: 10,
+          rowHeight: 10,
+          continuationY: 40,
+          stripeColor: "#eeeeee",
+        }),
+      ),
+      data,
+    );
+    expect(merged.ok && plain.ok).toBe(true);
+    if (!merged.ok || !plain.ok) throw new Error("expected success");
+    expect(merged.document.pageCount).toBe(plain.document.pageCount);
+    const stripesOf = (pages: readonly (readonly LoweredElement[])[]) =>
+      pages.map((page) =>
+        page.filter((el) => el.type === "rect" && el.fillColor === "#eeeeee"),
+      );
+    expect(stripesOf(merged.document.pages)).toEqual(
+      stripesOf(plain.document.pages),
+    );
+  });
+
+  it("keeps an out-of-range static span inactive and clips an overflowing rowSpan", () => {
+    const doc = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        cellSpans: [
+          { row: 5, key: "name", rowSpan: 2 },
+          { row: 1, key: "name", rowSpan: 9 },
+        ],
+      }),
+    );
+    const plain = docOf(table({ maxY: 100, headerHeight: 10, rowHeight: 10 }));
+    const data: IrData = { items: rowsOf(2) };
+    const result = lowerIr(doc, data);
+    const plainResult = lowerIr(plain, data);
+    expect(result.ok && plainResult.ok).toBe(true);
+    if (!result.ok || !plainResult.ok) throw new Error("expected success");
+    expect(result.document.pageCount).toBe(plainResult.document.pageCount);
+    // The merge originating at row 1 is truncated to 2 output rows, and the one originating at row 5 is inert
+    const page = result.document.pages[0] ?? [];
+    const item1 = textsOf(page, "item1");
+    expect(item1).toEqual([expect.objectContaining({ h: 10 - 2.0 })]);
+  });
+});
+
 describe("lowerIr — pageNumber", () => {
   it("replaces {n} and {N} and keeps other characters literal", () => {
     const doc = docOf(
@@ -912,6 +1145,118 @@ describe("lowerIr — pageNumber", () => {
     const page2 = result.document.pages[1]?.find((el) => el.sourceId === "pn1");
     expect(page1).toMatchObject({ content: "page 1 of 2 — {x}" });
     expect(page2).toMatchObject({ content: "page 2 of 2 — {x}" });
+  });
+});
+
+describe("lowerIr — text/pageNumber color", () => {
+  it("defaults text and pageNumber color to black", () => {
+    const doc = docOf(staticText(), pageNumber());
+    const result = lowerIr(doc, {});
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const [text, pn] = result.document.pages[0] ?? [];
+    expect(text).toMatchObject({ color: "#000000" });
+    expect(pn).toMatchObject({ color: "#000000" });
+  });
+
+  it("resolves explicit text and pageNumber color", () => {
+    const doc = docOf(
+      staticText({ color: "#ff0000" }),
+      pageNumber({ color: "#00ff00" }),
+    );
+    const result = lowerIr(doc, {});
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const [text, pn] = result.document.pages[0] ?? [];
+    expect(text).toMatchObject({ color: "#ff0000" });
+    expect(pn).toMatchObject({ color: "#00ff00" });
+  });
+
+  it("keeps table header/cell text black regardless of surrounding elements", () => {
+    const doc = docOf(table({ maxY: 100 }));
+    const result = lowerIr(doc, { items: rowsOf(1) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const texts = (result.document.pages[0] ?? []).filter(
+      (el): el is Extract<LoweredElement, { type: "text" }> =>
+        el.type === "text",
+    );
+    expect(texts.length).toBeGreaterThan(0);
+    for (const text of texts) {
+      expect(text.color).toBe("#000000");
+    }
+  });
+});
+
+describe("lowerIr — text font style attributes", () => {
+  it("defaults fontWeight/fontStyle/underline to normal/normal/false", () => {
+    const doc = docOf(staticText(), pageNumber());
+    const result = lowerIr(doc, {});
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const [text, pn] = result.document.pages[0] ?? [];
+    expect(text).toMatchObject({
+      fontWeight: "normal",
+      fontStyle: "normal",
+      underline: false,
+    });
+    expect(pn).toMatchObject({
+      fontWeight: "normal",
+      fontStyle: "normal",
+      underline: false,
+    });
+  });
+
+  it("resolves explicit fontWeight/fontStyle/underline to concrete values", () => {
+    const doc = docOf(
+      staticText({ fontWeight: "bold", fontStyle: "italic", underline: true }),
+    );
+    const result = lowerIr(doc, {});
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.document.pages[0]?.[0]).toMatchObject({
+      fontWeight: "bold",
+      fontStyle: "italic",
+      underline: true,
+    });
+  });
+
+  it("resolves the attributes on a named-style-referencing element from its concrete values", () => {
+    const doc: IrDocument = {
+      ...docOf(
+        staticText({ style: "強調", fontWeight: "bold", underline: true }),
+      ),
+      styles: [
+        { name: "強調", attrs: { fontWeight: "bold", underline: true } },
+      ],
+    };
+    const result = lowerIr(doc, {});
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.document.pages[0]?.[0]).toMatchObject({
+      fontWeight: "bold",
+      fontStyle: "normal",
+      underline: true,
+    });
+  });
+
+  it("keeps table header/cell text at normal weight and style", () => {
+    const doc = docOf(table({ maxY: 100 }));
+    const result = lowerIr(doc, { items: rowsOf(1) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const texts = (result.document.pages[0] ?? []).filter(
+      (el): el is Extract<LoweredElement, { type: "text" }> =>
+        el.type === "text",
+    );
+    expect(texts.length).toBeGreaterThan(0);
+    for (const text of texts) {
+      expect(text).toMatchObject({
+        fontWeight: "normal",
+        fontStyle: "normal",
+        underline: false,
+      });
+    }
   });
 });
 
@@ -1029,6 +1374,7 @@ describe("lowerIr — other basic element lowering", () => {
       thickness: 0.5,
       color: "#000000",
       strokeStyle: "solid",
+      rotate: 0,
     });
     expect(rc).toEqual({
       type: "rect",
@@ -1042,6 +1388,7 @@ describe("lowerIr — other basic element lowering", () => {
       fillColor: null,
       borderStyle: "solid",
       cornerRadius: 0,
+      rotate: 0,
     });
     expect(im).toEqual({
       type: "image",
@@ -1051,6 +1398,7 @@ describe("lowerIr — other basic element lowering", () => {
       w: 10,
       h: 10,
       src: "data:image/png;base64,AAAA",
+      rotate: 0,
     });
   });
 
@@ -1070,6 +1418,7 @@ describe("lowerIr — other basic element lowering", () => {
       h: 30,
       symbology: "ean13",
       content: "4912345678904",
+      rotate: 0,
     });
   });
 
@@ -1088,6 +1437,7 @@ describe("lowerIr — other basic element lowering", () => {
       borderWidth: 0.5,
       borderColor: "#000000",
       fillColor: null,
+      rotate: 0,
     });
   });
 
@@ -1130,6 +1480,63 @@ describe("lowerIr — other basic element lowering", () => {
       borderStyle: "dotted",
       cornerRadius: 3,
     });
+  });
+});
+
+describe("lowerIr — rotate resolution", () => {
+  it("resolves an explicit rotate and defaults omitted rotate to 0", () => {
+    const doc = docOf(
+      staticText({ rotate: 45 }),
+      line({ rotate: -30.5 }),
+      rect(),
+    );
+    const result = lowerIr(doc, {});
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const [text, ln, rc] = result.document.pages[0] ?? [];
+    expect(text).toMatchObject({ rotate: 45 });
+    expect(ln).toMatchObject({ rotate: -30.5 });
+    expect(rc).toMatchObject({ rotate: 0 });
+  });
+
+  it("propagates a flex child's rotate to its placed element", () => {
+    const doc = docOf(
+      flex({ children: [boundTextChild("k", { rotate: 90 })] }),
+    );
+    const result = lowerIr(doc, { k: "v" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.document.pages[0]?.[0]).toMatchObject({
+      sourceId: "c1",
+      rotate: 90,
+    });
+  });
+
+  it("propagates pageNumber's rotate to every page", () => {
+    const doc = docOf(
+      pageNumber({ rotate: 15 }),
+      table({ maxY: 100, headerHeight: 10, rowHeight: 10, continuationY: 0 }),
+    );
+    const result = lowerIr(doc, { items: rowsOf(10) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    for (const page of result.document.pages) {
+      expect(page.find((el) => el.sourceId === "pn1")).toMatchObject({
+        rotate: 15,
+      });
+    }
+  });
+
+  it("gives every table-expanded element rotate 0", () => {
+    const doc = docOf(table({ stripeColor: "#eeeeee" }));
+    const result = lowerIr(doc, { items: rowsOf(3) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const expanded = (result.document.pages[0] ?? []).filter(
+      (el) => el.sourceId === "items",
+    );
+    expect(expanded.length).toBeGreaterThan(0);
+    expect(expanded.every((el) => el.rotate === 0)).toBe(true);
   });
 });
 
@@ -1245,5 +1652,63 @@ describe("lowerIr — table stripeColor", () => {
     expect(page1Stripes).toHaveLength(4);
     expect(page2Stripes).toHaveLength(1);
     expect(page2Stripes[0]?.y).toBe(0 + 10 + 0 * 10);
+  });
+});
+
+describe("lowerIr — table frame/grid attributes", () => {
+  function frame(page: readonly LoweredElement[]) {
+    const el = page.find(
+      (el): el is Extract<LoweredElement, { type: "rect" }> =>
+        el.type === "rect",
+    );
+    if (!el) throw new Error("expected a frame rect");
+    return el;
+  }
+
+  function gridLines(page: readonly LoweredElement[]) {
+    return page.filter(
+      (el): el is Extract<LoweredElement, { type: "line" }> =>
+        el.type === "line",
+    );
+  }
+
+  it("uses the spec defaults (0.4mm frame, 0.25mm grid, solid) when omitted", () => {
+    const doc = docOf(table({ maxY: 100, headerHeight: 10, rowHeight: 10 }));
+    const result = lowerIr(doc, { items: rowsOf(1) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const page = result.document.pages[0] ?? [];
+    expect(frame(page)).toMatchObject({
+      borderWidth: 0.4,
+      borderStyle: "solid",
+    });
+    for (const line of gridLines(page)) {
+      expect(line).toMatchObject({ thickness: 0.25, strokeStyle: "solid" });
+    }
+  });
+
+  it("applies explicit frameWidth/gridWidth/frameStyle/gridStyle to the frame and grid lines", () => {
+    const doc = docOf(
+      table({
+        maxY: 100,
+        headerHeight: 10,
+        rowHeight: 10,
+        frameWidth: 1,
+        gridWidth: 0.6,
+        frameStyle: "dashed",
+        gridStyle: "dotted",
+      }),
+    );
+    const result = lowerIr(doc, { items: rowsOf(1) });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    const page = result.document.pages[0] ?? [];
+    expect(frame(page)).toMatchObject({
+      borderWidth: 1,
+      borderStyle: "dashed",
+    });
+    for (const line of gridLines(page)) {
+      expect(line).toMatchObject({ thickness: 0.6, strokeStyle: "dotted" });
+    }
   });
 });

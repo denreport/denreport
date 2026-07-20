@@ -26,7 +26,7 @@ export function InlineEditor(props: {
     onCancel,
   } = props;
   const fieldRef = useRef<FieldElement | null>(null);
-  // Escape → unmount 後に blur が届く経路があるため、確定/キャンセルは一度きりに絞る
+  // There is a path where blur arrives after Escape → unmount, so restrict commit/cancel to firing only once
   const doneRef = useRef(false);
 
   useEffect(() => {
@@ -66,11 +66,11 @@ export function InlineEditor(props: {
     }
   };
 
-  const classes = ["apx-inline-editor"];
+  const classes = ["dr-inline-editor"];
   if (align === "center") {
-    classes.push("apx-align-center");
+    classes.push("dr-align-center");
   } else if (align === "right") {
-    classes.push("apx-align-right");
+    classes.push("dr-align-right");
   }
 
   const style = {

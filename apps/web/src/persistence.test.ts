@@ -1,9 +1,14 @@
+import type { CompatTargetId } from "@denreport/designer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AUTOSAVE_DEBOUNCE_MS,
   attachAutosave,
+  EXPORT_TARGET_STORAGE_KEY,
   IR_STORAGE_KEY,
+  LOCALE_STORAGE_KEY,
+  restoreExportTarget,
   restoreIr,
+  restoreLocale,
   SAMPLE_DATA_STORAGE_KEY,
 } from "./persistence";
 
@@ -48,12 +53,18 @@ function createStubStorage(): StubStorage {
 function createFakeDesigner() {
   const changeListeners = new Set<() => void>();
   const sampleListeners = new Set<() => void>();
+  const exportTargetListeners = new Set<() => void>();
+  const localeListeners = new Set<() => void>();
   let ir = '{"version":"1.0"}';
   let sampleData = '{"a":1}';
+  let exportTarget: CompatTargetId = "pdfme";
+  let locale: "ja" | "en" = "ja";
   return {
     designer: {
       saveIr: (): string => ir,
       getSampleData: (): string => sampleData,
+      getExportTarget: (): CompatTargetId => exportTarget,
+      getLocale: (): "ja" | "en" => locale,
       onChange: (listener: () => void): (() => void) => {
         changeListeners.add(listener);
         return () => {
@@ -66,12 +77,30 @@ function createFakeDesigner() {
           sampleListeners.delete(listener);
         };
       },
+      onExportTargetChange: (listener: () => void): (() => void) => {
+        exportTargetListeners.add(listener);
+        return () => {
+          exportTargetListeners.delete(listener);
+        };
+      },
+      onLocaleChange: (listener: () => void): (() => void) => {
+        localeListeners.add(listener);
+        return () => {
+          localeListeners.delete(listener);
+        };
+      },
     },
     setIr(json: string): void {
       ir = json;
     },
     setSampleData(json: string): void {
       sampleData = json;
+    },
+    setExportTarget(target: CompatTargetId): void {
+      exportTarget = target;
+    },
+    setLocale(next: "ja" | "en"): void {
+      locale = next;
     },
     emitChange(): void {
       for (const listener of [...changeListeners]) {
@@ -83,8 +112,23 @@ function createFakeDesigner() {
         listener();
       }
     },
+    emitExportTargetChange(): void {
+      for (const listener of [...exportTargetListeners]) {
+        listener();
+      }
+    },
+    emitLocaleChange(): void {
+      for (const listener of [...localeListeners]) {
+        listener();
+      }
+    },
     listenerCount(): number {
-      return changeListeners.size + sampleListeners.size;
+      return (
+        changeListeners.size +
+        sampleListeners.size +
+        exportTargetListeners.size +
+        localeListeners.size
+      );
     },
   };
 }
@@ -111,6 +155,44 @@ describe("restoreIr", () => {
     const loadIr = vi.fn(() => ({ ok: false, errors: [] }) as const);
     expect(restoreIr({ loadIr }, storage)).toBe("invalid");
     expect(storage.getItem(IR_STORAGE_KEY)).toBe("{broken");
+  });
+});
+
+describe("restoreExportTarget", () => {
+  it("保存値がなければ undefined を返す", () => {
+    const storage = createStubStorage();
+    expect(restoreExportTarget(storage)).toBeUndefined();
+  });
+
+  it("有効な保存値はそのまま返す", () => {
+    const storage = createStubStorage();
+    storage.setItem(EXPORT_TARGET_STORAGE_KEY, "reportlab");
+    expect(restoreExportTarget(storage)).toBe("reportlab");
+  });
+
+  it("不正な保存値は undefined を返す", () => {
+    const storage = createStubStorage();
+    storage.setItem(EXPORT_TARGET_STORAGE_KEY, "excel");
+    expect(restoreExportTarget(storage)).toBeUndefined();
+  });
+});
+
+describe("restoreLocale", () => {
+  it("保存値がなければ undefined を返す", () => {
+    const storage = createStubStorage();
+    expect(restoreLocale(storage)).toBeUndefined();
+  });
+
+  it("有効な保存値はそのまま返す", () => {
+    const storage = createStubStorage();
+    storage.setItem(LOCALE_STORAGE_KEY, "en");
+    expect(restoreLocale(storage)).toBe("en");
+  });
+
+  it("不正な保存値は undefined を返す", () => {
+    const storage = createStubStorage();
+    storage.setItem(LOCALE_STORAGE_KEY, "fr");
+    expect(restoreLocale(storage)).toBeUndefined();
   });
 });
 
@@ -156,6 +238,28 @@ describe("attachAutosave", () => {
 
     vi.advanceTimersByTime(300);
     expect(storage.getItem(SAMPLE_DATA_STORAGE_KEY)).toBe('{"b":2}');
+  });
+
+  it("書き出しターゲットの変更もデバウンス後に getExportTarget() の値を書く", () => {
+    const fake = createFakeDesigner();
+    const storage = createStubStorage();
+    attachAutosave(fake.designer, storage, window, () => {});
+
+    fake.setExportTarget("reportlab");
+    fake.emitExportTargetChange();
+    vi.advanceTimersByTime(AUTOSAVE_DEBOUNCE_MS);
+    expect(storage.getItem(EXPORT_TARGET_STORAGE_KEY)).toBe("reportlab");
+  });
+
+  it("言語の変更もデバウンス後に getLocale() の値を書く", () => {
+    const fake = createFakeDesigner();
+    const storage = createStubStorage();
+    attachAutosave(fake.designer, storage, window, () => {});
+
+    fake.setLocale("en");
+    fake.emitLocaleChange();
+    vi.advanceTimersByTime(AUTOSAVE_DEBOUNCE_MS);
+    expect(storage.getItem(LOCALE_STORAGE_KEY)).toBe("en");
   });
 
   it("setItem が throw したら onError に渡り、以後の変更でも保存し続ける", () => {
@@ -208,7 +312,7 @@ describe("attachAutosave", () => {
     const storage = createStubStorage();
     const setItem = vi.spyOn(storage, "setItem");
     const detach = attachAutosave(fake.designer, storage, window, () => {});
-    expect(fake.listenerCount()).toBe(2);
+    expect(fake.listenerCount()).toBe(4);
 
     fake.emitChange();
     detach();

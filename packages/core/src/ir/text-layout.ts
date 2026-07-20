@@ -24,7 +24,7 @@ export interface LaidOutLine {
   readonly charSpacePt: number;
 }
 
-/** 行頭禁則の対象文字（1文字=1コードポイントの連結文字列）。生成 Python の _KINSOKU_HEAD と同期 */
+/** Characters subject to the line-head prohibition rule (kinsoku) — a concatenated string of 1 character = 1 code point each. Kept in sync with the generated Python's _KINSOKU_HEAD */
 export const LINE_HEAD_PROHIBITED = "、。，．）｝］」』】〕〉》｡､｣,.)]}";
 
 function widthOfChars(
@@ -55,7 +55,7 @@ function wrapParagraph(
     ) {
       lines.push(line);
       line = [ch];
-      // 追い出し: 送った直後の先頭がまだ禁則文字なら、直前行が1文字残る限り繰り返す
+      // Push-out: if the head of the line we just wrapped is still a prohibited character, repeat as long as the previous line has at least 1 character left
       while (
         LINE_HEAD_PROHIBITED.includes(line[0] as string) &&
         (lines[lines.length - 1]?.length ?? 0) >= 2

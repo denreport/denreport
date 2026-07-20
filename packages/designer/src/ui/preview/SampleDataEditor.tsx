@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import { useId } from "react";
+import { useMessages } from "../../i18n/context";
 import { useDraftValue } from "../properties/useDraftValue";
 
-/** サンプルデータの JSON 直接編集。blur で確定し（textarea の Enter は改行）、
-    不正 JSON でも確定は妨げない（保持形式が文字列であるため） */
+/** Direct JSON editing of sample data. Commits on blur (Enter in the textarea inserts
+    a newline); invalid JSON does not block committing (the storage format is a string) */
 export function SampleDataEditor(props: {
   readonly value: string;
   readonly onCommit: (json: string) => void;
@@ -11,6 +12,7 @@ export function SampleDataEditor(props: {
   readonly parseError: string | undefined;
 }): ReactNode {
   const { value, onCommit, onGenerate, parseError } = props;
+  const m = useMessages().sampleData;
   const handlers = useDraftValue(value, (raw) => {
     if (raw !== value) {
       onCommit(raw);
@@ -18,18 +20,18 @@ export function SampleDataEditor(props: {
   });
   const id = useId();
   return (
-    <div className="apx-sample">
-      <label className="apx-sect-h" htmlFor={id}>
-        サンプルデータ (JSON)
+    <div className="dr-sample">
+      <label className="dr-sect-h" htmlFor={id}>
+        {m.label}
       </label>
       <span
-        className={`apx-field apx-field-multi apx-sample-field${
+        className={`dr-field dr-field-multi dr-sample-field${
           parseError !== undefined ? " is-error" : ""
         }`}
       >
         <textarea
           id={id}
-          className="apx-mono"
+          className="dr-mono"
           rows={18}
           value={handlers.draft}
           onChange={(e) => handlers.onChange(e.currentTarget.value)}
@@ -38,14 +40,14 @@ export function SampleDataEditor(props: {
         />
       </span>
       {parseError !== undefined && (
-        <p className="apx-sample-err">{parseError}</p>
+        <p className="dr-sample-err">{parseError}</p>
       )}
       <button
         type="button"
-        className="apx-btn apx-btn-secondary"
+        className="dr-btn dr-btn-secondary"
         onClick={onGenerate}
       >
-        bind キーから生成
+        {m.generate}
       </button>
     </div>
   );

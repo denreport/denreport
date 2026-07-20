@@ -27,7 +27,7 @@ test("fixture IR を localStorage から復元し pdfme JSON を書き出す", a
     [IR_FIXTURE, SAMPLE_DATA],
   );
   await page.goto("/");
-  await expect(page.locator('.apx-el[data-apx-id="title"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="title"]')).toBeVisible();
 
   await page.getByRole("button", { name: "書き出し" }).click();
   const exportDialog = page.getByRole("dialog", { name: "書き出し" });
@@ -48,7 +48,7 @@ test("fixture IR を localStorage から復元し pdfme JSON を書き出す", a
   };
   expect(Object.keys(artifact).sort()).toEqual(["inputs", "template"]);
 
-  // 明細2行 + minRows 3 は1ページに収まる
+  // 2 line-item rows + minRows 3 fits on a single page
   const schemas = artifact.template?.schemas;
   expect(schemas).toHaveLength(1);
   expect(schemas?.[0]?.length).toBeGreaterThan(0);
@@ -71,7 +71,7 @@ test("フォント全体埋め込みをオンにすると font ブロック付�
     [IR_FIXTURE, SAMPLE_DATA],
   );
   await page.goto("/");
-  await expect(page.locator('.apx-el[data-apx-id="title"]')).toBeVisible();
+  await expect(page.locator('.dr-el[data-dr-id="title"]')).toBeVisible();
 
   await page.getByRole("button", { name: "書き出し" }).click();
   const exportDialog = page.getByRole("dialog", { name: "書き出し" });
@@ -89,7 +89,10 @@ test("フォント全体埋め込みをオンにすると font ブロック付�
 
   const path = await download.path();
   const artifact = JSON.parse(readFileSync(path, "utf8")) as {
-    readonly font?: { readonly name?: string; readonly subset?: boolean };
+    readonly font?: {
+      readonly names?: readonly string[];
+      readonly subset?: boolean;
+    };
   };
   expect(Object.keys(artifact).sort()).toEqual(["font", "inputs", "template"]);
   expect(artifact.font?.subset).toBe(false);

@@ -14,9 +14,9 @@ function boxVars(box: MmBox): CSSProperties {
 }
 
 export function GuidesLayer(props: {
-  /** guidesInPage 適用済み */
+  /** Already has guidesInPage applied */
   readonly guides: readonly CustomGuide[];
-  /** pageContext !== "first" では null を渡す */
+  /** Pass null when pageContext !== "first" */
   readonly envelopePreset: EnvelopePreset | null;
   readonly drag: GuideDragApi;
 }): ReactNode {
@@ -27,11 +27,11 @@ export function GuidesLayer(props: {
         guide.axis === "x" ? (
           <span
             key={guide.id}
-            className="apx-cguide-v"
+            className="dr-cguide-v"
             style={{ "--gx": guide.positionMm } as CSSProperties}
           >
             <span
-              className="apx-cguide-hit"
+              className="dr-cguide-hit"
               onPointerDown={(e) => {
                 e.stopPropagation();
                 drag.startFromGuide(guide.id, "x", e);
@@ -41,11 +41,11 @@ export function GuidesLayer(props: {
         ) : (
           <span
             key={guide.id}
-            className="apx-cguide-h"
+            className="dr-cguide-h"
             style={{ "--gy": guide.positionMm } as CSSProperties}
           >
             <span
-              className="apx-cguide-hit"
+              className="dr-cguide-hit"
               onPointerDown={(e) => {
                 e.stopPropagation();
                 drag.startFromGuide(guide.id, "y", e);
@@ -57,11 +57,11 @@ export function GuidesLayer(props: {
       {envelopePreset !== null && (
         <>
           <div
-            className="apx-env-window"
+            className="dr-env-window"
             style={boxVars(envelopePreset.windowBox)}
           />
           <div
-            className="apx-env-safe"
+            className="dr-env-safe"
             style={boxVars(envelopePreset.safeBox)}
           />
         </>

@@ -1,3 +1,4 @@
+import { getMessages, type MessageLocale } from "../i18n/messages";
 import {
   PAGE_COUNT_MAX,
   TABLE_CELL_PADDING_X,
@@ -17,12 +18,17 @@ import {
   resolveEllipseStyle,
   resolveLineStyle,
   resolveRectStyle,
+  resolveTextStyle,
 } from "./style";
+import type { TableMergeRect } from "./table-merge";
+import { computeChunkMerges, subtractSkips } from "./table-merge";
 import type {
   IrAlign,
   IrBarcodeSymbology,
   IrDocument,
   IrFont,
+  IrFontStyle,
+  IrFontWeight,
   IrOrientation,
   IrPage,
   IrPageNumberElement,
@@ -49,6 +55,12 @@ export interface LoweredTextElement {
   readonly fontSize: number;
   readonly align: IrAlign;
   readonly lineHeight: number;
+  readonly color: string;
+  readonly fontWeight: IrFontWeight;
+  readonly fontStyle: IrFontStyle;
+  readonly underline: boolean;
+  /** Resolved rotation in degrees; 0 means no rotation. */
+  readonly rotate: number;
 }
 
 /**
@@ -65,6 +77,7 @@ export interface LoweredLineElement {
   readonly thickness: number;
   readonly color: string;
   readonly strokeStyle: IrStrokeStyle;
+  readonly rotate: number;
 }
 
 /**
@@ -83,6 +96,7 @@ export interface LoweredRectElement {
   readonly fillColor: string | null;
   readonly borderStyle: IrStrokeStyle;
   readonly cornerRadius: number;
+  readonly rotate: number;
 }
 
 /**
@@ -99,6 +113,7 @@ export interface LoweredEllipseElement {
   readonly borderWidth: number;
   readonly borderColor: string;
   readonly fillColor: string | null;
+  readonly rotate: number;
 }
 
 /** An image element with its data URI `src` carried through unchanged. */
@@ -110,6 +125,7 @@ export interface LoweredImageElement {
   readonly w: number;
   readonly h: number;
   readonly src: string;
+  readonly rotate: number;
 }
 
 /**
@@ -125,6 +141,7 @@ export interface LoweredBarcodeElement {
   readonly h: number;
   readonly symbology: IrBarcodeSymbology;
   readonly content: string;
+  readonly rotate: number;
 }
 
 /** Union of every element type lowerIr can produce. */
@@ -171,8 +188,8 @@ function toIrError(p: DataProblem): IrError {
   return { rule: p.rule, path: p.path, message: p.message };
 }
 
-// 欠落キー（severity: warning）のみを補完する。C01→C02 の順に代入するため
-// text と table が同一キーを共有する場合は table（空配列）が後勝ちで残る
+// Fills in only missing keys (severity: warning). Since assignment happens in C01 → C02 order,
+// if text and table share the same key, table's value (an empty array) wins by being assigned last
 function applyMissingKeyDefaults(
   data: IrData,
   problems: readonly DataProblem[],
@@ -277,6 +294,13 @@ function lowerTableChunk(
   const xOf = (i: number): number =>
     table.x +
     table.columns.slice(0, i).reduce((total, col) => total + col.width, 0);
+  const merges = computeChunkMerges(table, rows, rowOffset, chunkSize);
+  const rectByOrigin = new Map<string, TableMergeRect>(
+    merges.rects.map((rect) => [`${rect.q}:${rect.col}`, rect]),
+  );
+  // Vertical rule interval endpoint → y coordinate (-1 is the top edge of the header band = the top edge of the table)
+  const rowEdgeY = (edge: number): number =>
+    edge < 0 ? y0 : y0 + table.headerHeight + edge * table.rowHeight;
 
   const out: LoweredElement[] = [];
   const stripeColor = table.stripeColor;
@@ -296,6 +320,7 @@ function lowerTableChunk(
         fillColor: stripeColor,
         borderStyle: TABLE_LINE_STYLE,
         cornerRadius: 0,
+        rotate: 0,
       });
     }
   }
@@ -306,50 +331,74 @@ function lowerTableChunk(
     y: y0,
     w: width,
     h: height,
-    borderWidth: TABLE_FRAME_WIDTH,
+    borderWidth: table.frameWidth ?? TABLE_FRAME_WIDTH,
     borderColor: TABLE_LINE_COLOR,
     fillColor: null,
-    borderStyle: TABLE_LINE_STYLE,
+    borderStyle: table.frameStyle ?? TABLE_LINE_STYLE,
     cornerRadius: 0,
+    rotate: 0,
   });
   for (let q = 0; q < chunkSize; q++) {
-    out.push({
-      type: "line",
-      sourceId: table.id,
-      orientation: "horizontal",
-      x: table.x,
-      y: y0 + table.headerHeight + q * table.rowHeight,
-      length: width,
-      thickness: TABLE_GRID_WIDTH,
-      color: TABLE_LINE_COLOR,
-      strokeStyle: TABLE_LINE_STYLE,
-    });
+    for (const segment of subtractSkips(
+      0,
+      table.columns.length,
+      merges.horizontalSkips.get(q),
+    )) {
+      out.push({
+        type: "line",
+        sourceId: table.id,
+        orientation: "horizontal",
+        x: xOf(segment.start),
+        y: y0 + table.headerHeight + q * table.rowHeight,
+        length: xOf(segment.end) - xOf(segment.start),
+        thickness: table.gridWidth ?? TABLE_GRID_WIDTH,
+        color: TABLE_LINE_COLOR,
+        strokeStyle: table.gridStyle ?? TABLE_LINE_STYLE,
+        rotate: 0,
+      });
+    }
   }
   for (let i = 1; i < table.columns.length; i++) {
-    out.push({
-      type: "line",
-      sourceId: table.id,
-      orientation: "vertical",
-      x: xOf(i),
-      y: y0,
-      length: height,
-      thickness: TABLE_GRID_WIDTH,
-      color: TABLE_LINE_COLOR,
-      strokeStyle: TABLE_LINE_STYLE,
-    });
+    for (const segment of subtractSkips(
+      -1,
+      chunkSize,
+      merges.verticalSkips.get(i),
+    )) {
+      out.push({
+        type: "line",
+        sourceId: table.id,
+        orientation: "vertical",
+        x: xOf(i),
+        y: rowEdgeY(segment.start),
+        length: rowEdgeY(segment.end) - rowEdgeY(segment.start),
+        thickness: table.gridWidth ?? TABLE_GRID_WIDTH,
+        color: TABLE_LINE_COLOR,
+        strokeStyle: table.gridStyle ?? TABLE_LINE_STYLE,
+        rotate: 0,
+      });
+    }
   }
   table.columns.forEach((column, i) => {
+    if (merges.covered.has(`header:${i}`)) return;
+    const rect = rectByOrigin.get(`header:${i}`);
+    const spanWidth =
+      rect === undefined ? column.width : xOf(i + rect.colSpan) - xOf(i);
     out.push({
       type: "text",
       sourceId: table.id,
       x: xOf(i) + TABLE_CELL_PADDING_X,
       y: y0 + TABLE_HEADER_TEXT_OFFSET_Y,
-      w: column.width - 2 * TABLE_CELL_PADDING_X,
+      w: spanWidth - 2 * TABLE_CELL_PADDING_X,
       h: table.headerHeight - TABLE_HEADER_TEXT_OFFSET_Y,
       content: column.label,
       fontSize: table.fontSize,
       align: "center",
       lineHeight: 1.25,
+      color: TABLE_LINE_COLOR,
+      fontWeight: "normal",
+      fontStyle: "normal",
+      underline: false,
+      rotate: 0,
     });
   });
   for (let q = 0; q < chunkSize; q++) {
@@ -357,6 +406,12 @@ function lowerTableChunk(
     const row = rows[t];
     if (row === undefined) continue;
     table.columns.forEach((column, i) => {
+      if (merges.covered.has(`${q}:${i}`)) return;
+      const rect = rectByOrigin.get(`${q}:${i}`);
+      const spanWidth =
+        rect === undefined ? column.width : xOf(i + rect.colSpan) - xOf(i);
+      const spanHeight =
+        rect === undefined ? table.rowHeight : rect.rowSpan * table.rowHeight;
       out.push({
         type: "text",
         sourceId: table.id,
@@ -366,12 +421,17 @@ function lowerTableChunk(
           table.headerHeight +
           q * table.rowHeight +
           TABLE_CELL_TEXT_OFFSET_Y,
-        w: column.width - 2 * TABLE_CELL_PADDING_X,
-        h: table.rowHeight - TABLE_CELL_TEXT_OFFSET_Y,
+        w: spanWidth - 2 * TABLE_CELL_PADDING_X,
+        h: spanHeight - TABLE_CELL_TEXT_OFFSET_Y,
         content: row[column.key] ?? "",
         fontSize: table.fontSize,
         align: column.align,
         lineHeight: 1.25,
+        color: TABLE_LINE_COLOR,
+        fontWeight: "normal",
+        fontStyle: "normal",
+        underline: false,
+        rotate: 0,
       });
     });
   }
@@ -385,11 +445,17 @@ function lowerTableChunk(
  * consumes. Fails with C01/C02 data errors, C03 (more than one table
  * expanding to multiple pages), or C04 (total pages over PAGE_COUNT_MAX).
  * Assumes `document` is the output of parseIr and already passed validateIr;
- * the S/M rule groups are not re-checked.
+ * the S/M rule groups are not re-checked. `options.locale` controls the
+ * language of every error message, including C01/C02 (default "ja").
  */
-export function lowerIr(document: IrDocument, data: IrData): LowerIrResult {
+export function lowerIr(
+  document: IrDocument,
+  data: IrData,
+  options?: { readonly locale?: MessageLocale },
+): LowerIrResult {
+  const m = getMessages(options?.locale).lower;
   const resolved = resolveFootnotes(document);
-  const problems = analyzeData(resolved, data);
+  const problems = analyzeData(resolved, data, options);
   const dataErrors = problems
     .filter((p) => p.severity === "error")
     .map(toIrError);
@@ -412,11 +478,7 @@ export function lowerIr(document: IrDocument, data: IrData): LowerIrResult {
   const c03Errors = multiPageEntries
     .slice(1)
     .map((entry) =>
-      err(
-        "C03",
-        `elements[${entry.index}]`,
-        "2ページ以上に展開される表が複数あります",
-      ),
+      err("C03", `elements[${entry.index}]`, m.multiplePagingTables),
     );
 
   const pageCount = Math.max(
@@ -425,13 +487,7 @@ export function lowerIr(document: IrDocument, data: IrData): LowerIrResult {
   );
   const c04Errors =
     pageCount > PAGE_COUNT_MAX
-      ? [
-          err(
-            "C04",
-            "",
-            `展開後の総ページ数 ${pageCount} が上限 ${PAGE_COUNT_MAX} を超えています`,
-          ),
-        ]
+      ? [err("C04", "", m.pageCountExceeded(pageCount, PAGE_COUNT_MAX))]
       : [];
 
   const errors = [...dataErrors, ...c03Errors, ...c04Errors];
@@ -464,7 +520,8 @@ export function lowerIr(document: IrDocument, data: IrData): LowerIrResult {
         });
         break;
       }
-      case "pageNumber":
+      case "pageNumber": {
+        const style = resolveTextStyle(element);
         for (const p of pagesFor(element.pages, pageCount)) {
           pages[p - 1]?.push({
             type: "text",
@@ -477,9 +534,15 @@ export function lowerIr(document: IrDocument, data: IrData): LowerIrResult {
             fontSize: element.fontSize,
             align: element.align,
             lineHeight: element.lineHeight,
+            color: style.color,
+            fontWeight: style.fontWeight,
+            fontStyle: style.fontStyle,
+            underline: style.underline,
+            rotate: element.rotate ?? 0,
           });
         }
         break;
+      }
       case "text":
       case "line":
       case "rect":
@@ -512,7 +575,8 @@ function lowerPlacedElement(
   data: IrData,
 ): LoweredElement {
   switch (element.type) {
-    case "text":
+    case "text": {
+      const style = resolveTextStyle(element);
       return {
         type: "text",
         sourceId: element.id,
@@ -524,7 +588,13 @@ function lowerPlacedElement(
         fontSize: element.fontSize,
         align: element.align,
         lineHeight: element.lineHeight,
+        color: style.color,
+        fontWeight: style.fontWeight,
+        fontStyle: style.fontStyle,
+        underline: style.underline,
+        rotate: element.rotate ?? 0,
       };
+    }
     case "line": {
       const style = resolveLineStyle(element);
       return {
@@ -537,6 +607,7 @@ function lowerPlacedElement(
         thickness: element.thickness,
         color: style.color,
         strokeStyle: style.strokeStyle,
+        rotate: element.rotate ?? 0,
       };
     }
     case "rect": {
@@ -553,6 +624,7 @@ function lowerPlacedElement(
         fillColor: style.fillColor,
         borderStyle: style.borderStyle,
         cornerRadius: style.cornerRadius,
+        rotate: element.rotate ?? 0,
       };
     }
     case "ellipse": {
@@ -567,6 +639,7 @@ function lowerPlacedElement(
         borderWidth: element.borderWidth,
         borderColor: style.borderColor,
         fillColor: style.fillColor,
+        rotate: element.rotate ?? 0,
       };
     }
     case "image":
@@ -578,6 +651,7 @@ function lowerPlacedElement(
         w: element.w,
         h: element.h,
         src: element.src,
+        rotate: element.rotate ?? 0,
       };
     case "barcode":
       return {
@@ -589,6 +663,7 @@ function lowerPlacedElement(
         h: element.h,
         symbology: element.symbology,
         content: interpolateText(element.value, data),
+        rotate: element.rotate ?? 0,
       };
   }
 }

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorMessageFor } from "../../state/error-index";
 import type { ElementFormProps } from "./ElementProperties";
 import { commitReplace, withOptionalAttr } from "./ElementProperties";
@@ -6,12 +7,13 @@ import {
   ColorField,
   NumberField,
   SelectField,
-  STROKE_STYLE_OPTIONS,
+  strokeStyleOptions,
 } from "./fields";
 
 export function RectProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;
   const el = view.element;
+  const m = useMessages();
   if (el.type !== "rect") {
     return null;
   }
@@ -19,8 +21,8 @@ export function RectProperties(props: ElementFormProps): ReactNode {
   const h = liveBox === null ? el.h : liveBox.h;
   return (
     <>
-      <section className="apx-sect">
-        <div className="apx-sect-h">配置</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.placement}</div>
         {"x" in el && (
           <>
             <NumberField
@@ -58,10 +60,10 @@ export function RectProperties(props: ElementFormProps): ReactNode {
           onCommit={(h) => commitReplace(store, el.id, { ...el, h })}
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">枠線</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.border.section}</div>
         <NumberField
-          label="枠線幅"
+          label={m.properties.border.width}
           value={el.borderWidth}
           unit="mm"
           precision={0.1}
@@ -71,7 +73,7 @@ export function RectProperties(props: ElementFormProps): ReactNode {
           }
         />
         <ColorField
-          label="枠線色"
+          label={m.properties.border.color}
           value={el.borderColor ?? null}
           onCommit={(borderColor) =>
             commitReplace(
@@ -88,9 +90,9 @@ export function RectProperties(props: ElementFormProps): ReactNode {
           }
         />
         <SelectField
-          label="線種"
+          label={m.properties.fields.strokeStyleLabel}
           value={el.borderStyle ?? "solid"}
-          options={STROKE_STYLE_OPTIONS}
+          options={strokeStyleOptions(m.properties.fields.strokeStyle)}
           onCommit={(borderStyle) =>
             commitReplace(
               store,
@@ -104,7 +106,7 @@ export function RectProperties(props: ElementFormProps): ReactNode {
           }
         />
         <NumberField
-          label="角丸半径"
+          label={m.properties.rect.cornerRadius}
           value={el.cornerRadius ?? 0}
           unit="mm"
           precision={0.1}
@@ -122,10 +124,10 @@ export function RectProperties(props: ElementFormProps): ReactNode {
           }
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">塗り</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.fill.section}</div>
         <ColorField
-          label="塗り色"
+          label={m.properties.fill.color}
           value={el.fillColor ?? null}
           allowNone
           onCommit={(fillColor) =>

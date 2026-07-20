@@ -1,6 +1,6 @@
 import type { IrPage } from "@denreport/core";
 
-/** axis "x" = 垂直線（x 位置）、"y" = 水平線。snapping.ts の SnapGuide と構造互換 */
+/** axis "x" = a vertical line (x position), "y" = a horizontal line. Structurally compatible with snapping.ts's SnapGuide */
 export interface CustomGuide {
   readonly id: string;
   readonly axis: "x" | "y";
@@ -42,7 +42,7 @@ export function removeGuide(
   return guides.filter((guide) => guide.id !== id);
 }
 
-/** ページ範囲 [0, size] 内のガイドのみ返す（ページサイズ変更後の孤児を描画・吸着から外す） */
+/** Returns only guides within the page range [0, size] (excludes orphans left after a page size change from rendering/snapping) */
 export function guidesInPage(
   guides: readonly CustomGuide[],
   page: IrPage,

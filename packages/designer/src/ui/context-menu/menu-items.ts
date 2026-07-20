@@ -1,4 +1,8 @@
+import type { Messages } from "../../i18n/messages";
+
 export type CanvasMenuAction =
+  | "mergeCells"
+  | "unmergeCells"
   | "copy"
   | "cut"
   | "paste"
@@ -9,21 +13,21 @@ export type CanvasMenuAction =
 
 export interface CanvasMenuItem {
   readonly action: CanvasMenuAction;
-  /** 表示名（例: コピー） */
+  /** Display name (e.g. Copy) */
   readonly label: string;
-  /** ショートカット表示（例: Ctrl+C）。複製は null */
+  /** Shortcut display (e.g. Ctrl+C). null for duplicate */
   readonly shortcut: string | null;
   readonly disabled: boolean;
 }
 
 export interface ContextTarget {
-  /** メニュー操作の対象になる選択（右クリックによる単独選択への追従を反映済み） */
+  /** The selection targeted by the menu operation (already reflects following a right-click's single-selection) */
   readonly selection: readonly string[];
-  /** true = 要素上の右クリック、false = 背景 */
+  /** true = right-click on an element, false = background */
   readonly onElement: boolean;
 }
 
-/** 右クリック対象 id（背景は null）と現在の選択から、メニューの対象を決める */
+/** Determines the menu's target from the right-clicked id (null for background) and the current selection */
 export function resolveContextTarget(
   selection: readonly string[],
   targetId: string | null,
@@ -37,16 +41,25 @@ export function resolveContextTarget(
   return { selection: [targetId], onElement: true };
 }
 
-/** 7項目固定のメニューを構築する */
-export function buildCanvasMenuItems(input: {
-  readonly onElement: boolean;
-  /** clipboardFromSelection が非 null（= トップレベル要素を含む選択） */
-  readonly canCopy: boolean;
-  readonly hasSelection: boolean;
-  readonly hasClipboard: boolean;
-  readonly canGroup: boolean;
-  readonly canUngroup: boolean;
-}): readonly CanvasMenuItem[] {
+export interface CellMenuContext {
+  readonly canMerge: boolean;
+  readonly canUnmerge: boolean;
+}
+
+/** Builds the 7 element-operation items, prepending the 2 cell-merge items at the front if a cell context is present */
+export function buildCanvasMenuItems(
+  m: Messages["contextMenu"],
+  input: {
+    readonly onElement: boolean;
+    /** clipboardFromSelection is non-null (= a selection that includes a top-level element) */
+    readonly canCopy: boolean;
+    readonly hasSelection: boolean;
+    readonly hasClipboard: boolean;
+    readonly canGroup: boolean;
+    readonly canUngroup: boolean;
+    readonly cell?: CellMenuContext | null;
+  },
+): readonly CanvasMenuItem[] {
   const {
     onElement,
     canCopy,
@@ -54,48 +67,67 @@ export function buildCanvasMenuItems(input: {
     hasClipboard,
     canGroup,
     canUngroup,
+    cell,
   } = input;
   const copyEnabled = onElement && canCopy;
+  const cellItems: CanvasMenuItem[] =
+    cell === undefined || cell === null
+      ? []
+      : [
+          {
+            action: "mergeCells",
+            label: m.mergeCells,
+            shortcut: null,
+            disabled: !cell.canMerge,
+          },
+          {
+            action: "unmergeCells",
+            label: m.unmergeCells,
+            shortcut: null,
+            disabled: !cell.canUnmerge,
+          },
+        ];
   return [
+    ...cellItems,
     {
       action: "copy",
-      label: "コピー",
+      label: m.copy,
       shortcut: "Ctrl+C",
       disabled: !copyEnabled,
     },
     {
       action: "cut",
-      label: "切り取り",
+      label: m.cut,
       shortcut: "Ctrl+X",
       disabled: !copyEnabled,
     },
     {
       action: "paste",
-      label: "貼り付け",
+      label: m.paste,
       shortcut: "Ctrl+V",
       disabled: !hasClipboard,
     },
     {
       action: "duplicate",
-      label: "複製",
+      label: m.duplicate,
       shortcut: null,
       disabled: !copyEnabled,
     },
     {
       action: "group",
-      label: "グループ化",
+      label: m.group,
       shortcut: "Ctrl+G",
       disabled: !(onElement && canGroup),
     },
     {
       action: "ungroup",
-      label: "グループ解除",
+      label: m.ungroup,
       shortcut: "Ctrl+Shift+G",
       disabled: !(onElement && canUngroup),
     },
     {
       action: "delete",
-      label: "削除",
+      label: m.delete,
       shortcut: "Delete",
       disabled: !(onElement && hasSelection),
     },

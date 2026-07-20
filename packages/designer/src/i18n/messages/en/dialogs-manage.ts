@@ -1,0 +1,96 @@
+import type { StyleAttrKey } from "@denreport/core";
+
+export const dialogsManageEn = {
+  styles: {
+    title: "Styles",
+    addNew: "+ New style",
+    addFromSelection: "Create from selection",
+    empty: "No styles yet.",
+    nameLabel: "Name",
+    nameFor: (n: number): string => `Style ${n}`,
+    deleteAriaLabel: (name: string): string => `Delete style "${name}"`,
+    attrLabels: {
+      fontSize: "Font size",
+      align: "Alignment",
+      lineHeight: "Line height",
+      fontWeight: "Bold",
+      fontStyle: "Italic",
+      underline: "Underline",
+      borderWidth: "Border width",
+      thickness: "Thickness",
+    } satisfies Record<StyleAttrKey, string>,
+    fontWeightOptions: { normal: "Normal", bold: "Bold" },
+    fontStyleOptions: { normal: "Upright", italic: "Italic" },
+    underlineOptions: { on: "On", off: "Off" },
+    summary: {
+      lineHeight: (value: number): string => `Line height ${value}`,
+      fontWeightBold: "Bold",
+      fontWeightNormal: "Normal weight",
+      fontStyleItalic: "Italic",
+      fontStyleNormal: "Upright",
+      underlineOn: "Underline",
+      underlineOff: "No underline",
+      borderWidth: (value: number): string => `Border ${value}mm`,
+      thickness: (value: number): string => `Thickness ${value}mm`,
+      empty: "(no attributes)",
+    },
+  },
+  shortcuts: {
+    title: "Keyboard shortcuts",
+    groups: {
+      edit: "Edit",
+      selectMove: "Select & move",
+      view: "View",
+      file: "File",
+      help: "Help",
+    },
+    items: {
+      undo: { keys: "Ctrl/⌘+Z", description: "Undo" },
+      redo: { keys: "Ctrl/⌘+Shift+Z, Ctrl/⌘+Y", description: "Redo" },
+      copy: { keys: "Ctrl/⌘+C", description: "Copy" },
+      cut: { keys: "Ctrl/⌘+X", description: "Cut" },
+      paste: { keys: "Ctrl/⌘+V", description: "Paste" },
+      duplicate: { keys: "Ctrl/⌘+D", description: "Duplicate" },
+      group: { keys: "Ctrl/⌘+G", description: "Group" },
+      ungroup: { keys: "Ctrl/⌘+Shift+G", description: "Ungroup" },
+      deleteSelection: {
+        keys: "Delete, Backspace",
+        description: "Delete selected elements",
+      },
+      selectAll: { keys: "Ctrl/⌘+A", description: "Select all elements" },
+      moveSelection: {
+        keys: "Arrow keys",
+        description:
+          "Move selected elements (5mm with snap, 1mm without, 0.1mm with Shift)",
+      },
+      deselectOrCancel: {
+        keys: "Escape",
+        description: "Deselect / cancel the current action",
+      },
+      switchToSelect: { keys: "V", description: "Switch to select mode" },
+      switchToPan: { keys: "H", description: "Switch to pan mode" },
+      tempPan: { keys: "Hold Space", description: "Pan temporarily" },
+      zoomIn: { keys: "Ctrl/⌘+'+'", description: "Zoom in" },
+      zoomOut: { keys: "Ctrl/⌘+'-'", description: "Zoom out" },
+      save: { keys: "Ctrl/⌘+S", description: "Save" },
+      openShortcuts: {
+        keys: "?, F1",
+        description: "Open this shortcut list",
+      },
+    },
+  },
+  scenarios: {
+    selectAriaLabel: "Sample data scenario",
+    nameAriaLabel: "Scenario name",
+    add: "Add",
+    duplicate: "Duplicate",
+    remove: "Delete",
+  },
+  sampleData: {
+    label: "Sample data (JSON)",
+    generate: "Generate from bind keys",
+  },
+  dialog: {
+    close: "Close",
+  },
+};

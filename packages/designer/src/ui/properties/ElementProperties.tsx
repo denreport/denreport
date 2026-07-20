@@ -2,7 +2,8 @@ import type { IrElement, IrError, IrFlexChild, IrPages } from "@denreport/core";
 import { applicableStyleAttrs } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId } from "react";
-import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
+import { useMessages } from "../../i18n/context";
+import { rotateElement } from "../../state/elements";
 import type { MmBox, PlacedElementView } from "../../state/geometry";
 import { replaceElement } from "../../state/properties";
 import type { EditorStore } from "../../state/store";
@@ -10,7 +11,7 @@ import { applyStyle, clearStyle } from "../../state/styles";
 import { BarcodeProperties } from "./BarcodeProperties";
 import { EllipseProperties } from "./EllipseProperties";
 import { FlexProperties } from "./FlexProperties";
-import { SegmentField } from "./fields";
+import { NumberField, SegmentField, TextField } from "./fields";
 import { ImageProperties } from "./ImageProperties";
 import { LineProperties } from "./LineProperties";
 import { PageNumberProperties } from "./PageNumberProperties";
@@ -22,11 +23,11 @@ export interface ElementFormProps {
   readonly store: EditorStore;
   readonly view: PlacedElementView;
   readonly errors: readonly IrError[];
-  /** ドラッグ中の要素 1 件のライブ box。ドラッグ対象でなければ null */
+  /** Live box of the one element being dragged. null if nothing is being dragged. */
   readonly liveBox: MmBox | null;
 }
 
-/** 属性1つの確定 = 1 commit。無変化（未知 id 等）では履歴を積まない */
+/** Committing one attribute = one commit. No history entry is added on no-op (unknown id, etc.) */
 export function commitReplace(
   store: EditorStore,
   id: string,
@@ -39,7 +40,7 @@ export function commitReplace(
   }
 }
 
-/** value が undefined（デフォルト値への復帰）なら属性を除去し、そうでなければ設定する */
+/** Removes the attribute if value is undefined (reverting to the default), otherwise sets it */
 export function withOptionalAttr<T extends object, K extends keyof T>(
   base: T,
   key: K,
@@ -52,16 +53,6 @@ export function withOptionalAttr<T extends object, K extends keyof T>(
   }
   return { ...base, [key]: value };
 }
-
-const PAGES_OPTIONS: readonly {
-  readonly value: IrPages;
-  readonly label: string;
-}[] = [
-  { value: "first", label: "1ページ目" },
-  { value: "rest", label: "継続" },
-  { value: "last", label: "最終" },
-  { value: "all", label: "全" },
-];
 
 function styleOf(el: IrElement | IrFlexChild): string | undefined {
   return el.type === "image" ||
@@ -97,34 +88,82 @@ function formFor(props: ElementFormProps): ReactNode {
 
 export function ElementProperties(props: ElementFormProps): ReactNode {
   const { store, view } = props;
+  const m = useMessages();
   const el = view.element;
   const styleSelectId = useId();
+  const pagesOptions: readonly {
+    readonly value: IrPages;
+    readonly label: string;
+  }[] = [
+    { value: "first", label: m.properties.element.pagesFirst },
+    { value: "rest", label: m.properties.element.pagesRest },
+    { value: "last", label: m.properties.element.pagesLast },
+    { value: "all", label: m.properties.element.pagesAll },
+  ];
   return (
     <>
-      <div className="apx-props-head">
-        <span className="apx-type-badge">{ELEMENT_TYPE_LABEL[el.type]}</span>
-        <span className="apx-props-id">{el.id}</span>
+      <div className="dr-props-head">
+        <div className="dr-props-head-top">
+          <span className="dr-type-badge">{m.elementTypes[el.type]}</span>
+          <span className="dr-props-id">{el.id}</span>
+        </div>
+        <TextField
+          label={m.properties.element.name}
+          value={el.name ?? ""}
+          onCommit={(raw) => {
+            const trimmed = raw.trim();
+            if (trimmed === (el.name ?? "")) {
+              return;
+            }
+            commitReplace(
+              store,
+              el.id,
+              withOptionalAttr(
+                el,
+                "name",
+                trimmed === "" ? undefined : trimmed,
+              ),
+            );
+          }}
+        />
       </div>
       {view.parentFlexId !== null && (
-        <p className="apx-sect apx-sect-note">
-          位置はフレックスが決定します。並び替えはキャンバスで行います。
+        <p className="dr-sect dr-sect-note">
+          {m.properties.element.flexChildNote}
         </p>
       )}
       {view.parentFlexId === null && "pages" in el && (
-        <section className="apx-sect">
+        <section className="dr-sect">
           <SegmentField
-            label="ページ"
+            label={m.properties.element.pages}
             value={el.pages}
-            options={PAGES_OPTIONS}
+            options={pagesOptions}
             onCommit={(pages) => commitReplace(store, el.id, { ...el, pages })}
           />
         </section>
       )}
+      {el.type !== "table" && el.type !== "flex" && (
+        <section className="dr-sect">
+          <NumberField
+            label={m.properties.element.rotate}
+            value={el.rotate ?? 0}
+            unit="°"
+            precision={0.1}
+            onCommit={(value) => {
+              const document = store.getState().document;
+              const updated = rotateElement(document, el.id, value);
+              if (updated !== document) {
+                store.commit(updated);
+              }
+            }}
+          />
+        </section>
+      )}
       {applicableStyleAttrs(el.type).length > 0 && (
-        <section className="apx-sect">
-          <div className="apx-frow">
-            <label htmlFor={styleSelectId}>スタイル</label>
-            <span className="apx-field">
+        <section className="dr-sect">
+          <div className="dr-frow">
+            <label htmlFor={styleSelectId}>{m.properties.element.style}</label>
+            <span className="dr-field">
               <select
                 id={styleSelectId}
                 value={styleOf(el) ?? ""}
@@ -140,7 +179,7 @@ export function ElementProperties(props: ElementFormProps): ReactNode {
                   }
                 }}
               >
-                <option value="">スタイルなし</option>
+                <option value="">{m.properties.element.noStyle}</option>
                 {(store.getState().document.styles ?? []).map((style) => (
                   <option key={style.name} value={style.name}>
                     {style.name}

@@ -1,6 +1,15 @@
 import type { CompatFinding } from "@denreport/core";
+import { COMPAT_MATRICES } from "@denreport/core";
 import { describe, expect, it } from "vitest";
-import { groupCompatFindings } from "./export-warnings";
+import { EXPORT_TARGET_IDS, groupCompatFindings } from "./export-warnings";
+
+describe("EXPORT_TARGET_IDS", () => {
+  it("COMPAT_MATRICES の全キーを過不足なく含む", () => {
+    expect([...EXPORT_TARGET_IDS].sort()).toEqual(
+      Object.keys(COMPAT_MATRICES).sort(),
+    );
+  });
+});
 
 function finding(overrides: Partial<CompatFinding>): CompatFinding {
   return {
@@ -10,6 +19,7 @@ function finding(overrides: Partial<CompatFinding>): CompatFinding {
     elementType: "text",
     path: "elements[0]",
     note: "近似の理由",
+    userMessage: "近似の平易文",
     ...overrides,
   };
 }
@@ -19,23 +29,23 @@ describe("groupCompatFindings", () => {
     expect(groupCompatFindings([])).toEqual([]);
   });
 
-  it("(level, note) ごとに集約する", () => {
+  it("(level, userMessage) ごとに集約する", () => {
     const groups = groupCompatFindings([
-      finding({ elementId: "a", note: "理由X" }),
-      finding({ elementId: "b", note: "理由Y" }),
-      finding({ elementId: "c", note: "理由X" }),
+      finding({ elementId: "a", userMessage: "理由X" }),
+      finding({ elementId: "b", userMessage: "理由Y" }),
+      finding({ elementId: "c", userMessage: "理由X" }),
     ]);
     expect(groups).toHaveLength(2);
-    expect(groups[0]?.note).toBe("理由X");
+    expect(groups[0]?.userMessage).toBe("理由X");
     expect(groups[0]?.elementIds).toEqual(["a", "c"]);
-    expect(groups[1]?.note).toBe("理由Y");
+    expect(groups[1]?.userMessage).toBe("理由Y");
     expect(groups[1]?.elementIds).toEqual(["b"]);
   });
 
-  it("同じ note でも level が違えば別グループになる", () => {
+  it("同じ userMessage でも level が違えば別グループになる", () => {
     const groups = groupCompatFindings([
-      finding({ elementId: "a", level: "approximated", note: "同文" }),
-      finding({ elementId: "b", level: "unsupported", note: "同文" }),
+      finding({ elementId: "a", level: "approximated", userMessage: "同文" }),
+      finding({ elementId: "b", level: "unsupported", userMessage: "同文" }),
     ]);
     expect(groups).toHaveLength(2);
     expect(groups.map((g) => g.level)).toEqual(["unsupported", "approximated"]);
@@ -62,12 +72,12 @@ describe("groupCompatFindings", () => {
 
   it("unsupported のグループが先頭に来て、同レベル内は初出順を保つ", () => {
     const groups = groupCompatFindings([
-      finding({ elementId: "a", level: "approximated", note: "近似1" }),
-      finding({ elementId: "b", level: "unsupported", note: "非対応1" }),
-      finding({ elementId: "c", level: "approximated", note: "近似2" }),
-      finding({ elementId: "d", level: "unsupported", note: "非対応2" }),
+      finding({ elementId: "a", level: "approximated", userMessage: "近似1" }),
+      finding({ elementId: "b", level: "unsupported", userMessage: "非対応1" }),
+      finding({ elementId: "c", level: "approximated", userMessage: "近似2" }),
+      finding({ elementId: "d", level: "unsupported", userMessage: "非対応2" }),
     ]);
-    expect(groups.map((g) => `${g.level}:${g.note}`)).toEqual([
+    expect(groups.map((g) => `${g.level}:${g.userMessage}`)).toEqual([
       "unsupported:非対応1",
       "unsupported:非対応2",
       "approximated:近似1",

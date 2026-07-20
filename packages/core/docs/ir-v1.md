@@ -8,9 +8,9 @@ IR（Intermediate Representation）は、帳票レイアウトを表す単一の
 
 ```json
 {
-  "version": "1.1",
+  "version": "1.0",
   "page": { "width": 210, "height": 297 },
-  "font": { "name": "NotoSansJP" },
+  "font": { "regular": "NotoSansJP", "bold": "NotoSansJPBold" },
   "styles": [ ... ],
   "elements": [ ... ]
 }
@@ -20,10 +20,15 @@ IR（Intermediate Representation）は、帳票レイアウトを表す単一の
 - `page` — 用紙（2節）。全ページ共通の寸法。文書のページ数は IR 単体では確定せず、
   データ結合時に表の展開で決まる（4.3節）。
 - `footnotes` — 脚注（任意。3.10節）。
-- `font` — 文書全体で使う論理フォント名。`font: { name: string }`。`name` は `id` と同じ
-  識別子パターン。文書全体で1フォント（要素単位のフォント切替は非対応）。ファイルパス・
-  バイナリは IR に含めない。論理名から実フォントへの解決・埋め込み・形式検証は
-  書き出し器側の責務であり、本仕様の検証には含まれない。
+- `groups` — 要素のグループ化（任意。3.13節）。
+- `font` — 文書のフォント。`regular` / `bold` / `italic` / `boldItalic` の4スロットの
+  論理名の組で、`regular` のみ必須。各論理名は `id` と同じ識別子パターン。フォントファミリーは
+  文書単位の1つ（要素ごとのファミリー切替は非対応）で、text 要素の `fontWeight` /
+  `fontStyle`（3.2節）が参照するスロットを決める。未定義スロットへの要求は検証エラーに
+  ならず、`resolveFontSlot` の劣化規則（斜体性優先: boldItalic → italic → bold → regular、
+  bold → regular、italic → regular）で定義済みスロットへ落とす。ファイルパス・バイナリは
+  IR に含めない。論理名から実フォントへの解決・埋め込み・形式検証は書き出し器側の責務であり、
+  本仕様の検証には含まれない。
 - `styles` — 任意。名前付きスタイルの定義（3.9節）。省略時は名前付きスタイルを使わない文書。
 - `elements` — 要素の配列。空配列は妥当（白紙の帳票）。配列順が描画順（後の要素が上に
   描かれる。同一ページ内の規則。flex の子はコンテナの位置に子の並び順で入る）。重なりは
@@ -48,7 +53,9 @@ IR（Intermediate Representation）は、帳票レイアウトを表す単一の
   (ascender / unitsPerEm + (lineHeight − 1) / 2 + i × lineHeight) × fontSize
   ```
 
-  （pt。mm への換算は 1pt = 0.352778mm）だけ下に置く。`ascender` は解決された実フォントの
+  （pt。mm への換算は 1pt = 0.352778mm）だけ下に置く。実フォントは、その要素の
+  `fontWeight` / `fontStyle` を `resolveFontSlot`（1節）で解決したスロットの実フォントを
+  指す。`ascender` はその実フォントの
   hhea テーブル（horizontal header）の ascender、`unitsPerEm` は head テーブル（font header）の
   unitsPerEm（フォント内部のテーブルの定義は OpenType 仕様
   https://learn.microsoft.com/en-us/typography/opentype/spec/hhea ・
@@ -56,8 +63,8 @@ IR（Intermediate Representation）は、帳票レイアウトを表す単一の
   第1項が em 単位のアセント（ベースラインから行上端までの距離）、第2項はフォントサイズを
   超える行送り分（leading）を行の上下に半分ずつ配る half-leading、第3項が行送り
   （`lineHeight × fontSize`）である。この式は書き出し器の近似裁量ではなく規範であり、
-  同一の実フォントを与えたすべてのターゲットで初行位置・行送りが一致する。行 i は
-  `\n` の単純分割ではなく、2.1節の折り返し後の行を指す。
+  同一のフォント組を与えたすべてのターゲットで初行位置・行送りがスロット単位で一致する。
+  行 i は `\n` の単純分割ではなく、2.1節の折り返し後の行を指す。
 
 ### 2.1 テキストの折り返し・行頭禁則（規範）
 
@@ -68,7 +75,9 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 1. `content` を `\n` で段落に分割する（空段落は空行として保持する）。
 2. 段落内をコードポイント単位で貪欲に詰める。行が非空で、次の1文字を加えると行の実測幅
    （実フォントの advance の合算 × `fontSize`）が実効幅を超えるとき、その文字の前で改行する。
-   文字単位の折り返しであり、欧文の単語境界は考慮しない。
+   実フォントは2節と同じく、その要素に `resolveFontSlot` で解決されたスロットの実フォント
+   （table のヘッダ・明細セルは常に `regular`）。文字単位の折り返しであり、欧文の単語境界は
+   考慮しない。
 3. 行頭禁則（追い出し）: 新しい行の先頭が禁則文字（下記）のとき、直前行の末尾1文字を
    新しい行の先頭へ送る。送った結果まだ先頭が禁則文字なら繰り返す。ただし直前行は最低
    1文字残す（残り1文字になったら打ち切り、禁則違反のまま許容する）。
@@ -94,8 +103,10 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 |---|---|---|---|
 | `type` | `"text" \| "line" \| "rect" \| "ellipse" \| "table" \| "image" \| "flex" \| "pageNumber"` | 必須 | 要素型 |
 | `id` | string | 必須 | 文書内で一意（flex の子孫を含む）。パターン `^[A-Za-z_][A-Za-z0-9_]*$`、64文字以内 |
+| `name` | string | 任意 | 表示用の名前。識別子制約なし（日本語可）、文書内での一意性は課さない。64文字以内 |
 | `x`, `y` | number | 必須※ | 要素の左上（線は基準点）。mm（2節）。※flex の子は持たない（位置はコンテナが決める。3.7節） |
 | `pages` | `"first" \| "rest" \| "last" \| "all"` | 任意 | 配置先ページ。first=1ページ目のみ / rest=2ページ目以降 / last=最終ページのみ / all=全ページ（フッタ等の共通領域）。デフォルトは `"first"`（**pageNumber のみ `"all"`**）。**table は持たない**（常に1ページ目起点で流し込み）。flex の子も持たない（コンテナから継承） |
+| `rotate` | number | 任意 | 外接箱中心（line は太さ0の箱＝線分中点）周りの時計回り回転角（度）。省略時 `0`（回転なし）。許容範囲は6節 M19。**table / flex は持たない**（未知属性として S09 が拒否）。flex の子は持てる（レイアウトは非回転の寸法で行い、回転は描画時に子自身の中心周りで適用する） |
 
 ### 3.2 text — テキスト（`{key}` による差し込み対応）
 
@@ -106,11 +117,17 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 | `fontSize` | number | 任意 | `10` | pt。mm ではない点に注意（2節） |
 | `align` | `"left" \| "center" \| "right" \| "justify"` | 任意 | `"left"` | 水平揃え。`"justify"` は均等割付（2.2節） |
 | `lineHeight` | number | 任意 | `1.25` | 行送り倍率 |
+| `fontWeight` | `"normal" \| "bold"` | 任意 | `"normal"` | 太さ。`font` の対応スロット（1節）で描画する |
+| `fontStyle` | `"normal" \| "italic"` | 任意 | `"normal"` | 斜体。`font` の対応スロット（1節）で描画する |
+| `underline` | boolean | 任意 | `false` | 下線。位置・太さは本仕様が規定せず、ターゲットの描画に従う |
+| `color` | string | 任意 | `"#000000"` | 文字色（`#rrggbb`） |
 | `style` | string | 任意 | — | 名前付きスタイル（3.9節）への参照 |
 
 折り返し・行頭禁則は2.1節、均等割付は2.2節の規範に従う。領域からの縦方向のはみ出し時の
-挙動は本仕様では規定しない。行のベースライン位置は2節の規範式（実フォントの計量に基づく）で
-一意に定まる。
+挙動は本仕様では規定しない。行のベースライン位置は2節の規範式（解決スロットの実フォントの
+計量に基づく）で一意に定まる。`fontWeight` / `fontStyle` は要素単位の指定であり、
+文字単位（リッチテキスト）のスタイル指定は持たない。合成（フェイク）太字・斜体は行わず、
+対応スロットが未定義の場合は `resolveFontSlot` の劣化規則（1節）に従う。
 
 `text` は `{key}` トークン（`key` は `id` と同じ識別子パターン、64文字以内）を
 1個以上含められ、データ結合時（5節）にそのキーの値へ置換される（部分差し込み）。
@@ -118,7 +135,7 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 エスケープ構文はなく、`{{key}}` は内側の `{key}` がトークンとして展開されるため
 `{値}` になる。置換は1パスのみで、データ値の中の `{key}` 形の文字列は再展開しない。
 
-### 3.3 line — 直線（水平・垂直のみ）
+### 3.3 line — 直線
 
 | 属性 | 型 | 必須 | デフォルト | 説明 |
 |---|---|---|---|---|
@@ -127,7 +144,9 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 | `thickness` | number | 任意 | `0.3` | 太さ（mm） |
 | `style` | string | 任意 | — | 名前付きスタイル（3.9節）への参照 |
 
-斜め線は非対応。太さ分の塗りが基準線のどちら側に付くかはターゲット近似を許容し規定しない。
+基準の幾何は水平・垂直の2方向のみ（`orientation` + `length`）。斜め線は共通属性 `rotate`
+（3.1節）で表現する: 回転中心は線分の中点（太さ0の箱の中心）。
+太さ分の塗りが基準線のどちら側に付くかはターゲット近似を許容し規定しない。
 
 ### 3.4 rect — 矩形（枠線のみ、塗りつぶし無し）
 
@@ -149,6 +168,12 @@ pageNumber が `w`、table のヘッダ・明細セルが `column.width − 2 ×
 | `maxY` | number | 任意 | `page.height` | 各ページで行を置ける領域の下端（mm）。これを超える行は次ページへ送る（5.3節） |
 | `continuationY` | number | 任意 | `table.y` | 2ページ目以降（継続ページ）の表上端（ヘッダの上端）。継続ページではヘッダを再表示する |
 | `minRows` | number | 任意 | `0` | 表示する最低行数（0以上の整数）。データ行数が少ない場合は空行で埋めて N 行の枠を描く（5.3節） |
+| `frameWidth` | number | 任意 | `0.4` | 外枠の線の太さ（mm）。0より大きい値 |
+| `gridWidth` | number | 任意 | `0.25` | 内部罫線（行・列の区切り線）の太さ（mm）。0より大きい値 |
+| `frameStyle` | `"solid" \| "dotted" \| "dashed" \| "dashdot" \| "dashdotdot"` | 任意 | `"solid"` | 外枠の線種 |
+| `gridStyle` | `"solid" \| "dotted" \| "dashed" \| "dashdot" \| "dashdotdot"` | 任意 | `"solid"` | 内部罫線（行・列の区切り線）の線種 |
+| `cellOverrides` | CellOverride[] | 任意 | — | セル固定値上書き。`{ row, key, value }`（row は0以上の整数の通し行番号、key は `columns[].key`、value は表示する文字列）の配列。(row, key) は table 内で一意（M13）。出力行数 `max(n, minRows)` 以上の row を指す上書きは不活性 |
+| `cellSpans` | CellSpan[] | 任意 | — | 静的セル結合の宣言（下表と5.3節。検証は M20） |
 | `style` | string | 任意 | — | 名前付きスタイル（3.9節）への参照 |
 
 Column:
@@ -159,11 +184,22 @@ Column:
 | `label` | string | 必須 | — | ヘッダ表示文字列（任意の文字列。日本語可） |
 | `width` | number | 必須 | — | 列幅（mm） |
 | `align` | `"left" \| "center" \| "right" \| "justify"` | 任意 | `"left"` | 明細セルの揃え（ヘッダは常に center。5.3節） |
+| `mergeSameValue` | boolean | 任意 | `false` | データ駆動の縦結合。連続する同一値の明細行を1セルに結合する（5.3節） |
+
+CellSpan（`cellSpans` の要素）:
+
+| 属性 | 型 | 必須 | デフォルト | 説明 |
+|---|---|---|---|---|
+| `row` | number \| `"header"` | 必須 | — | 起点の明細行番号（0始まりの通し行番号）または `"header"`（ヘッダ行の横結合。このとき rowSpan は 1） |
+| `key` | string | 必須 | — | 起点列の `columns[].key` |
+| `rowSpan` | number | 任意 | `1` | 縦に結合する行数（1以上の整数） |
+| `colSpan` | number | 任意 | `1` | 右方向に結合する列数（1以上の整数） |
 
 表の幅は Σ列幅から導出し、属性としては持たない。表の高さ・ページ数は行数に依存するため
 IR 単体では確定せず、データ結合時に決まる（5.3節）。明細が `maxY` を超える場合はエラーでは
-なく改ページする。行の途中分割はせず、ヘッダは各ページで再表示する。罫線の太さ・セル内余白は
-仕様定数（5.3節）とし、属性にしない。
+なく改ページする。行の途中分割はせず、ヘッダは各ページで再表示する。外枠と内部罫線の太さ・線種は
+上記の `frameWidth`/`gridWidth`/`frameStyle`/`gridStyle` で個別に指定できる（既定値は5.3節の
+定数と一致）。色は外枠・内部とも黒固定、セル内余白は仕様定数（5.3節）のままで、属性にしない。
 
 ### 3.6 image — 画像
 
@@ -222,6 +258,7 @@ grow / stretch / wrap / padding / space-between 等の均等配置は非対応�
 | `fontSize` | number | 任意 | `10` | pt |
 | `align` | `"left" \| "center" \| "right" \| "justify"` | 任意 | `"left"` | 水平揃え。`"justify"` は均等割付（2.2節） |
 | `lineHeight` | number | 任意 | `1.25` | 行送り倍率 |
+| `color` | string | 任意 | `"#000000"` | 文字色（`#rrggbb`） |
 | `style` | string | 任意 | — | 名前付きスタイル（3.9節）への参照 |
 
 `pages` のデフォルトが `"all"` である点だけ他要素と異なる。全ページフッタは
@@ -244,7 +281,7 @@ grow / stretch / wrap / padding / space-between 等の均等配置は非対応�
 | 属性 | 型 | 必須 | 説明 |
 |---|---|---|---|
 | `name` | string | 必須 | 表示名。非空・64文字以内・文書内で一意（識別子パターンは課さない） |
-| `attrs` | object | 必須（1フィールド以上） | `fontSize` / `align` / `lineHeight` / `borderWidth` / `thickness` の部分集合。各値の型・許容範囲は3節の対応する要素属性と同じ |
+| `attrs` | object | 必須（1フィールド以上） | `fontSize` / `align` / `lineHeight` / `fontWeight` / `fontStyle` / `underline` / `borderWidth` / `thickness` の部分集合。各値の型・許容範囲は3節の対応する要素属性と同じ（`fontWeight` / `fontStyle` / `underline` の適用先は text のみ） |
 
 `attrs` のうち要素型に該当しない属性（例: `borderWidth` を持つスタイルを `text` へ
 参照させる）は本仕様上は許容し、意味の解釈（どの属性を実際に反映するか）は書き出し器・
@@ -283,7 +320,7 @@ text 要素の `text` のみで、flex 子孫の text・table の `columns[].lab
 `text` を先頭から走査し、`{#id}` の初出順に `1, 2, 3…` を採番する（同じ id の再出現は初出
 番号を再利用する）。各マークを `*n` に置換する。参照された注記を番号昇順に `*n 本文` の行
 として連結し（注記本文内の `\n` はそのまま行になる。2行目以降にプレフィックスは付けない）、
-1つの text 要素として `elements` 末尾に追加する: `{ type: "text", id: "apxFootnotes", x, y,
+1つの text 要素として `elements` 末尾に追加する: `{ type: "text", id: "drFootnotes", x, y,
 pages, w, h, text: 連結結果, fontSize, align: "left", lineHeight }`（`x`/`w`/`pages`/
 `fontSize`/`lineHeight` は `footnotes` の値をそのまま使う）。ブロックの `y` は
 `page.height − bottom − blockHeight` で自動計算し、`blockHeight = 総行数 × fontSize ×
@@ -315,6 +352,19 @@ ReportLab 側のいずれも脚注固有の分岐を持たずに追随する。�
 
 領域（`x`, `y` 起点、`w` × `h`）に内接する楕円を描く。`style`（3.9節）は参照できない。
 
+### 3.13 groups — 要素のグループ化（ルート任意キー、要素ではない）
+
+編集 UI がトップレベル要素を束ね、クリック一回で全メンバーを選択できるようにするための
+メタデータ。要素ではなく `IrDocument` のルート任意キーであり、`elements` 配列には含まれない。
+
+| 属性 | 型 | 必須 | 説明 |
+|---|---|---|---|
+| `id` | string | 必須 | グループの識別子。`elements[].id` とは別の名前空間で、文書内一意の制約はない |
+| `memberIds` | string[] | 必須 | 束ねるトップレベル要素の `id`。文書に実在しない id を含んでいてもよく、生存判定は読み込み側の責務（本仕様は検証しない） |
+
+`resolveFlex`・`lowerIr`・ReportLab 側の書き出し・6節の検証規則はいずれも `groups` を参照しない。
+編集 UI 専用の表示・選択支援であり、描画・書き出し結果には一切影響しない。
+
 ## 4. バージョン番号と後方互換の方針
 
 ### 4.1 表現
@@ -324,9 +374,6 @@ ReportLab 側のいずれも脚注固有の分岐を持たずに追随する。�
   既存文書の意味を変えない。
 - major の増分 = 非互換変更（必須属性の追加、意味の変更、削除）。v1 の実装は
   major 2 以上の文書を読まない。
-- `"1.1"`（現行の `IR_VERSION`）は `styles`（任意ルートキー）・要素の `style`（任意属性、
-  3.9節）・`barcode` 要素（3.11節）を後方互換な追加として導入した minor。
-  `"1.0"` の既存文書はそのまま妥当。
 
 ### 4.2 読み込み側の規則
 
@@ -342,10 +389,12 @@ ReportLab 側のいずれも脚注固有の分岐を持たずに追随する。�
 - 検証規則（6節）の規則 ID は v1 系列内で安定（規則の追加はあっても、既存 ID の意味変更はしない）。
 - 複数ページの展開結果（ページ数・各ページの要素配置）は5.3節の参照意味論で
   ターゲット非依存に一意に決まる。
-- テキストの初行位置・行送り: 行のベースラインは2節の規範式（実フォントの hhea ascender と
-  head unitsPerEm に基づく）で一意に決まり、同一の実フォントを与えたすべてのターゲットで一致する。
-- テキストの折り返し・行頭禁則・均等割付の字間: 2.1節・2.2節の規範式で一意に決まり、
-  同一の実フォントを与えたすべてのターゲットで行分割・字間が一致する。
+- テキストの初行位置・行送り: 行のベースラインは2節の規範式（解決スロットの実フォントの
+  hhea ascender と head unitsPerEm に基づく）で一意に決まり、同一のフォント組を与えた
+  すべてのターゲットでスロット単位で一致する。
+- テキストの折り返し・行頭禁則・均等割付の字間: 2.1節・2.2節の規範式（解決スロットの
+  実フォントの字幅に基づく）で一意に決まり、同一のフォント組を与えたすべてのターゲットで
+  行分割・字間がスロット単位で一致する。
 
 保証しない:
 
@@ -423,8 +472,10 @@ table のチャンク p（1..P）は p ページ目に置く（表は常に1ペ�
 | `TABLE_CELL_PADDING_X` | 1.5 mm | セル文字の左右余白 |
 | `TABLE_HEADER_TEXT_OFFSET_Y` | 1.8 mm | ヘッダ文字の上端オフセット |
 | `TABLE_CELL_TEXT_OFFSET_Y` | 2.0 mm | 明細文字の上端オフセット |
-| `TABLE_FRAME_WIDTH` | 0.4 mm | 外枠の線太さ |
-| `TABLE_GRID_WIDTH` | 0.25 mm | 内部罫線の太さ |
+
+外枠・内部罫線の太さ・線種は table の `frameWidth`/`gridWidth`/`frameStyle`/`gridStyle` 属性
+（3.5節。省略時の既定はそれぞれ `TABLE_FRAME_WIDTH` = 0.4 mm・`TABLE_GRID_WIDTH` = 0.25 mm・
+`"solid"`）で決まる。
 
 列 i（0始まり）の左端 `X_i = table.x + Σ_{j<i} columns[j].width`、
 表の幅 `W = Σ columns[].width`、チャンクの高さ `H_p = headerHeight + c_p × rowHeight` として:
@@ -438,14 +489,44 @@ table のチャンク p（1..P）は p ページ目に置く（表は常に1ペ�
   h=`rowHeight − CELL_TEXT_OFFSET_Y`, align=`columns[i].align`,
   内容=行 t のデータの `columns[i].key` の値。x, w, fontSize, lineHeight はヘッダと同じ）。
   空行（t ≥ n）のセルは文字要素を生成しない（罫線・枠は生成する）。
-- 外枠: rect 相当（x=`table.x`, y=`Y0`, w=`W`, h=`H_p`, borderWidth=`FRAME_WIDTH`）。
+- 外枠: rect 相当（x=`table.x`, y=`Y0`, w=`W`, h=`H_p`, borderWidth=`table.frameWidth`,
+  borderStyle=`table.frameStyle`）。
 - 水平罫線: q = 0 .. c_p−1 に line 相当
   （orientation=horizontal, x=`table.x`, y=`Y0 + headerHeight + q×rowHeight`,
-  length=`W`, thickness=`GRID_WIDTH`）。q=0 がヘッダ下線。チャンクの底辺は外枠が兼ねる。
+  length=`W`, thickness=`table.gridWidth`, strokeStyle=`table.gridStyle`）。
+  q=0 がヘッダ下線。チャンクの底辺は外枠が兼ねる。
 - 垂直罫線: i = 1 .. 列数−1 に line 相当
-  （orientation=vertical, x=`X_i`, y=`Y0`, length=`H_p`, thickness=`GRID_WIDTH`）。
+  （orientation=vertical, x=`X_i`, y=`Y0`, length=`H_p`, thickness=`table.gridWidth`,
+  strokeStyle=`table.gridStyle`）。
 
 行の途中分割はしない（行は丸ごと次チャンクへ送る）。
+
+**セル結合** — 静的結合（`cellSpans`。3.5節）とデータ駆動結合（Column の
+`mergeSameValue`）は、上記の単一チャンク幾何に対する例外として適用する。
+
+- 結合範囲の決定:
+  - 静的: 各宣言 `{ row, key, rowSpan, colSpan }` は、通し行番号 `row` の列 `key` を
+    起点に `rowSpan` 行 × `colSpan` 列を1結合とする。`row: "header"` はヘッダ行の
+    横結合（`colSpan` のみ。各チャンクのヘッダ再表示に同様に適用する）。起点が
+    出力行数 `m` 以上の宣言は不活性、`rowSpan` が `m` からはみ出す分は切り詰める
+    （出力行数を超える `cellOverrides` と同じ規約）。
+  - データ駆動: `mergeSameValue: true` の各列で、`cellOverrides` 適用後のセル値が
+    連続して一致する長さ2以上の極大区間を1結合とする。対象は明細行のみ。
+    空文字列は結合しない（`minRows` の埋め草空行が誤結合しないため）。
+    自列より左にある `mergeSameValue` 列の区間境界では、自列の区間も切る
+    （左の列でグループが変わったら右の列の結合も切れる）。`cellSpans` の被覆範囲は
+    `mergeSameValue: true` の列に掛かってはならない（M20）。
+- ページ跨ぎ（内容複製）: 結合はチャンク境界で打ち切り、各チャンク内で独立の結合として
+  描く。継続チャンク側では、その先頭行が新たな起点となり、その行のデータの値を
+  再描画する。結合はページ割り（チャンクサイズ・ページ数）・行容量計算に一切影響しない。
+- 描画: 結合の起点セルにのみテキストを描く（幅 = 対象列幅の合計 − 2×`PADDING_X`、
+  高さ = `rowSpan × rowHeight − CELL_TEXT_OFFSET_Y`、縦位置は従来と同じ上端オフセット
+  基準、揃えは起点列の `align`・ヘッダは center）。被覆セル（起点以外）の値は描画しない
+  （データは変更しない）。結合範囲の内部にあたる水平・垂直罫線は、その区間を除いた
+  残り区間に分節して描く。結合と交差しない罫線は従来どおり全幅・全高の1本のまま出力する。
+  縞（`stripeColor`）は従来どおり行単位で描き、結合と独立とする。
+- 被覆セルを指す `cellOverrides` は不活性。起点セルへの上書きは従来どおり値として
+  描画され、データ駆動結合はその適用後の値で判定する。
 
 **(5) pageNumber の置換** — 割り当てられた各ページ p で text 相当
 （同じ x/y/w/h/fontSize/align/lineHeight、内容 = `format` 中の `{n}` を p、`{N}` を N で
@@ -476,18 +557,19 @@ flex の子はコンテナの配列位置に入る）。チャンク内部の描
 | ID | 規則 |
 |---|---|
 | S01 | 入力が JSON として構文解析できる |
-| S02 | ルートはオブジェクトで、キーは `version` `page` `font` `elements` の4つが必須、`styles` `docType` `footnotes` が任意（それ以外の未知キー拒否） |
+| S02 | ルートはオブジェクトで、キーは `version` `page` `font` `elements` の4つが必須、`styles` `docType` `footnotes` `groups` が任意（それ以外の未知キー拒否） |
 | S03 | `version` は `^1\.(0\|[1-9][0-9]*)$` に一致する文字列で、minor が実装のサポート値以下。major ≠ 1 または新しすぎる minor は専用メッセージで拒否 |
 | S04 | `page` は `{ width, height }`（両方 number・未知キー拒否） |
-| S05 | `font` は `{ name }`（string・未知キー拒否） |
+| S05 | `font` は `{ regular, bold?, italic?, boldItalic? }`（各値 string・`regular` 必須・未知キー拒否） |
 | S06 | `elements` は配列で、各要素はオブジェクト |
 | S07 | 各要素の `type` が9種のいずれか |
-| S08 | 要素型ごとの必須属性が揃い、各属性の型が正しい（型ごとに個別の規則: S08t, S08l, S08r, S08e, S08b, S08i, S08f, S08p, S08c。text/line/rect/table/pageNumber の任意属性 `style` の型検証もここに含む） |
+| S08 | 要素型ごとの必須属性が揃い、各属性の型が正しい（型ごとに個別の規則: S08t, S08l, S08r, S08e, S08b, S08i, S08f, S08p, S08c。全型共通の任意属性 `name`、text/line/rect/table/pageNumber の任意属性 `style` の型検証もここに含む） |
 | S09 | 要素・Column に未知の属性がない（table の `pages`、flex の子の `x`/`y`/`pages`、flex の交差軸寸法＝row の `h` / column の `w`、image/flex の `style` も未知属性として拒否） |
-| S10 | enum 値が定義域内（`align`, `orientation`, `direction`, `justifyContent`, `alignItems`, `pages`, `symbology`） |
+| S10 | enum 値が定義域内（`align`, `fontWeight`, `fontStyle`, `orientation`, `direction`, `justifyContent`, `alignItems`, `pages`, `symbology`） |
 | S12 | image の `src` が data URI 構文（`data:<mediatype>;base64,<payload>`）に一致する |
 | S13 | flex の `children` は配列で、各子は table 以外の要素オブジェクト（入れ子の flex を含め再帰的に S 群を適用する） |
 | S14 | `styles` は配列で、各要素は `name`（string）と `attrs`（定義済みキーのみ・値の型が正しいオブジェクト。`align` の enum 判定を含む）からなる（3.9節） |
+| S15 | `groups` は配列で、各要素は `id`（string）と `memberIds`（string の配列）からなる未知キー拒否のオブジェクト（3.13節） |
 
 S11 は欠番（かつて text の `text`/`bind` 排他を定義していたが、`bind` の廃止に伴い規則ごと削除し、
 番号は再割当しない）。text の `bind` は S09（未知の属性）で拒否され、メッセージが
@@ -502,12 +584,12 @@ S 群通過後、任意属性のデフォルト（3節の各表。`maxY = page.h
 | ID | 規則 |
 |---|---|
 | M01 | `id` が識別子パターン（3.1節）に一致し、flex の子孫を含む全要素で文書内一意 |
-| M02 | 全要素が用紙内に収まる: `x ≥ 0`, `y ≥ 0`, `x + 幅 ≤ page.width`, `y + 高さ ≤ page.height`。幅・高さは text/rect/ellipse/image/pageNumber/barcode = `w`/`h`、line = orientation に応じ `length`（太さ方向は基準線のみで判定）、flex = 3.7節の箱（主軸寸法を明示した場合はその値。子はコンテナの箱に含まれるため個別判定しない）、table = 幅 `Σ列幅`（縦方向のページ領域は M09） |
+| M02 | 全要素が用紙内に収まる: `x ≥ 0`, `y ≥ 0`, `x + 幅 ≤ page.width`, `y + 高さ ≤ page.height`。幅・高さは text/rect/ellipse/image/pageNumber/barcode = `w`/`h`、line = orientation に応じ `length`（太さ方向は基準線のみで判定）、flex = 3.7節の箱（主軸寸法を明示した場合はその値。子はコンテナの箱に含まれるため個別判定しない）、table = 幅 `Σ列幅`（縦方向のページ領域は M09）。判定は常に**非回転の箱**で行い、`rotate` によるはみ出しは規定しない |
 | M03 | 寸法が正: `w`, `h`（flex の明示主軸寸法＝row の `w` / column の `h`、barcode の `w`/`h` を含む）, `length`, `thickness`, `borderWidth`, `rowHeight`, `headerHeight`, `columns[].width` はすべて `> 0`。`gap` のみ `≥ 0`（間隔ゼロの密着を許す）。M03 は「正であること」のみを見る — flex 主軸寸法と内容寸法の比較は M12 の責務 |
 | M04 | `fontSize` は `0 < fontSize ≤ 200`（pt）、`lineHeight` は `0 < lineHeight ≤ 5` |
 | M05 | `page.width`, `page.height` は `1 ≤ 値 ≤ 5000`（mm） |
 | M06 | table の `columns` は1個以上、`key` は table 内で一意 |
-| M07 | `font.name`・table の `bind`・`columns[].key` が識別子パターンに一致する |
+| M07 | `font` の全定義スロットの論理名・table の `bind`・`columns[].key` が識別子パターンに一致する |
 | M08 | image の `src` の mediatype が `image/png` または `image/jpeg` で、base64 payload がデコード可能 |
 | M09 | table のページ領域が成立する: `continuationY ≥ 0`、`maxY ≤ page.height`、`table.y + headerHeight + rowHeight ≤ maxY`、`continuationY + headerHeight + rowHeight ≤ maxY`（先頭・継続の各ページに最低1行入る） |
 | M10 | `minRows` は0以上の整数 |
@@ -515,6 +597,9 @@ S 群通過後、任意属性のデフォルト（3節の各表。`maxY = page.h
 | M12 | flex の主軸寸法を明示した場合（row の `w` / column の `h`）、その値が内容寸法 `C`（子の主軸寸法の合計 + `gap`×(子数−1)。3.7節）以上 |
 | M14 | `styles` の各定義: `name` が非空・64文字以内・文書内一意、`attrs` が1フィールド以上で、各値が対応する要素属性と同じ許容範囲（`fontSize`/`lineHeight` は M04 と同じ範囲、`borderWidth`/`thickness` は `> 0`） |
 | M15 | 要素（flex の子孫を含む）の `style` が `styles` 内に存在する `name` を指す |
+| M18 | 要素（flex の子孫を含む）の `name`（指定時）が64文字以内である |
+| M19 | 要素（flex の子孫を含む）の `rotate`（指定時）が有限の number で `−360 ≤ rotate ≤ 360` である |
+| M20 | `cellSpans` の `row` が0以上の整数または `"header"`、`key` が `columns[].key` のいずれか、`rowSpan`・`colSpan` が1以上の整数で少なくとも一方が2以上、結合範囲が列範囲に収まり、`"header"` 行では `rowSpan` が1であり、結合範囲同士が table 内で重ならず、`mergeSameValue` が true の列に掛からない |
 
 ### C 群（データ結合時。実装は書き出し器側）
 
@@ -569,7 +654,7 @@ S 群通過後、任意属性のデフォルト（3節の各表。`maxY = page.h
 
 ```ts
 // types.ts
-export const IR_VERSION: "1.1";
+export const IR_VERSION: "1.0";
 export type IrAlign = "left" | "center" | "right" | "justify";
 export type IrOrientation = "horizontal" | "vertical";
 export type IrPages = "first" | "rest" | "last" | "all";
@@ -577,13 +662,30 @@ export type IrFlexDirection = "row" | "column";
 export type IrFlexAlign = "start" | "center" | "end";
 export type IrDocType = "qualifiedInvoice";
 export interface IrPage { readonly width: number; readonly height: number }
-export interface IrFont { readonly name: string }
+export type IrFontSlot = "regular" | "bold" | "italic" | "boldItalic";
+export type IrFontWeight = "normal" | "bold";
+export type IrFontStyle = "normal" | "italic";
+export interface IrFont {
+  readonly regular: string;
+  readonly bold?: string;
+  readonly italic?: string;
+  readonly boldItalic?: string;
+}
 export interface IrColumn {
   readonly key: string; readonly label: string;
   readonly width: number; readonly align: IrAlign;   // 正規化後はデフォルト適用済み
+  readonly mergeSameValue?: boolean;                 // 省略時 false（正規化でも埋めない）
+}
+export interface IrTableCellSpan {
+  readonly row: number | "header";
+  readonly key: string;
+  readonly rowSpan?: number;                         // 省略時 1（正規化でも埋めない）
+  readonly colSpan?: number;                         // 省略時 1（正規化でも埋めない）
 }
 export interface IrStyleAttrs {
   readonly fontSize?: number; readonly align?: IrAlign; readonly lineHeight?: number;
+  readonly fontWeight?: IrFontWeight; readonly fontStyle?: IrFontStyle;
+  readonly underline?: boolean;
   readonly borderWidth?: number; readonly thickness?: number;
 }
 export type StyleAttrKey = keyof IrStyleAttrs;
@@ -592,20 +694,24 @@ export type IrElement =
   | IrTextElement | IrLineElement | IrRectElement | IrEllipseElement | IrTableElement
   | IrImageElement | IrFlexElement | IrPageNumberElement | IrBarcodeElement;
 // 各 Ir*Element は3節の属性表どおり（正規化後は pages 等のデフォルト適用済み。
-// table は maxY / continuationY / minRows が具体値）。text.text は必須（string）
+// table は maxY / continuationY / minRows が具体値）。text.text は必須（string）。
+// table / flex 以外の7要素型は共通任意属性 rotate?: number を持つ（3.1節。正規化でも 0 埋めしない）
 export type IrBarcodeSymbology = "qrcode" | "code39" | "code128" | "ean13";
 export interface IrBarcodeElement {
   readonly type: "barcode";
   readonly id: string;
+  readonly name?: string;                  // 表示用の名前（3.1節）。識別子制約・一意性制約なし
   readonly x: number; readonly y: number;
   readonly pages: IrPages;
   readonly w: number; readonly h: number;
   readonly symbology: IrBarcodeSymbology;
   readonly value: string;                  // {key} トークン可（text.text と同一文法）
+  readonly rotate?: number;                // 外接箱中心周りの時計回り回転角（度）。省略時 0（3.1節）
 }
 export interface IrFlexElement {
   readonly type: "flex";
   readonly id: string;
+  readonly name?: string;                  // 表示用の名前（3.1節）。識別子制約・一意性制約なし
   readonly x: number; readonly y: number;
   readonly pages: IrPages;
   readonly direction: IrFlexDirection;
@@ -629,11 +735,14 @@ export type IrFlexChild =
 export interface IrPageNumberElement {
   readonly type: "pageNumber";
   readonly id: string;
+  readonly name?: string;                  // 表示用の名前（3.1節）。識別子制約・一意性制約なし
   readonly x: number; readonly y: number;
   readonly pages: IrPages;                 // デフォルトのみ "all"（3.1節）
   readonly w: number; readonly h: number;
   readonly format: string;
   readonly fontSize: number; readonly align: IrAlign; readonly lineHeight: number;
+  readonly color?: string;
+  readonly rotate?: number;                // 外接箱中心周りの時計回り回転角（度）。省略時 0（3.1節）
 }
 export interface IrFootnoteNote { readonly id: string; readonly text: string }
 export interface IrFootnotes {
@@ -641,6 +750,7 @@ export interface IrFootnotes {
   readonly fontSize: number; readonly lineHeight: number; readonly pages: IrPages;
   readonly notes: readonly IrFootnoteNote[];
 }
+export interface IrGroup { readonly id: string; readonly memberIds: readonly string[] }
 export interface IrDocument {
   readonly version: string;
   readonly page: IrPage;
@@ -649,12 +759,19 @@ export interface IrDocument {
   readonly elements: readonly IrElement[];
   readonly docType?: IrDocType;            // 任意。"qualifiedInvoice" のみ（6節 Q群）
   readonly footnotes?: IrFootnotes;         // 任意（3.10節）。全属性必須・デフォルト補完なし
+  readonly groups?: readonly IrGroup[];     // 任意（3.13節）。編集 UI 専用、描画・書き出しに影響しない
 }
 
 // errors.ts
-export type IrRuleId = "S01" | /* ... */ | "S14" | "M01" | /* ... */ | "M17" | "C01" | "C02" | "C03" | "C04" | "Q01"
+export type IrRuleId = "S01" | /* ... */ | "S15" | "M01" | /* ... */ | "M20" | "C01" | "C02" | "C03" | "C04" | "Q01"
   | "F01" | "F02" | "F03" | "F04" | "F05" | "F06";
 export interface IrError { readonly rule: IrRuleId; readonly path: string; readonly message: string }
+
+// font.ts — 1節の未定義スロット劣化規則の唯一の定義点。純関数。
+// 両ターゲット・デザイナープレビューが共用する
+export function resolveFontSlot(
+  font: IrFont, weight: IrFontWeight, style: IrFontStyle,
+): IrFontSlot;
 
 // parse.ts
 export type ParseIrResult =
@@ -682,6 +799,29 @@ export function validateIr(document: IrDocument): readonly IrError[];
 // invoice.ts — validateIr とは別関数。docType が無い文書には走らず常に空配列
 export function checkQualifiedInvoice(document: IrDocument): readonly IrError[];
 
+// table-merge.ts — 5.3節のセル結合ジオメトリの唯一の実装。純関数。
+// lowerIr とデザイナーのキャンバス描画が共用する
+export interface SkipRange { readonly start: number; readonly end: number }
+export interface TableMergeRect {
+  readonly q: number | "header";                    // チャンク内行番号（"header" はヘッダ行）
+  readonly col: number;
+  readonly rowSpan: number;                         // チャンク境界での打ち切り後の値
+  readonly colSpan: number;
+}
+export interface TableChunkMerges {
+  readonly rects: readonly TableMergeRect[];
+  readonly covered: ReadonlySet<string>;            // 起点以外の被覆セル（キーは "q:col"）
+  readonly horizontalSkips: ReadonlyMap<number, readonly SkipRange[]>;
+  readonly verticalSkips: ReadonlyMap<number, readonly SkipRange[]>;
+}
+export function computeChunkMerges(
+  table: IrTableElement, rows: readonly IrTableRow[],  // rows は cellOverrides 適用済み
+  rowOffset: number, chunkSize: number,
+): TableChunkMerges;
+export function subtractSkips(                        // 罫線の分節（skips を除いた残り区間）
+  start: number, end: number, skips: readonly SkipRange[] | undefined,
+): readonly SkipRange[];
+
 // text-layout.ts — 2.1節・2.2節の折り返し・行頭禁則・均等割付字間の唯一の実装。純関数。
 // 字幅の実測（フォントファイル読み取り）は呼び出し側（書き出し器）の責務
 export type CharWidthEm = (codePoint: number) => number;
@@ -707,7 +847,7 @@ v1 の語彙で書いた A4 請求書の骨子。発行者情報は flex（縦�
 {
   "version": "1.0",
   "page": { "width": 210, "height": 297 },
-  "font": { "name": "NotoSansJP" },
+  "font": { "regular": "NotoSansJP" },
   "elements": [
     { "type": "text", "id": "title", "text": "{title}", "x": 0, "y": 18, "w": 210, "h": 12, "fontSize": 22, "align": "center" },
     { "type": "flex", "id": "issuerBlock", "x": 130, "y": 40, "direction": "column", "h": 20, "justifyContent": "center", "gap": 1.5,

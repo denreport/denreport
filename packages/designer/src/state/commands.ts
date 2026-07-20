@@ -12,7 +12,7 @@ import { createGroupFrom, dissolveGroupsOf, livingGroups } from "./groups";
 import type { EditorStore } from "./store";
 import type { EditorState } from "./types";
 
-/** 選択のトップレベル要素をクリップボードへ格納する */
+/** Stores the top-level elements of the selection into the clipboard */
 export function copySelection(store: EditorStore): boolean {
   const state = store.getState();
   const clipboard = clipboardFromSelection(
@@ -27,7 +27,7 @@ export function copySelection(store: EditorStore): boolean {
   return true;
 }
 
-/** copySelection + 格納した要素の削除を1 commit で行う */
+/** Performs copySelection + deletion of the stored elements in a single commit */
 export function cutSelection(store: EditorStore): boolean {
   const state = store.getState();
   const clipboard = clipboardFromSelection(
@@ -44,7 +44,7 @@ export function cutSelection(store: EditorStore): boolean {
   return true;
 }
 
-/** クリップボードの groupIndexes を pastedIds へ写像し、新グループとして形成する */
+/** Maps the clipboard's groupIndexes onto pastedIds and forms them as new groups */
 function regroupPasted(
   groups: readonly ElementGroup[],
   groupIndexes: readonly (readonly number[])[],
@@ -62,7 +62,7 @@ function regroupPasted(
   return next;
 }
 
-/** クリップボード内容を貼り付け、貼った要素を選択にする。pasteCount を進める */
+/** Pastes the clipboard contents and selects the pasted elements. Advances pasteCount */
 export function pasteClipboard(store: EditorStore): boolean {
   const clipboard = store.getClipboard();
   if (clipboard === null) {
@@ -83,7 +83,7 @@ export function pasteClipboard(store: EditorStore): boolean {
   return true;
 }
 
-/** 選択をその場で複製（コピー+即ペーストの合成）。保存済みクリップボードは変更しない */
+/** Duplicates the selection in place (a composite of copy + immediate paste). Doesn't change the saved clipboard */
 export function duplicateSelection(store: EditorStore): boolean {
   const state = store.getState();
   const clipboard = clipboardFromSelection(
@@ -107,7 +107,7 @@ export function duplicateSelection(store: EditorStore): boolean {
   return true;
 }
 
-/** 選択（flex 子を含む）を削除し、選択を空にする */
+/** Deletes the selection (including flex children) and clears the selection */
 export function deleteSelection(store: EditorStore): boolean {
   const state = store.getState();
   if (state.selection.length === 0) {
@@ -117,7 +117,7 @@ export function deleteSelection(store: EditorStore): boolean {
   return true;
 }
 
-/** 選択のうちトップレベル要素の箱を文書順で返す（flex 子は対象外） */
+/** Returns the boxes of the top-level elements in the selection, in document order (flex children are excluded) */
 function selectedTopLevelViews(store: EditorStore) {
   const state = store.getState();
   const idSet = new Set(state.selection);
@@ -129,7 +129,7 @@ function selectedTopLevelViews(store: EditorStore) {
   );
 }
 
-/** 選択中のトップレベル要素が2未満なら false（commit しない） */
+/** Returns false (and doesn't commit) if fewer than 2 top-level elements are selected */
 export function alignSelection(store: EditorStore, kind: AlignKind): boolean {
   const views = selectedTopLevelViews(store);
   if (views.length < 2) {
@@ -146,7 +146,7 @@ export function alignSelection(store: EditorStore, kind: AlignKind): boolean {
   return true;
 }
 
-/** 選択中のトップレベル要素が3未満なら false（commit しない） */
+/** Returns false (and doesn't commit) if fewer than 3 top-level elements are selected */
 export function distributeSelection(
   store: EditorStore,
   axis: DistributeAxis,
@@ -166,7 +166,7 @@ export function distributeSelection(
   return true;
 }
 
-/** 選択中のトップレベル id が2以上のとき成立し、グループを新設する */
+/** Succeeds when 2 or more selected top-level ids exist, creating a new group */
 export function groupSelection(store: EditorStore): boolean {
   const state = store.getState();
   const topLevel = new Set(state.document.elements.map((el) => el.id));
@@ -178,7 +178,7 @@ export function groupSelection(store: EditorStore): boolean {
   return true;
 }
 
-/** 選択と交差する生存グループがあるとき成立し、それらを解除する */
+/** Succeeds when there's a living group that intersects the selection, dissolving it */
 export function ungroupSelection(store: EditorStore): boolean {
   const state = store.getState();
   if (!canUngroupSelection(state)) {

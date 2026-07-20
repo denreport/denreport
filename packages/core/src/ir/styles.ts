@@ -7,7 +7,14 @@ import type { IrElementType, StyleAttrKey } from "./types";
 export const STYLEABLE_ATTRS: Readonly<
   Record<IrElementType, readonly StyleAttrKey[]>
 > = {
-  text: ["fontSize", "align", "lineHeight"],
+  text: [
+    "fontSize",
+    "align",
+    "lineHeight",
+    "fontWeight",
+    "fontStyle",
+    "underline",
+  ],
   pageNumber: ["fontSize", "align", "lineHeight"],
   table: ["fontSize"],
   rect: ["borderWidth"],

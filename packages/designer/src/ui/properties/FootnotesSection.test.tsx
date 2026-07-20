@@ -3,7 +3,9 @@ import type { ReactNode } from "react";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { EditorStore } from "../../state/store";
 import { useEditorState } from "../useEditorState";
 import { FootnotesSection } from "./FootnotesSection";
@@ -16,7 +18,7 @@ function makeDocument(): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [],
   };
 }
@@ -214,5 +216,66 @@ describe("脚注定義済みの状態", () => {
     });
     render(store);
     expect(container.textContent).toContain("x は 0 以上である必要があります");
+  });
+
+  it("{#id} 構文と採番順の案内文を表示する", () => {
+    const store = storeWithFootnotes();
+    render(store);
+    expect(container.textContent).toContain("{#id}");
+    expect(container.textContent).toContain("出現順");
+  });
+
+  it("「id をコピー」「{#id} をコピー」でクリップボードへ書き込む", () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      configurable: true,
+    });
+    const store = new EditorStore({
+      ...makeDocument(),
+      footnotes: {
+        x: 15,
+        w: 180,
+        bottom: 10,
+        fontSize: 8,
+        lineHeight: 1.25,
+        pages: "all",
+        notes: [{ id: "fee", text: "振込手数料はお客様負担です" }],
+      },
+    });
+    render(store);
+
+    click(buttonByText("id をコピー"));
+    expect(writeText).toHaveBeenCalledExactlyOnceWith("fee");
+
+    click(buttonByText("{#id} をコピー"));
+    expect(writeText).toHaveBeenCalledWith("{#fee}");
+  });
+});
+
+describe("en Provider", () => {
+  it("脚注のフィールドラベルと案内文が英語になる", () => {
+    const store = new EditorStore({
+      ...makeDocument(),
+      footnotes: {
+        x: 15,
+        w: 180,
+        bottom: 10,
+        fontSize: 8,
+        lineHeight: 1.25,
+        pages: "all",
+        notes: [],
+      },
+    });
+    act(() => {
+      root.render(
+        <MessagesContext.Provider value={en}>
+          <Wrapper store={store} />
+        </MessagesContext.Provider>,
+      );
+    });
+    expect(container.textContent).toContain("Footnotes");
+    expect(inputByLabel("Width")).toBeDefined();
+    expect(container.textContent).toContain("Numbers are assigned");
   });
 });

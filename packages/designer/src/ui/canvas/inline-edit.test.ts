@@ -5,6 +5,7 @@ import type {
   IrTableElement,
 } from "@denreport/core";
 import { describe, expect, it } from "vitest";
+import { ja } from "../../i18n/messages/ja";
 import { layoutDocument } from "../../state/geometry";
 import { defaultScenarioSet } from "../../state/sample-scenarios";
 import type { EditorState, PageContext } from "../../state/types";
@@ -149,7 +150,7 @@ function makeLayout(pageContext: PageContext = "first") {
   const document: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: ELEMENTS,
   };
   return layoutDocument(document, pageContext);
@@ -425,7 +426,7 @@ describe("段階的選択（resolveClickTarget）とダブルクリックの整�
     const document = {
       version: "1.0" as const,
       page: { width: 210, height: 297 },
-      font: { name: "NotoSansJP" },
+      font: { regular: "NotoSansJP" },
       elements: ELEMENTS,
     };
     const state: EditorState = {
@@ -441,10 +442,11 @@ describe("段階的選択（resolveClickTarget）とダブルクリックの整�
       validationErrors: [],
       validationWarnings: [],
       dirty: false,
-      sampleScenarios: defaultScenarioSet(),
+      sampleScenarios: defaultScenarioSet("", ja.scenarioNames),
       fontRegistry: new Map(),
       customGuides: [],
       envelopePresetId: null,
+      selectedExportTarget: "pdfme",
       groups: [],
     };
     return {
@@ -454,8 +456,8 @@ describe("段階的選択（resolveClickTarget）とダブルクリックの整�
     };
   }
 
-  // ダブルクリックは2回のクリックの後に発火するため、flex 子への到達には
-  // resolveClickTarget の段階的選択が2クリック分（1段目=flex、2段目=子）進む必要がある
+  // A double-click fires after two clicks, so reaching a flex child requires
+  // resolveClickTarget's progressive selection to advance across two clicks (1st = flex, 2nd = child)
   it("flex 子 text は1クリック目では対象にならず、2クリック目で単独選択に達し対象になる", () => {
     const layout = layoutDocument(ctxFor([]).state.document, "first");
 

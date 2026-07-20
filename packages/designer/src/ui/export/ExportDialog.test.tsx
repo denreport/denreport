@@ -1,8 +1,11 @@
 import type { IrDocument } from "@denreport/core";
+import { EMBEDDED_FONT_LICENSE_URL } from "@denreport/targets";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { triggerDownload } from "../../api/download";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { EditorStore } from "../../state/store";
 import { ExportDialog } from "./ExportDialog";
 import { fetchEmbeddedFontData } from "./export-font";
@@ -10,8 +13,8 @@ import { fetchEmbeddedFontData } from "./export-font";
 vi.mock("../../api/download", () => ({ triggerDownload: vi.fn() }));
 vi.mock("./export-font", () => ({ fetchEmbeddedFontData: vi.fn() }));
 
-// 現行マトリクスに unsupported のエントリが存在しないため、非対応表示の検証用に
-// pdfme の image を unsupported に差し替える（他のエントリは実物のまま）
+// The current matrix has no "unsupported" entries, so to verify the unsupported display we
+// swap pdfme's image to unsupported (other entries stay as the real ones)
 vi.mock("@denreport/core", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@denreport/core")>();
   return {
@@ -25,7 +28,8 @@ vi.mock("@denreport/core", async (importOriginal) => {
           image: {
             element: {
               level: "unsupported",
-              note: "画像は書き出せません（テスト用）",
+              note: "image element unsupported (test)",
+              userMessage: () => "画像は書き出せません（テスト用）",
             },
           },
         },
@@ -34,8 +38,8 @@ vi.mock("@denreport/core", async (importOriginal) => {
   };
 });
 
-// readAscentPerEm/readCharWidths が読める最小の TTF（glyf + head.unitsPerEm +
-// hhea.ascender/numberOfHMetrics + hmtx 1本 + 空の cmap format4 サブテーブル）
+// The minimal TTF that readAscentPerEm/readCharWidths can read (glyf + head.unitsPerEm +
+// hhea.ascender/numberOfHMetrics + one hmtx entry + an empty cmap format4 subtable)
 function syntheticTtf(): Uint8Array {
   const headOffset = 12 + 5 * 16;
   const headLength = 54;
@@ -44,7 +48,7 @@ function syntheticTtf(): Uint8Array {
   const hmtxOffset = hheaOffset + hheaLength;
   const hmtxLength = 4;
   const cmapOffset = hmtxOffset + hmtxLength;
-  const cmapSubtableLength = 24; // format4、segCount=1（終端セグメントのみ）
+  const cmapSubtableLength = 24; // format4, segCount=1 (end segment only)
   const cmapLength = 12 + cmapSubtableLength;
   const bytes = new Uint8Array(cmapOffset + cmapLength);
   const view = new DataView(bytes.buffer);
@@ -74,11 +78,11 @@ function syntheticTtf(): Uint8Array {
   view.setUint16(cmapOffset + 2, 1); // numTables
   view.setUint16(cmapOffset + 4, 3); // platformId
   view.setUint16(cmapOffset + 6, 1); // encodingId
-  view.setUint32(cmapOffset + 8, 12); // subtable offset（cmap 先頭からの相対位置）
+  view.setUint32(cmapOffset + 8, 12); // subtable offset (relative to the start of cmap)
   const subtableAbs = cmapOffset + 12;
   view.setUint16(subtableAbs, 4); // format
   view.setUint16(subtableAbs + 2, cmapSubtableLength);
-  view.setUint16(subtableAbs + 6, 2); // segCountX2（segCount=1）
+  view.setUint16(subtableAbs + 6, 2); // segCountX2 (segCount=1)
   view.setUint16(subtableAbs + 14, 0xffff); // endCode[0]
   view.setUint16(subtableAbs + 18, 0xffff); // startCode[0]
   view.setInt16(subtableAbs + 20, 1); // idDelta[0]
@@ -149,7 +153,7 @@ function docOf(...elements: IrDocument["elements"]): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -161,8 +165,8 @@ beforeEach(() => {
   container = document.createElement("div");
   document.body.append(container);
   root = createRoot(container);
-  // 両ターゲットとも書き出しに fontData（字幅・計量）を要するため、既定で成功させる
-  // （フォント取得の失敗・形式エラーを検証するテストは個別に上書きする）
+  // Both targets need fontData (character widths/metrics) for export, so succeed by default
+  // (tests that verify font-fetch failures/format errors override this individually)
   vi.mocked(fetchEmbeddedFontData).mockResolvedValue(syntheticTtf());
 });
 
@@ -189,7 +193,7 @@ async function mount(
     <ExportDialog store={store} onClose={onClose} onReveal={onReveal} />,
   );
   await vi.waitFor(() => {
-    if (container.querySelector(".apx-dialog") === null) {
+    if (container.querySelector(".dr-dialog") === null) {
       throw new Error("ダイアログが未描画");
     }
   });
@@ -212,8 +216,8 @@ function click(el: Element): void {
 
 function targetCard(name: string): HTMLButtonElement {
   const card = [
-    ...container.querySelectorAll<HTMLButtonElement>(".apx-tcard"),
-  ].find((b) => b.querySelector(".apx-tcard-name")?.textContent === name);
+    ...container.querySelectorAll<HTMLButtonElement>(".dr-tcard"),
+  ].find((b) => b.querySelector(".dr-tcard-name")?.textContent === name);
   if (card === undefined) {
     throw new Error(`ターゲットカードがない: ${name}`);
   }
@@ -228,23 +232,27 @@ async function selectReportlab(): Promise<void> {
 }
 
 describe("警告一覧", () => {
-  it("非対応・近似を含む文書で警告カードが level 色・note・件数バッジつきで表示される", async () => {
+  it("非対応・近似を含む文書で警告カードが level 色・重大度ラベル・平易文・件数バッジつきで表示される", async () => {
     await mount(docOf(staticText("t1"), imageEl("img1")));
 
-    const cards = [...container.querySelectorAll(".apx-warn-card")];
+    const cards = [...container.querySelectorAll(".dr-warn-card")];
     expect(cards.length).toBeGreaterThanOrEqual(2);
-    // unsupported グループが先頭
+    // the unsupported group comes first
     expect(cards[0]?.classList.contains("is-unsupported")).toBe(true);
+    expect(cards[0]?.querySelector(".dr-warn-level")?.textContent).toBe(
+      "非対応",
+    );
     expect(cards[0]?.textContent).toContain("画像は書き出せません（テスト用）");
-    expect(cards[0]?.querySelector(".apx-chip")?.textContent).toBe("img1");
+    expect(cards[0]?.querySelector(".dr-chip")?.textContent).toBe("img1");
     expect(cards[1]?.classList.contains("is-approximated")).toBe(true);
-    // ヘッダの件数バッジは延べ判定件数
-    expect(container.querySelector(".apx-badge-warn")?.textContent).toBe("2");
+    expect(cards[1]?.querySelector(".dr-warn-level")?.textContent).toBe("近似");
+    // the header's count badge is the total finding count
+    expect(container.querySelector(".dr-badge-warn")?.textContent).toBe("2");
   });
 
   it("警告ゼロでは案内文言を表示する", async () => {
     await mount(docOf());
-    expect(container.querySelector(".apx-warn-card")).toBeNull();
+    expect(container.querySelector(".dr-warn-card")).toBeNull();
     expect(container.textContent).toContain(
       "✓ 選択中のターゲットですべての要素を書き出せます。",
     );
@@ -253,16 +261,16 @@ describe("警告一覧", () => {
   it("ターゲット切替で一覧が再計算される", async () => {
     await mount(docOf(imageEl("img1")));
     expect(
-      container.querySelector(".apx-warn-card.is-unsupported"),
+      container.querySelector(".dr-warn-card.is-unsupported"),
     ).not.toBeNull();
 
     click(targetCard("ReportLab"));
     await vi.waitFor(() => {
       expect(
-        container.querySelector(".apx-warn-card.is-unsupported"),
+        container.querySelector(".dr-warn-card.is-unsupported"),
       ).toBeNull();
     });
-    // ReportLab では image.src が近似
+    // for ReportLab, image.src is approximated
     expect(container.textContent).toContain("Pillow");
     expect(targetCard("ReportLab").getAttribute("aria-pressed")).toBe("true");
   });
@@ -283,7 +291,7 @@ describe("警告一覧", () => {
       EditorStore.prototype.setSelection.call(store, ids);
     });
 
-    const chip = container.querySelector<HTMLButtonElement>(".apx-chip");
+    const chip = container.querySelector<HTMLButtonElement>(".dr-chip");
     expect(chip?.textContent).toBe("t1");
     if (chip) click(chip);
 
@@ -298,16 +306,16 @@ describe("実行可否", () => {
   it("検証エラーがあると主ボタン disabled + フッタ注記", async () => {
     await mount(docOf(staticText("dup"), staticText("dup")));
     expect(buttonByText("書き出す").disabled).toBe(true);
-    expect(container.querySelector(".apx-dialog-f")?.textContent).toContain(
+    expect(container.querySelector(".dr-dialog-f")?.textContent).toContain(
       "検証エラーが 2 件あるため実行できません。",
     );
   });
 
   it("検証エラーがなければ警告があっても実行できる", async () => {
     await mount(docOf(staticText("t1")));
-    expect(container.querySelector(".apx-warn-card")).not.toBeNull();
+    expect(container.querySelector(".dr-warn-card")).not.toBeNull();
     expect(buttonByText("書き出す").disabled).toBe(false);
-    expect(container.querySelector(".apx-dialog-f")?.textContent).toContain(
+    expect(container.querySelector(".dr-dialog-f")?.textContent).toContain(
       "警告は書き出しを妨げません。",
     );
   });
@@ -326,7 +334,7 @@ describe("サンプルデータの厳格パース", () => {
     await mount(docOf(staticText("t1")), json);
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
-      const error = container.querySelector(".apx-export-error");
+      const error = container.querySelector(".dr-export-error");
       expect(error).not.toBeNull();
       expect(error?.textContent).toContain(phrase);
       expect(error?.textContent).toContain("プレビューのサンプルデータ欄");
@@ -341,7 +349,7 @@ describe("実行エラーの表示", () => {
     await mount(docOf(staticText("t1", { text: "{title}" })), '{"title": 123}');
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
-      const error = container.querySelector(".apx-export-error");
+      const error = container.querySelector(".dr-export-error");
       expect(error).not.toBeNull();
       expect(error?.textContent).toContain("C01");
       expect(error?.textContent).toContain("elements[0].text");
@@ -356,7 +364,7 @@ describe("実行エラーの表示", () => {
     await selectReportlab();
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
-      const error = container.querySelector(".apx-export-error");
+      const error = container.querySelector(".dr-export-error");
       expect(error).not.toBeNull();
       expect(error?.textContent).toContain("cff");
       expect(error?.textContent).toContain("CFF（OTF）アウトライン");
@@ -372,7 +380,7 @@ describe("実行エラーの表示", () => {
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
       expect(
-        container.querySelector(".apx-export-error")?.textContent,
+        container.querySelector(".dr-export-error")?.textContent,
       ).toContain("同梱フォントを取得できませんでした");
     });
     expect(vi.mocked(triggerDownload)).not.toHaveBeenCalled();
@@ -406,10 +414,60 @@ describe("書き出しの実行", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it("同梱フォントを実際に使う書き出しでは zip に OFL.txt が入る", async () => {
+    // The license must come from EMBEDDED_FONT_LICENSE_URL, not the font URL, so the
+    // mock returns URL-dependent bytes and the zip content is checked for the license side
+    const licenseMarker = "SIL-OFL-LICENSE-MARKER";
+    vi.mocked(fetchEmbeddedFontData).mockImplementation(async (url) =>
+      url === EMBEDDED_FONT_LICENSE_URL
+        ? new TextEncoder().encode(licenseMarker)
+        : syntheticTtf(),
+    );
+    await mount(docOf(staticText("t1")));
+    await selectReportlab();
+    click(buttonByText("書き出す"));
+    await vi.waitFor(() => {
+      expect(vi.mocked(triggerDownload)).toHaveBeenCalledOnce();
+    });
+    expect(vi.mocked(fetchEmbeddedFontData)).toHaveBeenCalledWith(
+      EMBEDDED_FONT_LICENSE_URL,
+    );
+    const blob = vi.mocked(triggerDownload).mock.calls.at(0)?.[2];
+    if (blob === undefined) throw new Error("ダウンロードされていない");
+    const zipText = new TextDecoder("latin1").decode(
+      new Uint8Array(await blob.arrayBuffer()),
+    );
+    expect(zipText).toContain("OFL.txt");
+    expect(zipText).toContain(licenseMarker);
+  });
+
+  it("同梱フォントと同名の登録フォントでは、同梱フォントは使われず OFL.txt も入らない", async () => {
+    const { store } = await mount(docOf(staticText("t1")));
+    store.registerFont({
+      name: "NotoSansJP",
+      displayName: "My NotoSansJP-alike",
+      data: syntheticTtf(),
+      ascentPerEm: 0.8,
+    });
+    await selectReportlab();
+    click(buttonByText("書き出す"));
+    await vi.waitFor(() => {
+      expect(vi.mocked(triggerDownload)).toHaveBeenCalledOnce();
+    });
+    expect(vi.mocked(fetchEmbeddedFontData)).not.toHaveBeenCalled();
+
+    const blob = vi.mocked(triggerDownload).mock.calls.at(0)?.[2];
+    if (blob === undefined) throw new Error("ダウンロードされていない");
+    const zipText = new TextDecoder("latin1").decode(
+      new Uint8Array(await blob.arrayBuffer()),
+    );
+    expect(zipText).not.toContain("OFL.txt");
+  });
+
   it("registered 解決では fetch なしに選択バイト列で書き出し、zip 内フォント名が <name>.ttf になる", async () => {
     const { store } = await mount({
       ...docOf(staticText("t1")),
-      font: { name: "MyLocalFont" },
+      font: { regular: "MyLocalFont" },
     });
     store.registerFont({
       name: "MyLocalFont",
@@ -431,12 +489,59 @@ describe("書き出しの実行", () => {
     expect(zipText).toContain("MyLocalFont.ttf");
   });
 
-  it("missing 解決ではダウンロードせず font-missing エラーを表示する", async () => {
-    await mount({ ...docOf(staticText("t1")), font: { name: "GoneFont" } });
+  it("bold スロットが registered なら zip に2つのフォントファイルが入る", async () => {
+    const { store } = await mount({
+      ...docOf(staticText("t1")),
+      font: { regular: "MyLocalFont", bold: "MyLocalBold" },
+    });
+    store.registerFont({
+      name: "MyLocalFont",
+      displayName: "My Local Font",
+      data: syntheticTtf(),
+      ascentPerEm: 0.8,
+    });
+    store.registerFont({
+      name: "MyLocalBold",
+      displayName: "My Local Bold",
+      data: syntheticTtf(),
+      ascentPerEm: 0.8,
+    });
     await selectReportlab();
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
-      const error = container.querySelector(".apx-export-error");
+      expect(vi.mocked(triggerDownload)).toHaveBeenCalledOnce();
+    });
+    const blob = vi.mocked(triggerDownload).mock.calls.at(0)?.[2];
+    if (blob === undefined) throw new Error("ダウンロードされていない");
+    const zipBytes = new Uint8Array(await blob.arrayBuffer());
+    const zipText = new TextDecoder("latin1").decode(zipBytes);
+    expect(zipText).toContain("MyLocalFont.ttf");
+    expect(zipText).toContain("MyLocalBold.ttf");
+  });
+
+  it("bold スロットの missing はスロット名付きエラーになり、ダウンロードしない", async () => {
+    await mount({
+      ...docOf(staticText("t1")),
+      font: { regular: "NotoSansJP", bold: "GoneBold" },
+    });
+    await selectReportlab();
+    click(buttonByText("書き出す"));
+    await vi.waitFor(() => {
+      const error = container.querySelector(".dr-export-error");
+      expect(error).not.toBeNull();
+      expect(error?.textContent).toContain(
+        "太字フォント「GoneBold」の実データがありません",
+      );
+    });
+    expect(vi.mocked(triggerDownload)).not.toHaveBeenCalled();
+  });
+
+  it("missing 解決ではダウンロードせず font-missing エラーを表示する", async () => {
+    await mount({ ...docOf(staticText("t1")), font: { regular: "GoneFont" } });
+    await selectReportlab();
+    click(buttonByText("書き出す"));
+    await vi.waitFor(() => {
+      const error = container.querySelector(".dr-export-error");
       expect(error).not.toBeNull();
       expect(error?.textContent).toContain(
         "フォント「GoneFont」の実データがありません",
@@ -448,11 +553,13 @@ describe("書き出しの実行", () => {
   });
 
   it("running 中は主ボタンが disabled になり二重実行しない", async () => {
-    let resolveFont: (data: Uint8Array) => void = () => {};
+    // The bundled font's data and its license are two separate fetchEmbeddedFontData calls
+    // (both pending until resolved), so each pending call needs its own resolver
+    const resolvers: Array<(data: Uint8Array) => void> = [];
     vi.mocked(fetchEmbeddedFontData).mockImplementation(
       () =>
         new Promise((resolve) => {
-          resolveFont = resolve;
+          resolvers.push(resolve);
         }),
     );
     await mount(docOf(staticText("t1")));
@@ -463,9 +570,9 @@ describe("書き出しの実行", () => {
       expect(container.textContent).toContain("書き出しています…");
     });
     buttonByText("書き出す").click();
-    expect(vi.mocked(fetchEmbeddedFontData)).toHaveBeenCalledOnce();
+    expect(vi.mocked(fetchEmbeddedFontData)).toHaveBeenCalledTimes(2);
 
-    resolveFont(syntheticTtf());
+    for (const resolve of resolvers) resolve(syntheticTtf());
     await vi.waitFor(() => {
       expect(vi.mocked(triggerDownload)).toHaveBeenCalledOnce();
     });
@@ -481,7 +588,7 @@ describe("雛形モード", () => {
     });
     const call = vi.mocked(triggerDownload).mock.calls.at(0);
     expect(call?.[1]).toBe("report-pdfme.json");
-    expect(container.querySelector(".apx-export-error")).toBeNull();
+    expect(container.querySelector(".dr-export-error")).toBeNull();
     expect(onClose).toHaveBeenCalledOnce();
   });
 
@@ -495,7 +602,7 @@ describe("雛形モード", () => {
     });
     const call = vi.mocked(triggerDownload).mock.calls.at(0);
     expect(call?.[1]).toBe("report-reportlab.zip");
-    expect(container.querySelector(".apx-export-error")).toBeNull();
+    expect(container.querySelector(".dr-export-error")).toBeNull();
     expect(onClose).toHaveBeenCalledOnce();
   });
 
@@ -532,7 +639,7 @@ describe("フォント全体埋め込み切替", () => {
     expect(Object.keys(parsed).sort()).toEqual(["inputs", "template"]);
   });
 
-  it("チェックすると書き出した JSON に font: { name, subset: false } を含む", async () => {
+  it("チェックすると書き出した JSON に font: { names, subset: false } を含む", async () => {
     await mount(docOf(staticText("t1")));
     const checkbox = container.querySelector<HTMLInputElement>(
       'input[type="checkbox"]',
@@ -546,7 +653,7 @@ describe("フォント全体埋め込み切替", () => {
     const blob = vi.mocked(triggerDownload).mock.calls.at(0)?.[2];
     if (blob === undefined) throw new Error("ダウンロードされていない");
     const parsed = JSON.parse(await blob.text());
-    expect(parsed.font).toEqual({ name: "NotoSansJP", subset: false });
+    expect(parsed.font).toEqual({ names: ["NotoSansJP"], subset: false });
   });
 });
 
@@ -601,6 +708,48 @@ describe("欠落キー警告", () => {
     click(targetCard("ReportLab"));
     await vi.waitFor(() => {
       expect(container.querySelector('[role="status"]')).toBeNull();
+    });
+  });
+});
+
+describe("en の MessagesContext", () => {
+  it("文言が英語で描画される", async () => {
+    const store = new EditorStore(docOf());
+    root.render(
+      <MessagesContext.Provider value={en}>
+        <ExportDialog store={store} onClose={() => {}} onReveal={() => {}} />
+      </MessagesContext.Provider>,
+    );
+    await vi.waitFor(() => {
+      if (container.querySelector(".dr-dialog") === null) {
+        throw new Error("ダイアログが未描画");
+      }
+    });
+    expect(container.textContent).toContain("Export");
+    expect(buttonByText("Close")).not.toBeNull();
+    expect(container.textContent).toContain(
+      "All elements can be exported for the selected target.",
+    );
+  });
+
+  it("フォント取得の失敗が英語で表示される", async () => {
+    vi.mocked(fetchEmbeddedFontData).mockRejectedValue(new Error("不通"));
+    const store = new EditorStore(docOf(staticText("t1")));
+    root.render(
+      <MessagesContext.Provider value={en}>
+        <ExportDialog store={store} onClose={() => {}} onReveal={() => {}} />
+      </MessagesContext.Provider>,
+    );
+    await vi.waitFor(() => {
+      if (container.querySelector(".dr-dialog") === null) {
+        throw new Error("ダイアログが未描画");
+      }
+    });
+    click(buttonByText("Export"));
+    await vi.waitFor(() => {
+      expect(
+        container.querySelector(".dr-export-error")?.textContent,
+      ).toContain("Couldn't fetch the bundled font. Please try again.");
     });
   });
 });

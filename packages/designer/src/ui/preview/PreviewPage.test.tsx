@@ -9,7 +9,7 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { PT_TO_MM, textBaselinesMm } from "../../state/preview";
 import { PreviewPage } from "./PreviewPage";
-import type { PreviewFont } from "./preview-font";
+import type { PreviewFont, PreviewFontSet } from "./preview-font";
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -17,7 +17,7 @@ import type { PreviewFont } from "./preview-font";
 
 const PAGE: IrPage = { width: 210, height: 297 };
 const FONT: PreviewFont = {
-  family: "apx-embedded-notosansjp",
+  family: "dr-embedded-notosansjp",
   ascentPerEm: 1.16,
   charWidths: () => 0.1,
 };
@@ -40,8 +40,13 @@ function textEl(
     fontSize: 10,
     align: "left",
     lineHeight: 1.25,
+    color: "#000000",
+    fontWeight: "normal",
+    fontStyle: "normal",
+    underline: false,
+    rotate: 0,
     ...overrides,
-  };
+  } as LoweredTextElement;
 }
 
 let container: HTMLElement;
@@ -62,10 +67,10 @@ afterEach(() => {
 
 function render(
   elements: readonly LoweredElement[],
-  font: PreviewFont | null = FONT,
+  fonts: PreviewFontSet | null = { regular: FONT },
 ): void {
   act(() => {
-    root.render(<PreviewPage elements={elements} page={PAGE} font={font} />);
+    root.render(<PreviewPage elements={elements} page={PAGE} fonts={fonts} />);
   });
 }
 
@@ -101,6 +106,46 @@ describe("PreviewPage", () => {
       6,
     );
     expect((texts[0] as Element).getAttribute("font-family")).toBe(FONT.family);
+  });
+
+  it("bold 要素は bold スロットの family / 計量で描画し、未定義スロットは regular に劣化する", () => {
+    const boldFont: PreviewFont = {
+      family: "dr-embedded-notosansjp-bold",
+      ascentPerEm: 0.9,
+      charWidths: () => 0.2,
+    };
+    const el = textEl({ fontWeight: "bold" });
+    render([el], { regular: FONT, bold: boldFont });
+    const text = container.querySelector("text");
+    expect((text as Element).getAttribute("font-family")).toBe(boldFont.family);
+    const expected = textBaselinesMm(el, boldFont.ascentPerEm, ["甲"]);
+    expect(attrOf(text as Element, "y")).toBeCloseTo(
+      expected[0]?.baselineY ?? Number.NaN,
+      6,
+    );
+
+    render([textEl({ fontStyle: "italic" })], {
+      regular: FONT,
+      bold: boldFont,
+    });
+    const italicFallback = container.querySelector("text");
+    expect((italicFallback as Element).getAttribute("font-family")).toBe(
+      FONT.family,
+    );
+  });
+
+  it("underline の text は text-decoration underline を持ち、非下線は持たない", () => {
+    render([textEl({ underline: true }), textEl({ underline: false })]);
+    const texts = [...container.querySelectorAll("text")];
+    expect(texts[0]?.getAttribute("text-decoration")).toBe("underline");
+    expect(texts[1]?.getAttribute("text-decoration")).toBeNull();
+  });
+
+  it("text の color が fill に写る", () => {
+    const el = textEl({ color: "#ff0000" });
+    render([el]);
+    const text = container.querySelector("text");
+    expect((text as Element).getAttribute("fill")).toBe("#ff0000");
   });
 
   it("align 4値が x と text-anchor に写像される", () => {
@@ -161,6 +206,7 @@ describe("PreviewPage", () => {
         thickness: 0.3,
         color: "#000000",
         strokeStyle: "solid",
+        rotate: 0,
       },
       {
         type: "line",
@@ -172,6 +218,7 @@ describe("PreviewPage", () => {
         thickness: 0.5,
         color: "#000000",
         strokeStyle: "solid",
+        rotate: 0,
       },
     ]);
     const lines = [...container.querySelectorAll("line")];
@@ -204,6 +251,7 @@ describe("PreviewPage", () => {
         fillColor: null,
         borderStyle: "solid",
         cornerRadius: 0,
+        rotate: 0,
       },
     ]);
     const rect = container.querySelector("rect");
@@ -230,6 +278,7 @@ describe("PreviewPage", () => {
         fillColor: "#eeeeee",
         borderStyle: "solid",
         cornerRadius: 3,
+        rotate: 0,
       },
     ]);
     const rect = container.querySelector("rect");
@@ -250,6 +299,7 @@ describe("PreviewPage", () => {
         thickness: 0.3,
         color: "#000000",
         strokeStyle: "dashed",
+        rotate: 0,
       },
     ]);
     const line = container.querySelector("line");
@@ -268,6 +318,7 @@ describe("PreviewPage", () => {
         borderWidth: 0.4,
         borderColor: "#123456",
         fillColor: "#abcdef",
+        rotate: 0,
       },
     ]);
     const ellipse = container.querySelector("ellipse");
@@ -283,7 +334,16 @@ describe("PreviewPage", () => {
   it("image は領域いっぱいに引き伸ばして写る", () => {
     const src = "data:image/png;base64,iVBORw0KGgo=";
     render([
-      { type: "image", sourceId: "i1", x: 170, y: 10, w: 30, h: 12, src },
+      {
+        type: "image",
+        sourceId: "i1",
+        x: 170,
+        y: 10,
+        w: 30,
+        h: 12,
+        src,
+        rotate: 0,
+      },
     ]);
     const image = container.querySelector("image");
     expect(image).not.toBeNull();
@@ -301,6 +361,37 @@ describe("PreviewPage", () => {
     expect(Number.isFinite(attrOf(text as Element, "y"))).toBe(true);
   });
 
+  it("rotate 0 では <g> に transform を付けない", () => {
+    render([textEl()]);
+    const g = container.querySelector("svg > g");
+    expect((g as Element).getAttribute("transform")).toBeNull();
+  });
+
+  it("rotate が外接箱中心周りの rotate(θ cx cy) として <g> に写る", () => {
+    render([textEl({ x: 10, y: 50, w: 100, h: 20, rotate: 45 })]);
+    const g = container.querySelector("svg > g");
+    expect((g as Element).getAttribute("transform")).toBe("rotate(45 60 60)");
+  });
+
+  it("line の rotate は線分中点周りになる", () => {
+    render([
+      {
+        type: "line",
+        sourceId: "l1",
+        x: 10,
+        y: 20,
+        orientation: "horizontal",
+        length: 50,
+        thickness: 0.3,
+        color: "#000000",
+        strokeStyle: "solid",
+        rotate: 90,
+      },
+    ]);
+    const g = container.querySelector("svg > g");
+    expect((g as Element).getAttribute("transform")).toBe("rotate(90 35 20)");
+  });
+
   it("barcode（qrcode）は枠・ファインダーパターン・解決済み content の文字列を描画する", () => {
     render([
       {
@@ -312,6 +403,7 @@ describe("PreviewPage", () => {
         h: 30,
         symbology: "qrcode",
         content: "ABC-123",
+        rotate: 0,
       },
     ]);
     const rects = [...container.querySelectorAll("rect")];
@@ -331,6 +423,7 @@ describe("PreviewPage", () => {
         h: 30,
         symbology: "code128",
         content: "ABC-123",
+        rotate: 0,
       },
     ]);
     const rects = [...container.querySelectorAll("rect")];

@@ -36,7 +36,7 @@ function blankDocument(): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [],
   };
 }
@@ -147,7 +147,7 @@ describe("distributionDeltas", () => {
     const deltas = distributionDeltas(views, "horizontal");
     expect(deltas.get("a")).toBeUndefined();
     expect(deltas.get("c")).toBeUndefined();
-    // b の目標開始位置 = 0 + 10 + 20 = 30 → delta = 10
+    // b's target start position = 0 + 10 + 20 = 30 -> delta = 10
     expect(deltas.get("b")).toEqual({ dx: 10, dy: 0 });
   });
 
@@ -168,10 +168,10 @@ describe("distributionDeltas", () => {
       view("c", { x: 20, y: 0, w: 10, h: 10 }),
       view("d", { x: 60, y: 0, w: 10, h: 10 }),
     ];
-    // b と c は同位置。文書順(b→c)を保てば b が2番目、c が3番目のまま並ぶ
+    // b and c are at the same position. Preserving document order (b->c) keeps b second and c third
     const deltas = distributionDeltas(views, "horizontal");
     // sumSizes = 40, span = 60+10-0 = 70, gap = 30/3 = 10
-    // b target = 0+10+10 = 20 → delta 0（既に20）→エントリなし
+    // b target = 0+10+10 = 20 -> delta 0 (already 20) -> no entry
     expect(deltas.get("b")).toBeUndefined();
     // c target = 20+10+10 = 40 → delta 20
     expect(deltas.get("c")).toEqual({ dx: 20, dy: 0 });

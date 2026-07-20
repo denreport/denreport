@@ -51,7 +51,7 @@ function docOf(...elements: IrDocument["elements"]): IrDocument {
   return {
     version: "1.0",
     page: { width: 500, height: 500 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -144,7 +144,7 @@ describe("resolveFlex", () => {
       y: 0,
       pages: "first",
       direction: "row",
-      w: 10, // C = 5 + 5 + gap(0) = 10、境界ちょうど
+      w: 10, // C = 5 + 5 + gap(0) = 10, exactly at the boundary
       gap: 0,
       justifyContent,
       alignItems: "start",

@@ -46,7 +46,7 @@ test("両パネルを閉じてもキャンバスバーの操作は可視かつ�
 });
 
 test("左パネルを閉じてもキャンバスは幅を保って表示される", async ({ page }) => {
-  const canvasArea = page.locator(".apx-canvas-area");
+  const canvasArea = page.locator(".dr-canvas-area");
   const before = await canvasArea.boundingBox();
   if (before === null) {
     throw new Error("キャンバスが表示されていません");
@@ -58,7 +58,7 @@ test("左パネルを閉じてもキャンバスは幅を保って表示され�
   if (after === null) {
     throw new Error("キャンバスが表示されていません");
   }
-  // グリッドの自動配置ずれで幅0に潰れていた回帰を検出する
+  // Detects a regression where a grid auto-placement offset collapsed the width to 0
   expect(after.width).toBeGreaterThan(0);
   expect(after.width).toBeGreaterThan(before.width);
   await expect(
@@ -67,7 +67,7 @@ test("左パネルを閉じてもキャンバスは幅を保って表示され�
 });
 
 test("右パネルを閉じてもキャンバスは幅を保って表示される", async ({ page }) => {
-  const canvasArea = page.locator(".apx-canvas-area");
+  const canvasArea = page.locator(".dr-canvas-area");
   const before = await canvasArea.boundingBox();
   if (before === null) {
     throw new Error("キャンバスが表示されていません");
@@ -84,6 +84,61 @@ test("右パネルを閉じてもキャンバスは幅を保って表示され�
   await expect(
     page.getByRole("navigation", { name: "要素パレット" }),
   ).toBeVisible();
+});
+
+test("960px で上部ツールバーに横スクロールが出ず、右パネルトグルがクリックできる", async ({
+  page,
+}) => {
+  const overflowing = await page.evaluate(() => {
+    const el = document.querySelector(".dr-toolbar");
+    return el !== null && el.scrollWidth > el.clientWidth;
+  });
+  expect(overflowing).toBe(false);
+
+  const toggleRight = page.getByRole("button", { name: "右パネルを開閉" });
+  await expect(toggleRight).toBeVisible();
+  await toggleRight.click();
+  await expect(
+    page.getByRole("complementary", { name: "プロパティ" }),
+  ).toBeHidden();
+});
+
+test("960px でキャンバスバーの封筒窓ガイド select が潰れず表示テキストを保つ", async ({
+  page,
+}) => {
+  const envelopeSelect = page.getByRole("combobox", { name: "封筒窓ガイド" });
+  const box = await envelopeSelect.boundingBox();
+  if (box === null) {
+    throw new Error("封筒窓ガイド select が表示されていません");
+  }
+  // A collapsed field shrinks to a few px wide and the label disappears entirely, so 60px is a safe lower bound
+  expect(box.width).toBeGreaterThan(60);
+});
+
+test("その他の操作メニューが開閉できる", async ({ page }) => {
+  const trigger = page.getByRole("button", { name: "その他の操作" });
+  await trigger.click();
+  const menu = page.getByRole("menu");
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole("menuitem")).toHaveCount(3);
+
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+});
+
+test("その他の操作メニューはトリガーの再クリックで閉じる（開き直らない）", async ({
+  page,
+}) => {
+  const trigger = page.getByRole("button", { name: "その他の操作" });
+  const menu = page.getByRole("menu");
+
+  await trigger.click();
+  await expect(menu).toBeVisible();
+
+  await trigger.click();
+  await expect(menu).toHaveCount(0);
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
 });
 
 test("スプリッターをキーボードで操作するとパレット領域の高さが減る", async ({

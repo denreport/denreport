@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "page": { "width": 210, "height": 297 },
+  "font": { "regular": "NotoSansJP" },
+  "elements": [
+    {
+      "type": "table",
+      "id": "items",
+      "bind": "items",
+      "x": 15,
+      "y": 40,
+      "rowHeight": 9,
+      "headerHeight": 9,
+      "fontSize": 10,
+      "maxY": 100,
+      "continuationY": 40,
+      "columns": [
+        {
+          "key": "category",
+          "label": "分類",
+          "width": 40,
+          "mergeSameValue": true
+        },
+        { "key": "name", "label": "品目", "width": 60 },
+        { "key": "amount", "label": "金額", "width": 40, "align": "right" }
+      ],
+      "cellSpans": [
+        { "row": "header", "key": "name", "colSpan": 2 },
+        { "row": 0, "key": "name", "colSpan": 2 }
+      ]
+    }
+  ]
+}

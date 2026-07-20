@@ -19,7 +19,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
       - run: docker build -t denreport-web:publish .
       - run: docker run -d --rm -p 8080:8080 --name denreport-web-publish denreport-web:publish
@@ -43,6 +43,10 @@ jobs:
         run: |
           docker tag denreport-web:publish ghcr.io/denreport/denreport:edge
           docker push ghcr.io/denreport/denreport:edge
+
+      - name: check version sync
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: bash scripts/check-version-sync.sh "${GITHUB_REF_NAME}"
 
       - name: tag and push release
         if: startsWith(github.ref, 'refs/tags/v')

@@ -1,0 +1,130 @@
+{
+  "basePdf": {
+    "width": 210,
+    "height": 297,
+    "padding": [
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "schemas": [
+    [
+      {
+        "type": "text",
+        "name": "p1_flat_0",
+        "position": {
+          "x": 20,
+          "y": 20
+        },
+        "width": 60,
+        "height": 10,
+        "fontSize": 12,
+        "fontName": "NotoSansJP",
+        "fontColor": "#000000",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25
+      },
+      {
+        "type": "text",
+        "name": "p1_quarter_0",
+        "position": {
+          "x": 20,
+          "y": 100
+        },
+        "width": 60,
+        "height": 10,
+        "fontSize": 12,
+        "fontName": "NotoSansJP",
+        "fontColor": "#000000",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25,
+        "rotate": 90
+      },
+      {
+        "type": "text",
+        "name": "p1_half_0",
+        "position": {
+          "x": 100,
+          "y": 100
+        },
+        "width": 60,
+        "height": 10,
+        "fontSize": 12,
+        "fontName": "NotoSansJP",
+        "fontColor": "#000000",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "lineHeight": 1.25,
+        "rotate": 180
+      },
+      {
+        "type": "line",
+        "name": "p1_diag_0",
+        "position": {
+          "x": 40,
+          "y": 150
+        },
+        "width": 60,
+        "height": 0.5,
+        "color": "#000000",
+        "rotate": 45
+      },
+      {
+        "type": "rectangle",
+        "name": "p1_box_0",
+        "position": {
+          "x": 120,
+          "y": 140
+        },
+        "width": 40,
+        "height": 20,
+        "borderWidth": 0.5,
+        "borderColor": "#000000",
+        "color": "",
+        "rotate": 30
+      },
+      {
+        "type": "ellipse",
+        "name": "p1_oval_0",
+        "position": {
+          "x": 30,
+          "y": 200
+        },
+        "width": 40,
+        "height": 20,
+        "borderWidth": 0.5,
+        "borderColor": "#000000",
+        "color": "",
+        "rotate": 60
+      },
+      {
+        "type": "image",
+        "name": "p1_mark_0",
+        "position": {
+          "x": 120,
+          "y": 200
+        },
+        "width": 20,
+        "height": 20,
+        "rotate": 90
+      },
+      {
+        "type": "qrcode",
+        "name": "p1_qr_0",
+        "position": {
+          "x": 90,
+          "y": 240
+        },
+        "width": 30,
+        "height": 30,
+        "backgroundColor": "#ffffff",
+        "barColor": "#000000",
+        "rotate": 45
+      }
+    ]
+  ]
+}

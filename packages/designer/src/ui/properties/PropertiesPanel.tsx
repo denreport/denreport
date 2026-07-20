@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorsByElement } from "../../state/error-index";
 import type { PlacedElementView } from "../../state/geometry";
 import { layoutDocument } from "../../state/geometry";
@@ -16,13 +17,14 @@ export function PropertiesPanel(props: {
   readonly interaction: InteractionState;
 }): ReactNode {
   const { store, interaction } = props;
+  const m = useMessages();
   const state = useEditorState(store);
   const layout = useMemo(
     () => layoutDocument(state.document, state.view.pageContext),
     [state.document, state.view.pageContext],
   );
   const byId = new Map(layout.map((view) => [view.id, view]));
-  // 選択 id が文書に無い場合（undo 直後等）は非選択扱い
+  // Treated as unselected when the selected id is not in the document (e.g. right after undo)
   const selected = state.selection
     .map((id) => byId.get(id))
     .filter((view): view is PlacedElementView => view !== undefined);
@@ -49,7 +51,7 @@ export function PropertiesPanel(props: {
   }
 
   return (
-    <aside className="apx-props" aria-label="プロパティ">
+    <aside className="dr-props" aria-label={m.toolbar.propertiesPanel}>
       {content}
     </aside>
   );

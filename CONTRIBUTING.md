@@ -62,25 +62,12 @@ All CI checks must pass before a PR is merged.
 
 ## Licensing of contributions
 
-denreport is split across two licenses (see the License section of
-[README.md](README.md)): `packages/core` and `packages/targets` are MIT;
-`packages/designer` and `apps/web` are dual-licensed under AGPL-3.0-only and
-a commercial license.
+All packages in denreport are MIT licensed (see the License section of
+[README.md](README.md)), and contributions are accepted under the same
+license.
 
-- **Contributions to `packages/core` or `packages/targets`** must be signed
-  off under the [Developer Certificate of Origin](https://developercertificate.org/)
-  (DCO). Add `Signed-off-by` to each commit with `git commit -s`, certifying
-  that you wrote the change or otherwise have the right to submit it under
-  the package's license.
-- **Contributions to `packages/designer` or `apps/web`** require the same
-  DCO sign-off, plus your agreement that the maintainers may distribute your
-  contribution under both AGPL-3.0-only and the project's commercial
-  license, on the same terms as the rest of the package. This is what makes
-  the commercial license offered alongside AGPL-3.0 possible — without it,
-  a contribution could only ever be redistributed under AGPL-3.0. Submitting
-  a pull request to these packages is taken as agreement to this; if you
-  can't agree to it (for example, because your employer holds rights to
-  your contributions), please say so in the PR before we merge it.
-
-These requirements are why every commit needs `Signed-off-by`, regardless
-of which package it touches.
+Every contribution must be signed off under the
+[Developer Certificate of Origin](https://developercertificate.org/) (DCO).
+Add `Signed-off-by` to each commit with `git commit -s`, certifying that you
+wrote the change or otherwise have the right to submit it under the
+project's license.

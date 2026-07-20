@@ -8,15 +8,16 @@ function focusablesIn(dialog: HTMLElement): HTMLElement[] {
   return [...dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)];
 }
 
-/** 確認・エラー・書き出し型モーダルの共通部品。Esc で onClose、スクリムクリックでは
-    閉じない（確認ダイアログの誤操作防止）。フォーカスは Tab / Shift+Tab で内部を巡回する */
+/** Shared component for confirmation, error, and export-style modals. Esc calls onClose,
+    but clicking the scrim does not close it (to prevent accidental dismissal of confirmation
+    dialogs). Focus cycles within the dialog via Tab / Shift+Tab */
 export function Dialog(props: {
-  /** 見出しと aria-label */
+  /** Heading and aria-label */
   readonly title: string;
   readonly onClose: () => void;
-  /** ボタン列 */
+  /** Button row */
   readonly footer: ReactNode;
-  /** true = 幅 560px（書き出し用） */
+  /** true = 560px width (for export) */
   readonly wide?: boolean;
   readonly children: ReactNode;
 }): ReactNode {
@@ -64,19 +65,19 @@ export function Dialog(props: {
   };
 
   return (
-    <div className="apx-dialog-scrim">
+    <div className="dr-dialog-scrim">
       <div
         ref={dialogRef}
-        className={`apx-dialog${wide === true ? " apx-dialog-wide" : ""}`}
+        className={`dr-dialog${wide === true ? " dr-dialog-wide" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
         onKeyDown={onKeyDown}
       >
-        <div className="apx-dialog-h">{title}</div>
-        <div className="apx-dialog-b">{children}</div>
-        <div className="apx-dialog-f">{footer}</div>
+        <div className="dr-dialog-h">{title}</div>
+        <div className="dr-dialog-b">{children}</div>
+        <div className="dr-dialog-f">{footer}</div>
       </div>
     </div>
   );

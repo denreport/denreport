@@ -1,10 +1,13 @@
+import type { IrFontSlot } from "@denreport/core";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { FontSelectorDialog } from "./FontSelectorDialog";
 
-// jsdom では globalThis === window のため、vi.stubGlobal で queryLocalFonts を生やせば
-// window.queryLocalFonts として観測できる
+// In jsdom, globalThis === window, so growing queryLocalFonts via vi.stubGlobal makes it
+// observable as window.queryLocalFonts
 function stubQueryLocalFonts(
   impl: () => Promise<
     readonly {
@@ -30,7 +33,7 @@ function stubQueryLocalFontsRejecting(error: Error): void {
   vi.stubGlobal("queryLocalFonts", () => Promise.reject(error));
 }
 
-// readAscentPerEm が読める最小の TTF（glyf + head.unitsPerEm + hhea.ascender）
+// A minimal TTF that readAscentPerEm can read (glyf + head.unitsPerEm + hhea.ascender)
 function embeddedTtf(): Uint8Array<ArrayBuffer> {
   const headOffset = 12 + 3 * 16;
   const hheaOffset = headOffset + 54;
@@ -92,27 +95,34 @@ afterEach(() => {
 interface Handlers {
   readonly onSelect: ReturnType<typeof vi.fn>;
   readonly onSelectEmbedded: ReturnType<typeof vi.fn>;
+  readonly onClear: ReturnType<typeof vi.fn>;
   readonly onClose: ReturnType<typeof vi.fn>;
 }
 
-async function renderDialog(currentName = "NotoSansJP"): Promise<Handlers> {
+async function renderDialog(
+  currentName: string | undefined = "NotoSansJP",
+  slot: IrFontSlot = "regular",
+): Promise<Handlers> {
   const onSelect = vi.fn();
   const onSelectEmbedded = vi.fn();
+  const onClear = vi.fn();
   const onClose = vi.fn();
   root.render(
     <FontSelectorDialog
+      slot={slot}
       currentName={currentName}
       onSelect={onSelect}
       onSelectEmbedded={onSelectEmbedded}
+      onClear={onClear}
       onClose={onClose}
     />,
   );
   await vi.waitFor(() => {
-    if (container.querySelector(".apx-dialog") === null) {
+    if (container.querySelector(".dr-dialog") === null) {
       throw new Error("ダイアログが未描画");
     }
   });
-  return { onSelect, onSelectEmbedded, onClose };
+  return { onSelect, onSelectEmbedded, onClear, onClose };
 }
 
 function buttonByText(text: string): HTMLButtonElement {
@@ -125,9 +135,9 @@ function buttonByText(text: string): HTMLButtonElement {
   return button;
 }
 
-// フォント行のボタンは fullName と副記の2つの span を持つため textContent が完全一致しない
+// A font row button has two spans, fullName and a subtext, so textContent doesn't match exactly
 function fontRowButton(fullName: string): HTMLButtonElement {
-  const name = [...container.querySelectorAll(".apx-font-name")].find(
+  const name = [...container.querySelectorAll(".dr-font-name")].find(
     (el) => el.textContent === fullName,
   );
   const button = name?.closest("button");
@@ -198,13 +208,44 @@ describe("確定", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("「同梱フォントに戻す」で onSelectEmbedded が呼ばれる", async () => {
+  it("「同梱フォントに戻す」で onSelectEmbedded にスロットの同梱名が渡る", async () => {
     stubQueryLocalFonts(async () => [TTF_A]);
     const { onSelectEmbedded } = await renderDialog();
     await vi.waitFor(() => buttonByText("同梱フォント（NotoSansJP）に戻す"));
 
     click(buttonByText("同梱フォント（NotoSansJP）に戻す"));
-    expect(onSelectEmbedded).toHaveBeenCalledOnce();
+    expect(onSelectEmbedded).toHaveBeenCalledExactlyOnceWith("NotoSansJP");
+  });
+
+  it("bold スロットでは同梱行が NotoSansJPBold になり、「未設定に戻す」で onClear が呼ばれる", async () => {
+    stubQueryLocalFonts(async () => [TTF_A]);
+    const { onSelectEmbedded, onClear } = await renderDialog(
+      "NotoSansJPBold",
+      "bold",
+    );
+    await vi.waitFor(() =>
+      buttonByText("同梱フォント（NotoSansJPBold）に戻す"),
+    );
+
+    click(buttonByText("同梱フォント（NotoSansJPBold）に戻す"));
+    expect(onSelectEmbedded).toHaveBeenCalledExactlyOnceWith("NotoSansJPBold");
+
+    click(buttonByText("未設定に戻す（標準フォントで代替）"));
+    expect(onClear).toHaveBeenCalledOnce();
+  });
+
+  it("italic スロットでは同梱行を出さず、「未設定に戻す」行だけ出す", async () => {
+    stubQueryLocalFonts(async () => [TTF_A]);
+    await renderDialog(undefined, "italic");
+    await vi.waitFor(() => buttonByText("未設定に戻す（標準フォントで代替）"));
+    expect(container.textContent).not.toContain("同梱フォント（");
+  });
+
+  it("regular スロットでは「未設定に戻す」行を出さない", async () => {
+    stubQueryLocalFonts(async () => [TTF_A]);
+    await renderDialog();
+    await vi.waitFor(() => buttonByText("同梱フォント（NotoSansJP）に戻す"));
+    expect(container.textContent).not.toContain("未設定に戻す");
   });
 
   it("キャンセルで onClose が呼ばれる", async () => {
@@ -243,5 +284,28 @@ describe("非対応・拒否・失敗の表示", () => {
       expect(container.textContent).toContain("取得できませんでした");
       buttonByText("再試行");
     });
+  });
+});
+
+describe("en の MessagesContext", () => {
+  it("文言が英語で描画される", async () => {
+    stubQueryLocalFonts(async () => []);
+    root.render(
+      <MessagesContext.Provider value={en}>
+        <FontSelectorDialog
+          slot="regular"
+          currentName="NotoSansJP"
+          onSelect={vi.fn()}
+          onSelectEmbedded={vi.fn()}
+          onClear={vi.fn()}
+          onClose={vi.fn()}
+        />
+      </MessagesContext.Provider>,
+    );
+    await vi.waitFor(() => {
+      expect(container.textContent).toContain("Choose the regular font");
+    });
+    expect(buttonByText("Cancel")).not.toBeNull();
+    expect(buttonByText("Revert to bundled font (NotoSansJP)")).not.toBeNull();
   });
 });

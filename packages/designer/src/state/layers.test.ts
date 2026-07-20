@@ -1,5 +1,7 @@
 import type { IrDocument, IrElement } from "@denreport/core";
 import { describe, expect, it } from "vitest";
+import { en } from "../i18n/messages/en";
+import { ja } from "../i18n/messages/ja";
 import { IMAGE_PLACEHOLDER_SRC } from "./constants";
 import { layoutDocument } from "./geometry";
 import type { LayerNode } from "./layers";
@@ -9,7 +11,7 @@ function makeDocument(elements: readonly IrElement[]): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -142,26 +144,26 @@ describe("layerLabel", () => {
     lineHeight: 1.25,
   };
 
+  function label(element: Parameters<typeof layerLabel>[0]): string {
+    return layerLabel(element, ja.elementTypes, ja.layers.imagePlaceholder);
+  }
+
   it("トークンを含む text も先頭12文字を超えると … で切り詰める", () => {
-    expect(layerLabel({ ...base, text: "{customerName}" })).toBe(
-      "{customerNam…",
-    );
+    expect(label({ ...base, text: "{customerName}" })).toBe("{customerNam…");
   });
 
   it("静的 text は先頭12文字を超えると … で切り詰める", () => {
-    expect(layerLabel({ ...base, text: "123456789012345" })).toBe(
-      "123456789012…",
-    );
-    expect(layerLabel({ ...base, text: "短い本文" })).toBe("短い本文");
+    expect(label({ ...base, text: "123456789012345" })).toBe("123456789012…");
+    expect(label({ ...base, text: "短い本文" })).toBe("短い本文");
   });
 
   it("空の text は型ラベル「テキスト」", () => {
-    expect(layerLabel({ ...base, text: "" })).toBe("テキスト");
+    expect(label({ ...base, text: "" })).toBe("テキスト");
   });
 
   it("pageNumber は format 文字列", () => {
     expect(
-      layerLabel({
+      label({
         type: "pageNumber",
         id: "p1",
         w: 30,
@@ -176,7 +178,7 @@ describe("layerLabel", () => {
 
   it("image はプレースホルダなら「画像未設定」、設定済みなら「画像」", () => {
     expect(
-      layerLabel({
+      label({
         type: "image",
         id: "img1",
         w: 30,
@@ -185,7 +187,7 @@ describe("layerLabel", () => {
       }),
     ).toBe("画像未設定");
     expect(
-      layerLabel({
+      label({
         type: "image",
         id: "img1",
         w: 30,
@@ -197,7 +199,7 @@ describe("layerLabel", () => {
 
   it("line / rect / table / flex は型の日本語ラベル", () => {
     expect(
-      layerLabel({
+      label({
         type: "line",
         id: "l1",
         orientation: "horizontal",
@@ -206,11 +208,11 @@ describe("layerLabel", () => {
       }),
     ).toBe("直線");
     expect(
-      layerLabel({ type: "rect", id: "r1", w: 10, h: 10, borderWidth: 0.3 }),
+      label({ type: "rect", id: "r1", w: 10, h: 10, borderWidth: 0.3 }),
     ).toBe("矩形");
-    expect(layerLabel(TABLE)).toBe("表");
+    expect(label(TABLE)).toBe("表");
     expect(
-      layerLabel({
+      label({
         type: "flex",
         id: "f1",
         direction: "row",
@@ -220,5 +222,35 @@ describe("layerLabel", () => {
         children: [],
       }),
     ).toBe("フレックス");
+  });
+
+  it("name が指定されていれば自動ラベルより優先する", () => {
+    expect(label({ ...base, text: "見出し", name: "表題" })).toBe("表題");
+    expect(label(TABLE)).toBe("表");
+    expect(label({ ...TABLE, name: "明細表" })).toBe("明細表");
+  });
+
+  it("name が空文字なら自動ラベルへフォールバックする", () => {
+    expect(label({ ...base, text: "見出し", name: "" })).toBe("見出し");
+  });
+
+  it("en メッセージでは image ラベルも英語になる", () => {
+    const image = {
+      type: "image" as const,
+      id: "img1",
+      w: 30,
+      h: 30,
+      src: IMAGE_PLACEHOLDER_SRC,
+    };
+    expect(layerLabel(image, en.elementTypes, en.layers.imagePlaceholder)).toBe(
+      "No image set",
+    );
+    expect(
+      layerLabel(
+        { ...image, src: "data:image/png;base64,xxx" },
+        en.elementTypes,
+        en.layers.imagePlaceholder,
+      ),
+    ).toBe("Image");
   });
 });

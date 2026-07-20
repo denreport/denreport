@@ -2,14 +2,14 @@ import type { IrPage } from "@denreport/core";
 import { roundMm } from "../../state/geometry";
 
 export interface PaperGeometry {
-  /** client 座標系での紙左上 */
+  /** Top-left of the paper in the client coordinate system */
   readonly paperLeftPx: number;
   readonly paperTopPx: number;
   /** MM_TO_PX * view.zoom */
   readonly mmPx: number;
 }
 
-/** 0.1mm 丸め済みの紙面 mm 位置 */
+/** Paper position in mm, rounded to 0.1mm */
 export function pointerToGuidePositionMm(
   axis: "x" | "y",
   clientX: number,

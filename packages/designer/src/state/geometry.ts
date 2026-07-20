@@ -16,12 +16,12 @@ export interface MmBox {
   readonly h: number;
 }
 
-/** 0.1mm 単位への丸め。IR に書き戻すすべての座標・寸法に適用する */
+/** Rounds to 0.1mm units. Applied to every coordinate/dimension written back to the IR */
 export function roundMm(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
-/** 文脈 c で編集可能なのは pages が c または all、および pages を持たない table */
+/** In context c, editable elements are those whose pages is c or all, plus table which has no pages */
 export function visibleInContext(
   pages: IrPages | null,
   context: PageContext,
@@ -29,16 +29,23 @@ export function visibleInContext(
   return pages === null || pages === "all" || pages === context;
 }
 
-/** 描画・ヒットテスト・スナップが共用する、文書中の全要素の箱と文脈情報 */
+/** table / flex have no rotate. Returns the rotation angle (degrees) for other elements */
+export function rotationDeg(element: IrElement | IrFlexChild): number {
+  return element.type !== "table" && element.type !== "flex"
+    ? (element.rotate ?? 0)
+    : 0;
+}
+
+/** The box and context info for every element in the document, shared by rendering, hit-testing, and snapping */
 export interface PlacedElementView {
   readonly id: string;
   readonly element: IrElement | IrFlexChild;
   readonly box: MmBox;
-  /** null は table（全文脈で編集可） */
+  /** null means table (editable in all contexts) */
   readonly pages: IrPages | null;
-  /** 直近の親 flex。トップレベルは null */
+  /** The nearest parent flex. null for top-level */
   readonly parentFlexId: string | null;
-  /** 親 flex の children 内の位置 */
+  /** Position within the parent flex's children */
   readonly childIndex: number | null;
 }
 
@@ -108,7 +115,7 @@ function measureFlex(flex: FlexLike): FlexMeasure {
   };
 }
 
-/** 主軸の内容寸法 C（= Σ子の主軸寸法 + gap×(子数−1)。入れ子の flex は導出寸法で数える） */
+/** The main axis's content size C (= sum of children's main-axis sizes + gap x (child count - 1). A nested flex is counted by its derived size) */
 export function flexMainContentSize(flex: FlexLike): number {
   return measureFlex(flex).contentMain;
 }
@@ -162,9 +169,9 @@ function tableBox(table: IrTableElement, context: PageContext): MmBox {
 }
 
 /**
- * 文書中の全要素の箱（mm）を配列順 = 描画順で返す。
- * flex コンテナと table の箱は resolveFlex が返さないため、ここが規範式で導出する
- * （子の座標は resolveFlex と一致することをテストで担保する）。
+ * Returns the boxes (mm) of every element in the document, in array order = draw order.
+ * flex container and table boxes aren't returned by resolveFlex, so they're derived here by
+ * the normative formula (a test guarantees child coordinates match resolveFlex).
  */
 export function layoutDocument(
   document: IrDocument,

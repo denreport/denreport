@@ -65,7 +65,7 @@ function baseDocument(
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
     ...(docType !== undefined ? { docType } : {}),
   };
@@ -148,7 +148,7 @@ describe("checkQualifiedInvoice", () => {
   });
 
   it("table.bind や cellOverrides の一致では充足しない", () => {
-    // bind は行データの配列名、cellOverrides.value は固定表示値であり、いずれも差し込み欄のキーではない
+    // bind is the array name of row data, and cellOverrides.value is a fixed display value — neither is a template-slot key
     const table = {
       ...tableElement(
         "tbl1",

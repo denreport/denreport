@@ -6,17 +6,17 @@ test("minRows の空行セルに固定値を入力すると、キャンバスと
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 130, y: 150 });
-  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  const table = page.locator('.dr-el[data-dr-id="table1"]');
   await expect(table).toBeVisible();
 
   const props = page.getByRole("complementary", { name: "プロパティ" });
   await commitField(props.getByLabel("最低行数"), "2");
 
   const cell = page.locator(
-    '[data-apx-id="table1"] [data-apx-row="0"][data-apx-col="0"]',
+    '[data-dr-id="table1"] [data-dr-row="0"][data-dr-col="0"]',
   );
   await cell.dblclick();
-  const editor = page.locator(".apx-inline-editor");
+  const editor = page.locator(".dr-inline-editor");
   await expect(editor).toBeVisible();
   await expect(editor).toHaveValue("");
   await editor.fill("固定値");
@@ -37,7 +37,7 @@ test("bind データのあるセルを上書きすると、プレビューは固
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 130, y: 150 });
-  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  const table = page.locator('.dr-el[data-dr-id="table1"]');
   await expect(table).toBeVisible();
 
   const preview = page.getByRole("dialog", { name: "プレビュー" });
@@ -52,12 +52,12 @@ test("bind データのあるセルを上書きすると、プレビューは固
   await expect(preview).toBeHidden();
 
   const cell = page.locator(
-    '[data-apx-id="table1"] [data-apx-row="0"][data-apx-col="0"]',
+    '[data-dr-id="table1"] [data-dr-row="0"][data-dr-col="0"]',
   );
   await expect(cell).toHaveText("行A");
 
   await cell.dblclick();
-  const editor = page.locator(".apx-inline-editor");
+  const editor = page.locator(".dr-inline-editor");
   await expect(editor).toHaveValue("行A");
   await editor.fill("上書き値");
   await editor.press("Enter");
@@ -71,7 +71,7 @@ test("bind データのあるセルを上書きすると、プレビューは固
   await preview.getByRole("button", { name: "閉じる" }).click();
   await expect(preview).toBeHidden();
 
-  // キャンバスへフォーカスを戻してから undo する（選択は変えない）
+  // Return focus to the canvas before undoing (doesn't change the selection)
   await table.click();
   await page.keyboard.press("Control+z");
   await expect(cell).toHaveText("行A");
@@ -82,7 +82,7 @@ test("空文字列で確定すると上書きが消え、bind 値の表示に戻
 }) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 130, y: 150 });
-  const table = page.locator('.apx-el[data-apx-id="table1"]');
+  const table = page.locator('.dr-el[data-dr-id="table1"]');
   await expect(table).toBeVisible();
 
   const preview = page.getByRole("dialog", { name: "プレビュー" });
@@ -97,10 +97,10 @@ test("空文字列で確定すると上書きが消え、bind 値の表示に戻
   await expect(preview).toBeHidden();
 
   const cell = page.locator(
-    '[data-apx-id="table1"] [data-apx-row="0"][data-apx-col="0"]',
+    '[data-dr-id="table1"] [data-dr-row="0"][data-dr-col="0"]',
   );
   await cell.dblclick();
-  const editor = page.locator(".apx-inline-editor");
+  const editor = page.locator(".dr-inline-editor");
   await editor.fill("上書き値");
   await editor.press("Enter");
   await expect(editor).toBeHidden();

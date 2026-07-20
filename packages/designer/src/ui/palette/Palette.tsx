@@ -1,7 +1,8 @@
 import type { IrElementType } from "@denreport/core";
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import type { CanvasInteraction } from "../canvas/useCanvasInteraction";
-import { ELEMENT_TYPE_META } from "../element-meta";
+import { elementTypeIcon } from "../element-meta";
 
 const PALETTE_ORDER: readonly IrElementType[] = [
   "text",
@@ -19,30 +20,30 @@ export function Palette(props: {
   readonly beginPlacement: CanvasInteraction["beginPlacement"];
   readonly onQuickAdd: (type: IrElementType) => void;
 }): ReactNode {
+  const m = useMessages();
   return (
-    <nav className="apx-palette" aria-label="要素パレット">
-      <div className="apx-panel-caption">要素</div>
-      <ul className="apx-pal-list">
+    <nav className="dr-palette" aria-label={m.palette.ariaLabel}>
+      <div className="dr-panel-caption">{m.palette.caption}</div>
+      <ul className="dr-pal-list">
         {PALETTE_ORDER.map((type) => {
-          const meta = ELEMENT_TYPE_META[type];
           return (
             <li key={type}>
               <button
                 type="button"
-                className="apx-pal-item"
+                className="dr-pal-item"
                 onPointerDown={(e) => props.beginPlacement(type, e.nativeEvent)}
                 onClick={() => props.onQuickAdd(type)}
               >
-                <span className="apx-pal-icon" aria-hidden="true">
-                  {meta.icon}
+                <span className="dr-pal-icon" aria-hidden="true">
+                  {elementTypeIcon(type, m)}
                 </span>
-                {meta.label}
+                {m.elementTypes[type]}
               </button>
             </li>
           );
         })}
       </ul>
-      <div className="apx-pal-hint">クリックで中央に追加 / ドラッグで配置</div>
+      <div className="dr-pal-hint">{m.palette.hint}</div>
     </nav>
   );
 }

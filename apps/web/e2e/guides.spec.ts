@@ -13,12 +13,12 @@ async function guideYMm(guide: Locator): Promise<number> {
   return Number.parseFloat(raw);
 }
 
-/** 上定規から paperBox 内の targetYPx へドラッグし、作成された水平ガイドを返す */
+/** Drags from the top ruler to targetYPx inside paperBox and returns the created horizontal guide */
 async function dragHorizontalGuideFromRuler(
   page: Page,
   targetYPx: number,
 ): Promise<Locator> {
-  const rulerBox = await page.locator(".apx-ruler-h").boundingBox();
+  const rulerBox = await page.locator(".dr-ruler-h").boundingBox();
   if (rulerBox === null) {
     throw new Error("上定規が表示されていません");
   }
@@ -27,7 +27,7 @@ async function dragHorizontalGuideFromRuler(
   await page.mouse.down();
   await page.mouse.move(startX, targetYPx, { steps: 8 });
   await page.mouse.up();
-  return page.locator(".apx-cguide-h");
+  return page.locator(".dr-cguide-h");
 }
 
 test("上定規からのドラッグで水平ガイドが作成され、離しても消えない", async ({
@@ -43,7 +43,7 @@ test("上定規からのドラッグで水平ガイドが作成され、離し�
     paperBox.y + paperBox.height / 3,
   );
   await expect(guide).toBeVisible();
-  // 離した後の再描画を経ても存在し続けることを確認する
+  // Confirm it stays present through a re-render after the release
   await page.mouse.move(paperBox.x + 5, paperBox.y + 5);
   await expect(guide).toBeVisible();
 });
@@ -56,14 +56,16 @@ test("要素をガイド近傍へドラッグすると、要素の座標がガ�
   if (paperBox === null) {
     throw new Error("キャンバスが表示されていません");
   }
-  // ページ中央・端と重ならない位置に作る（紙端・グリッド候補との競合を避ける）
+  // Create it at a position that doesn't overlap the page center or edges
+  // (to avoid conflicting with paper-edge or grid snap candidates)
   const guide = await dragHorizontalGuideFromRuler(
     page,
     paperBox.y + paperBox.height / 3,
   );
   const guideMm = await guideYMm(guide);
 
-  // テキスト要素の既定 h=8mm。中心をガイドの 0.2mm 下へ落とし、上端がガイドへ吸着することを見る
+  // The text element's default h=8mm. Drop its center 0.2mm below the guide and check
+  // that the top edge snaps to the guide
   await dragFromPalette(page, /^テキスト/, {
     x: 100,
     y: guideMm + 4.2,
@@ -86,7 +88,7 @@ test("ガイドを定規側へドラッグすると消える", async ({ page }) 
   );
   await expect(guide).toBeVisible();
 
-  const hit = guide.locator(".apx-cguide-hit");
+  const hit = guide.locator(".dr-cguide-hit");
   const hitBox = await hit.boundingBox();
   if (hitBox === null) {
     throw new Error("ガイドの掴みハンドルが表示されていません");
@@ -99,7 +101,7 @@ test("ガイドを定規側へドラッグすると消える", async ({ page }) 
   await page.mouse.move(paperBox.x + 20, paperBox.y - 20, { steps: 8 });
   await page.mouse.up();
 
-  await expect(page.locator(".apx-cguide-h")).toHaveCount(0);
+  await expect(page.locator(".dr-cguide-h")).toHaveCount(0);
 });
 
 test("封筒プリセットを選択すると1ページ目文脈で窓枠が表示され、継続ページ文脈では表示されない", async ({
@@ -109,12 +111,12 @@ test("封筒プリセットを選択すると1ページ目文脈で窓枠が表�
   const select = page.getByRole("combobox", { name: "封筒窓ガイド" });
   await select.selectOption("l3-w80h45");
 
-  await expect(page.locator(".apx-env-window")).toBeVisible();
-  await expect(page.locator(".apx-env-safe")).toBeVisible();
+  await expect(page.locator(".dr-env-window")).toBeVisible();
+  await expect(page.locator(".dr-env-safe")).toBeVisible();
 
   await page
     .getByRole("group", { name: "ページ文脈" })
     .getByRole("button", { name: "継続ページ" })
     .click();
-  await expect(page.locator(".apx-env-window")).toHaveCount(0);
+  await expect(page.locator(".dr-env-window")).toHaveCount(0);
 });

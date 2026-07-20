@@ -3,13 +3,15 @@ import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DesignerChrome } from "../../api/designer";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { EditorStore } from "../../state/store";
 import { Toolbar } from "./Toolbar";
 
 const BLANK: IrDocument = {
   version: "1.0",
   page: { width: 210, height: 297 },
-  font: { name: "NotoSansJP" },
+  font: { regular: "NotoSansJP" },
   elements: [],
 };
 
@@ -19,6 +21,8 @@ function makeChrome(overrides: Partial<DesignerChrome> = {}): DesignerChrome {
     toggleTheme: vi.fn(),
     requestSave: vi.fn(),
     importIr: vi.fn(() => ({ ok: true }) as const),
+    locale: "ja",
+    toggleLocale: vi.fn(),
     ...overrides,
   };
 }
@@ -64,7 +68,7 @@ async function renderToolbar(
     />,
   );
   await vi.waitFor(() => {
-    if (container.querySelector(".apx-toolbar") === null) {
+    if (container.querySelector(".dr-toolbar") === null) {
       throw new Error("ツールバーが未描画");
     }
   });
@@ -85,6 +89,15 @@ function click(el: Element): void {
   el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 }
 
+// Real browsers dispatch pointerdown and click as separate tasks, letting the
+// pointerdown-triggered state update flush before click runs; a same-tick
+// dispatch (no macrotask between them) doesn't reproduce that ordering
+async function realClick(el: Element): Promise<void> {
+  el.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+}
+
 describe("Toolbar", () => {
   it("保存クリックで chrome.requestSave が1回呼ばれる", async () => {
     const chrome = makeChrome();
@@ -93,34 +106,45 @@ describe("Toolbar", () => {
     expect(chrome.requestSave).toHaveBeenCalledOnce();
   });
 
-  it("テーマボタンの aria-pressed と is-on は resolvedTheme に追従する", async () => {
-    await renderToolbar(makeChrome({ resolvedTheme: "light" }));
-    const light = buttonByText("テーマ");
-    expect(light.getAttribute("aria-pressed")).toBe("false");
-    expect(light.classList.contains("is-on")).toBe(false);
-    expect(light.title).toBe("テーマを切り替え（現在: ライト）");
-    const lightSvg = light.querySelector("svg");
-    expect(lightSvg?.getAttribute("aria-hidden")).toBe("true");
-    expect(light.querySelectorAll("svg")).toHaveLength(1);
-
+  it("その他の操作ボタンでメニューが開き、resolvedTheme に応じたテーマ項目が表示される", async () => {
     await renderToolbar(makeChrome({ resolvedTheme: "dark" }));
+    const trigger = buttonByText("その他の操作");
+    expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    click(trigger);
     await vi.waitFor(() => {
-      const dark = buttonByText("テーマ");
-      expect(dark.getAttribute("aria-pressed")).toBe("true");
-      expect(dark.classList.contains("is-on")).toBe(true);
-      expect(dark.title).toBe("テーマを切り替え（現在: ダーク）");
+      expect(trigger.getAttribute("aria-expanded")).toBe("true");
     });
-    const dark = buttonByText("テーマ");
-    const darkSvg = dark.querySelector("svg");
-    expect(darkSvg?.getAttribute("aria-hidden")).toBe("true");
-    expect(dark.querySelectorAll("svg")).toHaveLength(1);
+    const themeItem = buttonByText("テーマを切り替え（現在: ダーク）");
+    expect(themeItem.getAttribute("role")).toBe("menuitem");
   });
 
-  it("テーマクリックで chrome.toggleTheme が呼ばれる", async () => {
+  it("開いた状態でトリガーを実クリック（pointerdown→click）すると閉じたまま留まる", async () => {
+    await renderToolbar(makeChrome());
+    const trigger = buttonByText("その他の操作");
+    await realClick(trigger);
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="menu"]')).not.toBeNull();
+    });
+
+    await realClick(trigger);
+    await vi.waitFor(() => {
+      expect(trigger.getAttribute("aria-expanded")).toBe("false");
+    });
+    expect(container.querySelector('[role="menu"]')).toBeNull();
+  });
+
+  it("テーマ項目のクリックで chrome.toggleTheme が呼ばれ、メニューが閉じる", async () => {
     const chrome = makeChrome();
     await renderToolbar(chrome);
-    click(buttonByText("テーマ"));
+    click(buttonByText("その他の操作"));
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="menu"]')).not.toBeNull();
+    });
+    click(buttonByText("テーマを切り替え（現在: ライト）"));
     expect(chrome.toggleTheme).toHaveBeenCalledOnce();
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="menu"]')).toBeNull();
+    });
   });
 
   it("プレビュークリックで onPreview が1回呼ばれる", async () => {
@@ -155,7 +179,7 @@ describe("Toolbar", () => {
     expect(onManageStyles).toHaveBeenCalledOnce();
   });
 
-  it("ショートカット一覧クリックで onShowShortcuts が1回呼ばれる", async () => {
+  it("ショートカット項目のクリックで onShowShortcuts が1回呼ばれる", async () => {
     const onShowShortcuts = vi.fn();
     await renderToolbar(
       makeChrome(),
@@ -164,6 +188,10 @@ describe("Toolbar", () => {
       new EditorStore(BLANK),
       onShowShortcuts,
     );
+    click(buttonByText("その他の操作"));
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="menu"]')).not.toBeNull();
+    });
     click(buttonByText("ショートカット一覧"));
     expect(onShowShortcuts).toHaveBeenCalledOnce();
   });
@@ -199,7 +227,7 @@ describe("Toolbar", () => {
 
   it("保存状態インジケータは非 dirty でも常にマウントされる", async () => {
     await renderToolbar(makeChrome());
-    const indicator = container.querySelector(".apx-doc-dirty");
+    const indicator = container.querySelector(".dr-doc-dirty");
     expect(indicator).not.toBeNull();
     expect(indicator?.classList.contains("is-on")).toBe(false);
     expect(indicator?.getAttribute("title")).toBeNull();
@@ -209,27 +237,27 @@ describe("Toolbar", () => {
     const store = await renderToolbar(makeChrome());
     store.commit({ ...store.getState().document, elements: [] });
     await vi.waitFor(() => {
-      const indicator = container.querySelector(".apx-doc-dirty");
+      const indicator = container.querySelector(".dr-doc-dirty");
       expect(indicator?.classList.contains("is-on")).toBe(true);
       expect(indicator?.getAttribute("title")).toBe("未保存の変更あり");
     });
-    expect(container.querySelectorAll(".apx-doc-dirty")).toHaveLength(1);
+    expect(container.querySelectorAll(".dr-doc-dirty")).toHaveLength(1);
 
     store.markSaved();
     await vi.waitFor(() => {
-      const indicator = container.querySelector(".apx-doc-dirty");
+      const indicator = container.querySelector(".dr-doc-dirty");
       expect(indicator?.classList.contains("is-on")).toBe(false);
       expect(indicator?.getAttribute("title")).toBeNull();
     });
-    expect(container.querySelectorAll(".apx-doc-dirty")).toHaveLength(1);
+    expect(container.querySelectorAll(".dr-doc-dirty")).toHaveLength(1);
 
     store.commit({ ...store.getState().document, elements: [] });
     await vi.waitFor(() => {
       expect(
-        container.querySelector(".apx-doc-dirty")?.classList.contains("is-on"),
+        container.querySelector(".dr-doc-dirty")?.classList.contains("is-on"),
       ).toBe(true);
     });
-    expect(container.querySelectorAll(".apx-doc-dirty")).toHaveLength(1);
+    expect(container.querySelectorAll(".dr-doc-dirty")).toHaveLength(1);
   });
 
   it("左右パネルトグルの aria-expanded は props を反映する", async () => {
@@ -266,6 +294,27 @@ describe("Toolbar", () => {
     expect(onToggleSidebar).toHaveBeenCalledOnce();
   });
 
+  it("書き出しターゲットの select は state.selectedExportTarget に追従し、選択で setSelectedExportTarget が呼ばれる", async () => {
+    const store = await renderToolbar(makeChrome());
+    const select = container.querySelector<HTMLSelectElement>(
+      'select[aria-label="書き出しターゲット"]',
+    );
+    if (select === null) {
+      throw new Error("書き出しターゲットの select がない");
+    }
+    expect(select.value).toBe("pdfme");
+
+    Object.getOwnPropertyDescriptor(
+      HTMLSelectElement.prototype,
+      "value",
+    )?.set?.call(select, "reportlab");
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+
+    await vi.waitFor(() => {
+      expect(store.getState().selectedExportTarget).toBe("reportlab");
+    });
+  });
+
   it("右パネルトグルのクリックで onToggleProps が1回呼ばれる", async () => {
     const onToggleProps = vi.fn();
     await renderToolbar(
@@ -281,5 +330,67 @@ describe("Toolbar", () => {
     );
     click(buttonByText("右パネルを開閉"));
     expect(onToggleProps).toHaveBeenCalledOnce();
+  });
+
+  it("Esc でメニューが閉じ、トリガーへフォーカスが戻る", async () => {
+    await renderToolbar(makeChrome());
+    const trigger = buttonByText("その他の操作");
+    click(trigger);
+    const menu = await vi.waitFor(() => {
+      const el = container.querySelector('[role="menu"]');
+      if (el === null) {
+        throw new Error("メニューが未描画");
+      }
+      return el;
+    });
+    menu.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "Escape",
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="menu"]')).toBeNull();
+      expect(document.activeElement).toBe(trigger);
+    });
+  });
+
+  it("言語項目のクリックで toggleLocale が呼ばれる", async () => {
+    const chrome = makeChrome();
+    await renderToolbar(chrome);
+    click(buttonByText("その他の操作"));
+    await vi.waitFor(() => {
+      expect(container.querySelector('[role="menu"]')).not.toBeNull();
+    });
+    click(buttonByText("言語を切り替え（現在: 日本語）"));
+    expect(chrome.toggleLocale).toHaveBeenCalledOnce();
+  });
+
+  it("en の MessagesContext では文言が英語で描画される", async () => {
+    root.render(
+      <MessagesContext.Provider value={en}>
+        <Toolbar
+          store={new EditorStore(BLANK)}
+          chrome={makeChrome()}
+          onPreview={() => {}}
+          onExport={() => {}}
+          onManageStyles={() => {}}
+          onShowShortcuts={() => {}}
+          sidebarOpen={true}
+          propsOpen={true}
+          onToggleSidebar={() => {}}
+          onToggleProps={() => {}}
+        />
+      </MessagesContext.Provider>,
+    );
+    await vi.waitFor(() => {
+      expect(container.querySelector(".dr-toolbar")).not.toBeNull();
+    });
+    expect(buttonByText("Save").disabled).toBe(false);
+    expect(buttonByText("Export").disabled).toBe(false);
+    expect(container.querySelector(".dr-brand-name")?.textContent).toBe(
+      "Report Designer",
+    );
   });
 });

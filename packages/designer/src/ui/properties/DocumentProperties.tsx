@@ -1,23 +1,73 @@
-import type { IrDocument } from "@denreport/core";
+import type { IrDocument, IrFontSlot } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
+import { useMessages } from "../../i18n/context";
+import type { Messages } from "../../i18n/messages";
 import { errorMessageFor } from "../../state/error-index";
-import { resolveFont } from "../../state/fonts";
-import { setDocType, setFontName, setPage } from "../../state/properties";
+import type { FontResolution } from "../../state/fonts";
+import { resolveFontSet } from "../../state/fonts";
+import {
+  type PaperPresetId,
+  paperPresetIdForSize,
+  paperPresetsForLanguage,
+} from "../../state/paper-presets";
+import {
+  setDocType,
+  setFontRegular,
+  setFontSlot,
+  setPage,
+} from "../../state/properties";
 import type { EditorStore } from "../../state/store";
 import { FontSelectorDialog } from "../fonts/FontSelectorDialog";
-import { EMBEDDED_FONT_NAME } from "../fonts/font-registration";
+import {
+  EMBEDDED_BOLD_FONT_NAME,
+  EMBEDDED_FONT_NAME,
+} from "../fonts/font-registration";
 import { isLocalFontAccessSupported } from "../fonts/local-fonts";
 import { useEditorState } from "../useEditorState";
 import { FootnotesSection } from "./FootnotesSection";
-import { NumberField, TextField } from "./fields";
+import { NumberField, SelectField, TextField } from "./fields";
+
+/** Select display value when the dimensions don't match any preset */
+const CUSTOM_PAPER_PRESET = "custom";
+
+const FONT_SLOTS: readonly IrFontSlot[] = [
+  "regular",
+  "bold",
+  "italic",
+  "boldItalic",
+];
+
+const EMBEDDED_NAMES: ReadonlySet<string> = new Set([
+  EMBEDDED_FONT_NAME,
+  EMBEDDED_BOLD_FONT_NAME,
+]);
+
+function resolutionNote(
+  resolution: FontResolution | undefined,
+  d: Messages["propertiesBulk"]["document"],
+): string {
+  if (resolution === undefined) {
+    return d.unsetFallback;
+  }
+  switch (resolution.kind) {
+    case "registered":
+      return d.resolutionRegistered(resolution.font.displayName);
+    case "embedded":
+      return d.resolutionEmbedded;
+    case "missing":
+      return d.resolutionMissing;
+  }
+}
 
 export function DocumentProperties(props: {
   readonly store: EditorStore;
 }): ReactNode {
   const { store } = props;
+  const m = useMessages();
   const state = useEditorState(store);
-  const [fontDialogOpen, setFontDialogOpen] = useState(false);
+  const d = m.propertiesBulk.document;
+  const [fontDialogSlot, setFontDialogSlot] = useState<IrFontSlot | null>(null);
   const docTypeCheckId = useId();
   const pageErrors = state.validationErrors.filter((error) =>
     error.path.startsWith("page."),
@@ -26,13 +76,20 @@ export function DocumentProperties(props: {
     error.path.startsWith("footnotes."),
   );
   const fontError = state.validationErrors.find(
-    (error) => error.path === "font.name",
+    (error) => error.path === "font.regular",
   )?.message;
-  const resolution = resolveFont(
-    state.document.font.name,
+  const resolutions = resolveFontSet(
+    state.document.font,
     state.fontRegistry,
-    EMBEDDED_FONT_NAME,
+    EMBEDDED_NAMES,
   );
+  const paperPresets = paperPresetsForLanguage(navigator.language);
+  const paperPresetId =
+    paperPresetIdForSize(
+      paperPresets,
+      state.document.page.width,
+      state.document.page.height,
+    ) ?? CUSTOM_PAPER_PRESET;
 
   const commitDoc = (op: (document: IrDocument) => IrDocument): void => {
     const document = store.getState().document;
@@ -44,13 +101,33 @@ export function DocumentProperties(props: {
 
   return (
     <>
-      <div className="apx-props-head">
-        <span className="apx-props-id">文書設定</span>
+      <div className="dr-props-head">
+        <span className="dr-props-id">{d.heading}</span>
       </div>
-      <section className="apx-sect">
-        <div className="apx-sect-h">用紙</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{d.paperSection}</div>
+        <SelectField<PaperPresetId | typeof CUSTOM_PAPER_PRESET>
+          label={d.size}
+          value={paperPresetId}
+          options={[
+            ...paperPresets.map((preset) => ({
+              value: preset.id,
+              label: m.paperPresets[preset.id],
+            })),
+            { value: CUSTOM_PAPER_PRESET, label: d.custom },
+          ]}
+          onCommit={(id) => {
+            const preset = paperPresets.find((p) => p.id === id);
+            if (preset === undefined) {
+              return;
+            }
+            commitDoc((document) =>
+              setPage(document, { width: preset.width, height: preset.height }),
+            );
+          }}
+        />
         <NumberField
-          label="幅"
+          label={d.width}
           value={state.document.page.width}
           unit="mm"
           precision={0.1}
@@ -62,7 +139,7 @@ export function DocumentProperties(props: {
           }
         />
         <NumberField
-          label="高さ"
+          label={d.height}
           value={state.document.page.height}
           unit="mm"
           precision={0.1}
@@ -74,45 +151,70 @@ export function DocumentProperties(props: {
           }
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">フォント</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{d.fontSection}</div>
         <TextField
-          label="フォント名"
-          value={state.document.font.name}
+          label={d.fontName}
+          value={state.document.font.regular}
           mono
           error={fontError}
           onCommit={(name) =>
-            commitDoc((document) => setFontName(document, name))
+            commitDoc((document) => setFontRegular(document, name))
           }
         />
-        <p className="apx-sect-note">
-          {resolution.kind === "registered" &&
-            `実データ: ${resolution.font.displayName}`}
-          {resolution.kind === "embedded" && "実データ: 同梱フォント"}
-          {resolution.kind === "missing" &&
-            "実データ未選択（同梱フォントで代替されます）"}
-        </p>
-        {isLocalFontAccessSupported(window) ? (
-          <button
-            type="button"
-            className="apx-btn apx-btn-secondary"
-            onClick={() => setFontDialogOpen(true)}
-          >
-            PC のフォントから選択…
-          </button>
-        ) : (
-          <p className="apx-sect-note">
-            お使いのブラウザは PC
-            内フォントの一覧取得に対応していません（Chromium
-            系ブラウザで利用できます）。
-          </p>
+        {FONT_SLOTS.map((slot) => {
+          const name = state.document.font[slot];
+          const slotError =
+            slot === "regular"
+              ? undefined
+              : state.validationErrors.find(
+                  (error) => error.path === `font.${slot}`,
+                )?.message;
+          return (
+            <div key={slot}>
+              {slot !== "regular" && (
+                <div className="dr-frow">
+                  <span className="dr-frow-label">
+                    {m.fonts.slotLabels[slot]}
+                  </span>
+                  <span className="dr-field">{name ?? d.unset}</span>
+                </div>
+              )}
+              {slotError !== undefined && (
+                <p className="dr-ferr" role="alert">
+                  {slotError}
+                </p>
+              )}
+              <p className="dr-sect-note">
+                {m.fonts.slotLabels[slot]}:{" "}
+                {slot === "regular" || name !== undefined
+                  ? resolutionNote(resolutions.get(slot), d)
+                  : d.unsetFallback}
+              </p>
+              {isLocalFontAccessSupported(window) && (
+                <button
+                  type="button"
+                  className="dr-btn dr-btn-secondary"
+                  onClick={() => setFontDialogSlot(slot)}
+                >
+                  {d.selectFont(m.fonts.slotLabels[slot])}
+                </button>
+              )}
+            </div>
+          );
+        })}
+        {!isLocalFontAccessSupported(window) && (
+          <p className="dr-sect-note">{d.localFontUnsupported}</p>
         )}
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">適格請求書</div>
-        <div className="apx-frow">
-          <span className="apx-frow-label">記載事項チェック</span>
-          <label className="apx-check" htmlFor={docTypeCheckId}>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{d.qualifiedInvoiceSection}</div>
+        <div className="dr-frow">
+          <span className="dr-frow-label">
+            {d.qualifiedInvoiceCheck}
+            <span className="dr-nowrap">{d.checkSuffix}</span>
+          </span>
+          <label className="dr-check" htmlFor={docTypeCheckId}>
             <input
               id={docTypeCheckId}
               type="checkbox"
@@ -123,7 +225,7 @@ export function DocumentProperties(props: {
                 )
               }
             />
-            有効化
+            {d.enable}
           </label>
         </div>
       </section>
@@ -132,20 +234,37 @@ export function DocumentProperties(props: {
         document={state.document}
         errors={footnoteErrors}
       />
-      <p className="apx-props-empty">要素を選択すると属性を編集できます。</p>
-      {fontDialogOpen && (
+      <p className="dr-props-empty">{d.selectPrompt}</p>
+      {fontDialogSlot !== null && (
         <FontSelectorDialog
-          currentName={state.document.font.name}
+          slot={fontDialogSlot}
+          currentName={state.document.font[fontDialogSlot]}
           onSelect={(font) => {
             store.registerFont(font);
-            commitDoc((document) => setFontName(document, font.name));
-            setFontDialogOpen(false);
+            commitDoc((document) =>
+              fontDialogSlot === "regular"
+                ? setFontRegular(document, font.name)
+                : setFontSlot(document, fontDialogSlot, font.name),
+            );
+            setFontDialogSlot(null);
           }}
-          onSelectEmbedded={() => {
-            commitDoc((document) => setFontName(document, EMBEDDED_FONT_NAME));
-            setFontDialogOpen(false);
+          onSelectEmbedded={(name) => {
+            commitDoc((document) =>
+              fontDialogSlot === "regular"
+                ? setFontRegular(document, name)
+                : setFontSlot(document, fontDialogSlot, name),
+            );
+            setFontDialogSlot(null);
           }}
-          onClose={() => setFontDialogOpen(false)}
+          onClear={() => {
+            if (fontDialogSlot !== "regular") {
+              commitDoc((document) =>
+                setFontSlot(document, fontDialogSlot, undefined),
+              );
+            }
+            setFontDialogSlot(null);
+          }}
+          onClose={() => setFontDialogSlot(null)}
         />
       )}
     </>

@@ -1,8 +1,9 @@
+import { EMBEDDED_FONT_URL } from "@denreport/targets";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadPreviewFont, registerPreviewFace } from "./preview-font";
 
-// readAscentPerEm/readCharWidths が読める最小の sfnt（head.unitsPerEm・hhea.ascender/
-// numberOfHMetrics・hmtx 1本・空の cmap format4 サブテーブルのみ実値）
+// A minimal sfnt that readAscentPerEm/readCharWidths can read (only head.unitsPerEm,
+// hhea.ascender/numberOfHMetrics, one hmtx entry, and an empty cmap format4 subtable have real values)
 function sfntWith(unitsPerEm: number, ascender: number): ArrayBuffer {
   const headOffset = 12 + 4 * 16;
   const headLength = 20;
@@ -11,7 +12,7 @@ function sfntWith(unitsPerEm: number, ascender: number): ArrayBuffer {
   const hmtxOffset = hheaOffset + hheaLength;
   const hmtxLength = 4;
   const cmapOffset = hmtxOffset + hmtxLength;
-  const cmapSubtableLength = 24; // format4、segCount=1（終端セグメントのみ）
+  const cmapSubtableLength = 24; // format4, segCount=1 (terminal segment only)
   const cmapLength = 12 + cmapSubtableLength; // header4 + record8 + subtable
   const buffer = new ArrayBuffer(cmapOffset + cmapLength);
   const view = new DataView(buffer);
@@ -40,11 +41,11 @@ function sfntWith(unitsPerEm: number, ascender: number): ArrayBuffer {
   view.setUint16(cmapOffset + 2, 1); // numTables
   view.setUint16(cmapOffset + 4, 3); // platformId
   view.setUint16(cmapOffset + 6, 1); // encodingId
-  view.setUint32(cmapOffset + 8, 12); // subtable offset（cmap 先頭からの相対位置）
+  view.setUint32(cmapOffset + 8, 12); // subtable offset (relative to the start of cmap)
   const subtableAbs = cmapOffset + 12;
   view.setUint16(subtableAbs, 4); // format
   view.setUint16(subtableAbs + 2, cmapSubtableLength);
-  view.setUint16(subtableAbs + 6, 2); // segCountX2（segCount=1）
+  view.setUint16(subtableAbs + 6, 2); // segCountX2 (segCount=1)
   view.setUint16(subtableAbs + 14, 0xffff); // endCode[0]
   view.setUint16(subtableAbs + 18, 0xffff); // startCode[0]
   view.setInt16(subtableAbs + 20, 1); // idDelta[0]
@@ -89,19 +90,27 @@ describe("loadPreviewFont", () => {
     stubOkFetch(sfntWith(1000, 1160));
     const { doc, fonts } = makeDoc();
 
-    const font = await loadPreviewFont(doc);
-    expect(font.family).toBe("apx-embedded-notosansjp");
+    const font = await loadPreviewFont(
+      doc,
+      EMBEDDED_FONT_URL,
+      "dr-embedded-notosansjp",
+    );
+    expect(font.family).toBe("dr-embedded-notosansjp");
     expect(font.ascentPerEm).toBeCloseTo(1.16, 6);
     expect(fonts.size).toBe(1);
-    expect([...fonts][0]?.family).toBe("apx-embedded-notosansjp");
+    expect([...fonts][0]?.family).toBe("dr-embedded-notosansjp");
   });
 
   it("同一 document には再登録しない", async () => {
     stubOkFetch(sfntWith(1000, 1160));
     const { doc, fonts } = makeDoc();
 
-    await loadPreviewFont(doc);
-    const second = await loadPreviewFont(doc);
+    await loadPreviewFont(doc, EMBEDDED_FONT_URL, "dr-embedded-notosansjp");
+    const second = await loadPreviewFont(
+      doc,
+      EMBEDDED_FONT_URL,
+      "dr-embedded-notosansjp",
+    );
     expect(fonts.size).toBe(1);
     expect(second.ascentPerEm).toBeCloseTo(1.16, 6);
   });
@@ -112,7 +121,13 @@ describe("loadPreviewFont", () => {
       vi.fn(() => Promise.reject(new Error("ネットワーク不通"))),
     );
     vi.stubGlobal("FontFace", FakeFontFace);
-    await expect(loadPreviewFont(makeDoc().doc)).rejects.toThrow();
+    await expect(
+      loadPreviewFont(
+        makeDoc().doc,
+        EMBEDDED_FONT_URL,
+        "dr-embedded-notosansjp",
+      ),
+    ).rejects.toThrow();
   });
 
   it("HTTP エラー応答で reject する", async () => {
@@ -123,19 +138,27 @@ describe("loadPreviewFont", () => {
       }),
     );
     vi.stubGlobal("FontFace", FakeFontFace);
-    await expect(loadPreviewFont(makeDoc().doc)).rejects.toThrow("404");
+    await expect(
+      loadPreviewFont(
+        makeDoc().doc,
+        EMBEDDED_FONT_URL,
+        "dr-embedded-notosansjp",
+      ),
+    ).rejects.toThrow("404");
   });
 
   it("計量を読み取れないバイト列で reject し、登録もしない", async () => {
     stubOkFetch(new ArrayBuffer(4));
     const { doc, fonts } = makeDoc();
-    await expect(loadPreviewFont(doc)).rejects.toThrow();
+    await expect(
+      loadPreviewFont(doc, EMBEDDED_FONT_URL, "dr-embedded-notosansjp"),
+    ).rejects.toThrow();
     expect(fonts.size).toBe(0);
   });
 });
 
 describe("registerPreviewFace", () => {
-  it("apx-local-<name> の family で FontFace を登録する", async () => {
+  it("dr-local-<name> の family で FontFace を登録する", async () => {
     vi.stubGlobal("FontFace", FakeFontFace);
     const { doc, fonts } = makeDoc();
 
@@ -144,9 +167,9 @@ describe("registerPreviewFace", () => {
       "MyFont",
       new Uint8Array([1, 2, 3]),
     );
-    expect(family).toBe("apx-local-MyFont");
+    expect(family).toBe("dr-local-MyFont");
     expect(fonts.size).toBe(1);
-    expect([...fonts][0]?.family).toBe("apx-local-MyFont");
+    expect([...fonts][0]?.family).toBe("dr-local-MyFont");
   });
 
   it("同一バイト列の再登録では FontFace を差し替えない", async () => {

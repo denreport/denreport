@@ -1,0 +1,40 @@
+export const toolbarEn = {
+  toolbar: {
+    brandName: "Report Designer",
+    togglePanelLeft: "Toggle left panel",
+    elementsPanel: "Elements & layers",
+    unsavedChanges: "Unsaved changes",
+    undo: "Undo",
+    redo: "Redo",
+    canvasMode: "Canvas mode",
+    select: "Select",
+    selectTitle: "Select (V)",
+    pan: "Pan",
+    panTitle: "Pan (H)",
+    themeTitle: (dark: boolean): string =>
+      dark
+        ? "Switch theme (currently: dark)"
+        : "Switch theme (currently: light)",
+    localeTitle: "Switch language (currently: English)",
+    shortcuts: "Keyboard shortcuts",
+    moreOptions: "More options",
+    open: "Open",
+    save: "Save",
+    manageStyles: "Styles",
+    preview: "Preview",
+    exportTarget: "Export target",
+    export: "Export",
+    togglePanelRight: "Toggle right panel",
+    propertiesPanel: "Properties",
+    openIr: {
+      unsavedTitle: "Unsaved changes",
+      unsavedBody: "Opening a file will discard unsaved changes. Continue?",
+      cancel: "Cancel",
+      continue: "Continue",
+      failedTitle: "Couldn't open file",
+      close: "Close",
+      readFailed: "Couldn't read the file.",
+      unchangedNote: "The document was not changed.",
+    },
+  },
+};

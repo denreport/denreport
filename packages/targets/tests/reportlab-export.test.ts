@@ -12,8 +12,8 @@ import {
   syntheticTtf,
 } from "./helpers/sfnt";
 
-const FONT = syntheticTtf();
-const UNIT_WIDTH_FONT = buildUniformWidthTtf(1, 1);
+const FONT = { regular: syntheticTtf() };
+const UNIT_WIDTH_FONT = { regular: buildUniformWidthTtf(1, 1) };
 
 function widthMmFor(widthPt: number): number {
   return widthPt * PT_TO_MM;
@@ -23,7 +23,7 @@ function docOf(...elements: IrDocument["elements"]): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -57,8 +57,7 @@ describe("exportReportlab — mapping rules", () => {
     const result = exportReportlab(docOf(), {}, FONT);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
-    expect(result.code).toContain('FONT_NAME = "NotoSansJP"');
-    expect(result.code).toContain('FONT_FILE = "NotoSansJP.ttf"');
+    expect(result.code).toContain('"NotoSansJP": ("NotoSansJP.ttf", ');
     expect(result.code).toContain("PAGE_WIDTH = 210 * mm");
     expect(result.code).toContain("PAGE_HEIGHT = 297 * mm");
     expect(result.code).toContain("PAGE_COUNT = 1");
@@ -82,7 +81,30 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      '_text(c, font, 10, 20, 100, 22, "center", 1.5, ["請求書"])',
+      '_text(c, "NotoSansJP", 10, 20, 100, 12, 22, "center", 1.5, (0, 0, 0), 0, False, ["請求書"])',
+    );
+  });
+
+  it("maps an explicit text color through", () => {
+    const doc = docOf({
+      type: "text",
+      id: "title",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 50,
+      h: 10,
+      text: "赤字",
+      fontSize: 10,
+      align: "left",
+      lineHeight: 1.25,
+      color: "#ff0000",
+    });
+    const result = exportReportlab(doc, {}, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      '_text(c, "NotoSansJP", 0, 0, 50, 10, 10, "left", 1.25, (1, 0, 0), 0, False, ["赤字"])',
     );
   });
 
@@ -157,10 +179,10 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      "_line(c, 0, 0, 90, 0, 0.4, (0, 0, 0), None)",
+      "_line(c, 0, 0, 90, 0, 0.4, (0, 0, 0), None, 0)",
     );
     expect(result.code).toContain(
-      "_line(c, 5, 5, 5, 45, 0.5, (0, 0, 0), None)",
+      "_line(c, 5, 5, 5, 45, 0.5, (0, 0, 0), None, 0)",
     );
   });
 
@@ -179,7 +201,7 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      "_rect(c, 0, 0, 89, 12, 0.5, (0, 0, 0), None, None, 0)",
+      "_rect(c, 0, 0, 89, 12, 0.5, (0, 0, 0), None, None, 0, 0)",
     );
   });
 
@@ -202,7 +224,7 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      "_rect(c, 0, 0, 40, 20, 0.5, (0, 0.2, 1), (0.9333333333333333, 0.9333333333333333, 0.9333333333333333), [2 * mm, 1 * mm], 3)",
+      "_rect(c, 0, 0, 40, 20, 0.5, (0, 0.2, 1), (0.9333333333333333, 0.9333333333333333, 0.9333333333333333), [2 * mm, 1 * mm], 3, 0)",
     );
   });
 
@@ -223,7 +245,7 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      "_line(c, 0, 0, 10, 0, 0.3, (1, 0, 0), [0.4 * mm, 0.8 * mm])",
+      "_line(c, 0, 0, 10, 0, 0.3, (1, 0, 0), [0.4 * mm, 0.8 * mm], 0)",
     );
   });
 
@@ -245,7 +267,7 @@ describe("exportReportlab — mapping rules", () => {
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain("def _ellipse(c, x, y, w, h,");
     expect(result.code).toContain(
-      `_ellipse(c, 0, 0, 30, 20, 0.4, ${pyRgb("#123456")}, ${pyRgb("#abcdef")})`,
+      `_ellipse(c, 0, 0, 30, 20, 0.4, ${pyRgb("#123456")}, ${pyRgb("#abcdef")}, 0)`,
     );
   });
 
@@ -270,7 +292,7 @@ describe("exportReportlab — mapping rules", () => {
     const result = exportReportlab(doc, {}, FONT);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
-    expect(result.code).toContain('_image(c, 15, 15, 20, 20, "AAAA")');
+    expect(result.code).toContain('_image(c, 15, 15, 20, 20, "AAAA", 0)');
   });
 
   it.each([
@@ -296,10 +318,65 @@ describe("exportReportlab — mapping rules", () => {
       expect(result.ok).toBe(true);
       if (!result.ok) throw new Error("expected success");
       expect(result.code).toContain(
-        `_barcode(c, "${reportlabName}", "ABC-123", 15, 15, 30, 30)`,
+        `_barcode(c, "${reportlabName}", "ABC-123", 15, 15, 30, 30, 0)`,
       );
     },
   );
+
+  it("passes an element's rotate through as the rot argument", () => {
+    const doc = docOf(
+      {
+        type: "text",
+        id: "t",
+        x: 10,
+        y: 20,
+        pages: "first",
+        w: 100,
+        h: 12,
+        text: "回転",
+        fontSize: 10,
+        align: "left",
+        lineHeight: 1.25,
+        rotate: 45,
+      },
+      {
+        type: "line",
+        id: "ln",
+        x: 0,
+        y: 0,
+        pages: "first",
+        orientation: "horizontal",
+        length: 90,
+        thickness: 0.4,
+        rotate: -30.5,
+      },
+      {
+        type: "rect",
+        id: "box",
+        x: 0,
+        y: 0,
+        pages: "first",
+        w: 89,
+        h: 12,
+        borderWidth: 0.5,
+        rotate: 90,
+      },
+    );
+    const result = exportReportlab(doc, {}, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      '_text(c, "NotoSansJP", 10, 20, 100, 12, 10, "left", 1.25, (0, 0, 0), 45, False, ["回転"])',
+    );
+    expect(result.code).toContain(
+      "_line(c, 0, 0, 90, 0, 0.4, (0, 0, 0), None, -30.5)",
+    );
+    expect(result.code).toContain(
+      "_rect(c, 0, 0, 89, 12, 0.5, (0, 0, 0), None, None, 0, 90)",
+    );
+    // In the PDF coordinate system (y-up), -rot matches the IR's clockwise direction
+    expect(result.code).toContain("c.rotate(-rot)");
+  });
 
   it("keeps the page's statement order equal to the element order", () => {
     const doc = docOf(
@@ -341,7 +418,7 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     const pageBody = result.code.slice(result.code.indexOf("def _page_1"));
-    const textIndex = pageBody.indexOf("_text(c, font,");
+    const textIndex = pageBody.indexOf('_text(c, "NotoSansJP",');
     const rectIndex = pageBody.indexOf("_rect(c, 0, 10");
     const lineIndex = pageBody.indexOf("_line(c, 0, 20");
     expect(textIndex).toBeGreaterThan(-1);
@@ -353,7 +430,7 @@ describe("exportReportlab — mapping rules", () => {
     const result = exportReportlab(docOf(), {}, FONT);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
-    expect(result.code).toContain("def _page_1(c, font):\n    pass");
+    expect(result.code).toContain("def _page_1(c):\n    pass");
   });
 
   it("emits one _page_N function per page and serializes build() in order", () => {
@@ -376,17 +453,17 @@ describe("exportReportlab — mapping rules", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain("PAGE_COUNT = 2");
-    expect(result.code).toContain("def _page_1(c, font):");
-    expect(result.code).toContain("def _page_2(c, font):");
-    expect(result.code).not.toContain("def _page_3(c, font):");
+    expect(result.code).toContain("def _page_1(c):");
+    expect(result.code).toContain("def _page_2(c):");
+    expect(result.code).not.toContain("def _page_3(c):");
     expect(result.code).toContain(
       [
         "def build(output_path):",
-        "    font = _register_font()",
+        "    _register_fonts()",
         "    c = Canvas(output_path, pagesize=(PAGE_WIDTH, PAGE_HEIGHT))",
-        "    _page_1(c, font)",
+        "    _page_1(c)",
         "    c.showPage()",
-        "    _page_2(c, font)",
+        "    _page_2(c)",
         "    c.showPage()",
         "    c.save()",
       ].join("\n"),
@@ -463,11 +540,11 @@ describe("exportReportlab — conditional output", () => {
     },
   );
 
-  it("always includes _register_font", () => {
+  it("always includes _register_fonts", () => {
     const result = exportReportlab(docOf(), {}, FONT);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
-    expect(result.code).toContain("def _register_font():");
+    expect(result.code).toContain("def _register_fonts():");
   });
 
   it("omits the createBarcodeDrawing import and _barcode without a barcode element", () => {
@@ -501,14 +578,14 @@ describe("exportReportlab — conditional output", () => {
 });
 
 describe("exportReportlab — font handling", () => {
-  it("transcribes the font's ascent-per-em into FONT_ASCENT_EM", () => {
+  it("transcribes the font's ascent-per-em into the FONTS entry", () => {
     const result = exportReportlab(docOf(), {}, FONT);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
-    expect(result.code).toContain("FONT_ASCENT_EM = 0.8");
+    expect(result.code).toContain('"NotoSansJP": ("NotoSansJP.ttf", 0.8)');
   });
 
-  it("computes text baselines from FONT_ASCENT_EM with half-leading", () => {
+  it("computes text baselines from the font's ascent with half-leading", () => {
     const doc = docOf({
       type: "text",
       id: "title",
@@ -526,14 +603,14 @@ describe("exportReportlab — font handling", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      "baseline = PAGE_HEIGHT - y * mm - (FONT_ASCENT_EM + (line_height - 1) / 2 + i * line_height) * size",
+      "baseline = PAGE_HEIGHT - y * mm - (ascent + (line_height - 1) / 2 + i * line_height) * size",
     );
     expect(result.code).not.toContain("getAscentDescent");
   });
 
   it("rejects a TTF whose head/hhea metrics cannot be read", () => {
     const noMetrics = buildSfnt(0x00010000, ["glyf", "head", "loca"]);
-    const result = exportReportlab(docOf(), {}, noMetrics);
+    const result = exportReportlab(docOf(), {}, { regular: noMetrics });
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected failure");
     expect(result.fontIssues).toHaveLength(1);
@@ -548,7 +625,7 @@ describe("exportReportlab — font handling", () => {
       { tag: "hhea", data: buildHheaTable(800, 1) },
       "loca",
     ]);
-    const result = exportReportlab(docOf(), {}, noWidths);
+    const result = exportReportlab(docOf(), {}, { regular: noWidths });
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected failure");
     expect(result.fontIssues).toHaveLength(1);
@@ -556,21 +633,20 @@ describe("exportReportlab — font handling", () => {
     expect(result.fontIssues[0]?.message).toContain("字幅");
   });
 
-  it("returns the font file named after the logical font name, bytes untouched", () => {
+  it("returns one font file per declared slot, named after the logical name, bytes untouched", () => {
     const result = exportReportlab(docOf(), {}, FONT);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
-    expect(result.fontFile.filename).toBe("NotoSansJP.ttf");
-    expect(result.fontFile.data).toBe(FONT);
+    expect(result.fontFiles).toHaveLength(1);
+    expect(result.fontFiles[0]?.filename).toBe("NotoSansJP.ttf");
+    expect(result.fontFiles[0]?.data).toBe(FONT.regular);
   });
 
   it("registers the font relative to the script location and exits when missing", () => {
     const result = exportReportlab(docOf(), {}, FONT);
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
-    expect(result.code).toContain(
-      "os.path.join(os.path.dirname(os.path.abspath(__file__)), FONT_FILE)",
-    );
+    expect(result.code).toContain("os.path.join(base_dir, file)");
     expect(result.code).toContain("if not os.path.exists(font_path):");
     expect(result.code).toContain("sys.exit(");
   });
@@ -584,7 +660,7 @@ describe("exportReportlab — font handling", () => {
   });
 
   it("rejects a CFF font before generating anything", () => {
-    const result = exportReportlab(docOf(), {}, syntheticCff());
+    const result = exportReportlab(docOf(), {}, { regular: syntheticCff() });
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected failure");
     expect(result.errors).toEqual([]);
@@ -599,7 +675,7 @@ describe("exportReportlab — font handling", () => {
     ["woff", buildSfnt("wOFF", [])],
     ["unknown", new Uint8Array(64).fill(0xff)],
   ] as const)("rejects a %s input the same way", (format, data) => {
-    const result = exportReportlab(docOf(), {}, data);
+    const result = exportReportlab(docOf(), {}, { regular: data });
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected failure");
     expect(result.fontIssues).toHaveLength(1);
@@ -620,7 +696,13 @@ describe("exportReportlab — font handling", () => {
       align: "left",
       lineHeight: 1.25,
     });
-    const result = exportReportlab(doc, { title: 123 }, syntheticCff());
+    const result = exportReportlab(
+      doc,
+      { title: 123 },
+      {
+        regular: syntheticCff(),
+      },
+    );
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("expected failure");
     expect(result.errors).toEqual([
@@ -653,7 +735,7 @@ describe("exportReportlab — warnings passthrough", () => {
       { rule: "C01", path: "elements[0].text", message: expect.any(String) },
     ]);
     expect(result.code).toContain(
-      '_text(c, font, 0, 0, 50, 10, "left", 1.25, [""])',
+      '_text(c, "NotoSansJP", 0, 0, 50, 10, 10, "left", 1.25, (0, 0, 0), 0, False, [""])',
     );
   });
 
@@ -757,7 +839,7 @@ describe("exportReportlab — text wrapping and justify", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      `_text(c, font, 10, 20, ${w}, 1, "left", 1.25, ["abc", "def"])`,
+      `_text(c, "NotoSansJP", 10, 20, ${w}, 20, 1, "left", 1.25, (0, 0, 0), 0, False, ["abc", "def"])`,
     );
   });
 
@@ -768,7 +850,145 @@ describe("exportReportlab — text wrapping and justify", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
     expect(result.code).toContain(
-      `_text(c, font, 10, 20, ${w}, 1, "justify", 1.25, ["abc", "def"])`,
+      `_text(c, "NotoSansJP", 10, 20, ${w}, 20, 1, "justify", 1.25, (0, 0, 0), 0, False, ["abc", "def"])`,
     );
+  });
+});
+
+describe("exportReportlab — font slots and underline", () => {
+  const BOLD_FONT_SET = {
+    regular: buildUniformWidthTtf(1, 1),
+    bold: buildUniformWidthTtf(2, 1, 900),
+  };
+
+  function styledDoc(
+    overrides: Partial<
+      Extract<IrDocument["elements"][number], { type: "text" }>
+    >,
+  ): IrDocument {
+    return {
+      version: "1.0",
+      page: { width: 210, height: 297 },
+      font: { regular: "Base", bold: "BaseBold" },
+      elements: [
+        {
+          type: "text",
+          id: "t1",
+          x: 10,
+          y: 20,
+          pages: "first",
+          w: widthMmFor(6.5),
+          h: 20,
+          text: "abcdef",
+          fontSize: 1,
+          align: "left",
+          lineHeight: 1.25,
+          ...overrides,
+        } as IrDocument["elements"][number],
+      ],
+    };
+  }
+
+  it("registers every declared slot in the FONTS constant with its own ascent", () => {
+    const result = exportReportlab(styledDoc({}), {}, BOLD_FONT_SET);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain('"Base": ("Base.ttf", 800)');
+    expect(result.code).toContain('"BaseBold": ("BaseBold.ttf", 900)');
+  });
+
+  it("emits the resolved slot's logical name into the _text call", () => {
+    const result = exportReportlab(
+      styledDoc({ fontWeight: "bold" }),
+      {},
+      BOLD_FONT_SET,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain('_text(c, "BaseBold",');
+  });
+
+  it("wraps a bold element with the bold slot's widths", () => {
+    // A 6pt-wide box: with regular (1em/char) it's 1 line, with bold (2em/char) it wraps at 3 chars
+    const result = exportReportlab(
+      styledDoc({ fontWeight: "bold" }),
+      {},
+      BOLD_FONT_SET,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain('["abc", "def"]');
+  });
+
+  it("passes underline through as True and includes the underline stroke in _text", () => {
+    const result = exportReportlab(
+      styledDoc({ underline: true }),
+      {},
+      BOLD_FONT_SET,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(', 0, True, ["abcdef"])');
+    expect(result.code).toContain("if underline and line_w > 0:");
+    expect(result.code).toContain(
+      "c.line(line_x, baseline - 0.1 * size, line_x + line_w, baseline - 0.1 * size)",
+    );
+  });
+
+  it("returns one font file per declared slot", () => {
+    const result = exportReportlab(styledDoc({}), {}, BOLD_FONT_SET);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.fontFiles.map((file) => file.filename)).toEqual([
+      "Base.ttf",
+      "BaseBold.ttf",
+    ]);
+    expect(result.fontFiles[1]?.data).toBe(BOLD_FONT_SET.bold);
+  });
+
+  it("tags fontIssues with the broken slot", () => {
+    const result = exportReportlab(
+      styledDoc({}),
+      {},
+      { regular: BOLD_FONT_SET.regular, bold: syntheticCff() },
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.fontIssues).toHaveLength(1);
+    expect(result.fontIssues[0]?.slot).toBe("bold");
+  });
+});
+
+describe("exportReportlab — locale", () => {
+  it("defaults to Japanese header and font-registration text", () => {
+    const result = exportReportlab(docOf(), {}, FONT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain("生成物であり、手編集を想定しない。");
+    expect(result.code).toContain("フォントファイルが見つかりません");
+  });
+
+  it('emits English header and font-registration text for locale "en"', () => {
+    const result = exportReportlab(docOf(), {}, FONT, { locale: "en" });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+    expect(result.code).toContain(
+      "Generated file; not intended for manual editing.",
+    );
+    expect(result.code).toContain("Font file not found:");
+  });
+
+  it('returns English fontIssues messages for locale "en"', () => {
+    const result = exportReportlab(
+      docOf(),
+      {},
+      { regular: syntheticCff() },
+      {
+        locale: "en",
+      },
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error("expected failure");
+    expect(result.fontIssues[0]?.message).toContain("TTF font");
   });
 });

@@ -4,15 +4,16 @@ import { parseIr } from "../src/ir/parse";
 import { validateIr } from "../src/ir/validate";
 import invoiceFixture from "./fixtures/invoice.json";
 import invoiceMultipageFixture from "./fixtures/invoice-multipage.json";
+import tableMergeFixture from "./fixtures/table-merge.json";
 
-// biome-ignore lint/suspicious/noExplicitAny: 不正フィクスチャは仕様外の値も組み立てる必要がある
+// biome-ignore lint/suspicious/noExplicitAny: invalid fixtures need to construct out-of-spec values too
 type Raw = any;
 
 function baseDoc(): Raw {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [
       { type: "text", id: "t1", x: 0, y: 0, w: 50, h: 10, text: "hello" },
       {
@@ -137,10 +138,10 @@ describe("parseIr", () => {
       expect(parse(doc).ok).toBe(true);
     });
 
-    it("accepts 1.1", () => {
+    it("rejects an unsupported minor (1.1)", () => {
       const doc = baseDoc();
       doc.version = "1.1";
-      expect(parse(doc).ok).toBe(true);
+      expectRule(parse(doc), "S03", "version");
     });
 
     it("rejects an unsupported minor (1.2)", () => {
@@ -195,16 +196,49 @@ describe("parseIr", () => {
       expectRule(parse(doc), "S05", "font");
     });
 
-    it("rejects a missing font.name", () => {
+    it("rejects a missing font.regular", () => {
       const doc = baseDoc();
-      doc.font = {};
-      expectRule(parse(doc), "S05", "font.name");
+      doc.font = { bold: "NotoSansJPBold" };
+      expectRule(parse(doc), "S05", "font.regular");
     });
 
     it("rejects an unknown font key", () => {
       const doc = baseDoc();
-      doc.font = { name: "NotoSansJP", path: "/tmp/font.ttf" };
+      doc.font = { regular: "NotoSansJP", path: "/tmp/font.ttf" };
       expectRule(parse(doc), "S05", "font.path");
+    });
+
+    it("rejects a non-string optional slot", () => {
+      const doc = baseDoc();
+      doc.font = { regular: "NotoSansJP", bold: 1 };
+      expectRule(parse(doc), "S05", "font.bold");
+    });
+
+    it("accepts a full four-slot font and keeps only the declared slots", () => {
+      const doc = baseDoc();
+      doc.font = {
+        regular: "NotoSansJP",
+        bold: "NotoSansJPBold",
+        italic: "NotoSansJPItalic",
+        boldItalic: "NotoSansJPBoldItalic",
+      };
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error("expected success");
+      expect(result.document.font).toEqual({
+        regular: "NotoSansJP",
+        bold: "NotoSansJPBold",
+        italic: "NotoSansJPItalic",
+        boldItalic: "NotoSansJPBoldItalic",
+      });
+    });
+
+    it("keeps a regular-only font free of undefined slot keys", () => {
+      const doc = baseDoc();
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) throw new Error("expected success");
+      expect(Object.keys(result.document.font)).toEqual(["regular"]);
     });
   });
 
@@ -243,6 +277,43 @@ describe("parseIr", () => {
       const doc = baseDoc();
       doc.elements = [{ type: "text", id: "t1", x: 0, y: 0, w: 10, h: 10 }];
       expectRule(parse(doc), "S08t", "elements[0].text");
+    });
+
+    it("S08t: rejects a non-string fontWeight and fontStyle", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "text",
+          id: "t1",
+          x: 0,
+          y: 0,
+          w: 10,
+          h: 10,
+          text: "hi",
+          fontWeight: 700,
+          fontStyle: 1,
+        },
+      ];
+      const result = parse(doc);
+      expectRule(result, "S08t", "elements[0].fontWeight");
+      expectRule(result, "S08t", "elements[0].fontStyle");
+    });
+
+    it("S08t: rejects a non-boolean underline", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "text",
+          id: "t1",
+          x: 0,
+          y: 0,
+          w: 10,
+          h: 10,
+          text: "hi",
+          underline: "yes",
+        },
+      ];
+      expectRule(parse(doc), "S08t", "elements[0].underline");
     });
 
     it("S08l: rejects line missing orientation", () => {
@@ -364,6 +435,65 @@ describe("parseIr", () => {
         },
       ];
       expectRule(parse(doc), "S08b", "elements[0].cellOverrides[0].row");
+    });
+
+    it("S08b: rejects cellSpans that is not an array and a non-object entry", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+          cellSpans: "nope",
+        },
+      ];
+      expectRule(parse(doc), "S08b", "elements[0].cellSpans");
+
+      doc.elements[0].cellSpans = [42];
+      expectRule(parse(doc), "S08b", "elements[0].cellSpans[0]");
+    });
+
+    it('S08b: rejects a cellSpans row that is neither a number nor "header"', () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+          cellSpans: [{ row: "footer", key: "a", colSpan: 2 }],
+        },
+      ];
+      expectRule(parse(doc), "S08b", "elements[0].cellSpans[0].row");
+    });
+
+    it("S08b: rejects non-number rowSpan/colSpan and a non-boolean mergeSameValue", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10, mergeSameValue: "yes" }],
+          cellSpans: [{ row: 0, key: "a", rowSpan: "2", colSpan: true }],
+        },
+      ];
+      expectRule(parse(doc), "S08b", "elements[0].cellSpans[0].rowSpan");
+      expectRule(parse(doc), "S08b", "elements[0].cellSpans[0].colSpan");
+      expectRule(parse(doc), "S08b", "elements[0].columns[0].mergeSameValue");
     });
 
     it("S08i: rejects image missing src", () => {
@@ -536,6 +666,24 @@ describe("parseIr", () => {
       expectRule(parse(doc), "S09", "elements[0].cellOverrides[0].note");
     });
 
+    it("rejects an unknown cellSpans entry attribute", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+          cellSpans: [{ row: 0, key: "a", rowSpan: 2, value: "extra" }],
+        },
+      ];
+      expectRule(parse(doc), "S09", "elements[0].cellSpans[0].value");
+    });
+
     it("rejects text.bind with a migration message", () => {
       const doc = baseDoc();
       doc.elements = [
@@ -567,6 +715,42 @@ describe("parseIr", () => {
         },
       ];
       expectRule(parse(doc), "S10", "elements[0].align");
+    });
+
+    it("rejects out-of-domain fontWeight and fontStyle values", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "text",
+          id: "t1",
+          x: 0,
+          y: 0,
+          w: 10,
+          h: 10,
+          text: "hi",
+          fontWeight: "bolder",
+          fontStyle: "oblique",
+        },
+      ];
+      const result = parse(doc);
+      expectRule(result, "S10", "elements[0].fontWeight");
+      expectRule(result, "S10", "elements[0].fontStyle");
+    });
+
+    it("rejects fontWeight on pageNumber as an unknown attribute (S09)", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "pageNumber",
+          id: "p1",
+          x: 0,
+          y: 0,
+          w: 30,
+          h: 6,
+          fontWeight: "bold",
+        },
+      ];
+      expectRule(parse(doc), "S09", "elements[0].fontWeight");
     });
 
     it("rejects an invalid symbology value", () => {
@@ -624,6 +808,42 @@ describe("parseIr", () => {
         },
       ];
       expectRule(parse(doc), "S10", "elements[0].borderStyle");
+    });
+
+    it("rejects an invalid table.frameStyle value", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+          frameStyle: "wavy",
+        },
+      ];
+      expectRule(parse(doc), "S10", "elements[0].frameStyle");
+    });
+
+    it("rejects an invalid table.gridStyle value", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+          gridStyle: "wavy",
+        },
+      ];
+      expectRule(parse(doc), "S10", "elements[0].gridStyle");
     });
 
     it("reports only S09 (not S10) for an enum-named attribute unknown to the element type", () => {
@@ -819,6 +1039,38 @@ describe("parseIr", () => {
       expectRule(parse(doc), "S14", "styles[0].attrs.align");
     });
 
+    it("rejects out-of-domain fontWeight/fontStyle and non-boolean underline attrs", () => {
+      const doc = baseDoc();
+      doc.styles = [
+        {
+          name: "x",
+          attrs: { fontWeight: 700, fontStyle: "oblique", underline: "yes" },
+        },
+      ];
+      const result = parse(doc);
+      expectRule(result, "S14", "styles[0].attrs.fontWeight");
+      expectRule(result, "S14", "styles[0].attrs.fontStyle");
+      expectRule(result, "S14", "styles[0].attrs.underline");
+    });
+
+    it("accepts fontWeight/fontStyle/underline style attrs", () => {
+      const doc = baseDoc();
+      doc.styles = [
+        {
+          name: "強調",
+          attrs: { fontWeight: "bold", fontStyle: "italic", underline: true },
+        },
+      ];
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.document.styles?.[0]?.attrs).toEqual({
+        fontWeight: "bold",
+        fontStyle: "italic",
+        underline: true,
+      });
+    });
+
     it("rejects a non-object attrs", () => {
       const doc = baseDoc();
       doc.styles = [{ name: "x", attrs: "fontSize" }];
@@ -907,6 +1159,145 @@ describe("parseIr", () => {
         },
       ];
       expect(parse(doc).ok).toBe(true);
+    });
+  });
+
+  describe("name (common optional attribute)", () => {
+    it("accepts a name on every element type, including a table", () => {
+      const doc = baseDoc();
+      doc.elements = doc.elements.map((el: Raw, i: number) => ({
+        ...el,
+        name: `名前${i}`,
+      }));
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(
+        result.document.elements.map((el) => "name" in el && el.name),
+      ).toEqual(doc.elements.map((el: Raw) => el.name));
+    });
+
+    it("accepts a name with no identifier constraint (Japanese, duplicates allowed)", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        { type: "rect", id: "r1", x: 0, y: 0, w: 10, h: 10, name: "同じ名前" },
+        { type: "rect", id: "r2", x: 0, y: 0, w: 10, h: 10, name: "同じ名前" },
+      ];
+      expect(parse(doc).ok).toBe(true);
+    });
+
+    it("accepts a name on a flex child", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "flex",
+          id: "flex1",
+          x: 0,
+          y: 0,
+          direction: "column",
+          children: [
+            {
+              type: "text",
+              id: "ft1",
+              w: 1,
+              h: 1,
+              text: "a",
+              name: "子の名前",
+            },
+          ],
+        },
+      ];
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const flex = result.document.elements[0];
+      expect(flex?.type === "flex" && flex.children[0]).toMatchObject({
+        name: "子の名前",
+      });
+    });
+
+    it("rejects a non-string name", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        { type: "rect", id: "r1", x: 0, y: 0, w: 10, h: 10, name: 1 },
+      ];
+      expectRule(parse(doc), "S08r", "elements[0].name");
+    });
+
+    it("does not add a name attribute when omitted", () => {
+      const result = parse(baseDoc());
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.document.elements[0]).not.toHaveProperty("name");
+    });
+  });
+
+  describe("rotate (common optional attribute)", () => {
+    const rotatableRules: readonly [number, IrRuleId][] = [
+      [0, "S08t"],
+      [1, "S08l"],
+      [2, "S08r"],
+      [3, "S08e"],
+      [5, "S08i"],
+      [7, "S08p"],
+      [8, "S08c"],
+    ];
+
+    it("accepts a number rotate on every rotatable element type", () => {
+      const doc = baseDoc();
+      for (const [index] of rotatableRules) {
+        doc.elements[index].rotate = -45.5;
+      }
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      for (const [index] of rotatableRules) {
+        expect(result.document.elements[index]).toMatchObject({
+          rotate: -45.5,
+        });
+      }
+    });
+
+    it.each(rotatableRules)(
+      "rejects a non-number rotate on elements[%i] with %s",
+      (index, rule) => {
+        const doc = baseDoc();
+        doc.elements[index].rotate = "45";
+        expectRule(parse(doc), rule, `elements[${index}].rotate`);
+      },
+    );
+
+    it("rejects rotate on a table with S09", () => {
+      const doc = baseDoc();
+      doc.elements[4].rotate = 45;
+      expectRule(parse(doc), "S09", "elements[4].rotate");
+    });
+
+    it("rejects rotate on a flex with S09", () => {
+      const doc = baseDoc();
+      doc.elements[6].rotate = 45;
+      expectRule(parse(doc), "S09", "elements[6].rotate");
+    });
+
+    it("accepts rotate on a flex child and keeps it through normalization", () => {
+      const doc = baseDoc();
+      doc.elements[6].children[0].rotate = 90;
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const flex = result.document.elements[6];
+      expect(flex?.type === "flex" && flex.children[0]).toMatchObject({
+        rotate: 90,
+      });
+    });
+
+    it("does not add a rotate attribute when omitted", () => {
+      const result = parse(baseDoc());
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      for (const el of result.document.elements) {
+        expect(el).not.toHaveProperty("rotate");
+      }
     });
   });
 
@@ -1009,6 +1400,83 @@ describe("parseIr", () => {
 
     it("rejects an unknown root key even when footnotes is present", () => {
       const doc = withFootnotes(VALID_FOOTNOTES);
+      doc.extra = 1;
+      expectRule(parse(doc), "S02", "extra");
+    });
+  });
+
+  describe("groups (S02, S15)", () => {
+    function withGroups(groups: Raw): Raw {
+      const doc = baseDoc();
+      doc.groups = groups;
+      return doc;
+    }
+
+    const VALID_GROUPS: Raw = [{ id: "group1", memberIds: ["t1", "l1"] }];
+
+    it("accepts a document with a valid groups array", () => {
+      expect(parse(withGroups(VALID_GROUPS)).ok).toBe(true);
+    });
+
+    it("accepts a document without groups (back-compat)", () => {
+      const doc = baseDoc();
+      expect("groups" in doc).toBe(false);
+      expect(parse(doc).ok).toBe(true);
+    });
+
+    it("accepts an empty groups array", () => {
+      expect(parse(withGroups([])).ok).toBe(true);
+    });
+
+    it("rejects a non-array groups", () => {
+      expectRule(parse(withGroups({ id: "group1" })), "S15", "groups");
+    });
+
+    it("rejects a non-object group entry", () => {
+      expectRule(parse(withGroups(["nope"])), "S15", "groups[0]");
+    });
+
+    it("rejects a group entry with an unknown key", () => {
+      expectRule(
+        parse(withGroups([{ id: "group1", memberIds: ["t1"], extra: 1 }])),
+        "S15",
+        "groups[0].extra",
+      );
+    });
+
+    it("rejects a non-string id", () => {
+      expectRule(
+        parse(withGroups([{ id: 1, memberIds: ["t1"] }])),
+        "S15",
+        "groups[0].id",
+      );
+    });
+
+    it("rejects a non-array memberIds", () => {
+      expectRule(
+        parse(withGroups([{ id: "group1", memberIds: "t1" }])),
+        "S15",
+        "groups[0].memberIds",
+      );
+    });
+
+    it("rejects a memberIds array with a non-string entry", () => {
+      expectRule(
+        parse(withGroups([{ id: "group1", memberIds: ["t1", 2] }])),
+        "S15",
+        "groups[0].memberIds",
+      );
+    });
+
+    it("passes groups through normalization unchanged", () => {
+      const result = parse(withGroups(VALID_GROUPS));
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.document.groups).toEqual(VALID_GROUPS);
+    });
+
+    it("rejects an unknown root key even when groups is present", () => {
+      const doc = withGroups(VALID_GROUPS);
       doc.extra = 1;
       expectRule(parse(doc), "S02", "extra");
     });
@@ -1214,6 +1682,53 @@ describe("parseIr", () => {
       });
     });
 
+    it("preserves cellSpans and mergeSameValue without filling span defaults", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [
+            { key: "a", label: "A", width: 10, mergeSameValue: true },
+            { key: "b", label: "B", width: 10 },
+          ],
+          cellSpans: [
+            { row: "header", key: "b", colSpan: 1 },
+            { row: 2, key: "b", rowSpan: 3 },
+          ],
+        },
+      ];
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const el = result.document.elements[0];
+      expect(el).toMatchObject({
+        columns: [{ key: "a", mergeSameValue: true }, { key: "b" }],
+        cellSpans: [
+          { row: "header", key: "b", colSpan: 1 },
+          { row: 2, key: "b", rowSpan: 3 },
+        ],
+      });
+      if (el?.type !== "table") return;
+      expect(el.columns[1]).not.toHaveProperty("mergeSameValue");
+      expect(el.cellSpans?.[0]).not.toHaveProperty("rowSpan");
+      expect(el.cellSpans?.[1]).not.toHaveProperty("colSpan");
+      expect(el).not.toHaveProperty("cellOverrides");
+    });
+
+    it("does not add a cellSpans attribute when omitted", () => {
+      const result = parse(baseDoc());
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const el = result.document.elements.find((e) => e.type === "table");
+      expect(el).not.toHaveProperty("cellSpans");
+    });
+
     it("does not add a styles attribute when omitted", () => {
       const result = parse(baseDoc());
       expect(result.ok).toBe(true);
@@ -1295,6 +1810,36 @@ describe("parseIr", () => {
       expect(result.document.elements[0]).not.toHaveProperty("fillColor");
     });
 
+    it("passes explicit text fontWeight/fontStyle/underline through and omits them when unspecified", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "text",
+          id: "t1",
+          x: 0,
+          y: 0,
+          w: 50,
+          h: 10,
+          text: "強調",
+          fontWeight: "bold",
+          fontStyle: "italic",
+          underline: false,
+        },
+        { type: "text", id: "t2", x: 0, y: 20, w: 50, h: 10, text: "通常" },
+      ];
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.document.elements[0]).toMatchObject({
+        fontWeight: "bold",
+        fontStyle: "italic",
+        underline: false,
+      });
+      expect(result.document.elements[1]).not.toHaveProperty("fontWeight");
+      expect(result.document.elements[1]).not.toHaveProperty("fontStyle");
+      expect(result.document.elements[1]).not.toHaveProperty("underline");
+    });
+
     it("projects style attributes only when present, leaving unstyled elements unchanged", () => {
       const doc = baseDoc();
       doc.elements = [
@@ -1349,6 +1894,56 @@ describe("parseIr", () => {
       });
     });
 
+    it("does not add a color attribute to text/pageNumber when omitted, and preserves it when present", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "text",
+          id: "t1",
+          x: 0,
+          y: 0,
+          w: 40,
+          h: 8,
+          text: "無色",
+        },
+        {
+          type: "text",
+          id: "t2",
+          x: 0,
+          y: 0,
+          w: 40,
+          h: 8,
+          text: "赤",
+          color: "#ff0000",
+        },
+        {
+          type: "pageNumber",
+          id: "p1",
+          x: 0,
+          y: 0,
+          w: 40,
+          h: 8,
+        },
+        {
+          type: "pageNumber",
+          id: "p2",
+          x: 0,
+          y: 0,
+          w: 40,
+          h: 8,
+          color: "#00ff00",
+        },
+      ];
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      const [t1, t2, p1, p2] = result.document.elements;
+      expect(t1).not.toHaveProperty("color");
+      expect(t2).toMatchObject({ color: "#ff0000" });
+      expect(p1).not.toHaveProperty("color");
+      expect(p2).toMatchObject({ color: "#00ff00" });
+    });
+
     it("does not add a stripeColor attribute when omitted, and preserves it when present", () => {
       const doc = baseDoc();
       doc.elements = [
@@ -1391,12 +1986,64 @@ describe("parseIr", () => {
         "stripeColor",
       );
     });
+
+    it("does not add frameWidth/gridWidth/frameStyle/gridStyle when omitted, and preserves them when present", () => {
+      const doc = baseDoc();
+      doc.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+          frameWidth: 1,
+          gridWidth: 0.5,
+          frameStyle: "dashed",
+          gridStyle: "dotted",
+        },
+      ];
+      const result = parse(doc);
+      expect(result.ok).toBe(true);
+      if (!result.ok) return;
+      expect(result.document.elements[0]).toMatchObject({
+        frameWidth: 1,
+        gridWidth: 0.5,
+        frameStyle: "dashed",
+        gridStyle: "dotted",
+      });
+
+      const withoutOverrides = baseDoc();
+      withoutOverrides.elements = [
+        {
+          type: "table",
+          id: "tbl1",
+          x: 0,
+          y: 0,
+          bind: "items",
+          rowHeight: 9,
+          headerHeight: 9,
+          columns: [{ key: "a", label: "A", width: 10 }],
+        },
+      ];
+      const resultWithout = parse(withoutOverrides);
+      expect(resultWithout.ok).toBe(true);
+      if (!resultWithout.ok) return;
+      const el = resultWithout.document.elements[0];
+      expect(el).not.toHaveProperty("frameWidth");
+      expect(el).not.toHaveProperty("gridWidth");
+      expect(el).not.toHaveProperty("frameStyle");
+      expect(el).not.toHaveProperty("gridStyle");
+    });
   });
 
   describe("golden fixtures", () => {
     it.each([
       ["invoice.json", invoiceFixture],
       ["invoice-multipage.json", invoiceMultipageFixture],
+      ["table-merge.json", tableMergeFixture],
     ] as const)("parses and validates %s with no errors", (_name, fixture) => {
       const result = parseIr(JSON.stringify(fixture));
       expect(result.ok).toBe(true);

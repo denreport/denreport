@@ -1,3 +1,4 @@
+import { EMBEDDED_FONT_URL } from "@denreport/targets";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fetchEmbeddedFontData } from "./export-font";
 
@@ -16,7 +17,9 @@ describe("fetchEmbeddedFontData", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(fetchEmbeddedFontData()).resolves.toEqual(bytes);
+    await expect(fetchEmbeddedFontData(EMBEDDED_FONT_URL)).resolves.toEqual(
+      bytes,
+    );
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
@@ -27,7 +30,9 @@ describe("fetchEmbeddedFontData", () => {
         return { ok: false, status: 404 } as unknown as Response;
       }),
     );
-    await expect(fetchEmbeddedFontData()).rejects.toThrow("404");
+    await expect(fetchEmbeddedFontData(EMBEDDED_FONT_URL)).rejects.toThrow(
+      "404",
+    );
   });
 
   it("ネットワーク失敗で reject する", async () => {
@@ -35,6 +40,8 @@ describe("fetchEmbeddedFontData", () => {
       "fetch",
       vi.fn(() => Promise.reject(new Error("ネットワーク不通"))),
     );
-    await expect(fetchEmbeddedFontData()).rejects.toThrow("ネットワーク不通");
+    await expect(fetchEmbeddedFontData(EMBEDDED_FONT_URL)).rejects.toThrow(
+      "ネットワーク不通",
+    );
   });
 });

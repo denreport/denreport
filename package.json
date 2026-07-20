@@ -9,7 +9,7 @@
     "lint": "biome check .",
     "typecheck": "pnpm -r --if-present run typecheck",
     "test": "pnpm -r --if-present run test",
-    "check": "pnpm run lint && pnpm run typecheck && pnpm run test && bash scripts/check-comment-refs.sh"
+    "check": "pnpm run lint && pnpm run typecheck && pnpm run test && bash scripts/check-comment-refs.sh && bash scripts/check-version-sync.sh"
   },
   "devDependencies": {
     "typescript": "7.0.2",

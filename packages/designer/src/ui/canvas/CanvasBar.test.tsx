@@ -3,6 +3,8 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { EditorStore } from "../../state/store";
 import { CanvasBar } from "./CanvasBar";
 
@@ -14,7 +16,7 @@ function makeStore(page: IrDocument["page"]): EditorStore {
   const document: IrDocument = {
     version: "1.0",
     page,
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [],
   };
   return new EditorStore(document);
@@ -89,5 +91,24 @@ describe("CanvasBar の封筒窓ガイド", () => {
       root.render(<CanvasBar store={store} />);
     });
     expect(select().disabled).toBe(true);
+  });
+});
+
+describe("en の MessagesContext", () => {
+  it("文言が英語で描画される", () => {
+    const store = makeStore({ width: 210, height: 297 });
+    act(() => {
+      root.render(
+        <MessagesContext.Provider value={en}>
+          <CanvasBar store={store} />
+        </MessagesContext.Provider>,
+      );
+    });
+    expect(
+      container.querySelector('select[aria-label="Envelope window guide"]'),
+    ).not.toBeNull();
+    expect(container.textContent).toContain("Snap");
+    expect(container.textContent).toContain("Grid");
+    expect(container.textContent).toContain("Envelope window: None");
   });
 });

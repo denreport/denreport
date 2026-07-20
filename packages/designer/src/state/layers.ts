@@ -1,17 +1,17 @@
 import type {
   IrDocument,
   IrElement,
+  IrElementType,
   IrFlexChild,
   IrPages,
 } from "@denreport/core";
 import { IMAGE_PLACEHOLDER_SRC } from "./constants";
-import { ELEMENT_TYPE_LABEL } from "./element-labels";
 
-/** レイヤーツリーの1ノード。children は flex のみ非 null */
+/** One node in the layer tree. children is non-null only for flex */
 export interface LayerNode {
   readonly id: string;
   readonly element: IrElement | IrFlexChild;
-  /** 選択時のページ文脈切替に使う。table は null（全文脈で可視）。flex 子は親 flex の pages を継承 */
+  /** Used to switch the page context on selection. null for table (visible in all contexts). A flex child inherits its parent flex's pages */
   readonly pages: IrPages | null;
   readonly children: readonly LayerNode[] | null;
 }
@@ -31,7 +31,7 @@ function buildNode(
   return { id: element.id, element, pages, children: null };
 }
 
-/** IrDocument.elements / IrFlexElement.children を配列順のままツリーに写す */
+/** Maps IrDocument.elements / IrFlexElement.children into a tree, preserving array order */
 export function buildLayerTree(document: IrDocument): readonly LayerNode[] {
   return document.elements.map((element) =>
     buildNode(element, element.type === "table" ? null : element.pages),
@@ -40,13 +40,20 @@ export function buildLayerTree(document: IrDocument): readonly LayerNode[] {
 
 const TEXT_LABEL_MAX = 12;
 
-/** ツリー行の表示名（プレーン文字列） */
-export function layerLabel(element: IrElement | IrFlexChild): string {
+/** A tree row's display name (plain string). Prefers name if present */
+export function layerLabel(
+  element: IrElement | IrFlexChild,
+  elementTypes: Record<IrElementType, string>,
+  imagePlaceholder: string,
+): string {
+  if (element.name !== undefined && element.name !== "") {
+    return element.name;
+  }
   switch (element.type) {
     case "text": {
       const text = element.text;
       if (text.length === 0) {
-        return ELEMENT_TYPE_LABEL.text;
+        return elementTypes.text;
       }
       return text.length > TEXT_LABEL_MAX
         ? `${text.slice(0, TEXT_LABEL_MAX)}…`
@@ -55,8 +62,10 @@ export function layerLabel(element: IrElement | IrFlexChild): string {
     case "pageNumber":
       return element.format;
     case "image":
-      return element.src === IMAGE_PLACEHOLDER_SRC ? "画像未設定" : "画像";
+      return element.src === IMAGE_PLACEHOLDER_SRC
+        ? imagePlaceholder
+        : elementTypes.image;
     default:
-      return ELEMENT_TYPE_LABEL[element.type];
+      return elementTypes[element.type];
   }
 }

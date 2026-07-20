@@ -25,7 +25,7 @@ function makeDocument(elements: readonly IrTextElement[] = []): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -98,13 +98,41 @@ describe("EditorStore", () => {
     const store = new EditorStore(makeDocument());
     expect(store.getState().validationErrors).toEqual([]);
 
-    // x=500 は用紙幅 210mm を超えるため M02 になる
+    // x=500 exceeds the paper width of 210mm, so it becomes M02
     store.commit(makeDocument([textElement("t1", 500)]));
     const rules = store.getState().validationErrors.map((e) => e.rule);
     expect(rules).toContain("M02");
 
     store.commit(makeDocument([textElement("t1", 10)]));
     expect(store.getState().validationErrors).toEqual([]);
+  });
+
+  it("setLocale は現在の文書で検証をやり直し、購読者へ通知する", () => {
+    const store = new EditorStore(makeDocument([textElement("t1", 500)]));
+    let notified = 0;
+    store.subscribe(() => {
+      notified += 1;
+    });
+    const jaMessage = store.getState().validationErrors[0]?.message;
+
+    store.setLocale("en");
+    expect(notified).toBe(1);
+    const enMessage = store.getState().validationErrors[0]?.message;
+    expect(enMessage).toBeDefined();
+    expect(enMessage).not.toBe(jaMessage);
+
+    store.setLocale("en");
+    expect(notified).toBe(1);
+  });
+
+  it("setLocale 後の commit も切り替えた言語で検証する", () => {
+    const store = new EditorStore(makeDocument());
+    store.setLocale("en");
+    store.commit(makeDocument([textElement("t1", 500)]));
+    const enMessage = store.getState().validationErrors[0]?.message;
+
+    const jaStore = new EditorStore(makeDocument([textElement("t1", 500)]));
+    expect(enMessage).not.toBe(jaStore.getState().validationErrors[0]?.message);
   });
 
   it("commit / replaceDocument / undo で validationWarnings が再計算される", () => {
@@ -310,6 +338,49 @@ describe("EditorStore のカスタムガイド・封筒プリセット", () => {
   });
 });
 
+describe("EditorStore の書き出しターゲット", () => {
+  it("省略時の初期値は pdfme", () => {
+    const state = new EditorStore(makeDocument()).getState();
+    expect(state.selectedExportTarget).toBe("pdfme");
+  });
+
+  it("コンストラクタ第3引数で初期値を指定できる", () => {
+    const state = new EditorStore(
+      makeDocument(),
+      undefined,
+      "reportlab",
+    ).getState();
+    expect(state.selectedExportTarget).toBe("reportlab");
+  });
+
+  it("setSelectedExportTarget は購読者に通知し、履歴にも dirty にも影響しない", () => {
+    const store = new EditorStore(makeDocument());
+    let notified = 0;
+    store.subscribe(() => {
+      notified += 1;
+    });
+
+    store.setSelectedExportTarget("reportlab");
+
+    expect(notified).toBe(1);
+    expect(store.getState().selectedExportTarget).toBe("reportlab");
+    expect(store.canUndo()).toBe(false);
+    expect(store.getState().dirty).toBe(false);
+  });
+
+  it("undo / redo・commit・replaceDocument を経ても維持される", () => {
+    const store = new EditorStore(makeDocument());
+    store.setSelectedExportTarget("reportlab");
+
+    store.commit(makeDocument([textElement("t1", 10)]));
+    store.undo();
+    expect(store.getState().selectedExportTarget).toBe("reportlab");
+
+    store.replaceDocument(makeDocument());
+    expect(store.getState().selectedExportTarget).toBe("reportlab");
+  });
+});
+
 function registeredFont(name: string): RegisteredFont {
   return {
     name,
@@ -393,11 +464,35 @@ describe("EditorStore のグループ", () => {
     expect(store.getState().dirty).toBe(false);
   });
 
-  it("replaceDocument でグループが空になる", () => {
+  it("replaceDocument は新文書に groups が無ければグループを空にする", () => {
     const store = new EditorStore(makeDocument());
     store.setGroups([{ id: "group1", memberIds: ["a", "b"] }]);
 
     store.replaceDocument(makeDocument([textElement("t1", 10)]));
+    expect(store.getState().groups).toEqual([]);
+  });
+
+  it("replaceDocument は document.groups からグループを復元する", () => {
+    const store = new EditorStore(makeDocument());
+    const document: IrDocument = {
+      ...makeDocument([textElement("t1", 10), textElement("t2", 60)]),
+      groups: [{ id: "group1", memberIds: ["t1", "t2"] }],
+    };
+
+    store.replaceDocument(document);
+    expect(store.getState().groups).toEqual([
+      { id: "group1", memberIds: ["t1", "t2"] },
+    ]);
+  });
+
+  it("replaceDocument は生存メンバー2未満のグループを復元しない", () => {
+    const store = new EditorStore(makeDocument());
+    const document: IrDocument = {
+      ...makeDocument([textElement("t1", 10)]),
+      groups: [{ id: "group1", memberIds: ["t1", "ghost"] }],
+    };
+
+    store.replaceDocument(document);
     expect(store.getState().groups).toEqual([]);
   });
 

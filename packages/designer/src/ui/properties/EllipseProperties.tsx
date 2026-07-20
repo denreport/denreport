@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorMessageFor } from "../../state/error-index";
 import type { ElementFormProps } from "./ElementProperties";
 import { commitReplace, withOptionalAttr } from "./ElementProperties";
@@ -7,6 +8,7 @@ import { ColorField, NumberField } from "./fields";
 export function EllipseProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;
   const el = view.element;
+  const m = useMessages();
   if (el.type !== "ellipse") {
     return null;
   }
@@ -14,8 +16,8 @@ export function EllipseProperties(props: ElementFormProps): ReactNode {
   const h = liveBox === null ? el.h : liveBox.h;
   return (
     <>
-      <section className="apx-sect">
-        <div className="apx-sect-h">配置</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.placement}</div>
         {"x" in el && (
           <>
             <NumberField
@@ -53,10 +55,10 @@ export function EllipseProperties(props: ElementFormProps): ReactNode {
           onCommit={(h) => commitReplace(store, el.id, { ...el, h })}
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">枠線</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.border.section}</div>
         <NumberField
-          label="枠線幅"
+          label={m.properties.border.width}
           value={el.borderWidth}
           unit="mm"
           precision={0.1}
@@ -66,7 +68,7 @@ export function EllipseProperties(props: ElementFormProps): ReactNode {
           }
         />
         <ColorField
-          label="枠線色"
+          label={m.properties.border.color}
           value={el.borderColor ?? null}
           onCommit={(borderColor) =>
             commitReplace(
@@ -83,10 +85,10 @@ export function EllipseProperties(props: ElementFormProps): ReactNode {
           }
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">塗り</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.fill.section}</div>
         <ColorField
-          label="塗り色"
+          label={m.properties.fill.color}
           value={el.fillColor ?? null}
           allowNone
           onCommit={(fillColor) =>

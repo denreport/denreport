@@ -95,7 +95,7 @@ export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
     [store],
   );
 
-  // ドラッグ中の Esc キャンセル（pointer capture 中はフォーカス位置に依らず効かせる）
+  // Esc cancels during a drag (effective regardless of focus position while pointer capture is active)
   useEffect(() => {
     if (interaction.kind === "idle") {
       return;
@@ -130,7 +130,7 @@ export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
         const at = toMm(ev);
         if (at !== null) {
           setCursorMm(at);
-          dispatch({ kind: "pointerMove", at });
+          dispatch({ kind: "pointerMove", at, shiftKey: ev.shiftKey });
         }
       };
       const onUp = (ev: PointerEvent): void => {
@@ -165,7 +165,7 @@ export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
       if (e.button !== 0) {
         return;
       }
-      // pointerdown の取消は互換 mousedown も抑止し、テキスト選択の開始ごと止める
+      // Canceling pointerdown also suppresses the compatibility mousedown, stopping every start of text selection
       e.preventDefault();
       e.currentTarget.focus({ preventScroll: true });
       const at = toMm(e);
@@ -174,15 +174,14 @@ export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
       }
       e.currentTarget.setPointerCapture(e.pointerId);
       const target = e.target instanceof Element ? e.target : null;
-      const handleEl = target?.closest("[data-apx-handle]") ?? null;
-      const idEl = target?.closest("[data-apx-id]") ?? null;
+      const handleEl = target?.closest("[data-dr-handle]") ?? null;
+      const idEl = target?.closest("[data-dr-id]") ?? null;
       dispatch({
         kind: "pointerDown",
         at,
-        targetId: idEl?.getAttribute("data-apx-id") ?? null,
+        targetId: idEl?.getAttribute("data-dr-id") ?? null,
         handle:
-          (handleEl?.getAttribute("data-apx-handle") as HandleId | null) ??
-          null,
+          (handleEl?.getAttribute("data-dr-handle") as HandleId | null) ?? null,
         shiftKey: e.shiftKey,
       });
     },
@@ -197,7 +196,7 @@ export function useCanvasInteraction(store: EditorStore): CanvasInteraction {
       }
       setCursorMm(at);
       if (interactionRef.current.kind !== "idle") {
-        dispatch({ kind: "pointerMove", at });
+        dispatch({ kind: "pointerMove", at, shiftKey: e.shiftKey });
       }
     },
     [dispatch, toMm],

@@ -1,15 +1,16 @@
 import { readFileSync } from "node:fs";
 import { EMBEDDED_FONT_URL } from "@denreport/targets";
 import { describe, expect, it } from "vitest";
+import { ja } from "../../i18n/messages/ja";
 import { sanitizeFontName } from "../../state/fonts";
 import { buildRegisteredFont } from "./font-registration";
 
-// jsdom 下では import.meta.url 由来の URL が http://localhost:3000/@fs/... になる
+// Under jsdom, the URL derived from import.meta.url becomes http://localhost:3000/@fs/...
 const EMBEDDED_FONT = new Uint8Array(
   readFileSync(EMBEDDED_FONT_URL.pathname.replace(/^\/@fs/, "")),
 );
 
-// OTTO ヘッダ + CFF テーブルだけの合成フォント。形式判定はディレクトリしか読まない
+// A synthetic font with only an OTTO header + CFF table. Format detection only reads the directory
 function syntheticCff(): Uint8Array {
   const bytes = new Uint8Array(12 + 16);
   const view = new DataView(bytes.buffer);
@@ -19,7 +20,7 @@ function syntheticCff(): Uint8Array {
   return bytes;
 }
 
-// glyf テーブルのみ持ち head/hhea を持たない TTF（計量読取不能を再現する）
+// A TTF that has only a glyf table and no head/hhea (reproduces unreadable metrics)
 function ttfMissingMetrics(): Uint8Array {
   const bytes = new Uint8Array(12 + 16);
   const view = new DataView(bytes.buffer);
@@ -31,9 +32,12 @@ function ttfMissingMetrics(): Uint8Array {
 
 describe("buildRegisteredFont", () => {
   it("同梱 TTF は ok になり ascentPerEm と sanitizeFontName の名前を持つ", () => {
-    const result = buildRegisteredFont(EMBEDDED_FONT, {
-      fullName: "Noto Sans JP",
-    });
+    const result = buildRegisteredFont(
+      EMBEDDED_FONT,
+      { fullName: "Noto Sans JP" },
+      ja.fonts,
+      "ja",
+    );
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
     expect(result.font.name).toBe(sanitizeFontName("Noto Sans JP"));
@@ -43,9 +47,12 @@ describe("buildRegisteredFont", () => {
   });
 
   it("CFF は validate.ts と同じ文言の FontIssue で拒否する", () => {
-    const result = buildRegisteredFont(syntheticCff(), {
-      fullName: "Test CFF",
-    });
+    const result = buildRegisteredFont(
+      syntheticCff(),
+      { fullName: "Test CFF" },
+      ja.fonts,
+      "ja",
+    );
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");
     expect(result.issues).toEqual([
@@ -58,9 +65,12 @@ describe("buildRegisteredFont", () => {
   });
 
   it("計量を読み取れない TTF は FontIssue になる", () => {
-    const result = buildRegisteredFont(ttfMissingMetrics(), {
-      fullName: "Broken",
-    });
+    const result = buildRegisteredFont(
+      ttfMissingMetrics(),
+      { fullName: "Broken" },
+      ja.fonts,
+      "ja",
+    );
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");
     expect(result.issues[0]?.format).toBe("ttf");

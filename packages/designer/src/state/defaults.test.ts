@@ -25,9 +25,22 @@ function blankDocument(): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [],
   };
+}
+
+function defaultElement(
+  document: IrDocument,
+  type: IrElementType,
+  x: number,
+  y: number,
+) {
+  return createDefaultElement(document, type, x, y);
+}
+
+function centeredElement(document: IrDocument, type: IrElementType) {
+  return createCenteredElement(document, type);
 }
 
 describe("nextElementId", () => {
@@ -38,17 +51,17 @@ describe("nextElementId", () => {
 
   it("flex 子孫の id とも衝突しない", () => {
     let doc = blankDocument();
-    doc = addElement(doc, createDefaultElement(doc, "flex", 10, 10));
-    // flex1 と、その text 子 text1 が使用済みになる
+    doc = addElement(doc, defaultElement(doc, "flex", 10, 10));
+    // flex1, and its text child text1, become used
     expect(nextElementId(doc, "flex")).toBe("flex2");
     expect(nextElementId(doc, "text")).toBe("text2");
   });
 
   it("削除済み番号（最小の空き）を再利用する", () => {
     let doc = blankDocument();
-    doc = addElement(doc, createDefaultElement(doc, "text", 10, 10));
-    doc = addElement(doc, createDefaultElement(doc, "text", 10, 30));
-    doc = addElement(doc, createDefaultElement(doc, "text", 10, 50));
+    doc = addElement(doc, defaultElement(doc, "text", 10, 10));
+    doc = addElement(doc, defaultElement(doc, "text", 10, 30));
+    doc = addElement(doc, defaultElement(doc, "text", 10, 50));
     doc = {
       ...doc,
       elements: doc.elements.filter((el) => el.id !== "text2"),
@@ -62,12 +75,12 @@ describe("createDefaultElement", () => {
     it(`${type}: S 群通過の正規化済み完全形で、白紙 A4 上で M 群違反を作らない`, () => {
       const doc = addElement(
         blankDocument(),
-        createDefaultElement(blankDocument(), type, 20, 30),
+        defaultElement(blankDocument(), type, 20, 30),
       );
       const result = parseIr(JSON.stringify(doc));
       expect(result.ok).toBe(true);
       if (result.ok) {
-        // 正規化済み = parseIr のデフォルト適用で変化しない
+        // Normalized = unchanged by parseIr's default application
         expect(result.document).toEqual(doc);
         expect(validateIr(result.document)).toEqual([]);
       }
@@ -75,7 +88,7 @@ describe("createDefaultElement", () => {
   }
 
   it("座標は 0.1mm に丸められる", () => {
-    const el = createDefaultElement(blankDocument(), "rect", 10.04, 20.06);
+    const el = defaultElement(blankDocument(), "rect", 10.04, 20.06);
     expect(el.type).toBe("rect");
     if (el.type === "rect") {
       expect(el.x).toBe(10);
@@ -84,7 +97,7 @@ describe("createDefaultElement", () => {
   });
 
   it("table は文書依存デフォルト（maxY = page.height・continuationY = y）を具体値で持つ", () => {
-    const el = createDefaultElement(blankDocument(), "table", 15, 90);
+    const el = defaultElement(blankDocument(), "table", 15, 90);
     expect(el.type).toBe("table");
     if (el.type === "table") {
       expect(el.maxY).toBe(297);
@@ -94,7 +107,7 @@ describe("createDefaultElement", () => {
   });
 
   it("barcode は既定で qrcode・トークン値 {code} を持つ", () => {
-    const el = createDefaultElement(blankDocument(), "barcode", 15, 90);
+    const el = defaultElement(blankDocument(), "barcode", 15, 90);
     expect(el.type).toBe("barcode");
     if (el.type === "barcode") {
       expect(el.symbology).toBe("qrcode");
@@ -106,12 +119,26 @@ describe("createDefaultElement", () => {
 
   it("flex は text 子1個つきで生成され、子 id も文書から採番される", () => {
     let doc = blankDocument();
-    doc = addElement(doc, createDefaultElement(doc, "text", 10, 10));
-    const el = createDefaultElement(doc, "flex", 20, 20);
+    doc = addElement(doc, defaultElement(doc, "text", 10, 10));
+    const el = defaultElement(doc, "flex", 20, 20);
     expect(el.type).toBe("flex");
     if (el.type === "flex") {
       expect(el.children).toHaveLength(1);
       expect(el.children[0]?.id).toBe("text2");
+    }
+  });
+
+  it("既定テキスト・列名はロケールに依らず英語", () => {
+    const el = defaultElement(blankDocument(), "text", 10, 10);
+    expect(el.type).toBe("text");
+    if (el.type === "text") {
+      expect(el.text).toBe("text1");
+    }
+
+    const table = defaultElement(blankDocument(), "table", 10, 10);
+    expect(table.type).toBe("table");
+    if (table.type === "table") {
+      expect(table.columns.map((c) => c.label)).toEqual(["column1", "column2"]);
     }
   });
 });
@@ -120,7 +147,7 @@ describe("createCenteredElement", () => {
   for (const type of ALL_TYPES) {
     it(`${type}: A4 白紙でページ中央に置かれ M 群違反を作らない`, () => {
       const doc = blankDocument();
-      const el = createCenteredElement(doc, type);
+      const el = centeredElement(doc, type);
       const size = defaultSizeMm(type);
       expect(el.x + size.w / 2).toBeCloseTo(doc.page.width / 2, 1);
       expect(el.y + size.h / 2).toBeCloseTo(doc.page.height / 2, 1);
@@ -135,7 +162,7 @@ describe("createCenteredElement", () => {
 
   it("table は列幅の合計を幅として中央寄せする", () => {
     const doc = blankDocument();
-    const el = createCenteredElement(doc, "table");
+    const el = centeredElement(doc, "table");
     expect(el.type).toBe("table");
     if (el.type === "table") {
       const totalWidth = el.columns.reduce(
@@ -151,7 +178,7 @@ describe("createCenteredElement", () => {
       ...blankDocument(),
       page: { width: 1, height: 1 },
     };
-    const el = createCenteredElement(tiny, "rect");
+    const el = centeredElement(tiny, "rect");
     expect(el.x).toBe(0);
     expect(el.y).toBe(0);
   });

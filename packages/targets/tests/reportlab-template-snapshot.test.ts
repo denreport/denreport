@@ -19,7 +19,7 @@ function staticDocument(): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [
       {
         type: "text",
@@ -52,7 +52,7 @@ function tokenDocument(): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [
       {
         type: "text",
@@ -88,7 +88,7 @@ function footnotesDocument(): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [
       {
         type: "text",
@@ -119,7 +119,9 @@ function footnotesDocument(): IrDocument {
 describe("exportReportlabTemplate — golden fixture snapshots", () => {
   it("reportlab-template-token", async () => {
     const fontData = new Uint8Array(readFileSync(EMBEDDED_FONT_URL));
-    const result = exportReportlabTemplate(tokenDocument(), fontData);
+    const result = exportReportlabTemplate(tokenDocument(), {
+      regular: fontData,
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
 
@@ -140,7 +142,9 @@ describe("exportReportlabTemplate — golden fixture snapshots", () => {
 
   it("reportlab-template-static", async () => {
     const fontData = new Uint8Array(readFileSync(EMBEDDED_FONT_URL));
-    const result = exportReportlabTemplate(staticDocument(), fontData);
+    const result = exportReportlabTemplate(staticDocument(), {
+      regular: fontData,
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
 
@@ -163,7 +167,9 @@ describe("exportReportlabTemplate — golden fixture snapshots", () => {
     const data = readJson<IrData>(fixturesDir, "invoice-multipage-data.json");
     const fontData = new Uint8Array(readFileSync(EMBEDDED_FONT_URL));
 
-    const result = exportReportlabTemplate(parsed.document, fontData);
+    const result = exportReportlabTemplate(parsed.document, {
+      regular: fontData,
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
 
@@ -177,9 +183,36 @@ describe("exportReportlabTemplate — golden fixture snapshots", () => {
     );
   });
 
+  it("reportlab-template-table-merge", async () => {
+    const parsed = parseIr(
+      readFileSync(`${coreFixturesDir}/table-merge.json`, "utf-8"),
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) throw new Error("expected valid IR fixture");
+    const data = readJson<IrData>(fixturesDir, "table-merge-data.json");
+    const fontData = new Uint8Array(readFileSync(EMBEDDED_FONT_URL));
+
+    const result = exportReportlabTemplate(parsed.document, {
+      regular: fontData,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error("expected success");
+
+    await expect(result.code).toMatchFileSnapshot(
+      "./__snapshots__/reportlab-template-table-merge.py",
+    );
+    await expect(
+      JSON.stringify({ data, pages: 2 }, null, 2),
+    ).toMatchFileSnapshot(
+      "./__snapshots__/reportlab-template-table-merge.data.json",
+    );
+  });
+
   it("reportlab-template-footnotes", async () => {
     const fontData = new Uint8Array(readFileSync(EMBEDDED_FONT_URL));
-    const result = exportReportlabTemplate(footnotesDocument(), fontData);
+    const result = exportReportlabTemplate(footnotesDocument(), {
+      regular: fontData,
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("expected success");
 

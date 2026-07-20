@@ -4,8 +4,10 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
+import { ja } from "../../i18n/messages/ja";
 import { IMAGE_PLACEHOLDER_SRC } from "../../state/constants";
-import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
 import { layoutDocument } from "../../state/geometry";
 import { EditorStore } from "../../state/store";
 import type { InteractionState } from "../canvas/interaction";
@@ -142,7 +144,7 @@ function makeStore(): EditorStore {
   const document: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: ELEMENTS,
   };
   return new EditorStore(document);
@@ -152,7 +154,7 @@ function makeStoreWithStyle(): EditorStore {
   const document: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     styles: [{ name: "見出し", attrs: { fontSize: 20, align: "center" } }],
     elements: ELEMENTS,
   };
@@ -289,26 +291,24 @@ describe("PropertiesPanel の振り分け", () => {
   it("単一選択では型ごとのフォームを表示する（全8型）", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
-    const cases: readonly (readonly [
-      string,
-      keyof typeof ELEMENT_TYPE_LABEL,
-    ])[] = [
-      ["t1", "text"],
-      ["l1", "line"],
-      ["r1", "rect"],
-      ["e1", "ellipse"],
-      ["tbl1", "table"],
-      ["img1", "image"],
-      ["f1", "flex"],
-      ["p1", "pageNumber"],
-      ["bc1", "barcode"],
-    ];
+    const cases: readonly (readonly [string, keyof typeof ja.elementTypes])[] =
+      [
+        ["t1", "text"],
+        ["l1", "line"],
+        ["r1", "rect"],
+        ["e1", "ellipse"],
+        ["tbl1", "table"],
+        ["img1", "image"],
+        ["f1", "flex"],
+        ["p1", "pageNumber"],
+        ["bc1", "barcode"],
+      ];
     for (const [id, type] of cases) {
       select(store, [id]);
-      expect(container.querySelector(".apx-type-badge")?.textContent).toBe(
-        ELEMENT_TYPE_LABEL[type],
+      expect(container.querySelector(".dr-type-badge")?.textContent).toBe(
+        ja.elementTypes[type],
       );
-      expect(container.querySelector(".apx-props-id")?.textContent).toBe(id);
+      expect(container.querySelector(".dr-props-id")?.textContent).toBe(id);
     }
   });
 
@@ -317,8 +317,8 @@ describe("PropertiesPanel の振り分け", () => {
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["t1", "r1"]);
     expect(container.textContent).toContain("2 個の要素を選択中");
-    expect(container.querySelector(".apx-field")).not.toBeNull();
-    expect(container.querySelector(".apx-type-badge")).toBeNull();
+    expect(container.querySelector(".dr-field")).not.toBeNull();
+    expect(container.querySelector(".dr-type-badge")).toBeNull();
   });
 
   it("選択 id が文書に無い場合は非選択扱い", () => {
@@ -346,12 +346,21 @@ describe("PropertiesPanel の振り分け", () => {
     expect(store.canUndo()).toBe(false);
   });
 
+  it("適格請求書チェックのラベルは「チェック」部分が単語内分断されないよう nowrap で囲む", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    const labels = [...container.querySelectorAll(".dr-frow-label")];
+    const label = labels.find((el) => el.textContent === "記載事項チェック");
+    expect(label?.textContent).toBe("記載事項チェック");
+    expect(label?.querySelector(".dr-nowrap")?.textContent).toBe("チェック");
+  });
+
   it("flex 子の選択では x / y / ページを出さず、注記を表示する", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["c1"]);
-    expect(container.querySelector(".apx-type-badge")?.textContent).toBe(
-      ELEMENT_TYPE_LABEL.text,
+    expect(container.querySelector(".dr-type-badge")?.textContent).toBe(
+      ja.elementTypes.text,
     );
     const labels = [...container.querySelectorAll("label")].map(
       (l) => l.textContent,
@@ -360,6 +369,206 @@ describe("PropertiesPanel の振り分け", () => {
     expect(labels).not.toContain("y");
     expect(container.querySelector('fieldset[aria-label="ページ"]')).toBeNull();
     expect(container.textContent).toContain("位置はフレックスが決定");
+  });
+});
+
+describe("用紙サイズプリセット", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function stubLanguage(language: string): void {
+    vi.spyOn(window.navigator, "language", "get").mockReturnValue(language);
+  }
+
+  it("英語圏 UI では A3/A4/A5/B5(ISO)/Letter/Legal を選択肢に出し、A4 の白紙初期値を選択済みにする", () => {
+    stubLanguage("en-US");
+    const store = makeStore();
+    // The preset candidate set follows navigator.language; the labels follow the UI locale (here, en)
+    render(
+      <MessagesContext.Provider value={en}>
+        <PropertiesPanel store={store} interaction={IDLE} />
+      </MessagesContext.Provider>,
+    );
+    const select = requireSelectByLabel(en.propertiesBulk.document.size);
+    expect(
+      [...select.querySelectorAll("option")].map((o) => o.textContent),
+    ).toEqual(["A3", "A4", "A5", "B5", "Letter", "Legal", "Custom"]);
+    expect(select.value).toBe("a4");
+  });
+
+  it("日本語 UI では A3/A4/A5/B4(JIS)/B5(JIS)/はがき/レターを選択肢に出す", () => {
+    stubLanguage("ja-JP");
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    const select = requireSelectByLabel("サイズ");
+    expect(
+      [...select.querySelectorAll("option")].map((o) => o.textContent),
+    ).toEqual(["A3", "A4", "A5", "B4", "B5", "はがき", "レター", "カスタム"]);
+  });
+
+  it("プリセットを選ぶと幅・高さが一括で commit される", () => {
+    stubLanguage("ja-JP");
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    setSelectValue(requireSelectByLabel("サイズ"), "b5jis");
+    expect(store.getState().document.page).toEqual({ width: 182, height: 257 });
+    expect(inputByLabel("幅").value).toBe("182.0");
+    expect(inputByLabel("高さ").value).toBe("257.0");
+  });
+
+  it("レターを選ぶと規格値（215.9x279.4mm）がそのまま commit される", () => {
+    stubLanguage("ja-JP");
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    setSelectValue(requireSelectByLabel("サイズ"), "letter");
+    expect(store.getState().document.page).toEqual({
+      width: 215.9,
+      height: 279.4,
+    });
+    expect(inputByLabel("幅").value).toBe("215.9");
+    expect(inputByLabel("高さ").value).toBe("279.4");
+  });
+
+  it("どのプリセットとも一致しない寸法では「カスタム」を選択済みにする", () => {
+    stubLanguage("ja-JP");
+    const store = makeStore();
+    act(() => {
+      store.commit({
+        ...store.getState().document,
+        page: { width: 200, height: 300 },
+      });
+    });
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    expect(requireSelectByLabel("サイズ").value).toBe("custom");
+  });
+
+  it("幅・高さ欄を手動編集してプリセットに一致させると select 表示が追従する", () => {
+    stubLanguage("ja-JP");
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    setValue(inputByLabel("幅"), "148");
+    blur(inputByLabel("幅"));
+    setValue(inputByLabel("高さ"), "210");
+    blur(inputByLabel("高さ"));
+    expect(requireSelectByLabel("サイズ").value).toBe("a5");
+  });
+});
+
+describe("名前フィールド", () => {
+  it("ヘッダーの名前欄への入力が commit に到達し、undo で戻る", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["r1"]);
+
+    const nameInput = inputByLabel("名前");
+    expect(nameInput.value).toBe("");
+    setValue(nameInput, "見出し枠");
+    blur(nameInput);
+    expect(elementById(store, "r1")).toMatchObject({ name: "見出し枠" });
+
+    act(() => {
+      store.undo();
+    });
+    expect(elementById(store, "r1")).not.toHaveProperty("name");
+  });
+
+  it("空欄への変更は name 属性を除去する", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["r1"]);
+
+    const nameInput = inputByLabel("名前");
+    setValue(nameInput, "見出し枠");
+    blur(nameInput);
+    expect(elementById(store, "r1")).toMatchObject({ name: "見出し枠" });
+
+    setValue(nameInput, "  ");
+    blur(nameInput);
+    expect(elementById(store, "r1")).not.toHaveProperty("name");
+  });
+
+  it("flex 子でも名前欄を表示・編集できる", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["c1"]);
+
+    const nameInput = inputByLabel("名前");
+    setValue(nameInput, "子要素名");
+    blur(nameInput);
+    const flex = elementById(store, "f1");
+    expect(flex.type === "flex" ? flex.children[0] : null).toMatchObject({
+      name: "子要素名",
+    });
+  });
+});
+
+describe("回転フィールド", () => {
+  it("table / flex 以外で回転欄を表示し、table / flex では表示しない", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["r1"]);
+    expect(inputByLabel("回転")).toBeDefined();
+
+    select(store, ["tbl1"]);
+    expect(
+      [...container.querySelectorAll("label")].some(
+        (l) => l.textContent === "回転",
+      ),
+    ).toBe(false);
+
+    select(store, ["f1"]);
+    expect(
+      [...container.querySelectorAll("label")].some(
+        (l) => l.textContent === "回転",
+      ),
+    ).toBe(false);
+  });
+
+  it("入力が 0.1° 丸めで commit に到達し、undo で戻る", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["r1"]);
+
+    const input = inputByLabel("回転");
+    expect(input.value).toBe("0.0");
+    setValue(input, "45.04");
+    blur(input);
+    expect(elementById(store, "r1")).toMatchObject({ rotate: 45 });
+
+    act(() => {
+      store.undo();
+    });
+    expect(elementById(store, "r1")).not.toHaveProperty("rotate");
+  });
+
+  it("0 への変更は rotate 属性を除去する", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["r1"]);
+
+    const input = inputByLabel("回転");
+    setValue(input, "90");
+    blur(input);
+    expect(elementById(store, "r1")).toMatchObject({ rotate: 90 });
+
+    setValue(input, "0");
+    blur(input);
+    expect(elementById(store, "r1")).not.toHaveProperty("rotate");
+  });
+
+  it("flex 子でも回転欄を表示・編集できる", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["c1"]);
+
+    const input = inputByLabel("回転");
+    setValue(input, "-15");
+    blur(input);
+    const flex = elementById(store, "f1");
+    expect(flex.type === "flex" ? flex.children[0] : null).toMatchObject({
+      rotate: -15,
+    });
   });
 });
 
@@ -428,6 +637,44 @@ describe("代表的な編集経路", () => {
     expect(elementById(store, "t1")).toMatchObject({ text: "見出し" });
   });
 
+  it("テキスト編集欄に {#id} 構文の案内文を表示する", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["t1"]);
+    expect(container.querySelector(".dr-fhint")?.textContent).toContain(
+      "{#id}",
+    );
+  });
+
+  it("未定義の脚注 id を参照する（F03）とテキスト編集欄にエラーを表示する", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["t1"]);
+
+    const textInput = inputByLabel("テキスト");
+    setValue(textInput, "見出し{#missing}");
+    blur(textInput);
+
+    expect(container.querySelector(".dr-field.is-error")).not.toBeNull();
+    expect(container.querySelector(".dr-ferr")?.textContent).toContain(
+      "missing",
+    );
+  });
+
+  it("flex 内の text に脚注マークを書く（F04）とテキスト編集欄にエラーを表示する", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["c1"]);
+
+    const textInput = inputByLabel("テキスト");
+    setValue(textInput, "子{#note1}");
+    blur(textInput);
+
+    expect(container.querySelector(".dr-ferr")?.textContent).toBe(
+      "脚注マークは flex 内の text には書けません",
+    );
+  });
+
   it("列追加 → width 変更で Σ列幅の表示が更新される", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
@@ -440,8 +687,8 @@ describe("代表的な編集経路", () => {
     expect(container.textContent).toContain("Σ列幅 = 120.0 mm");
 
     const widthInput = container
-      .querySelectorAll(".apx-col-card")[2]
-      ?.querySelector(".apx-col-w input");
+      .querySelectorAll(".dr-col-card")[2]
+      ?.querySelector(".dr-col-w input");
     if (!(widthInput instanceof HTMLInputElement)) {
       throw new Error("幅の入力がない");
     }
@@ -523,7 +770,7 @@ describe("代表的な編集経路", () => {
       fileInput.dispatchEvent(new Event("change", { bubbles: true }));
     });
 
-    // FileReader の完了前に同じ要素の w を編集する
+    // Edit w on the same element before FileReader completes
     const widthInput = inputByLabel("w");
     setValue(widthInput, "50");
     blur(widthInput);
@@ -623,7 +870,7 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     if (!(fillCheckbox instanceof HTMLInputElement)) {
       throw new Error("塗り「なし」チェックボックスがない");
     }
-    expect(fillCheckbox.checked).toBe(true); // fillColor 未指定 = なし
+    expect(fillCheckbox.checked).toBe(true); // fillColor unspecified = none
     click(fillCheckbox);
     let r1 = elementById(store, "r1");
     expect(r1).toMatchObject({ fillColor: "#000000" });
@@ -658,6 +905,42 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     expect(elementById(store, "e1")).toMatchObject({ fillColor: "#abcdef" });
   });
 
+  it("table の外枠・内部罫線の太さ・線種の commit と、既定値への復帰による属性除去", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    select(store, ["tbl1"]);
+
+    const frameWidthInput = inputByLabel("外枠の太さ");
+    expect(frameWidthInput.value).toBe("0.40"); // Display of the TABLE_FRAME_WIDTH default value
+    setValue(frameWidthInput, "1");
+    blur(frameWidthInput);
+    expect(elementById(store, "tbl1")).toMatchObject({ frameWidth: 1 });
+
+    setSelectValue(requireSelectByLabel("外枠の線種"), "dashed");
+    expect(elementById(store, "tbl1")).toMatchObject({ frameStyle: "dashed" });
+
+    const gridWidthInput = inputByLabel("内部罫線の太さ");
+    expect(gridWidthInput.value).toBe("0.25"); // Display of the TABLE_GRID_WIDTH default value
+    setValue(gridWidthInput, "0.6");
+    blur(gridWidthInput);
+    expect(elementById(store, "tbl1")).toMatchObject({ gridWidth: 0.6 });
+
+    setSelectValue(requireSelectByLabel("内部罫線の線種"), "dotted");
+    expect(elementById(store, "tbl1")).toMatchObject({ gridStyle: "dotted" });
+
+    setValue(frameWidthInput, "0.4");
+    blur(frameWidthInput);
+    setValue(gridWidthInput, "0.25");
+    blur(gridWidthInput);
+    setSelectValue(requireSelectByLabel("外枠の線種"), "solid");
+    setSelectValue(requireSelectByLabel("内部罫線の線種"), "solid");
+    const tbl1 = elementById(store, "tbl1");
+    expect("frameWidth" in tbl1 && tbl1.frameWidth !== undefined).toBe(false);
+    expect("gridWidth" in tbl1 && tbl1.gridWidth !== undefined).toBe(false);
+    expect("frameStyle" in tbl1 && tbl1.frameStyle !== undefined).toBe(false);
+    expect("gridStyle" in tbl1 && tbl1.gridStyle !== undefined).toBe(false);
+  });
+
   it("table の網掛けトグルは ON で既定色を設定し、OFF で stripeColor を除去する", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
@@ -684,6 +967,25 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     tbl1 = elementById(store, "tbl1");
     expect("stripeColor" in tbl1).toBe(false);
   });
+
+  it("text / pageNumber の文字色の commit と、既定値への復帰による属性除去", () => {
+    const store = makeStore();
+    render(<PropertiesPanel store={store} interaction={IDLE} />);
+
+    select(store, ["t1"]);
+    setValue(inputByLabel("文字色"), "#ff0000");
+    expect(elementById(store, "t1")).toMatchObject({ color: "#ff0000" });
+    setValue(inputByLabel("文字色"), "#000000");
+    const t1 = elementById(store, "t1");
+    expect("color" in t1 && t1.color !== undefined).toBe(false);
+
+    select(store, ["p1"]);
+    setValue(inputByLabel("文字色"), "#00ff00");
+    expect(elementById(store, "p1")).toMatchObject({ color: "#00ff00" });
+    setValue(inputByLabel("文字色"), "#000000");
+    const p1 = elementById(store, "p1");
+    expect("color" in p1 && p1.color !== undefined).toBe(false);
+  });
 });
 
 describe("maxY ガイド線の表示条件", () => {
@@ -702,8 +1004,8 @@ describe("maxY ガイド線の表示条件", () => {
     const store = makeStore();
     store.setSelection(["tbl1"]);
     renderOverlay(store);
-    expect(container.querySelector(".apx-maxy-line")).not.toBeNull();
-    expect(container.querySelector(".apx-maxy-chip")?.textContent).toBe(
+    expect(container.querySelector(".dr-maxy-line")).not.toBeNull();
+    expect(container.querySelector(".dr-maxy-chip")?.textContent).toBe(
       "maxY 240",
     );
   });
@@ -712,11 +1014,11 @@ describe("maxY ガイド線の表示条件", () => {
     const store = makeStore();
     store.setSelection(["t1"]);
     renderOverlay(store);
-    expect(container.querySelector(".apx-maxy-line")).toBeNull();
+    expect(container.querySelector(".dr-maxy-line")).toBeNull();
 
     store.setSelection(["tbl1", "t1"]);
     renderOverlay(store);
-    expect(container.querySelector(".apx-maxy-line")).toBeNull();
+    expect(container.querySelector(".dr-maxy-line")).toBeNull();
   });
 });
 
@@ -783,7 +1085,7 @@ describe("ドラッグ中のライブ表示", () => {
   });
 });
 
-// readAscentPerEm が読める最小の TTF（glyf + head.unitsPerEm + hhea.ascender）
+// The minimal TTF that readAscentPerEm can read (glyf + head.unitsPerEm + hhea.ascender)
 function localTtf(): Uint8Array<ArrayBuffer> {
   const headOffset = 12 + 3 * 16;
   const hheaOffset = headOffset + 54;
@@ -822,20 +1124,20 @@ describe("PC のフォントから選択", () => {
     vi.unstubAllGlobals();
   });
 
-  it("ボタンでダイアログが開き、選択確定で font.name が commit されレジストリに登録される", async () => {
+  it("ボタンでダイアログが開き、選択確定で font.regular が commit されレジストリに登録される", async () => {
     stubQueryLocalFonts();
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
 
-    click(buttonByText("PC のフォントから選択…"));
+    click(buttonByText("標準のフォントを選択…"));
     await vi.waitFor(() => {
-      expect(container.querySelector(".apx-dialog")).not.toBeNull();
+      expect(container.querySelector(".dr-dialog")).not.toBeNull();
     });
     await vi.waitFor(() => {
-      expect(container.querySelector(".apx-font-name")).not.toBeNull();
+      expect(container.querySelector(".dr-font-name")).not.toBeNull();
     });
 
-    const fontRow = [...container.querySelectorAll(".apx-font-name")]
+    const fontRow = [...container.querySelectorAll(".dr-font-name")]
       .find((el) => el.textContent === "Local Font")
       ?.closest("button");
     if (!(fontRow instanceof HTMLButtonElement)) {
@@ -848,24 +1150,24 @@ describe("PC のフォントから選択", () => {
     click(buttonByText("このフォントを使う"));
 
     await vi.waitFor(() => {
-      expect(store.getState().document.font.name).toBe("LocalFont");
+      expect(store.getState().document.font.regular).toBe("LocalFont");
     });
     expect(store.getState().dirty).toBe(true);
     expect(store.getState().fontRegistry.get("LocalFont")?.displayName).toBe(
       "Local Font",
     );
-    expect(container.querySelector(".apx-dialog")).toBeNull();
+    expect(container.querySelector(".dr-dialog")).toBeNull();
 
     act(() => {
       store.undo();
     });
-    expect(store.getState().document.font.name).toBe("NotoSansJP");
+    expect(store.getState().document.font.regular).toBe("NotoSansJP");
     expect(store.getState().fontRegistry.get("LocalFont")).toBeDefined();
 
     act(() => {
       store.redo();
     });
-    expect(store.getState().document.font.name).toBe("LocalFont");
+    expect(store.getState().document.font.regular).toBe("LocalFont");
     expect(inputByLabel("フォント名").value).toBe("LocalFont");
   });
 
@@ -883,12 +1185,69 @@ describe("PC のフォントから選択", () => {
     act(() => {
       store.commit({
         ...store.getState().document,
-        font: { name: "GoneFont" },
+        font: { regular: "GoneFont" },
       });
     });
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     expect(container.textContent).toContain(
       "実データ未選択（同梱フォントで代替されます）",
     );
+  });
+});
+
+describe("en ロケール表示", () => {
+  it("要素別パネルが英語の MessagesContext で描画される", () => {
+    const store = makeStore();
+    render(
+      <MessagesContext.Provider value={en}>
+        <PropertiesPanel store={store} interaction={IDLE} />
+      </MessagesContext.Provider>,
+    );
+
+    select(store, ["t1"]);
+    expect(container.textContent).toContain("Content");
+    expect(container.textContent).toContain("Placement");
+    expect(container.textContent).toContain("Decoration");
+    expect(inputByLabel("Name").value).toBe("");
+    expect(inputByLabel("Rotate").value).toBe("0.0");
+
+    select(store, ["l1"]);
+    expect(container.textContent).toContain("Shape");
+
+    select(store, ["f1"]);
+    expect(container.textContent).toContain("Layout");
+    expect(container.textContent).toContain("Set explicitly");
+
+    select(store, ["bc1"]);
+    expect(container.textContent).toContain("Barcode");
+    expect(container.textContent).toContain("Symbology");
+  });
+
+  it("文書設定パネルのフォントスロット名が英語で描画される", () => {
+    const store = makeStore();
+    render(
+      <MessagesContext.Provider value={en}>
+        <PropertiesPanel store={store} interaction={IDLE} />
+      </MessagesContext.Provider>,
+    );
+
+    expect(container.textContent).toContain("Document settings");
+    expect(container.textContent).toContain("Regular:");
+    expect(container.textContent).toContain("Bold:");
+    expect(container.textContent).toContain("Italic:");
+    expect(container.textContent).not.toContain("標準");
+    expect(container.textContent).not.toContain("太字");
+  });
+
+  it("パネルの aria-label が英語になる", () => {
+    render(
+      <MessagesContext.Provider value={en}>
+        <PropertiesPanel store={makeStore()} interaction={IDLE} />
+      </MessagesContext.Provider>,
+    );
+
+    expect(
+      container.querySelector(".dr-props")?.getAttribute("aria-label"),
+    ).toBe("Properties");
   });
 });

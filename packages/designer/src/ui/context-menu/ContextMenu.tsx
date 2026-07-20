@@ -4,7 +4,7 @@ import type { CanvasMenuAction, CanvasMenuItem } from "./menu-items";
 import { clampMenuPosition } from "./position";
 
 export function ContextMenu(props: {
-  /** 右クリック位置（viewport 座標 px）。表示時に clampMenuPosition で補正する */
+  /** Right-click position (viewport coordinates, px). Corrected via clampMenuPosition at display time */
   readonly x: number;
   readonly y: number;
   readonly items: readonly CanvasMenuItem[];
@@ -17,7 +17,7 @@ export function ContextMenu(props: {
   const [pos, setPos] = useState({ x, y });
   const [visible, setVisible] = useState(false);
 
-  // 初回は渡された座標で非表示描画し、実測サイズが分かってからクランプ位置を確定する
+  // On the first render, draw hidden at the given coordinates, then fix the clamped position once the measured size is known
   useLayoutEffect(() => {
     const menu = menuRef.current;
     if (menu === null) {
@@ -36,7 +36,7 @@ export function ContextMenu(props: {
     setVisible(true);
   }, [x, y]);
 
-  // visible が確定する前は visibility: hidden のため、その間の focus() はブラウザに無視される
+  // Before visible is set, visibility: hidden is in effect, so focus() calls during that time are ignored by the browser
   useLayoutEffect(() => {
     if (!visible) {
       return;
@@ -130,7 +130,7 @@ export function ContextMenu(props: {
   return (
     <div
       ref={menuRef}
-      className="apx-context-menu"
+      className="dr-context-menu"
       role="menu"
       tabIndex={-1}
       style={{
@@ -148,14 +148,14 @@ export function ContextMenu(props: {
           }}
           type="button"
           role="menuitem"
-          className={`apx-context-menu-item${item.disabled ? " disabled" : ""}`}
+          className={`dr-context-menu-item${item.disabled ? " disabled" : ""}`}
           aria-disabled={item.disabled}
           tabIndex={-1}
           onClick={() => activateIndex(index)}
         >
-          <span className="apx-context-menu-label">{item.label}</span>
+          <span className="dr-context-menu-label">{item.label}</span>
           {item.shortcut !== null && (
-            <span className="apx-context-menu-shortcut">{item.shortcut}</span>
+            <span className="dr-context-menu-shortcut">{item.shortcut}</span>
           )}
         </button>
       ))}

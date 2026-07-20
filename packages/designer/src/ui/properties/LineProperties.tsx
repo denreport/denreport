@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorMessageFor } from "../../state/error-index";
 import type { ElementFormProps } from "./ElementProperties";
 import { commitReplace, withOptionalAttr } from "./ElementProperties";
@@ -7,12 +8,13 @@ import {
   NumberField,
   SegmentField,
   SelectField,
-  STROKE_STYLE_OPTIONS,
+  strokeStyleOptions,
 } from "./fields";
 
 export function LineProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;
   const el = view.element;
+  const m = useMessages();
   if (el.type !== "line") {
     return null;
   }
@@ -25,8 +27,8 @@ export function LineProperties(props: ElementFormProps): ReactNode {
   return (
     <>
       {"x" in el && (
-        <section className="apx-sect">
-          <div className="apx-sect-h">配置</div>
+        <section className="dr-sect">
+          <div className="dr-sect-h">{m.properties.placement}</div>
           <NumberField
             label="x"
             value={liveBox === null ? el.x : liveBox.x}
@@ -45,21 +47,24 @@ export function LineProperties(props: ElementFormProps): ReactNode {
           />
         </section>
       )}
-      <section className="apx-sect">
-        <div className="apx-sect-h">形状</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.line.shape}</div>
         <SegmentField
-          label="向き"
+          label={m.properties.line.orientation}
           value={el.orientation}
           options={[
-            { value: "horizontal", label: "水平" },
-            { value: "vertical", label: "垂直" },
+            {
+              value: "horizontal",
+              label: m.properties.line.orientationHorizontal,
+            },
+            { value: "vertical", label: m.properties.line.orientationVertical },
           ]}
           onCommit={(orientation) =>
             commitReplace(store, el.id, { ...el, orientation })
           }
         />
         <NumberField
-          label="長さ"
+          label={m.properties.line.length}
           value={length}
           unit="mm"
           precision={0.1}
@@ -67,7 +72,7 @@ export function LineProperties(props: ElementFormProps): ReactNode {
           onCommit={(length) => commitReplace(store, el.id, { ...el, length })}
         />
         <NumberField
-          label="太さ"
+          label={m.properties.line.thickness}
           value={el.thickness}
           unit="mm"
           precision={0.1}
@@ -77,10 +82,10 @@ export function LineProperties(props: ElementFormProps): ReactNode {
           }
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">スタイル</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.line.style}</div>
         <ColorField
-          label="色"
+          label={m.properties.line.color}
           value={el.color ?? null}
           onCommit={(color) =>
             commitReplace(
@@ -95,9 +100,9 @@ export function LineProperties(props: ElementFormProps): ReactNode {
           }
         />
         <SelectField
-          label="線種"
+          label={m.properties.fields.strokeStyleLabel}
           value={el.strokeStyle ?? "solid"}
-          options={STROKE_STYLE_OPTIONS}
+          options={strokeStyleOptions(m.properties.fields.strokeStyle)}
           onCommit={(strokeStyle) =>
             commitReplace(
               store,

@@ -36,7 +36,6 @@ describe("envelopePresetById", () => {
   it("id に対応するプリセットを返す", () => {
     expect(envelopePresetById("l3-w80h45")).toEqual({
       id: "l3-w80h45",
-      label: "長3・窓 80×45",
       windowBox: { x: 7.5, y: 11.5, w: 80, h: 45 },
       safeBox: { x: 12.5, y: 16.5, w: 70, h: 35 },
     });

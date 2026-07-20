@@ -20,7 +20,7 @@ function makeDocument(elements: readonly IrElement[]): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements,
   };
 }
@@ -57,7 +57,7 @@ function tokenText(id: string, text: string): IrTextElement {
   };
 }
 
-// 先頭ページ容量 kFirst = floor((100 - 20 - 8) / 8) = 9、継続ページ容量 kCont = 9
+// First-page capacity kFirst = floor((100 - 20 - 8) / 8) = 9, continuation-page capacity kCont = 9
 function itemsTable(overrides: Partial<IrTableElement> = {}): IrTableElement {
   return {
     type: "table",
@@ -108,7 +108,7 @@ function pagesOf(
   document: IrDocument,
   sampleJson: string,
 ): readonly (readonly LoweredElement[])[] {
-  const result = buildPreview(document, sampleJson);
+  const result = buildPreview(document, sampleJson, "ja");
   if (!result.ok) {
     throw new Error(`buildPreview が失敗: ${JSON.stringify(result.errors)}`);
   }
@@ -140,14 +140,14 @@ describe("buildPreview: 行数とページ展開", () => {
   const doc = makeDocument([itemsTable(), PAGE_NO]);
 
   it("0行では minRows 分の空行枠で1ページになる", () => {
-    const result = buildPreview(doc, sampleWithRows(0));
+    const result = buildPreview(doc, sampleWithRows(0), "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.warnings).toEqual([]);
     expect(result.document.pageCount).toBe(1);
     const page = result.document.pages[0] ?? [];
     expect(rowLines(page)).toHaveLength(3);
-    // ヘッダ2列のみで、セルのテキストはない
+    // Only the 2 header columns; no cell text
     expect(textsBySource(page, "items")).toHaveLength(2);
   });
 
@@ -158,7 +158,7 @@ describe("buildPreview: 行数とページ展開", () => {
   });
 
   it("先頭ページ容量ちょうど（9行）は1ページに収まる", () => {
-    const result = buildPreview(doc, sampleWithRows(9));
+    const result = buildPreview(doc, sampleWithRows(9), "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.document.pageCount).toBe(1);
@@ -170,7 +170,7 @@ describe("buildPreview: 行数とページ展開", () => {
   });
 
   it("容量を溢れる（10行）と2ページに分かれ、ページ番号も追従する", () => {
-    const result = buildPreview(doc, sampleWithRows(10));
+    const result = buildPreview(doc, sampleWithRows(10), "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.document.pageCount).toBe(2);
@@ -191,7 +191,7 @@ describe("buildPreview: 行数とページ展開", () => {
 describe("buildPreview: C01/C02 の補完と警告", () => {
   it("text の {key} トークンの欠損はプレースホルダ {キー名} に補完され、警告が積まれる", () => {
     const doc = makeDocument([boundText("t1", "customerName")]);
-    const result = buildPreview(doc, "{}");
+    const result = buildPreview(doc, "{}", "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const texts = textsBySource(result.document.pages[0] ?? [], "t1");
@@ -203,7 +203,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
 
   it("text の {key} トークンの型不一致もプレースホルダに補完される", () => {
     const doc = makeDocument([boundText("t1", "customerName")]);
-    const result = buildPreview(doc, '{"customerName": 5}');
+    const result = buildPreview(doc, '{"customerName": 5}', "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const texts = textsBySource(result.document.pages[0] ?? [], "t1");
@@ -213,7 +213,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
 
   it("text 内の {key} トークン欠損はトークン表記のまま見え、警告が積まれる", () => {
     const doc = makeDocument([tokenText("t1", "合計: {total} 円")]);
-    const result = buildPreview(doc, "{}");
+    const result = buildPreview(doc, "{}", "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const texts = textsBySource(result.document.pages[0] ?? [], "t1");
@@ -225,7 +225,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
 
   it("同一テキスト内の複数トークンがそれぞれ独立に補完され、警告件数もキー数分になる", () => {
     const doc = makeDocument([tokenText("t1", "{a} / {b}")]);
-    const result = buildPreview(doc, "{}");
+    const result = buildPreview(doc, "{}", "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const texts = textsBySource(result.document.pages[0] ?? [], "t1");
@@ -235,7 +235,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
 
   it("table bind の欠損は空配列に補完され、minRows 分の空行枠になる", () => {
     const doc = makeDocument([itemsTable()]);
-    const result = buildPreview(doc, "{}");
+    const result = buildPreview(doc, "{}", "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const page = result.document.pages[0] ?? [];
@@ -247,7 +247,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
 
   it("不正 JSON は空データ扱いで全キーが補完され、source: json の警告が先頭に付く", () => {
     const doc = makeDocument([boundText("t1", "customerName"), itemsTable()]);
-    const result = buildPreview(doc, "{oops");
+    const result = buildPreview(doc, "{oops", "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.warnings.map((w) => w.source)).toEqual([
@@ -262,9 +262,34 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
     expect(rowLines(page)).toHaveLength(3);
   });
 
+  it("JSON 警告は locale に追随する", () => {
+    const doc = makeDocument([boundText("t1", "customerName")]);
+    const ja = buildPreview(doc, "{oops", "ja");
+    const en = buildPreview(doc, "{oops", "en");
+    expect(ja.ok).toBe(true);
+    expect(en.ok).toBe(true);
+    if (!ja.ok || !en.ok) return;
+    expect(ja.warnings[0]?.message).toBe(
+      "サンプルデータを JSON として解釈できないため、空のデータとして扱います",
+    );
+    expect(en.warnings[0]?.message).toBe(
+      "The sample data cannot be parsed as JSON, so it is treated as empty data.",
+    );
+  });
+
+  it("トップレベルが非オブジェクトの JSON 警告も locale に追随する", () => {
+    const doc = makeDocument([boundText("t1", "customerName")]);
+    const en = buildPreview(doc, "[1, 2]", "en");
+    expect(en.ok).toBe(true);
+    if (!en.ok) return;
+    expect(en.warnings[0]?.message).toBe(
+      "The sample data is not a top-level object, so it is treated as empty data.",
+    );
+  });
+
   it("空文字列は未入力扱いで、JSON 警告は付かない（補完の警告のみ）", () => {
     const doc = makeDocument([boundText("t1", "customerName")]);
-    const result = buildPreview(doc, "");
+    const result = buildPreview(doc, "", "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.warnings.filter((w) => w.source === "json")).toEqual([]);
@@ -276,6 +301,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
     const result = buildPreview(
       doc,
       JSON.stringify({ customerName: "株式会社サンプル", items: rows(2) }),
+      "ja",
     );
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -292,6 +318,7 @@ describe("buildPreview: 補完で解消できないエラー", () => {
     const result = buildPreview(
       doc,
       JSON.stringify({ items: rows(20), items2: rows(20) }),
+      "ja",
     );
     expect(result.ok).toBe(false);
     if (result.ok) return;
@@ -300,9 +327,9 @@ describe("buildPreview: 補完で解消できないエラー", () => {
   });
 
   it("展開後の総ページ数が上限を超えると C04 で ok: false", () => {
-    // continuationY 83 → 継続ページ容量 1 行。9 + 1001 行で 1002 ページになる
+    // continuationY 83 -> continuation-page capacity is 1 row. 9 + 1001 rows becomes 1002 pages
     const doc = makeDocument([itemsTable({ continuationY: 83 })]);
-    const result = buildPreview(doc, sampleWithRows(1010));
+    const result = buildPreview(doc, sampleWithRows(1010), "ja");
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.errors.map((e) => e.rule)).toEqual(["C04"]);
@@ -313,8 +340,8 @@ describe("buildPreview: 純粋性", () => {
   it("補完が起きても入力 document を変更しない", () => {
     const doc = makeDocument([boundText("t1", "customerName"), itemsTable()]);
     const before = JSON.stringify(doc);
-    buildPreview(doc, "{oops");
-    buildPreview(doc, "{}");
+    buildPreview(doc, "{oops", "ja");
+    buildPreview(doc, "{}", "ja");
     expect(JSON.stringify(doc)).toBe(before);
   });
 });
@@ -331,6 +358,11 @@ describe("textBaselinesMm", () => {
     fontSize: 10,
     align: "left",
     lineHeight: 1.25,
+    color: "#000000",
+    fontWeight: "normal",
+    fontStyle: "normal",
+    underline: false,
+    rotate: 0,
   };
 
   it("PT_TO_MM は 1pt = 0.352778mm の換算値", () => {
@@ -342,7 +374,7 @@ describe("textBaselinesMm", () => {
     expect(lines).toHaveLength(2);
     expect(lines[0]?.text).toBe("甲");
     expect(lines[1]?.text).toBe("乙");
-    // (1.16 + 0.125) × 10pt = 12.85pt → 4.5332mm、2行目は +12.5pt
+    // (1.16 + 0.125) x 10pt = 12.85pt -> 4.5332mm, the 2nd line is +12.5pt
     expect(lines[0]?.baselineY).toBeCloseTo(50 + 12.85 * (25.4 / 72), 4);
     expect(lines[1]?.baselineY).toBeCloseTo(50 + 25.35 * (25.4 / 72), 4);
   });
@@ -426,7 +458,7 @@ describe("generateSampleData", () => {
       itemsTable(),
       PAGE_NO,
     ]);
-    const result = buildPreview(doc, generateSampleData(doc));
+    const result = buildPreview(doc, generateSampleData(doc), "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.warnings).toEqual([]);
@@ -443,7 +475,7 @@ describe("generateSampleData", () => {
 
   it("生成結果を buildPreview に渡すとトークンの警告も空になる", () => {
     const doc = makeDocument([tokenText("t1", "合計: {total} 円")]);
-    const result = buildPreview(doc, generateSampleData(doc));
+    const result = buildPreview(doc, generateSampleData(doc), "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.warnings).toEqual([]);

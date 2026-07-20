@@ -2,13 +2,13 @@ import type { IrDocument } from "@denreport/core";
 import { validateIr } from "@denreport/core";
 import { describe, expect, it } from "vitest";
 import type { RegisteredFont } from "./fonts";
-import { resolveFont, sanitizeFontName } from "./fonts";
+import { resolveFont, resolveFontSet, sanitizeFontName } from "./fonts";
 
 function documentWithFontName(name: string): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name },
+    font: { regular: name },
     elements: [],
   };
 }
@@ -59,27 +59,59 @@ function font(name: string): RegisteredFont {
   return { name, displayName: name, data: new Uint8Array(), ascentPerEm: 1 };
 }
 
+const EMBEDDED = new Set(["NotoSansJP", "NotoSansJPBold"]);
+
 describe("resolveFont", () => {
   it("レジストリに一致すれば registered になり、同梱名より優先される", () => {
     const registry = new Map([["NotoSansJP", font("NotoSansJP")]]);
-    expect(resolveFont("NotoSansJP", registry, "NotoSansJP")).toEqual({
+    expect(resolveFont("NotoSansJP", registry, EMBEDDED)).toEqual({
       kind: "registered",
       font: font("NotoSansJP"),
     });
   });
 
-  it("レジストリに無く同梱名と一致すれば embedded になる", () => {
+  it("レジストリに無く同梱名と一致すれば embedded に name が載る", () => {
     const registry = new Map<string, RegisteredFont>();
-    expect(resolveFont("NotoSansJP", registry, "NotoSansJP")).toEqual({
+    expect(resolveFont("NotoSansJPBold", registry, EMBEDDED)).toEqual({
       kind: "embedded",
+      name: "NotoSansJPBold",
     });
   });
 
   it("どちらでもなければ missing に name が載る", () => {
     const registry = new Map<string, RegisteredFont>();
-    expect(resolveFont("IPAexGothic", registry, "NotoSansJP")).toEqual({
+    expect(resolveFont("IPAexGothic", registry, EMBEDDED)).toEqual({
       kind: "missing",
       name: "IPAexGothic",
     });
+  });
+});
+
+describe("resolveFontSet", () => {
+  it("宣言スロットだけを解決し、登録・同梱・missing が混在できる", () => {
+    const registry = new Map([["MyItalic", font("MyItalic")]]);
+    const resolutions = resolveFontSet(
+      {
+        regular: "NotoSansJP",
+        bold: "MissingBold",
+        italic: "MyItalic",
+      },
+      registry,
+      EMBEDDED,
+    );
+    expect([...resolutions.keys()]).toEqual(["regular", "bold", "italic"]);
+    expect(resolutions.get("regular")).toEqual({
+      kind: "embedded",
+      name: "NotoSansJP",
+    });
+    expect(resolutions.get("bold")).toEqual({
+      kind: "missing",
+      name: "MissingBold",
+    });
+    expect(resolutions.get("italic")).toEqual({
+      kind: "registered",
+      font: font("MyItalic"),
+    });
+    expect(resolutions.has("boldItalic")).toBe(false);
   });
 });

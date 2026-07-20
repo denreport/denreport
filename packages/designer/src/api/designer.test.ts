@@ -1,4 +1,4 @@
-import type { IrDocument } from "@denreport/core";
+import type { CompatTargetId, IrDocument } from "@denreport/core";
 import { parseIr } from "@denreport/core";
 import {
   afterEach,
@@ -9,16 +9,23 @@ import {
   it,
   vi,
 } from "vitest";
+import type { Locale } from "../i18n/locale";
+import { ja } from "../i18n/messages/ja";
 import * as publicExports from "../index";
 import { addScenario, parseSampleDataStorage } from "../state/sample-scenarios";
 import type { EditorStore } from "../state/store";
-import type { DesignerOptions, DesignerTheme, LoadIrResult } from "./designer";
+import type {
+  DesignerLocale,
+  DesignerOptions,
+  DesignerTheme,
+  LoadIrResult,
+} from "./designer";
 import { Designer } from "./designer";
 
 const VALID_IR = JSON.stringify({
   version: "1.0",
   page: { width: 210, height: 297 },
-  font: { name: "NotoSansJP" },
+  font: { regular: "NotoSansJP" },
   elements: [
     {
       type: "text",
@@ -35,7 +42,7 @@ const VALID_IR = JSON.stringify({
 const ROUND_TRIP_IR = JSON.stringify({
   version: "1.0",
   page: { width: 210, height: 297 },
-  font: { name: "NotoSansJP" },
+  font: { regular: "NotoSansJP" },
   elements: [
     {
       type: "text",
@@ -130,7 +137,7 @@ function storeOf(designer: Designer): EditorStore {
   return (designer as unknown as { readonly store: EditorStore }).store;
 }
 
-// jsdom は matchMedia 未実装のため、常に不一致（= ライト解決）の最小スタブを与える
+// jsdom doesn't implement matchMedia, so provide a minimal stub that always mismatches (= resolves to light)
 beforeAll(() => {
   vi.stubGlobal(
     "matchMedia",
@@ -144,7 +151,7 @@ beforeAll(() => {
         dispatchEvent: () => false,
       }) as unknown as MediaQueryList,
   );
-  // jsdom の URL には createObjectURL / revokeObjectURL が無い
+  // jsdom's URL lacks createObjectURL / revokeObjectURL
   Object.assign(URL, {
     createObjectURL: () => "blob:denreport-test",
     revokeObjectURL: () => {},
@@ -154,16 +161,15 @@ beforeAll(() => {
 let containers: HTMLElement[] = [];
 let designers: Designer[] = [];
 
+// jsdom's default language is en-US, so default to ja here so that tests with locale omitted
+// don't fall back to an English display
 function mount(options?: DesignerOptions): {
   container: HTMLElement;
   designer: Designer;
 } {
   const container = document.createElement("div");
   document.body.append(container);
-  const designer =
-    options === undefined
-      ? new Designer(container)
-      : new Designer(container, options);
+  const designer = new Designer(container, { locale: "ja", ...options });
   containers.push(container);
   designers.push(designer);
   return { container, designer };
@@ -187,7 +193,7 @@ async function toolbarButton(
 ): Promise<HTMLButtonElement> {
   return await vi.waitFor(() => {
     const button = [
-      ...container.querySelectorAll<HTMLButtonElement>(".apx-toolbar button"),
+      ...container.querySelectorAll<HTMLButtonElement>(".dr-toolbar button"),
     ].find((b) => (b.getAttribute("aria-label") ?? b.textContent) === label);
     if (button === undefined) {
       throw new Error(`ツールバーにボタンがない: ${label}`);
@@ -198,6 +204,10 @@ async function toolbarButton(
 
 function click(el: Element): void {
   el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+}
+
+function parseSample(json: string): ReturnType<typeof parseSampleDataStorage> {
+  return parseSampleDataStorage(json, ja.scenarioNames);
 }
 
 function makeDirty(designer: Designer): void {
@@ -219,12 +229,12 @@ function spyAnchorClicks(): HTMLAnchorElement[] {
 }
 
 describe("Designer のマウントと破棄", () => {
-  it("マウントで container 内に .apx-designer が描画される", async () => {
+  it("マウントで container 内に .dr-designer が描画される", async () => {
     const { container } = mount();
-    const rootEl = container.querySelector(".apx-designer");
+    const rootEl = container.querySelector(".dr-designer");
     expect(rootEl).not.toBeNull();
     await vi.waitFor(() => {
-      expect(container.querySelector(".apx-statusbar")).not.toBeNull();
+      expect(container.querySelector(".dr-statusbar")).not.toBeNull();
     });
   });
 
@@ -255,6 +265,11 @@ describe("Designer のマウントと破棄", () => {
     expect(() => designer.getSampleData()).toThrow();
     expect(() => designer.setSampleData("{}")).toThrow();
     expect(() => designer.onSampleDataChange(() => {})).toThrow();
+    expect(() => designer.getExportTarget()).toThrow();
+    expect(() => designer.onExportTargetChange(() => {})).toThrow();
+    expect(() => designer.setLocale("en")).toThrow();
+    expect(() => designer.getLocale()).toThrow();
+    expect(() => designer.onLocaleChange(() => {})).toThrow();
   });
 
   it("不正な initialIr はコンストラクタで throw する", () => {
@@ -271,7 +286,10 @@ describe("IR の入出力", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.document.page).toEqual({ width: 210, height: 297 });
-      expect(result.document.font.name).toBe("NotoSansJP");
+      expect(result.document.font).toEqual({
+        regular: "NotoSansJP",
+        bold: "NotoSansJPBold",
+      });
       expect(result.document.elements).toEqual([]);
     }
   });
@@ -344,17 +362,40 @@ describe("IR の入出力", () => {
     expect(reloaded.saveIr()).toBe(saved);
   });
 
-  it("saveIr の JSON にグループ由来のキーが現れない", () => {
+  it("saveIr は生存グループを groups キーへ直列化する", () => {
     const { designer } = mount({ initialIr: ROUND_TRIP_IR });
     storeOf(designer).setGroups([
       { id: "group1", memberIds: ["title", "customer"] },
     ]);
-    const json = designer.saveIr();
-    expect(json).not.toContain("group1");
-    expect(json).not.toContain("groups");
+    const parsed = JSON.parse(designer.saveIr()) as IrDocument;
+    expect(parsed.groups).toEqual([
+      { id: "group1", memberIds: ["title", "customer"] },
+    ]);
   });
 
-  it("loadIr は旧グループをリセットする", () => {
+  it("生存メンバーが2未満のグループは groups キーごと省かれる", () => {
+    const { designer } = mount({ initialIr: ROUND_TRIP_IR });
+    storeOf(designer).setGroups([{ id: "group1", memberIds: ["title"] }]);
+    const parsed = JSON.parse(designer.saveIr()) as IrDocument;
+    expect(parsed).not.toHaveProperty("groups");
+  });
+
+  it("saveIr → loadIr → saveIr でグループが同値に復元される", () => {
+    const { designer } = mount({ initialIr: ROUND_TRIP_IR });
+    storeOf(designer).setGroups([
+      { id: "group1", memberIds: ["title", "customer"] },
+    ]);
+    const saved = designer.saveIr();
+
+    const { designer: reloaded } = mount();
+    expect(reloaded.loadIr(saved)).toEqual({ ok: true });
+    expect(storeOf(reloaded).getState().groups).toEqual([
+      { id: "group1", memberIds: ["title", "customer"] },
+    ]);
+    expect(reloaded.saveIr()).toBe(saved);
+  });
+
+  it("loadIr は読み込んだ IR に groups が無ければ旧グループをリセットする", () => {
     const { designer } = mount({ initialIr: VALID_IR });
     const store = storeOf(designer);
     store.setGroups([{ id: "group1", memberIds: ["title"] }]);
@@ -418,18 +459,33 @@ describe("onChange", () => {
     designer.loadIr(VALID_IR);
     expect(fired).toBe(0);
   });
+
+  it("グループ化・解除（setGroups）は文書を変えなくても発火する", () => {
+    const { designer } = mount({ initialIr: ROUND_TRIP_IR });
+    const store = storeOf(designer);
+    let fired = 0;
+    designer.onChange(() => {
+      fired += 1;
+    });
+
+    store.setGroups([{ id: "group1", memberIds: ["title", "customer"] }]);
+    expect(fired).toBe(1);
+
+    store.setGroups([]);
+    expect(fired).toBe(2);
+  });
 });
 
 describe("サンプルデータ API", () => {
   it("getSampleData は封筒形式（シナリオ一式）を返す", () => {
     const { designer: blank } = mount();
-    const blankSet = parseSampleDataStorage(blank.getSampleData());
+    const blankSet = parseSample(blank.getSampleData());
     expect(blankSet.items).toHaveLength(1);
     expect(blankSet.items[0]?.json).toBe("");
 
     const raw = '{ "customerName":  "甲" }';
     const { designer } = mount({ initialSampleData: raw });
-    const migrated = parseSampleDataStorage(designer.getSampleData());
+    const migrated = parseSample(designer.getSampleData());
     expect(migrated.items).toHaveLength(1);
     expect(migrated.items[0]?.json).toBe(raw);
   });
@@ -437,14 +493,10 @@ describe("サンプルデータ API", () => {
   it("setSampleData / getSampleData は封筒形式で往復し、不正 JSON も受理する", () => {
     const { designer } = mount();
     designer.setSampleData("{oops");
-    expect(
-      parseSampleDataStorage(designer.getSampleData()).items[0]?.json,
-    ).toBe("{oops");
+    expect(parseSample(designer.getSampleData()).items[0]?.json).toBe("{oops");
 
     const { designer: broken } = mount({ initialSampleData: "{oops" });
-    expect(parseSampleDataStorage(broken.getSampleData()).items[0]?.json).toBe(
-      "{oops",
-    );
+    expect(parseSample(broken.getSampleData()).items[0]?.json).toBe("{oops");
   });
 
   it("getSampleData の返り値を initialSampleData に渡すと往復する", () => {
@@ -480,11 +532,11 @@ describe("サンプルデータ API", () => {
     });
 
     const store = storeOf(designer);
-    store.setSampleScenarios(addScenario(store.getState().sampleScenarios));
-    expect(sampleFired).toBe(1);
-    expect(parseSampleDataStorage(designer.getSampleData()).items).toHaveLength(
-      2,
+    store.setSampleScenarios(
+      addScenario(store.getState().sampleScenarios, ja.scenarioNames),
     );
+    expect(sampleFired).toBe(1);
+    expect(parseSample(designer.getSampleData()).items).toHaveLength(2);
   });
 
   it("文書変更（commit / loadIr）では onSampleDataChange が発火せず、サンプルは維持される", () => {
@@ -500,9 +552,9 @@ describe("サンプルデータ API", () => {
     makeDirty(designer);
     designer.loadIr(VALID_IR);
     expect(sampleFired).toBe(0);
-    expect(
-      parseSampleDataStorage(designer.getSampleData()).items[0]?.json,
-    ).toBe('{"a": 1}');
+    expect(parseSample(designer.getSampleData()).items[0]?.json).toBe(
+      '{"a": 1}',
+    );
   });
 
   it("解除関数でリスナーが外れる", () => {
@@ -517,10 +569,50 @@ describe("サンプルデータ API", () => {
   });
 });
 
+describe("書き出しターゲット API", () => {
+  it("省略時は既定の pdfme になる", () => {
+    const { designer } = mount();
+    expect(designer.getExportTarget()).toBe("pdfme");
+  });
+
+  it("initialExportTarget を渡すと初期値になる", () => {
+    const { designer } = mount({ initialExportTarget: "reportlab" });
+    expect(designer.getExportTarget()).toBe("reportlab");
+  });
+
+  it("store 経由の選択変更（ツールバー・書き出しダイアログ相当）で onExportTargetChange が発火し、onChange は発火しない", () => {
+    const { designer } = mount({ initialIr: VALID_IR });
+    let targetFired = 0;
+    let changeFired = 0;
+    designer.onExportTargetChange(() => {
+      targetFired += 1;
+    });
+    designer.onChange(() => {
+      changeFired += 1;
+    });
+
+    storeOf(designer).setSelectedExportTarget("reportlab");
+    expect(targetFired).toBe(1);
+    expect(changeFired).toBe(0);
+    expect(designer.getExportTarget()).toBe("reportlab");
+  });
+
+  it("解除関数でリスナーが外れる", () => {
+    const { designer } = mount();
+    let fired = 0;
+    const unsubscribe = designer.onExportTargetChange(() => {
+      fired += 1;
+    });
+    unsubscribe();
+    storeOf(designer).setSelectedExportTarget("reportlab");
+    expect(fired).toBe(0);
+  });
+});
+
 describe("テーマ", () => {
   it("setTheme で data-theme 属性が切り替わる", () => {
     const { container, designer } = mount();
-    const rootEl = container.querySelector(".apx-designer");
+    const rootEl = container.querySelector(".dr-designer");
     designer.setTheme("dark");
     expect(rootEl?.getAttribute("data-theme")).toBe("dark");
     designer.setTheme("light");
@@ -529,7 +621,7 @@ describe("テーマ", () => {
 
   it('"auto" は OS 設定の解決値になる（jsdom では light）', () => {
     const { container, designer } = mount();
-    const rootEl = container.querySelector(".apx-designer");
+    const rootEl = container.querySelector(".dr-designer");
     expect(rootEl?.getAttribute("data-theme")).toBe("light");
     designer.setTheme("dark");
     designer.setTheme("auto");
@@ -583,28 +675,158 @@ describe("保存ボタンと onSaveRequest", () => {
 });
 
 describe("テーマトグル", () => {
-  it("トグルで data-theme と aria-pressed が裏返り、auto から明示テーマに移る", async () => {
+  it("その他の操作メニューのテーマ項目で data-theme が裏返り、auto から明示テーマに移る", async () => {
     const { container } = mount();
-    const rootEl = container.querySelector(".apx-designer");
+    const rootEl = container.querySelector(".dr-designer");
     expect(rootEl?.getAttribute("data-theme")).toBe("light");
 
-    const toggle = await toolbarButton(container, "テーマ");
-    expect(toggle.getAttribute("aria-pressed")).toBe("false");
-
-    click(toggle);
-    // auto のままなら light に解決される（matchMedia スタブは常に不一致）ため、
-    // dark になったこと自体が明示テーマへ移った証拠になる
-    expect(rootEl?.getAttribute("data-theme")).toBe("dark");
+    click(await toolbarButton(container, "その他の操作"));
+    click(await toolbarButton(container, "テーマを切り替え（現在: ライト）"));
+    // If it stayed on auto it would resolve to light (the matchMedia stub always mismatches),
+    // so becoming dark is itself evidence that it moved to an explicit theme
     await vi.waitFor(() => {
-      expect(toggle.getAttribute("aria-pressed")).toBe("true");
-      expect(toggle.classList.contains("is-on")).toBe(true);
+      expect(rootEl?.getAttribute("data-theme")).toBe("dark");
     });
 
-    click(toggle);
-    expect(rootEl?.getAttribute("data-theme")).toBe("light");
+    click(await toolbarButton(container, "その他の操作"));
+    click(await toolbarButton(container, "テーマを切り替え（現在: ダーク）"));
     await vi.waitFor(() => {
-      expect(toggle.getAttribute("aria-pressed")).toBe("false");
+      expect(rootEl?.getAttribute("data-theme")).toBe("light");
     });
+  });
+});
+
+describe("言語切替", () => {
+  it('locale 省略時は "auto"（jsdom の navigator.languages は en-US のため en に解決される）', () => {
+    const container = document.createElement("div");
+    containers.push(container);
+    const designer = new Designer(container);
+    designers.push(designer);
+    expect(designer.getLocale()).toBe("en");
+  });
+
+  it("setLocale で表示言語と rootEl.lang が切り替わり、onLocaleChange が発火する", async () => {
+    const { container, designer } = mount();
+    const rootEl = container.querySelector(".dr-designer");
+    expect(rootEl?.getAttribute("lang")).toBe("ja");
+    expect(designer.getLocale()).toBe("ja");
+    await toolbarButton(container, "保存");
+
+    let fired = 0;
+    designer.onLocaleChange(() => {
+      fired += 1;
+    });
+
+    designer.setLocale("en");
+    expect(designer.getLocale()).toBe("en");
+    expect(rootEl?.getAttribute("lang")).toBe("en");
+    expect(fired).toBe(1);
+    await toolbarButton(container, "Save");
+
+    designer.setLocale("ja");
+    expect(fired).toBe(2);
+    await toolbarButton(container, "保存");
+  });
+
+  it("解決値が変わらない setLocale では onLocaleChange が発火しない", () => {
+    const { designer } = mount();
+    let fired = 0;
+    designer.onLocaleChange(() => {
+      fired += 1;
+    });
+    designer.setLocale("ja");
+    expect(fired).toBe(0);
+  });
+
+  it("解除関数でリスナーが外れる", () => {
+    const { designer } = mount();
+    let fired = 0;
+    const unsubscribe = designer.onLocaleChange(() => {
+      fired += 1;
+    });
+    unsubscribe();
+    designer.setLocale("en");
+    expect(fired).toBe(0);
+  });
+});
+
+describe("core / targets への locale 伝搬", () => {
+  async function openedDrawer(container: HTMLElement): Promise<HTMLElement> {
+    const bar = await vi.waitFor(() => {
+      const el = container.querySelector<HTMLButtonElement>(".dr-drawer-bar");
+      if (el === null) throw new Error("検証ペインがない");
+      return el;
+    });
+    click(bar);
+    return await vi.waitFor(() => {
+      const body = container.querySelector<HTMLElement>(".dr-drawer-body");
+      if (body === null) throw new Error("検証ペインが開かない");
+      return body;
+    });
+  }
+
+  it("setLocale で検証エラーの文言が切り替わる", async () => {
+    const { container, designer } = mount({ initialIr: VALID_IR });
+    const store = storeOf(designer);
+    const document_ = store.getState().document;
+    store.commit({
+      ...document_,
+      elements: document_.elements.map((el) => ({ ...el, x: -1 })),
+    });
+    const body = await openedDrawer(container);
+    await vi.waitFor(() => {
+      expect(body.textContent).toContain("x が 0 未満です");
+    });
+
+    designer.setLocale("en");
+    await vi.waitFor(() => {
+      expect(body.textContent).toContain("x is below 0");
+      expect(body.textContent).not.toContain("x が 0 未満です");
+    });
+  });
+
+  it("setLocale で互換警告の文言が切り替わる", async () => {
+    const { container, designer } = mount({ initialIr: VALID_IR });
+    const body = await openedDrawer(container);
+    await vi.waitFor(() => {
+      expect(body.textContent).toContain("文字の折り返しや配置は");
+    });
+
+    designer.setLocale("en");
+    await vi.waitFor(() => {
+      expect(body.textContent).toContain("Text wrapping and alignment");
+      expect(body.textContent).not.toContain("文字の折り返しや配置は");
+    });
+  });
+
+  it("書き出しダイアログの互換警告が setLocale で切り替わる", async () => {
+    const { container, designer } = mount({ initialIr: VALID_IR });
+    click(await toolbarButton(container, "書き出し"));
+    const dialog = await vi.waitFor(() => {
+      const el = container.querySelector<HTMLElement>(".dr-warn-card");
+      if (el === null) throw new Error("互換警告カードがない");
+      return el;
+    });
+    expect(dialog.textContent).toContain("文字の折り返しや配置は");
+
+    designer.setLocale("en");
+    await vi.waitFor(() => {
+      const el = container.querySelector<HTMLElement>(".dr-warn-card");
+      expect(el?.textContent).toContain("Text wrapping and alignment");
+    });
+  });
+
+  it("loadIr の失敗メッセージが解決済み locale に従う", () => {
+    const { designer } = mount();
+    const jaResult = designer.loadIr("{");
+    expect(jaResult.ok).toBe(false);
+    if (jaResult.ok) throw new Error("失敗を期待");
+
+    designer.setLocale("en");
+    const enResult = designer.loadIr("{");
+    expect(enResult.ok).toBe(false);
+    if (enResult.ok) throw new Error("失敗を期待");
+    expect(enResult.errors[0]?.message).not.toBe(jaResult.errors[0]?.message);
   });
 });
 
@@ -615,8 +837,8 @@ describe("公開面の型（React 非漏洩）", () => {
   });
 
   it("公開シグネチャは DOM 標準型・プリミティブ・core の型だけで閉じる", () => {
-    // HTMLElement の全属性を展開する expectTypeOf の深い等価比較は現実的でないため、
-    // コンストラクタは代入可能性（コンパイル時検査）で担保する
+    // A deep equality comparison via expectTypeOf that expands every attribute of HTMLElement
+    // isn't practical, so the constructor is verified via assignability (a compile-time check) instead
     const construct: new (
       container: HTMLElement,
       options?: DesignerOptions,
@@ -639,15 +861,31 @@ describe("公開面の型（React 非漏洩）", () => {
     expectTypeOf<Designer["onSampleDataChange"]>().toEqualTypeOf<
       (listener: () => void) => () => void
     >();
+    expectTypeOf<Designer["getExportTarget"]>().toEqualTypeOf<
+      () => CompatTargetId
+    >();
+    expectTypeOf<Designer["onExportTargetChange"]>().toEqualTypeOf<
+      (listener: () => void) => () => void
+    >();
     expectTypeOf<Designer["setTheme"]>().toEqualTypeOf<
       (theme: DesignerTheme) => void
     >();
+    expectTypeOf<Designer["setLocale"]>().toEqualTypeOf<
+      (locale: DesignerLocale) => void
+    >();
+    expectTypeOf<Designer["getLocale"]>().toEqualTypeOf<() => Locale>();
+    expectTypeOf<Designer["onLocaleChange"]>().toEqualTypeOf<
+      (listener: () => void) => () => void
+    >();
     expectTypeOf<Designer["destroy"]>().toEqualTypeOf<() => void>();
     expectTypeOf<DesignerTheme>().toEqualTypeOf<"light" | "dark" | "auto">();
+    expectTypeOf<DesignerLocale>().toEqualTypeOf<"ja" | "en" | "auto">();
     expectTypeOf<DesignerOptions>().toEqualTypeOf<{
       readonly initialIr?: string;
       readonly initialSampleData?: string;
+      readonly initialExportTarget?: CompatTargetId;
       readonly theme?: DesignerTheme;
+      readonly locale?: DesignerLocale;
     }>();
   });
 });

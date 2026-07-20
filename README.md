@@ -38,18 +38,20 @@ denreport is pre-1.0 and under active development. What exists today:
   selected target, so surprises show up at design time, not after opening
   the output PDF.
 
-Nothing above requires a paid plan.
+All of the above is free and open source.
 
 ## Packages
 
 This is a pnpm monorepo with three packages and one app:
 
-| Package | License | What it is |
-|---|---|---|
-| [`@denreport/core`](packages/core) | MIT | The IR spec, parser, and validator. No UI, no rendering. |
-| [`@denreport/targets`](packages/targets) | MIT | Exporters from IR to pdfme and ReportLab, plus the compatibility matrices. |
-| [`@denreport/designer`](packages/designer) | AGPL-3.0-only, or commercial | The browser-based editor UI, embeddable via a small `Designer` class. |
-| [`apps/web`](apps/web) | AGPL-3.0-only | The reference app you get when you run this repo. |
+| Package | What it is |
+|---|---|
+| [`@denreport/core`](packages/core) | The IR spec, parser, and validator. No UI, no rendering. |
+| [`@denreport/targets`](packages/targets) | Exporters from IR to pdfme and ReportLab, plus the compatibility matrices. |
+| [`@denreport/designer`](packages/designer) | The browser-based editor UI, embeddable via a small `Designer` class. |
+| [`apps/web`](apps/web) | The reference app you get when you run this repo. |
+
+All packages are MIT licensed.
 
 None of these are published to npm yet — publishing is planned but not set up.
 For now, use them by cloning this repository and building from source (see
@@ -58,30 +60,39 @@ Quickstart below), not by installing from a registry.
 ## License FAQ
 
 **Can I use denreport in my own project for free?**
-Yes. `@denreport/core` and `@denreport/targets` — the IR spec, parser, and
-both exporters — are MIT licensed. Use them in any project, commercial or
-not, with no obligations beyond the MIT notice.
-
-**What about the designer UI?**
-`@denreport/designer` is AGPL-3.0-only. You can self-host it and use it
-inside your organization freely, including for commercial work. AGPL-3.0
-only requires source disclosure if you distribute a product built on it, or
-offer it as a network service to others — in that case you either comply
-with AGPL-3.0 (make your product's source available under a compatible
-license) or use a commercial license instead, which removes that
-requirement.
+Yes. Every package — the IR spec, parser, both exporters, the designer UI,
+and the reference app — is MIT licensed. Use them in any project,
+commercial or not, with no obligations beyond the MIT notice.
 
 **Do the PDFs, templates, or generated code I produce have any license
 obligations?**
-No. Output produced by denreport — exported PDF files, pdfme templates, or
-generated ReportLab code — is entirely yours, with no attribution
-requirement and no obligation to disclose anything.
+The output itself is yours. Exported PDF files (including the fonts
+embedded in them — the SIL Open Font License states that it does not apply
+to documents created with a font), pdfme template JSON, and generated
+ReportLab Python code carry no attribution or disclosure requirement, and
+denreport claims no rights over them.
 
-**Why is the designer AGPL but core/targets MIT?**
-So the parts you'd want to depend on programmatically (the format, the
-parser, the exporters) are unencumbered, while the editor UI — the part
-someone would embed into a competing product — is what funds continued
-development.
+One caveat: the ReportLab export is a zip that also contains the font
+*files* (TTF) the script loads. When those are the bundled Noto Sans JP
+fonts, the files themselves stay under the
+[SIL Open Font License 1.1](packages/targets/assets/fonts/OFL.txt). The
+zip itself does not include the license file, so if you pass the zip on to
+someone else, add a copy of
+[`OFL.txt`](packages/targets/assets/fonts/OFL.txt) alongside it — that one
+file carries both the copyright notice and the license text that OFL
+condition 2 requires each copy to keep. Don't sell the font files on
+their own (OFL condition 1). If you registered your own fonts, their
+license terms apply instead.
+
+**What licenses do the bundled fonts and the export targets use?**
+The bundled fonts are the Regular and Bold weights of Noto Sans JP, under
+the SIL Open Font License 1.1; the license text ships in
+[`packages/targets/assets/fonts/OFL.txt`](packages/targets/assets/fonts/OFL.txt).
+The libraries the exported artifacts run on are permissive as well:
+[pdfme](https://github.com/pdfme/pdfme) is MIT,
+[reportlab](https://www.reportlab.com/opensource/) is BSD 3-Clause, and
+Pillow (required by generated code that draws images) is MIT-CMU. None of
+them impose obligations on the documents you generate with them.
 
 ## Quickstart
 
@@ -147,9 +158,8 @@ reverse proxy (nginx, Caddy, etc.) if you need either.
 
 Beyond the above, we're planning deeper Japanese typesetting features
 (vertical writing, gaiji, and similar), a self-hosted rendering runtime, and
-a curated set of ready-made templates. Some of these are expected to be
-offered under a paid plan alongside the free designer; none of that exists
-yet, and this README will be updated as it ships.
+a curated set of ready-made templates. None of that exists yet, and this
+README will be updated as it ships.
 
 ## Contributing
 
@@ -166,8 +176,6 @@ See [SECURITY.md](SECURITY.md) for how to report a vulnerability.
 
 ## License
 
-MIT for `packages/core` and `packages/targets`; AGPL-3.0-only (or
-commercial) for `packages/designer` and `apps/web`. Full license texts are
-in [LICENSE-MIT](LICENSE-MIT) and [LICENSE-AGPL-3.0](LICENSE-AGPL-3.0), and
-each package's `LICENSE` file states which applies to it. See the License
+MIT for all packages. The full license text is in [LICENSE](LICENSE), and
+each package carries its own copy in its `LICENSE` file. See the License
 FAQ above for what this means in practice.

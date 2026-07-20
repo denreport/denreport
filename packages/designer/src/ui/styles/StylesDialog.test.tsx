@@ -3,6 +3,8 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { EditorStore } from "../../state/store";
 import { StylesDialog } from "./StylesDialog";
 
@@ -31,7 +33,7 @@ function makeStore(document?: Partial<IrDocument>): EditorStore {
   const base: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [textElement()],
   };
   return new EditorStore({ ...base, ...document });
@@ -75,8 +77,8 @@ function click(el: Element): void {
   });
 }
 
-/** htmlFor で紐づく入力（NumberField / TextField）のみを対象とする。
-    チェックボックスラベル（for なし）とは別扱い */
+/** Targets only inputs linked via htmlFor (NumberField / TextField).
+    Checkbox labels (without for) are handled separately */
 function inputByLabel(text: string): HTMLInputElement {
   const label = [...container.querySelectorAll("label[for]")].find(
     (l) => l.textContent === text,
@@ -222,6 +224,18 @@ describe("属性編集", () => {
       { name: "見出し", attrs: { fontSize: 14, lineHeight: 1.25 } },
     ]);
   });
+
+  it("整列に「均等」を選べ、要約にも反映される", () => {
+    const store = makeStore({
+      styles: [{ name: "見出し", attrs: { fontSize: 14, align: "left" } }],
+    });
+    render(store);
+    click(buttonByText("均等"));
+    expect(store.getState().document.styles).toEqual([
+      { name: "見出し", attrs: { fontSize: 14, align: "justify" } },
+    ]);
+    expect(container.textContent).toContain("均等");
+  });
 });
 
 describe("名称変更・削除", () => {
@@ -287,5 +301,41 @@ describe("名称変更・削除", () => {
     const el = store.getState().document.elements[0];
     expect(el).not.toHaveProperty("style");
     expect(el).toMatchObject({ fontSize: 14 });
+  });
+});
+
+describe("en の MessagesContext", () => {
+  it("文言が英語で描画され、生成名も英語になる", () => {
+    const store = makeStore();
+    act(() => {
+      root.render(
+        <MessagesContext.Provider value={en}>
+          <StylesDialog store={store} onClose={() => {}} />
+        </MessagesContext.Provider>,
+      );
+    });
+    expect(container.textContent).toContain("No styles yet.");
+    click(buttonByText("+ New style"));
+    expect(store.getState().document.styles).toEqual([
+      { name: "Style 1", attrs: { fontSize: 10 } },
+    ]);
+  });
+
+  it("整列の選択肢と属性要約も英語になる", () => {
+    const store = makeStore({
+      styles: [{ name: "Heading", attrs: { fontSize: 14, align: "center" } }],
+    });
+    act(() => {
+      root.render(
+        <MessagesContext.Provider value={en}>
+          <StylesDialog store={store} onClose={() => {}} />
+        </MessagesContext.Provider>,
+      );
+    });
+    expect(container.textContent).toContain("Center");
+    click(buttonByText("Justify"));
+    expect(store.getState().document.styles).toEqual([
+      { name: "Heading", attrs: { fontSize: 14, align: "justify" } },
+    ]);
   });
 });

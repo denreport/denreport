@@ -32,7 +32,7 @@ function makeStore(): EditorStore {
   const document: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [textElement("a")],
   };
   const store = new EditorStore(document);
@@ -61,7 +61,7 @@ function makeTableStore(sampleData: string): EditorStore {
   const document: IrDocument = {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [tableElement("tbl1")],
   };
   return new EditorStore(document, sampleData);
@@ -120,7 +120,7 @@ describe("Canvas パンモード", () => {
     act(() => {
       root.render(<Host store={store} />);
     });
-    const viewport = container.querySelector(".apx-viewport");
+    const viewport = container.querySelector(".dr-viewport");
     expect(viewport?.classList.contains("is-pan")).toBe(true);
   });
 
@@ -130,8 +130,8 @@ describe("Canvas パンモード", () => {
     act(() => {
       root.render(<Host store={store} />);
     });
-    const viewport = container.querySelector(".apx-viewport");
-    const paper = container.querySelector(".apx-paper");
+    const viewport = container.querySelector(".dr-viewport");
+    const paper = container.querySelector(".dr-paper");
     if (viewport === null || paper === null) {
       throw new Error("viewport または paper が見つからない");
     }
@@ -175,7 +175,7 @@ describe("Canvas パンモード", () => {
     act(() => {
       root.render(<Host store={store} />);
     });
-    const viewport = container.querySelector(".apx-viewport");
+    const viewport = container.querySelector(".dr-viewport");
     expect(viewport?.classList.contains("is-pan")).toBe(false);
 
     act(() => {
@@ -202,7 +202,7 @@ describe("Canvas パンモード", () => {
     act(() => {
       root.render(<Host store={store} />);
     });
-    const viewport = container.querySelector(".apx-viewport");
+    const viewport = container.querySelector(".dr-viewport");
     const input = document.createElement("input");
     document.body.append(input);
 
@@ -225,7 +225,7 @@ describe("Canvas パンモード", () => {
     act(() => {
       root.render(<Host store={store} />);
     });
-    const paper = container.querySelector(".apx-paper");
+    const paper = container.querySelector(".dr-paper");
     if (paper === null) {
       throw new Error("paper が見つからない");
     }
@@ -234,7 +234,7 @@ describe("Canvas パンモード", () => {
         new MouseEvent("dblclick", { bubbles: true, clientX: 1, clientY: 1 }),
       );
     });
-    expect(container.querySelector(".apx-inline-editor")).toBeNull();
+    expect(container.querySelector(".dr-inline-editor")).toBeNull();
   });
 });
 
@@ -244,15 +244,15 @@ describe("Canvas ダブルクリック編集開始", () => {
     act(() => {
       root.render(<Host store={store} />);
     });
-    const paper = container.querySelector(".apx-paper");
-    const target = container.querySelector('[data-apx-id="a"]');
+    const paper = container.querySelector(".dr-paper");
+    const target = container.querySelector('[data-dr-id="a"]');
     if (paper === null || target === null) {
       throw new Error("paper または対象要素が見つからない");
     }
 
-    // setPointerCapture 済みのポインタでは dblclick の target が paper 自身に固定される
-    // （実ブラウザの挙動）ため、ここでは document.elementFromPoint 側だけが実際の
-    // カーソル位置の要素を返す状況を再現する
+    // For a pointer that already has setPointerCapture, dblclick's target is pinned to paper
+    // itself (real browser behavior), so here we reproduce the situation where only
+    // document.elementFromPoint returns the element actually at the cursor position
     document.elementFromPoint = () => target as HTMLElement;
     act(() => {
       paper.dispatchEvent(
@@ -260,16 +260,16 @@ describe("Canvas ダブルクリック編集開始", () => {
       );
     });
 
-    expect(container.querySelector(".apx-inline-editor")).not.toBeNull();
+    expect(container.querySelector(".dr-inline-editor")).not.toBeNull();
   });
 });
 
 describe("Canvas 表のデータ行セル編集", () => {
   function dblclickCell(row: number, col: number): void {
     const cell = container.querySelector(
-      `[data-apx-id="tbl1"] [data-apx-row="${row}"][data-apx-col="${col}"]`,
+      `[data-dr-id="tbl1"] [data-dr-row="${row}"][data-dr-col="${col}"]`,
     );
-    const paper = container.querySelector(".apx-paper");
+    const paper = container.querySelector(".dr-paper");
     if (cell === null || paper === null) {
       throw new Error("セルまたは paper が見つからない");
     }
@@ -289,7 +289,7 @@ describe("Canvas 表のデータ行セル編集", () => {
       root.render(<Host store={store} />);
     });
     dblclickCell(0, 0);
-    const editor = container.querySelector(".apx-inline-editor");
+    const editor = container.querySelector(".dr-inline-editor");
     expect(editor).not.toBeNull();
     expect((editor as HTMLInputElement).value).toBe("item0");
   });
@@ -303,12 +303,12 @@ describe("Canvas 表のデータ行セル編集", () => {
     });
     dblclickCell(0, 0);
     const editor = container.querySelector(
-      ".apx-inline-editor",
+      ".dr-inline-editor",
     ) as HTMLInputElement;
     setValue(editor, "固定値");
     pressEnter(editor);
 
-    expect(container.querySelector(".apx-inline-editor")).toBeNull();
+    expect(container.querySelector(".dr-inline-editor")).toBeNull();
     const table = store.getState().document.elements[0];
     expect(table?.type === "table" ? table.cellOverrides : undefined).toEqual([
       { row: 0, key: "name", value: "固定値" },
@@ -326,7 +326,7 @@ describe("Canvas 表のデータ行セル編集", () => {
     const before = store.getState().document;
     dblclickCell(0, 0);
     const editor = container.querySelector(
-      ".apx-inline-editor",
+      ".dr-inline-editor",
     ) as HTMLInputElement;
     pressEnter(editor);
 
@@ -344,12 +344,117 @@ describe("Canvas 表のデータ行セル編集", () => {
     const before = store.getState().document;
     dblclickCell(0, 0);
     const editor = container.querySelector(
-      ".apx-inline-editor",
+      ".dr-inline-editor",
     ) as HTMLInputElement;
     setValue(editor, "item0");
     pressEnter(editor);
 
     expect(store.getState().document).toBe(before);
     expect(store.getState().dirty).toBe(false);
+  });
+});
+
+describe("Canvas セル範囲選択", () => {
+  const MM = 3.78; // MM_TO_PX (zoom 1)
+
+  function firePointer(
+    target: Element,
+    type: string,
+    xMm: number,
+    yMm: number,
+    shiftKey = false,
+  ): void {
+    act(() => {
+      target.dispatchEvent(
+        new PointerEvent(type, {
+          bubbles: true,
+          clientX: xMm * MM,
+          clientY: yMm * MM,
+          button: 0,
+          pointerId: 1,
+          shiftKey,
+        }),
+      );
+    });
+  }
+
+  beforeEach(() => {
+    // jsdom does not implement setPointerCapture, so stub it out to neutralize the onPointerDown call
+    HTMLElement.prototype.setPointerCapture ??= () => {};
+    HTMLElement.prototype.hasPointerCapture ??= () => false;
+  });
+
+  it("表選択済みでのドラッグでセル範囲を選択し、表は動かずハイライトが残る", () => {
+    const store = makeTableStore("{}");
+    store.setSelection(["tbl1"]);
+    act(() => {
+      root.render(<Host store={store} />);
+    });
+    const paper = container.querySelector(".dr-paper");
+    const tableEl = container.querySelector('[data-dr-id="tbl1"]');
+    if (paper === null || tableEl === null) {
+      throw new Error("paper または表が見つからない");
+    }
+    const beforeDocument = store.getState().document;
+
+    // tbl1: box x10 y10 w50 h24 (headerHeight8 + minRows2 * rowHeight8)
+    // pointerdown resolves data-dr-id from e.target, so it's fired on the table element
+    firePointer(tableEl, "pointerdown", 35, 22); // row0
+    firePointer(paper, "pointermove", 35, 30); // row1
+    expect(container.querySelector(".dr-cell-sel")).not.toBeNull();
+    firePointer(paper, "pointerup", 35, 30);
+
+    const box = container.querySelector(".dr-cell-sel") as HTMLElement;
+    expect(box).not.toBeNull();
+    expect(box.style.getPropertyValue("--y")).toBe("18");
+    expect(box.style.getPropertyValue("--h")).toBe("16");
+    expect(store.getState().document).toBe(beforeDocument);
+    expect(store.getState().selection).toEqual(["tbl1"]);
+  });
+
+  it("Shift+pointerdown で既存の選択矩形を拡張する", () => {
+    const store = makeTableStore("{}");
+    store.setSelection(["tbl1"]);
+    act(() => {
+      root.render(<Host store={store} />);
+    });
+    const paper = container.querySelector(".dr-paper");
+    const tableEl = container.querySelector('[data-dr-id="tbl1"]');
+    if (paper === null || tableEl === null) {
+      throw new Error("paper または表が見つからない");
+    }
+
+    firePointer(tableEl, "pointerdown", 35, 22); // row0
+    firePointer(paper, "pointerup", 35, 22);
+    const initial = container.querySelector(".dr-cell-sel") as HTMLElement;
+    expect(initial.style.getPropertyValue("--h")).toBe("8");
+
+    firePointer(tableEl, "pointerdown", 35, 30, true); // shift + row1
+    firePointer(paper, "pointerup", 35, 30);
+    const extended = container.querySelector(".dr-cell-sel") as HTMLElement;
+    expect(extended.style.getPropertyValue("--y")).toBe("18");
+    expect(extended.style.getPropertyValue("--h")).toBe("16");
+  });
+
+  it("表の選択が外れるとハイライトが消える", () => {
+    const store = makeTableStore("{}");
+    store.setSelection(["tbl1"]);
+    act(() => {
+      root.render(<Host store={store} />);
+    });
+    const paper = container.querySelector(".dr-paper");
+    const tableEl = container.querySelector('[data-dr-id="tbl1"]');
+    if (paper === null || tableEl === null) {
+      throw new Error("paper または表が見つからない");
+    }
+
+    firePointer(tableEl, "pointerdown", 35, 22);
+    firePointer(paper, "pointerup", 35, 22);
+    expect(container.querySelector(".dr-cell-sel")).not.toBeNull();
+
+    act(() => {
+      store.setSelection([]);
+    });
+    expect(container.querySelector(".dr-cell-sel")).toBeNull();
   });
 });

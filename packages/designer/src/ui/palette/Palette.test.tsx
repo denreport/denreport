@@ -1,7 +1,9 @@
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
+import { ja } from "../../i18n/messages/ja";
 import { Palette } from "./Palette";
 
 let container: HTMLElement;
@@ -18,9 +20,9 @@ afterEach(() => {
   container.remove();
 });
 
-function buttonFor(type: keyof typeof ELEMENT_TYPE_LABEL): HTMLButtonElement {
-  const label = ELEMENT_TYPE_LABEL[type];
-  const button = [...container.querySelectorAll(".apx-pal-item")].find((el) =>
+function buttonFor(type: keyof typeof ja.elementTypes): HTMLButtonElement {
+  const label = ja.elementTypes[type];
+  const button = [...container.querySelectorAll(".dr-pal-item")].find((el) =>
     el.textContent?.includes(label),
   );
   if (!(button instanceof HTMLButtonElement)) {
@@ -37,7 +39,7 @@ describe("Palette", () => {
       <Palette beginPlacement={beginPlacement} onQuickAdd={onQuickAdd} />,
     );
     await vi.waitFor(() => {
-      if (container.querySelector(".apx-palette") === null) {
+      if (container.querySelector(".dr-palette") === null) {
         throw new Error("パレットが未描画");
       }
     });
@@ -55,7 +57,7 @@ describe("Palette", () => {
       <Palette beginPlacement={beginPlacement} onQuickAdd={onQuickAdd} />,
     );
     await vi.waitFor(() => {
-      if (container.querySelector(".apx-palette") === null) {
+      if (container.querySelector(".dr-palette") === null) {
         throw new Error("パレットが未描画");
       }
     });
@@ -76,7 +78,7 @@ describe("Palette", () => {
       <Palette beginPlacement={beginPlacement} onQuickAdd={onQuickAdd} />,
     );
     await vi.waitFor(() => {
-      if (container.querySelector(".apx-palette") === null) {
+      if (container.querySelector(".dr-palette") === null) {
         throw new Error("パレットが未描画");
       }
     });
@@ -85,5 +87,24 @@ describe("Palette", () => {
       new MouseEvent("click", { bubbles: true }),
     );
     expect(onQuickAdd).toHaveBeenCalledExactlyOnceWith("barcode");
+  });
+
+  it("text アイコンの字形見本がロケールで切り替わる", async () => {
+    root.render(<Palette beginPlacement={vi.fn()} onQuickAdd={vi.fn()} />);
+    await vi.waitFor(() => {
+      if (container.querySelector(".dr-palette") === null) {
+        throw new Error("パレットが未描画");
+      }
+    });
+    expect(container.querySelector(".dr-pi-text")?.textContent).toBe("あ");
+
+    root.render(
+      <MessagesContext.Provider value={en}>
+        <Palette beginPlacement={vi.fn()} onQuickAdd={vi.fn()} />
+      </MessagesContext.Provider>,
+    );
+    await vi.waitFor(() => {
+      expect(container.querySelector(".dr-pi-text")?.textContent).toBe("A");
+    });
   });
 });

@@ -12,6 +12,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useMessages } from "../../i18n/context";
 import { MM_TO_PX } from "../../state/constants";
 import { envelopePresetById } from "../../state/envelope-presets";
 import type { PlacedElementView } from "../../state/geometry";
@@ -27,6 +28,7 @@ import type { TableCellSource } from "../../state/table-cells";
 import { cellView, tableCellSources } from "../../state/table-cells";
 import { ContextMenu } from "../context-menu/ContextMenu";
 import { useCanvasContextMenu } from "../context-menu/useCanvasContextMenu";
+import { useFontMetrics } from "../fonts/font-metrics";
 import { commitReplace } from "../properties/ElementProperties";
 import { useEditorState } from "../useEditorState";
 import { GuidesLayer } from "./GuidesLayer";
@@ -42,6 +44,7 @@ import { PaperElement } from "./PaperElement";
 import { Ruler } from "./Ruler";
 import { SelectionOverlay } from "./SelectionOverlay";
 import type { CanvasInteraction } from "./useCanvasInteraction";
+import { useCellSelection } from "./useCellSelection";
 import type { GuideDragApi } from "./useGuideDrag";
 import { useGuideDrag } from "./useGuideDrag";
 import { usePanning } from "./usePanning";
@@ -55,8 +58,8 @@ const NOOP_GUIDE_DRAG: GuideDragApi = {
 
 const PT_PER_MM = 0.352778;
 
-// 単一行 input は defaultValue 代入時点で改行を除去するため、改行入り value との
-// 比較はこの正規化を通してから行う
+// A single-line input strips line breaks at the point defaultValue is assigned, so comparisons
+// against a value containing line breaks must go through this normalization first
 function stripLineBreaks(value: string): string {
   return value.replace(/\r\n|\r|\n/g, "");
 }
@@ -66,6 +69,7 @@ function draggingIds(interaction: InteractionState): ReadonlySet<string> {
     case "moving":
       return new Set(interaction.ids);
     case "resizing":
+    case "rotating":
       return new Set([interaction.id]);
     case "reordering":
       return new Set([interaction.childId]);
@@ -157,7 +161,7 @@ function InlineEditingLayer(props: {
       align={column.align}
       onCommit={(raw) => {
         const document = store.getState().document;
-        // 覗いて Enter しただけで bind 由来の表示値が固定値として凍結される事故を避ける
+        // Avoid the accident of a bind-derived display value being frozen as a fixed value just from peeking in and pressing Enter
         if (
           raw !== "" &&
           !current.overridden &&
@@ -186,17 +190,20 @@ function InlineEditingLayer(props: {
 export function Canvas(props: {
   readonly store: EditorStore;
   readonly interaction: CanvasInteraction;
-  /** 検証ドロワーの行クリックが要素へスクロールするための経路（マウント時に関数を詰める） */
+  /** The path by which clicking a row in the validation drawer scrolls to the element (the function is filled in at mount time) */
   readonly revealRef: RefObject<((id: string) => void) | null>;
 }): ReactNode {
   const { store, interaction, revealRef } = props;
   const state = useEditorState(store);
+  const m = useMessages();
   const { document: doc, view } = state;
   const activeJson = activeSampleJson(state.sampleScenarios);
+  const metrics = useFontMetrics(doc.font, state.fontRegistry);
   const layout = useMemo(
     () => layoutDocument(doc, view.pageContext),
     [doc, view.pageContext],
   );
+  const cellSel = useCellSelection(store, layout);
   const cellSources = useMemo(
     () => tableCellSources(doc, activeJson),
     [doc, activeJson],
@@ -216,7 +223,7 @@ export function Canvas(props: {
   const panningRef = useRef(pan.panning);
   panningRef.current = pan.panning;
   const guideDragState = useGuideDrag(store, viewportRef);
-  // パンモード中はガイドの作成・移動を無効にする
+  // Disable guide creation/movement while in pan mode
   const guideDrag = pan.panMode ? NOOP_GUIDE_DRAG : guideDragState;
   const guidesOnPage = useMemo(
     () => guidesInPage(state.customGuides, doc.page),
@@ -230,22 +237,23 @@ export function Canvas(props: {
       ? envelopePresetById(state.envelopePresetId)
       : null;
 
-  // undo・IR 読込・ページ文脈切替など外部要因で文書が変わったら、古い座標の編集枠を残さない
-  // biome-ignore lint/correctness/useExhaustiveDependencies: 効果内では参照しないが、doc/pageContext の変化そのものが破棄条件
+  // Don't leave a stale-coordinate edit box behind when the document changes due to an external cause such as undo, IR load, or page-context switch
+  // biome-ignore lint/correctness/useExhaustiveDependencies: not referenced inside the effect, but a change in doc/pageContext itself is the discard condition
   useEffect(() => {
     setEditing(null);
   }, [doc, view.pageContext]);
 
   const restoreFocus = useCallback((): void => {
-    viewportRef.current?.querySelector<HTMLElement>(".apx-paper")?.focus();
+    viewportRef.current?.querySelector<HTMLElement>(".dr-paper")?.focus();
   }, []);
   const menu = useCanvasContextMenu(
     store,
     interaction.interaction.kind !== "idle",
     restoreFocus,
+    cellSel,
   );
 
-  // 初期ズームはページ全体フィット。マウント時1回だけで、ウィンドウリサイズには追従しない
+  // The initial zoom fits the whole page. Runs only once at mount, and does not track window resizes
   useLayoutEffect(() => {
     if (fittedRef.current) {
       return;
@@ -255,7 +263,7 @@ export function Canvas(props: {
     if (viewport === null) {
       return;
     }
-    const corner = viewport.querySelector(".apx-ruler-corner");
+    const corner = viewport.querySelector(".dr-ruler-corner");
     const rulerWidth = corner instanceof HTMLElement ? corner.offsetWidth : 0;
     const rulerHeight = corner instanceof HTMLElement ? corner.offsetHeight : 0;
     const zoom = fitPageZoom({
@@ -273,7 +281,7 @@ export function Canvas(props: {
     store.setView({ zoom });
   }, [store, doc.page.width, doc.page.height]);
 
-  // ズーム変更時はアンカー（wheel ならカーソル位置、それ以外はビューポート中心）直下の mm を維持する
+  // On zoom change, keep the mm directly under the anchor fixed (cursor position for wheel, viewport center otherwise)
   useLayoutEffect(() => {
     const previous = prevZoomRef.current;
     prevZoomRef.current = view.zoom;
@@ -281,7 +289,7 @@ export function Canvas(props: {
     if (viewport === null || previous === view.zoom) {
       return;
     }
-    const paper = viewport.querySelector(".apx-paper");
+    const paper = viewport.querySelector(".dr-paper");
     if (!(paper instanceof HTMLElement)) {
       return;
     }
@@ -314,7 +322,7 @@ export function Canvas(props: {
       if (!e.ctrlKey && !e.metaKey) {
         return;
       }
-      // React の onWheel は passive 登録のため preventDefault が効かず、ネイティブリスナーが必要
+      // React's onWheel is registered as passive, so preventDefault has no effect — a native listener is needed
       e.preventDefault();
       if (interactionKindRef.current !== "idle" || panningRef.current) {
         return;
@@ -340,7 +348,7 @@ export function Canvas(props: {
   useEffect(() => {
     revealRef.current = (id: string): void => {
       viewportRef.current
-        ?.querySelector(`[data-apx-id="${CSS.escape(id)}"]`)
+        ?.querySelector(`[data-dr-id="${CSS.escape(id)}"]`)
         ?.scrollIntoView({ block: "nearest", inline: "nearest" });
     };
     return () => {
@@ -355,32 +363,32 @@ export function Canvas(props: {
     if (interaction.interaction.kind !== "idle") {
       return;
     }
-    // paperProps.onPointerDown が押下のたびに paper へ setPointerCapture するため、
-    // e.target はドラッグ中の座標追従用に paper 自身へ固定される。実際にカーソル直下に
-    // ある要素は hit-test で取り直す必要がある
+    // Because paperProps.onPointerDown calls setPointerCapture on paper every time it's pressed,
+    // e.target is pinned to paper itself for coordinate tracking during the drag. The element
+    // actually under the cursor must be re-obtained via hit-test
     const target = document.elementFromPoint(e.clientX, e.clientY);
-    const handleEl = target?.closest("[data-apx-handle]") ?? null;
+    const handleEl = target?.closest("[data-dr-handle]") ?? null;
     if (handleEl !== null) {
       return;
     }
-    const idEl = target?.closest("[data-apx-id]") ?? null;
-    const colEl = target?.closest("[data-apx-col]") ?? null;
-    const colAttr = colEl?.getAttribute("data-apx-col") ?? null;
-    const rowEl = target?.closest("[data-apx-row]") ?? null;
-    const rowAttr = rowEl?.getAttribute("data-apx-row") ?? null;
+    const idEl = target?.closest("[data-dr-id]") ?? null;
+    const colEl = target?.closest("[data-dr-col]") ?? null;
+    const colAttr = colEl?.getAttribute("data-dr-col") ?? null;
+    const rowEl = target?.closest("[data-dr-row]") ?? null;
+    const rowAttr = rowEl?.getAttribute("data-dr-row") ?? null;
     setEditing(
       resolveInlineEditTarget({
         layout,
         selection: state.selection,
         pageContext: view.pageContext,
-        elementId: idEl?.getAttribute("data-apx-id") ?? null,
+        elementId: idEl?.getAttribute("data-dr-id") ?? null,
         columnIndex: colAttr === null ? null : Number(colAttr),
         rowIndex: rowAttr === null ? null : Number(rowAttr),
       }),
     );
   };
 
-  const viewportClass = `apx-viewport${pan.panMode ? " is-pan" : ""}${
+  const viewportClass = `dr-viewport${pan.panMode ? " is-pan" : ""}${
     pan.panning ? " is-panning" : ""
   }`;
 
@@ -396,7 +404,7 @@ export function Canvas(props: {
         } as CSSProperties
       }
     >
-      <div className="apx-ruler-corner">mm</div>
+      <div className="dr-ruler-corner">mm</div>
       <Ruler
         axis="h"
         lengthMm={doc.page.width}
@@ -407,9 +415,9 @@ export function Canvas(props: {
         lengthMm={doc.page.height}
         onGuidePointerDown={(e) => guideDrag.startFromRuler("v", e)}
       />
-      <div className="apx-canvas-content">
+      <div className="dr-canvas-content">
         <div
-          className={`apx-paper${view.gridVisible ? " apx-show-grid" : ""}`}
+          className={`dr-paper${view.gridVisible ? " dr-show-grid" : ""}`}
           style={
             {
               "--pw": doc.page.width,
@@ -417,13 +425,35 @@ export function Canvas(props: {
             } as CSSProperties
           }
           role="application"
-          aria-label="キャンバス"
-          // biome-ignore lint/a11y/noNoninteractiveTabindex: 矢印キー編集のため紙にフォーカスを持たせる
+          aria-label={m.canvas.ariaLabel}
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: give the paper focus so arrow-key editing works
           tabIndex={0}
           {...interaction.paperProps}
           onPointerDown={
-            pan.panMode ? undefined : interaction.paperProps.onPointerDown
+            pan.panMode
+              ? undefined
+              : (e) => {
+                  if (
+                    interaction.interaction.kind === "idle" &&
+                    cellSel.onPointerDown(e)
+                  ) {
+                    return;
+                  }
+                  interaction.paperProps.onPointerDown(e);
+                }
           }
+          onPointerMove={(e) => {
+            cellSel.onPointerMove(e);
+            interaction.paperProps.onPointerMove(e);
+          }}
+          onPointerUp={(e) => {
+            cellSel.onPointerUp();
+            interaction.paperProps.onPointerUp(e);
+          }}
+          onPointerCancel={(e) => {
+            cellSel.onPointerCancel();
+            interaction.paperProps.onPointerCancel(e);
+          }}
           onDoubleClick={pan.panMode ? undefined : onPaperDoubleClick}
           onContextMenu={
             pan.panMode ? (e) => e.preventDefault() : menu.onContextMenu
@@ -440,13 +470,25 @@ export function Canvas(props: {
                   ? cellSources.get(view_.element.id)
                   : undefined
               }
+              metrics={metrics}
             />
           ))}
+          {cellSel.selectionBox !== null && (
+            <div
+              className="dr-cell-sel"
+              style={
+                {
+                  "--x": cellSel.selectionBox.x,
+                  "--y": cellSel.selectionBox.y,
+                  "--w": cellSel.selectionBox.w,
+                  "--h": cellSel.selectionBox.h,
+                } as CSSProperties
+              }
+            />
+          )}
           {doc.elements.length === 0 &&
             interaction.interaction.kind !== "placing" && (
-              <div className="apx-paper-empty-hint">
-                パレットから要素をドラッグして配置
-              </div>
+              <div className="dr-paper-empty-hint">{m.canvas.emptyHint}</div>
             )}
           <GuidesLayer
             guides={guidesOnPage}

@@ -1,9 +1,10 @@
-import type { IrElement } from "@denreport/core";
+import type { IrElement, IrTableElement } from "@denreport/core";
 import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { PlacedElementView } from "../../state/geometry";
+import type { FontMetricsSet } from "../fonts/font-metrics";
 import { PaperElement } from "./PaperElement";
 
 (
@@ -37,17 +38,22 @@ function viewOf(element: IrElement): PlacedElementView {
   };
 }
 
-function renderEl(element: IrElement): void {
+function renderEl(element: IrElement, metrics?: FontMetricsSet | null): void {
   act(() => {
     root.render(
-      <PaperElement view={viewOf(element)} context="first" dragging={false} />,
+      <PaperElement
+        view={viewOf(element)}
+        context="first"
+        dragging={false}
+        metrics={metrics}
+      />,
     );
   });
 }
 
 function el(): HTMLElement {
-  const node = container.querySelector(".apx-el");
-  if (node === null) throw new Error(".apx-el がない");
+  const node = container.querySelector(".dr-el");
+  if (node === null) throw new Error(".dr-el がない");
   return node as HTMLElement;
 }
 
@@ -104,10 +110,38 @@ describe("PaperElement — rect の CSS 変数", () => {
     });
     expect(el().style.getPropertyValue("--ls")).toBe("dashed");
   });
+
+  it("borderWidth 0（枠なし）では is-borderless クラスを付ける", () => {
+    renderEl({
+      type: "rect",
+      id: "r1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      borderWidth: 0,
+    });
+    expect(el().classList.contains("is-borderless")).toBe(true);
+  });
+
+  it("borderWidth 0 でなければ is-borderless クラスを付けない", () => {
+    renderEl({
+      type: "rect",
+      id: "r1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      borderWidth: 0.3,
+    });
+    expect(el().classList.contains("is-borderless")).toBe(false);
+  });
 });
 
 describe("PaperElement — ellipse", () => {
-  it("apx-el-ellipse クラスと枠線・塗りの CSS 変数を持つ", () => {
+  it("dr-el-ellipse クラスと枠線・塗りの CSS 変数を持つ", () => {
     renderEl({
       type: "ellipse",
       id: "e1",
@@ -120,10 +154,24 @@ describe("PaperElement — ellipse", () => {
       borderColor: "#123456",
       fillColor: "#abcdef",
     });
-    expect(el().classList.contains("apx-el-ellipse")).toBe(true);
+    expect(el().classList.contains("dr-el-ellipse")).toBe(true);
     expect(el().style.getPropertyValue("--bw")).toBe("0.4");
     expect(el().style.getPropertyValue("--bc")).toBe("#123456");
     expect(el().style.getPropertyValue("--fc")).toBe("#abcdef");
+  });
+
+  it("borderWidth 0（枠なし）では is-borderless クラスを付ける", () => {
+    renderEl({
+      type: "ellipse",
+      id: "e1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 30,
+      h: 20,
+      borderWidth: 0,
+    });
+    expect(el().classList.contains("is-borderless")).toBe(true);
   });
 });
 
@@ -158,5 +206,218 @@ describe("PaperElement — line の色・線種", () => {
     });
     expect(el().style.getPropertyValue("--lc")).toBe("#ff0000");
     expect(el().style.getPropertyValue("--ls")).toBe("dashed");
+  });
+});
+
+describe("PaperElement — text / pageNumber の文字色", () => {
+  it("color の指定なしでは --tc を出さない", () => {
+    renderEl({
+      type: "text",
+      id: "t1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      text: "本文",
+      fontSize: 10,
+      align: "left",
+      lineHeight: 1.25,
+    });
+    expect(el().style.getPropertyValue("--tc")).toBe("");
+  });
+
+  it("text の color が --tc に写る", () => {
+    renderEl({
+      type: "text",
+      id: "t1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      text: "本文",
+      fontSize: 10,
+      align: "left",
+      lineHeight: 1.25,
+      color: "#ff0000",
+    });
+    expect(el().style.getPropertyValue("--tc")).toBe("#ff0000");
+  });
+
+  it("pageNumber の color が --tc に写る", () => {
+    renderEl({
+      type: "pageNumber",
+      id: "p1",
+      x: 0,
+      y: 0,
+      pages: "all",
+      w: 40,
+      h: 20,
+      format: "{n} / {N}",
+      fontSize: 10,
+      align: "left",
+      lineHeight: 1.25,
+      color: "#112233",
+    });
+    expect(el().style.getPropertyValue("--tc")).toBe("#112233");
+  });
+});
+
+describe("PaperElement — rotate の CSS 変数", () => {
+  it("rotate 指定なしでは --rot を出さない", () => {
+    renderEl({
+      type: "rect",
+      id: "r1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      borderWidth: 0.3,
+    });
+    expect(el().style.getPropertyValue("--rot")).toBe("");
+  });
+
+  it("rotate が deg 付きで --rot に写る", () => {
+    renderEl({
+      type: "rect",
+      id: "r1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      borderWidth: 0.3,
+      rotate: -30.5,
+    });
+    expect(el().style.getPropertyValue("--rot")).toBe("-30.5deg");
+  });
+
+  it("line の rotate も --rot に写る", () => {
+    renderEl({
+      type: "line",
+      id: "l1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      orientation: "horizontal",
+      length: 40,
+      thickness: 0.3,
+      rotate: 45,
+    });
+    expect(el().style.getPropertyValue("--rot")).toBe("45deg");
+  });
+});
+
+describe("PaperElement — table の CSS 変数", () => {
+  function tableEl(overrides: Partial<IrTableElement> = {}): IrTableElement {
+    return {
+      type: "table",
+      id: "tbl1",
+      x: 0,
+      y: 0,
+      bind: "items",
+      columns: [{ key: "a", label: "A", width: 40, align: "left" }],
+      rowHeight: 10,
+      headerHeight: 10,
+      fontSize: 10,
+      maxY: 100,
+      continuationY: 0,
+      minRows: 0,
+      ...overrides,
+    };
+  }
+
+  it("罫線属性の指定なしでは CSS 変数を出さない", () => {
+    renderEl(tableEl());
+    expect(el().style.getPropertyValue("--frame-w")).toBe("");
+    expect(el().style.getPropertyValue("--grid-w")).toBe("");
+    expect(el().style.getPropertyValue("--frame-ls")).toBe("");
+    expect(el().style.getPropertyValue("--grid-ls")).toBe("");
+  });
+
+  it("frameWidth / gridWidth / frameStyle / gridStyle が CSS 変数に写る", () => {
+    renderEl(
+      tableEl({
+        frameWidth: 1,
+        gridWidth: 0.5,
+        frameStyle: "dashed",
+        gridStyle: "dotted",
+      }),
+    );
+    expect(el().style.getPropertyValue("--frame-w")).toBe("1");
+    expect(el().style.getPropertyValue("--grid-w")).toBe("0.5");
+    expect(el().style.getPropertyValue("--frame-ls")).toBe("dashed");
+    expect(el().style.getPropertyValue("--grid-ls")).toBe("dotted");
+  });
+
+  it("frameStyle: dashdot は dashed に近似する", () => {
+    renderEl(tableEl({ frameStyle: "dashdot" }));
+    expect(el().style.getPropertyValue("--frame-ls")).toBe("dashed");
+  });
+});
+
+describe("PaperElement — フォント計量の有無による text / pageNumber の描画", () => {
+  const METRICS: FontMetricsSet = { regular: () => 0.5 };
+
+  it("metrics 未指定では従来どおり生テキストのまま描画する", () => {
+    renderEl({
+      type: "text",
+      id: "t1",
+      x: 0,
+      y: 0,
+      pages: "first",
+      w: 40,
+      h: 20,
+      text: "本文",
+      fontSize: 10,
+      align: "left",
+      lineHeight: 1.25,
+    });
+    expect(el().querySelectorAll(".dr-text-line")).toHaveLength(0);
+    expect(el().textContent).toBe("本文");
+  });
+
+  it("metrics 指定の text は .dr-text-line で行分割描画する", () => {
+    renderEl(
+      {
+        type: "text",
+        id: "t1",
+        x: 0,
+        y: 0,
+        pages: "first",
+        w: 40,
+        h: 20,
+        text: "本文",
+        fontSize: 10,
+        align: "left",
+        lineHeight: 1.25,
+      },
+      METRICS,
+    );
+    expect(el().querySelectorAll(".dr-text-line")).toHaveLength(1);
+    expect(el().textContent).toBe("本文");
+  });
+
+  it("metrics 指定の pageNumber は .dr-text-line > .dr-bind になる", () => {
+    renderEl(
+      {
+        type: "pageNumber",
+        id: "p1",
+        x: 0,
+        y: 0,
+        pages: "all",
+        w: 40,
+        h: 20,
+        format: "{n} / {N}",
+        fontSize: 10,
+        align: "left",
+        lineHeight: 1.25,
+      },
+      METRICS,
+    );
+    const line = el().querySelector(".dr-text-line");
+    expect(line?.querySelector(".dr-bind")?.textContent).toBe("{n} / {N}");
   });
 });

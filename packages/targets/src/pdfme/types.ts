@@ -18,6 +18,8 @@ interface PdfmeSchemaBase {
   readonly position: PdfmePosition;
   readonly width: number;
   readonly height: number;
+  /** Clockwise rotation, in degrees, about the schema's center. Omitted when 0. */
+  readonly rotate?: number;
 }
 
 /**
@@ -28,11 +30,14 @@ export interface PdfmeTextSchema extends PdfmeSchemaBase {
   readonly type: "text";
   readonly fontSize: number;
   readonly fontName: string;
+  readonly fontColor: string;
   readonly alignment: "left" | "center" | "right";
   readonly verticalAlignment: "top";
   readonly lineHeight: number;
-  /** justify（均等割付）の行のみ設定する。単位は fontSize と同じ pt */
+  /** Set only for justify lines. The unit is pt, same as fontSize. */
   readonly characterSpacing?: number;
+  /** Underline. Position and thickness follow pdfme's rendering (the IR doesn't specify them). Omitted when false. */
+  readonly underline?: boolean;
 }
 
 /** A pdfme line schema. */

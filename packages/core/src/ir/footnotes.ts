@@ -6,7 +6,7 @@ const FOOTNOTE_MARK_PATTERN = new RegExp(
   "g",
 );
 
-/** text 内の {#id} マークの id を出現順・重複ありで返す */
+/** Returns the ids of {#id} marks within text, in order of appearance, with duplicates */
 export function footnoteMarkIds(text: string): readonly string[] {
   return [...text.matchAll(FOOTNOTE_MARK_PATTERN)].map(
     (match) => match[1] as string,
@@ -49,12 +49,12 @@ export function resolveFootnotes(document: IrDocument): IrDocument {
     return { ...element, text };
   });
 
-  // 参照が1つも無ければブロックを追加しない（マーク置換のみ行う）
+  // If there are no references at all, don't add a block (only mark substitution is performed)
   if (numberById.size === 0) {
     return { ...rest, elements };
   }
 
-  // 未参照の注記（validateIr 合格文書では発生しない）は定義順で末尾に採番する
+  // Unreferenced notes (which don't occur in a document that passed validateIr) are numbered last, in definition order
   for (const note of footnotes.notes) {
     assignNumber(note.id);
   }
@@ -78,7 +78,7 @@ export function resolveFootnotes(document: IrDocument): IrDocument {
 
   const notesElement: IrTextElement = {
     type: "text",
-    id: "apxFootnotes",
+    id: "drFootnotes",
     x: footnotes.x,
     y: document.page.height - footnotes.bottom - blockHeight,
     pages: footnotes.pages,

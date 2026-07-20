@@ -1,5 +1,5 @@
 export interface MenuPlacementInput {
-  /** 右クリック位置（viewport 座標 px） */
+  /** Right-click position (viewport coordinates, px) */
   readonly x: number;
   readonly y: number;
   readonly menuWidth: number;
@@ -8,7 +8,7 @@ export interface MenuPlacementInput {
   readonly viewportHeight: number;
 }
 
-/** 右下方向に開き、画面端でははみ出し分を平行移動（クランプ）する。反転はしない */
+/** Opens toward the bottom-right, and translates (clamps) any overflow at the screen edge. Never flips */
 export function clampMenuPosition(input: MenuPlacementInput): {
   readonly x: number;
   readonly y: number;

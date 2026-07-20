@@ -6,6 +6,7 @@ import type {
   PointerEvent as ReactPointerEvent,
 } from "react";
 import { useCallback, useRef, useState } from "react";
+import { useMessages } from "../../i18n/context";
 import type { EditorStore } from "../../state/store";
 import type { CanvasInteraction } from "../canvas/useCanvasInteraction";
 import { LayersPanel } from "../layers/LayersPanel";
@@ -29,13 +30,14 @@ export function Sidebar(props: {
   readonly onReveal: (id: string) => void;
 }): ReactNode {
   const { store, beginPlacement, onQuickAdd, onReveal } = props;
+  const m = useMessages();
   const sidebarRef = useRef<HTMLDivElement | null>(null);
   const dragRef = useRef<DragState | null>(null);
   const [paletteHeight, setPaletteHeight] = useState<number | null>(null);
 
   const measuredPaletteHeight = useCallback((): number => {
     const rect = sidebarRef.current
-      ?.querySelector(".apx-palette")
+      ?.querySelector(".dr-palette")
       ?.getBoundingClientRect();
     return rect?.height ?? MIN_PALETTE_HEIGHT;
   }, []);
@@ -94,23 +96,23 @@ export function Sidebar(props: {
 
   return (
     <div
-      className={`apx-sidebar${paletteHeight !== null ? " has-split" : ""}`}
+      className={`dr-sidebar${paletteHeight !== null ? " has-split" : ""}`}
       ref={sidebarRef}
       style={
         paletteHeight !== null
-          ? ({ "--apx-palette-h": `${paletteHeight}px` } as CSSProperties)
+          ? ({ "--dr-palette-h": `${paletteHeight}px` } as CSSProperties)
           : undefined
       }
     >
       <Palette beginPlacement={beginPlacement} onQuickAdd={onQuickAdd} />
-      {/* biome-ignore lint/a11y/useSemanticElements: <hr> は focusable/interactive にできず、ドラッグ・キーボード操作を持たせられない */}
+      {/* biome-ignore lint/a11y/useSemanticElements: <hr> cannot be made focusable/interactive, so it can't support drag/keyboard operation */}
       <div
         role="separator"
         aria-orientation="horizontal"
-        aria-label="パレットとレイヤーの高さ"
+        aria-label={m.sidebar.splitterAriaLabel}
         aria-valuenow={paletteHeight ?? undefined}
         tabIndex={0}
-        className="apx-sidebar-splitter"
+        className="dr-sidebar-splitter"
         onPointerDown={onSplitterPointerDown}
         onPointerMove={onSplitterPointerMove}
         onPointerUp={onSplitterPointerEnd}

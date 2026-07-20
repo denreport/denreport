@@ -1,16 +1,16 @@
-/** パレット部が下回れない高さ（見出し+1項目が見える程度）(px) */
+/** Height below which the palette area cannot shrink (roughly enough to show a heading + 1 item) (px) */
 export const MIN_PALETTE_HEIGHT = 60;
-/** レイヤーパネルに常に残す高さ (px) */
+/** Height always left for the layers panel (px) */
 export const MIN_LAYERS_HEIGHT = 96;
-/** キーボード操作 1 打鍵あたりの増減量 (px) */
+/** Amount to change per keyboard keystroke (px) */
 export const SPLITTER_KEY_STEP = 16;
 
-/** app.css の .apx-sidebar-splitter の height と一致させる値 */
+/** Value that must match the height of .dr-sidebar-splitter in app.css */
 const SPLITTER_HEIGHT = 5;
 
 /**
- * 希望高さをサイドバー実高さに対してクランプする。
- * sidebarHeight が小さすぎて両最小値を満たせない場合は MIN_PALETTE_HEIGHT を返す。
+ * Clamps the desired height against the sidebar's actual height.
+ * If sidebarHeight is too small to satisfy both minimums, returns MIN_PALETTE_HEIGHT.
  */
 export function clampPaletteHeight(
   desired: number,

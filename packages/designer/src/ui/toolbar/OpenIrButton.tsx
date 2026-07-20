@@ -2,6 +2,7 @@ import type { IrError } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 import type { LoadIrResult } from "../../api/designer";
+import { useMessages } from "../../i18n/context";
 import { Dialog } from "../dialog/Dialog";
 
 type FlowState =
@@ -19,6 +20,7 @@ export function OpenIrButton(props: {
   const { dirty, importIr } = props;
   const [flow, setFlow] = useState<FlowState>(IDLE);
   const fileInput = useRef<HTMLInputElement>(null);
+  const m = useMessages();
 
   const pickFile = (): void => {
     setFlow(IDLE);
@@ -43,7 +45,7 @@ export function OpenIrButton(props: {
     <>
       <button
         type="button"
-        className="apx-btn apx-btn-secondary"
+        className="dr-btn dr-btn-secondary"
         onClick={() => {
           if (dirty) {
             setFlow({ kind: "confirm" });
@@ -52,7 +54,7 @@ export function OpenIrButton(props: {
           }
         }}
       >
-        開く
+        {m.toolbar.open}
       </button>
       <input
         ref={fileInput}
@@ -61,7 +63,7 @@ export function OpenIrButton(props: {
         hidden
         onChange={(event) => {
           const file = event.currentTarget.files?.[0];
-          // 同じファイルを選び直しても change が発火するよう毎回リセットする
+          // Reset every time so that change fires even when the same file is picked again
           event.currentTarget.value = "";
           if (file !== undefined) {
             readFile(file);
@@ -70,59 +72,59 @@ export function OpenIrButton(props: {
       />
       {flow.kind === "confirm" && (
         <Dialog
-          title="未保存の変更"
+          title={m.toolbar.openIr.unsavedTitle}
           onClose={() => setFlow(IDLE)}
           footer={
             <>
               <button
                 type="button"
-                className="apx-btn apx-btn-secondary"
+                className="dr-btn dr-btn-secondary"
                 onClick={() => setFlow(IDLE)}
               >
-                キャンセル
+                {m.toolbar.openIr.cancel}
               </button>
               <button
                 type="button"
-                className="apx-btn apx-btn-primary"
+                className="dr-btn dr-btn-primary"
                 onClick={pickFile}
               >
-                続行
+                {m.toolbar.openIr.continue}
               </button>
             </>
           }
         >
-          <p>読み込むと未保存の変更は失われます。続行しますか？</p>
+          <p>{m.toolbar.openIr.unsavedBody}</p>
         </Dialog>
       )}
       {(flow.kind === "rejected" || flow.kind === "read-failed") && (
         <Dialog
-          title="読み込めませんでした"
+          title={m.toolbar.openIr.failedTitle}
           onClose={() => setFlow(IDLE)}
           footer={
             <button
               type="button"
-              className="apx-btn apx-btn-secondary"
+              className="dr-btn dr-btn-secondary"
               onClick={() => setFlow(IDLE)}
             >
-              閉じる
+              {m.toolbar.openIr.close}
             </button>
           }
         >
           {flow.kind === "read-failed" ? (
-            <p>ファイルを読み取れませんでした。</p>
+            <p>{m.toolbar.openIr.readFailed}</p>
           ) : (
-            <ul className="apx-dialog-errors">
+            <ul className="dr-dialog-errors">
               {flow.errors.map((error, i) => (
-                // biome-ignore lint/suspicious/noArrayIndexKey: 同一 rule / path のエラーが並び得るため index で識別する
+                // biome-ignore lint/suspicious/noArrayIndexKey: errors with the same rule / path can appear side by side, so identify by index
                 <li key={i}>
-                  <span className="apx-verr-rule">{error.rule}</span>
-                  <span className="apx-verr-path">{error.path}</span>
+                  <span className="dr-verr-rule">{error.rule}</span>
+                  <span className="dr-verr-path">{error.path}</span>
                   <span>{error.message}</span>
                 </li>
               ))}
             </ul>
           )}
-          <p className="apx-dialog-note">文書は変更されていません。</p>
+          <p className="dr-dialog-note">{m.toolbar.openIr.unchangedNote}</p>
         </Dialog>
       )}
     </>

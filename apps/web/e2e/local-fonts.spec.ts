@@ -6,15 +6,15 @@ test.describe("PC 内フォントからの選択（許可済み環境）", () =>
   test("一覧取得〜選択〜プレビュー反映まで通しで動く", async ({ page }) => {
     await page.goto("/");
     const props = page.getByRole("complementary", { name: "プロパティ" });
-    await props.getByRole("button", { name: "PC のフォントから選択…" }).click();
+    await props.getByRole("button", { name: "標準のフォントを選択…" }).click();
 
-    const dialog = page.getByRole("dialog", { name: "PC のフォントから選択" });
+    const dialog = page.getByRole("dialog", { name: "標準のフォントを選択" });
     await expect(dialog).toBeVisible();
 
-    // fonts-liberation は CI（playwright install --with-deps）・開発コンテナの双方に
-    // インストール済みで、TrueType（glyf）アウトラインのため validateFont を必ず通る
+    // fonts-liberation is installed on both CI (playwright install --with-deps) and the dev
+    // container, and being a TrueType (glyf) outline it always passes validateFont
     await dialog.getByLabel("フォント名で検索").fill("Liberation");
-    const candidate = dialog.locator(".apx-font-name").first();
+    const candidate = dialog.locator(".dr-font-name").first();
     await expect(candidate).toBeVisible();
     const displayName = await candidate.innerText();
 
@@ -30,12 +30,12 @@ test.describe("PC 内フォントからの選択（許可済み環境）", () =>
     await page.getByRole("button", { name: "プレビュー" }).click();
     const preview = page.getByRole("dialog", { name: "プレビュー" });
     await expect(preview).toBeVisible();
-    await expect(preview.locator(".apx-preview-warnings")).toHaveCount(0);
+    await expect(preview.locator(".dr-preview-warnings")).toHaveCount(0);
     await expect
       .poll(() =>
         page.evaluate(
           (family) => document.fonts.check(`13px ${family}`),
-          `apx-local-${registeredName}`,
+          `dr-local-${registeredName}`,
         ),
       )
       .toBe(true);
@@ -52,7 +52,7 @@ test.describe("PC 内フォント選択が非対応の環境", () => {
 
     const props = page.getByRole("complementary", { name: "プロパティ" });
     await expect(
-      props.getByRole("button", { name: "PC のフォントから選択…" }),
+      props.getByRole("button", { name: /のフォントを選択…$/ }),
     ).toHaveCount(0);
     await expect(
       props.getByText(/PC 内フォントの一覧取得に対応していません/),

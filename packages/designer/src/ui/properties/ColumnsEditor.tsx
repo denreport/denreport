@@ -1,5 +1,6 @@
 import type { IrAlign, IrDocument } from "@denreport/core";
 import type { ReactNode } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorMessageFor } from "../../state/error-index";
 import {
   addTableColumn,
@@ -7,7 +8,7 @@ import {
   removeTableColumn,
   updateTableColumn,
 } from "../../state/properties";
-import { ALIGN_OPTIONS } from "./align-options";
+import { alignOptions } from "./align-options";
 import type { ElementFormProps } from "./ElementProperties";
 import { useDraftValue } from "./useDraftValue";
 
@@ -25,10 +26,10 @@ function TextCell(props: {
     }
   });
   return (
-    <span className={`apx-field${invalid === true ? " is-error" : ""}`}>
+    <span className={`dr-field${invalid === true ? " is-error" : ""}`}>
       <input
         aria-label={ariaLabel}
-        className={mono === true ? "apx-mono" : undefined}
+        className={mono === true ? "dr-mono" : undefined}
         value={handlers.draft}
         onChange={(e) => handlers.onChange(e.currentTarget.value)}
         onBlur={handlers.onBlur}
@@ -60,25 +61,26 @@ function WidthCell(props: {
     }
   });
   return (
-    <span
-      className={`apx-field apx-col-w${invalid === true ? " is-error" : ""}`}
-    >
+    <span className={`dr-field dr-col-w${invalid === true ? " is-error" : ""}`}>
       <input
         aria-label={ariaLabel}
-        className="apx-num"
+        className="dr-num"
         inputMode="decimal"
         value={handlers.draft}
         onChange={(e) => handlers.onChange(e.currentTarget.value)}
         onBlur={handlers.onBlur}
         onKeyDown={handlers.onKeyDown}
       />
-      <span className="apx-unit">mm</span>
+      <span className="dr-unit">mm</span>
     </span>
   );
 }
 
 export function ColumnsEditor(props: ElementFormProps): ReactNode {
   const { store, view, errors } = props;
+  const m = useMessages();
+  const c = m.propertiesBulk.columns;
+  const alignOpts = alignOptions(m.properties.align);
   const el = view.element;
   if (el.type !== "table") {
     return null;
@@ -93,19 +95,20 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
   };
 
   return (
-    <section className="apx-sect">
-      <div className="apx-sect-h">
-        列<span className="apx-mono">{el.columns.length}</span>
+    <section className="dr-sect">
+      <div className="dr-sect-h">
+        {c.heading}
+        <span className="dr-mono">{el.columns.length}</span>
       </div>
       {el.columns.map((col, i) => {
         const keyError = errorMessageFor(errors, `columns[${i}].key`);
         const widthError = errorMessageFor(errors, `columns[${i}].width`);
         return (
-          // biome-ignore lint/suspicious/noArrayIndexKey: 列に安定 id がなく、key の重複は編集の常態のため index で識別する
-          <div key={i} className="apx-col-card">
-            <div className="apx-col-row">
+          // biome-ignore lint/suspicious/noArrayIndexKey: columns have no stable id, and duplicate keys while editing are a normal part of editing, so index is used to identify them
+          <div key={i} className="dr-col-card">
+            <div className="dr-col-row">
               <TextCell
-                ariaLabel={`列${i + 1} の key`}
+                ariaLabel={c.keyLabel(i + 1)}
                 value={col.key}
                 mono
                 invalid={keyError !== undefined}
@@ -115,8 +118,8 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
               />
               <button
                 type="button"
-                className="apx-col-btn"
-                aria-label={`列${i + 1} を上へ`}
+                className="dr-col-btn"
+                aria-label={c.moveUpLabel(i + 1)}
                 disabled={i === 0}
                 onClick={() =>
                   commitDoc((doc) => moveTableColumn(doc, el.id, i, -1))
@@ -126,8 +129,8 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
               </button>
               <button
                 type="button"
-                className="apx-col-btn"
-                aria-label={`列${i + 1} を下へ`}
+                className="dr-col-btn"
+                aria-label={c.moveDownLabel(i + 1)}
                 disabled={i === el.columns.length - 1}
                 onClick={() =>
                   commitDoc((doc) => moveTableColumn(doc, el.id, i, 1))
@@ -137,8 +140,8 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
               </button>
               <button
                 type="button"
-                className="apx-col-btn apx-col-del"
-                aria-label={`列${i + 1} を削除`}
+                className="dr-col-btn dr-col-del"
+                aria-label={c.deleteLabel(i + 1)}
                 disabled={el.columns.length === 1}
                 onClick={() =>
                   commitDoc((doc) => removeTableColumn(doc, el.id, i))
@@ -147,9 +150,9 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
                 ×
               </button>
             </div>
-            <div className="apx-col-row">
+            <div className="dr-col-row">
               <TextCell
-                ariaLabel={`列${i + 1} の見出し`}
+                ariaLabel={c.headingLabel(i + 1)}
                 value={col.label}
                 onCommit={(label) =>
                   commitDoc((doc) =>
@@ -158,7 +161,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
                 }
               />
               <WidthCell
-                ariaLabel={`列${i + 1} の幅`}
+                ariaLabel={c.widthLabel(i + 1)}
                 value={col.width}
                 invalid={widthError !== undefined}
                 onCommit={(width) =>
@@ -167,9 +170,9 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
                   )
                 }
               />
-              <span className="apx-field apx-col-align">
+              <span className="dr-field dr-col-align">
                 <select
-                  aria-label={`列${i + 1} の整列`}
+                  aria-label={c.alignLabel(i + 1)}
                   value={col.align}
                   onChange={(e) =>
                     commitDoc((doc) =>
@@ -179,7 +182,7 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
                     )
                   }
                 >
-                  {ALIGN_OPTIONS.map((option) => (
+                  {alignOpts.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -187,21 +190,38 @@ export function ColumnsEditor(props: ElementFormProps): ReactNode {
                 </select>
               </span>
             </div>
+            <div className="dr-col-row">
+              <label className="dr-check">
+                <input
+                  type="checkbox"
+                  aria-label={c.mergeSameValueLabel(i + 1)}
+                  checked={col.mergeSameValue === true}
+                  onChange={(e) =>
+                    commitDoc((doc) =>
+                      updateTableColumn(doc, el.id, i, {
+                        mergeSameValue: e.currentTarget.checked,
+                      }),
+                    )
+                  }
+                />
+                {c.mergeSameValue}
+              </label>
+            </div>
             {keyError !== undefined && (
-              <div className="apx-col-err">{keyError}</div>
+              <div className="dr-col-err">{keyError}</div>
             )}
             {widthError !== undefined && (
-              <div className="apx-col-err">{widthError}</div>
+              <div className="dr-col-err">{widthError}</div>
             )}
           </div>
         );
       })}
       <button
         type="button"
-        className="apx-add-col"
+        className="dr-add-col"
         onClick={() => commitDoc((doc) => addTableColumn(doc, el.id))}
       >
-        ＋ 列を追加
+        {c.addColumn}
       </button>
     </section>
   );

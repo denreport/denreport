@@ -40,7 +40,7 @@ function doc(overrides: Partial<IrDocument> = {}): IrDocument {
   return {
     version: "1.0",
     page: { width: 210, height: 297 },
-    font: { name: "NotoSansJP" },
+    font: { regular: "NotoSansJP" },
     elements: [],
     ...overrides,
   };
@@ -109,7 +109,7 @@ describe("resolveFootnotes", () => {
     const resolved = resolveFootnotes(document);
     const block = resolved.elements[resolved.elements.length - 1];
     expect(block).toMatchObject({
-      id: "apxFootnotes",
+      id: "drFootnotes",
       text: "*1 本体価格は税抜表示です\n*2 振込手数料はお客様負担です",
     });
   });

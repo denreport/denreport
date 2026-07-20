@@ -16,7 +16,7 @@ export function addElement(
   return { ...document, elements: [...document.elements, element] };
 }
 
-/** ids はトップレベル要素のみ。dx / dy は mm */
+/** ids are top-level elements only. dx / dy are in mm */
 export function moveElements(
   document: IrDocument,
   ids: readonly string[],
@@ -32,8 +32,8 @@ export function moveElements(
       }
       const x = roundMm(el.x + dx);
       const y = roundMm(el.y + dy);
-      // continuationY が y と等値なのは未分離のままの表に限られるため、
-      // その場合だけ追従させれば明示的に分離済みの表を壊さずに済む
+      // continuationY equals y only for a table that hasn't been detached yet, so
+      // following it only in that case avoids breaking a table that's already been explicitly detached
       if (el.type === "table" && el.continuationY === el.y) {
         return { ...el, x, y, continuationY: y };
       }
@@ -70,7 +70,7 @@ function applyBox(el: IrElement, box: MmBox): IrElement {
   }
 }
 
-/** box の変化を要素型ごとの属性（x/y/w/h、line は x/y/length、table は x/y のみ）へ反映 */
+/** Reflects a box change onto the attributes for each element type (x/y/w/h; line is x/y/length; table is x/y only) */
 export function resizeElement(
   document: IrDocument,
   id: string,
@@ -84,7 +84,30 @@ export function resizeElement(
   };
 }
 
-/** rest / last 文脈での table 縦ドラッグ用 */
+/** Sets rotate, rounded to 0.1deg units. Removes the attribute if the rounded value is 0.
+    Returns the document as-is for table / flex or an unknown id. Also affects flex children */
+export function rotateElement(
+  document: IrDocument,
+  id: string,
+  rotate: number,
+): IrDocument {
+  const rounded = Math.round(rotate * 10) / 10;
+  return updateElementById(document, id, (el) => {
+    if (el.type === "table" || el.type === "flex") {
+      return el;
+    }
+    if (rounded === 0) {
+      if (el.rotate === undefined) {
+        return el;
+      }
+      const { rotate: _rotate, ...rest } = el;
+      return rest;
+    }
+    return el.rotate === rounded ? el : { ...el, rotate: rounded };
+  });
+}
+
+/** For a table's vertical drag in the rest / last context */
 export function setTableContinuationY(
   document: IrDocument,
   id: string,
@@ -100,7 +123,7 @@ export function setTableContinuationY(
   };
 }
 
-/** トップレベル要素と flex 子（子孫）の両方を id で削除できる */
+/** Can delete both top-level elements and flex children (descendants) by id */
 export function deleteElements(
   document: IrDocument,
   ids: readonly string[],
@@ -218,7 +241,7 @@ export function reorderFlexChild(
   });
 }
 
-/** トップレベル要素から x/y/pages を落として flex 子の形にする */
+/** Drops x/y/pages from a top-level element to shape it as a flex child */
 export function toFlexChild(
   element: Exclude<IrElement, IrTableElement>,
 ): IrFlexChild {
@@ -226,7 +249,7 @@ export function toFlexChild(
   return child;
 }
 
-/** flex 子に x/y/pages を与えてトップレベル要素の形にする（toFlexChild の逆変換） */
+/** Gives a flex child x/y/pages to shape it as a top-level element (the inverse of toFlexChild) */
 export function toTopLevelElement(
   child: IrFlexChild,
   x: number,
@@ -236,8 +259,8 @@ export function toTopLevelElement(
   return { ...child, x: roundMm(x), y: roundMm(y), pages } as IrElement;
 }
 
-/** flex 子孫の寸法のみを box から反映する（w/h、line は length。x/y は書かない）。
-    トップレベル要素や flex/table には作用させない */
+/** Reflects only the dimensions of a flex descendant from box (w/h; line is length; x/y are not written).
+    Does not affect top-level elements or flex/table */
 export function resizeFlexChild(
   document: IrDocument,
   id: string,

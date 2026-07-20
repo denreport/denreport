@@ -1,6 +1,7 @@
 import type { IrDocument, IrFlexAlign } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId } from "react";
+import { useMessages } from "../../i18n/context";
 import { errorMessageFor } from "../../state/error-index";
 import { flexMainContentSize } from "../../state/geometry";
 import { setFlexDirection, setFlexMainSize } from "../../state/properties";
@@ -8,19 +9,19 @@ import type { ElementFormProps } from "./ElementProperties";
 import { commitReplace } from "./ElementProperties";
 import { NumberField, SegmentField } from "./fields";
 
-const FLEX_ALIGN_OPTIONS: readonly {
-  readonly value: IrFlexAlign;
-  readonly label: string;
-}[] = [
-  { value: "start", label: "先頭" },
-  { value: "center", label: "中央" },
-  { value: "end", label: "末尾" },
-];
-
 export function FlexProperties(props: ElementFormProps): ReactNode {
   const { store, view, errors, liveBox } = props;
   const checkId = useId();
   const el = view.element;
+  const m = useMessages();
+  const flexAlignOptions: readonly {
+    readonly value: IrFlexAlign;
+    readonly label: string;
+  }[] = [
+    { value: "start", label: m.properties.flex.alignStart },
+    { value: "center", label: m.properties.flex.alignCenter },
+    { value: "end", label: m.properties.flex.alignEnd },
+  ];
   if (el.type !== "flex") {
     return null;
   }
@@ -39,8 +40,8 @@ export function FlexProperties(props: ElementFormProps): ReactNode {
   return (
     <>
       {"x" in el && (
-        <section className="apx-sect">
-          <div className="apx-sect-h">配置</div>
+        <section className="dr-sect">
+          <div className="dr-sect-h">{m.properties.placement}</div>
           <NumberField
             label="x"
             value={liveBox === null ? el.x : liveBox.x}
@@ -59,14 +60,14 @@ export function FlexProperties(props: ElementFormProps): ReactNode {
           />
         </section>
       )}
-      <section className="apx-sect">
-        <div className="apx-sect-h">レイアウト</div>
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.flex.layout}</div>
         <SegmentField
-          label="方向"
+          label={m.properties.flex.direction}
           value={el.direction}
           options={[
-            { value: "column", label: "縦" },
-            { value: "row", label: "横" },
+            { value: "column", label: m.properties.flex.directionColumn },
+            { value: "row", label: m.properties.flex.directionRow },
           ]}
           onCommit={(direction) =>
             commitDoc((document) =>
@@ -75,7 +76,7 @@ export function FlexProperties(props: ElementFormProps): ReactNode {
           }
         />
         <NumberField
-          label="間隔"
+          label={m.properties.flex.gap}
           value={el.gap}
           unit="mm"
           precision={0.1}
@@ -83,29 +84,29 @@ export function FlexProperties(props: ElementFormProps): ReactNode {
           onCommit={(gap) => commitReplace(store, el.id, { ...el, gap })}
         />
         <SegmentField
-          label="主軸配置"
+          label={m.properties.flex.mainAxisAlign}
           value={el.justifyContent}
-          options={FLEX_ALIGN_OPTIONS}
+          options={flexAlignOptions}
           onCommit={(justifyContent) =>
             commitReplace(store, el.id, { ...el, justifyContent })
           }
         />
         <SegmentField
-          label="交差軸配置"
+          label={m.properties.flex.crossAxisAlign}
           value={el.alignItems}
-          options={FLEX_ALIGN_OPTIONS}
+          options={flexAlignOptions}
           onCommit={(alignItems) =>
             commitReplace(store, el.id, { ...el, alignItems })
           }
         />
       </section>
-      <section className="apx-sect">
-        <div className="apx-sect-h">寸法</div>
-        <div className="apx-frow">
-          <span className="apx-frow-label">
-            主軸寸法（{el.direction === "row" ? "w" : "h"}）
+      <section className="dr-sect">
+        <div className="dr-sect-h">{m.properties.flex.dimension}</div>
+        <div className="dr-frow">
+          <span className="dr-frow-label">
+            {m.properties.flex.mainSize(el.direction === "row" ? "w" : "h")}
           </span>
-          <label className="apx-check" htmlFor={checkId}>
+          <label className="dr-check" htmlFor={checkId}>
             <input
               id={checkId}
               type="checkbox"
@@ -122,7 +123,7 @@ export function FlexProperties(props: ElementFormProps): ReactNode {
                 )
               }
             />
-            明示する
+            {m.properties.flex.explicit}
           </label>
         </div>
         {explicitMain !== undefined ? (
@@ -137,16 +138,18 @@ export function FlexProperties(props: ElementFormProps): ReactNode {
             }
           />
         ) : (
-          <div className="apx-frow">
+          <div className="dr-frow">
             <span />
-            <span className="apx-field-static">
-              導出 = {content.toFixed(1)} mm
+            <span className="dr-field-static">
+              {m.properties.flex.derived(content.toFixed(1))}
             </span>
           </div>
         )}
-        <div className="apx-frow">
-          <span className="apx-frow-label">交差軸</span>
-          <span className="apx-field-static">導出 = {cross.toFixed(1)} mm</span>
+        <div className="dr-frow">
+          <span className="dr-frow-label">{m.properties.flex.crossAxis}</span>
+          <span className="dr-field-static">
+            {m.properties.flex.derived(cross.toFixed(1))}
+          </span>
         </div>
       </section>
     </>

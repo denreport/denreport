@@ -4,9 +4,9 @@ import type { CanvasMode } from "../../state/types";
 import { isPanKeySource, panScrollTarget } from "./panning";
 
 export interface PanningState {
-  /** 実効モードが pan（canvasMode === "pan" または Space 押下中） */
+  /** Effective mode is pan (canvasMode === "pan" or Space is held down) */
   readonly panMode: boolean;
-  /** パンドラッグ中 */
+  /** Currently pan-dragging */
   readonly panning: boolean;
   readonly onViewportPointerDown: (
     e: ReactPointerEvent<HTMLDivElement>,

@@ -1,11 +1,12 @@
 import type { IrFlexElement } from "@denreport/core";
 import type { CSSProperties, ReactNode } from "react";
-import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
+import { useMessages } from "../../i18n/context";
 import { errorElementIds } from "../../state/error-index";
 import type { MmBox, PlacedElementView } from "../../state/geometry";
-import { visibleInContext } from "../../state/geometry";
+import { rotationDeg, visibleInContext } from "../../state/geometry";
 import type { EditorState } from "../../state/types";
 import type { HandleId, InteractionState } from "./interaction";
+import { isRotatable } from "./interaction";
 
 function boxVars(box: MmBox): CSSProperties {
   return {
@@ -18,6 +19,22 @@ function boxVars(box: MmBox): CSSProperties {
 
 function fmt(value: number): string {
   return value.toFixed(1);
+}
+
+// Returns the point obtained by rotating point p by deg degrees around the center (cx, cy),
+// in the same direction as CSS's rotate() (clockwise in y-down screen coordinates)
+function rotatePointDeg(
+  p: { readonly x: number; readonly y: number },
+  cx: number,
+  cy: number,
+  deg: number,
+): { x: number; y: number } {
+  const rad = (deg * Math.PI) / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
+  const dx = p.x - cx;
+  const dy = p.y - cy;
+  return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
 }
 
 const BOX_HANDLES: readonly {
@@ -35,8 +52,9 @@ const BOX_HANDLES: readonly {
   { id: "w", fx: 0, fy: 0.5 },
 ];
 
-// flex 子は x/y を持たず、n/w 側は「反対側を固定して原点を動かす」操作になり
-// justify/align start の確定位置とゴーストがずれるため、e/s/se のみを出す
+// A flex child has no x/y, and the n/w side would become an operation that "fixes the opposite
+// side and moves the origin", which would make the ghost diverge from the justify/align start
+// committed position, so only e/s/se are shown
 const FLEX_CHILD_HANDLES = BOX_HANDLES.filter(
   (h) => h.id === "e" || h.id === "s" || h.id === "se",
 );
@@ -67,25 +85,36 @@ function handlesFor(view: PlacedElementView): readonly {
 }[] {
   const type = view.element.type;
   const box = view.box;
-  if (view.parentFlexId !== null) {
-    if (type === "flex" || type === "table") {
-      return [];
+  const raw = (() => {
+    if (view.parentFlexId !== null) {
+      if (type === "flex" || type === "table") {
+        return [];
+      }
+      if (type === "line") {
+        return [
+          { id: "line-end" as const, x: box.x + box.w, y: box.y + box.h },
+        ];
+      }
+      return toHandles(FLEX_CHILD_HANDLES, box);
     }
     if (type === "line") {
-      return [{ id: "line-end", x: box.x + box.w, y: box.y + box.h }];
+      return [
+        { id: "line-start" as const, x: box.x, y: box.y },
+        { id: "line-end" as const, x: box.x + box.w, y: box.y + box.h },
+      ];
     }
-    return toHandles(FLEX_CHILD_HANDLES, box);
+    if (type === "table" || type === "flex") {
+      return [];
+    }
+    return toHandles(BOX_HANDLES, box);
+  })();
+  const rot = rotationDeg(view.element);
+  if (rot === 0) {
+    return raw;
   }
-  if (type === "line") {
-    return [
-      { id: "line-start", x: box.x, y: box.y },
-      { id: "line-end", x: box.x + box.w, y: box.y + box.h },
-    ];
-  }
-  if (type === "table" || type === "flex") {
-    return [];
-  }
-  return toHandles(BOX_HANDLES, box);
+  const cx = box.x + box.w / 2;
+  const cy = box.y + box.h / 2;
+  return raw.map((h) => ({ id: h.id, ...rotatePointDeg(h, cx, cy, rot) }));
 }
 
 function unionBox(boxes: readonly MmBox[]): MmBox | null {
@@ -153,6 +182,7 @@ export function SelectionOverlay(props: {
   readonly interaction: InteractionState;
 }): ReactNode {
   const { state, layout, interaction } = props;
+  const m = useMessages();
   const context = state.view.pageContext;
   const byId = new Map(layout.map((view) => [view.id, view]));
 
@@ -161,7 +191,7 @@ export function SelectionOverlay(props: {
     .filter((view): view is PlacedElementView => view !== undefined);
   const single = selectedViews.length === 1 ? selectedViews[0] : undefined;
 
-  // エラー要素: path → id を1件ずつ解決して規則 ID チップに使う
+  // Error elements: resolve path → id one at a time for use as a rule ID chip
   const errorRules = new Map<string, string>();
   for (const error of state.validationErrors) {
     for (const id of errorElementIds(state.document, [error])) {
@@ -178,14 +208,23 @@ export function SelectionOverlay(props: {
       ? interaction.guides
       : [];
 
-  let dragGhosts: readonly { readonly key: string; readonly box: MmBox }[] = [];
+  let dragGhosts: readonly {
+    readonly key: string;
+    readonly box: MmBox;
+    readonly rotate?: number;
+  }[] = [];
+  let rotatingGhost: {
+    readonly box: MmBox;
+    readonly rotate: number;
+  } | null = null;
   let tip: { readonly box: MmBox; readonly text: string } | null = null;
   if (interaction.kind === "moving") {
     dragGhosts = interaction.ids.flatMap((id) => {
-      const box = byId.get(id)?.box;
-      if (box === undefined) {
+      const view = byId.get(id);
+      if (view === undefined) {
         return [];
       }
+      const box = view.box;
       return [
         {
           key: id,
@@ -195,6 +234,7 @@ export function SelectionOverlay(props: {
             w: box.w,
             h: box.h,
           },
+          rotate: rotationDeg(view.element),
         },
       ];
     });
@@ -205,7 +245,14 @@ export function SelectionOverlay(props: {
       }
     }
   } else if (interaction.kind === "resizing") {
-    dragGhosts = [{ key: interaction.id, box: interaction.box }];
+    const view = byId.get(interaction.id);
+    dragGhosts = [
+      {
+        key: interaction.id,
+        box: interaction.box,
+        rotate: view !== undefined ? rotationDeg(view.element) : 0,
+      },
+    ];
     tip = {
       box: interaction.box,
       text: `${fmt(interaction.box.w)} × ${fmt(interaction.box.h)} mm`,
@@ -220,6 +267,12 @@ export function SelectionOverlay(props: {
       box: interaction.box,
       text: `x ${fmt(interaction.box.x)}  y ${fmt(interaction.box.y)}`,
     };
+  } else if (interaction.kind === "rotating") {
+    const box = byId.get(interaction.id)?.box;
+    if (box !== undefined) {
+      rotatingGhost = { box, rotate: interaction.rotate };
+      tip = { box, text: `${fmt(interaction.rotate)}°` };
+    }
   } else if (
     interaction.kind === "reordering" &&
     interaction.targetFlexId === null
@@ -267,7 +320,7 @@ export function SelectionOverlay(props: {
         }
       : null;
 
-  // 確定選択（state.selection）と重なる id は実線の apx-sel-box に任せ、二重描画しない
+  // Ids that overlap the committed selection (state.selection) are left to the solid dr-sel-box, avoiding double-drawing
   const previewViews =
     interaction.kind === "marquee"
       ? interaction.previewIds
@@ -276,22 +329,22 @@ export function SelectionOverlay(props: {
           .filter((view): view is PlacedElementView => view !== undefined)
       : [];
 
-  // maxY はどの表示にも現れない位置のため、table 単一選択中のみガイド線で可視化する
+  // maxY is a position that doesn't appear in any display, so it's visualized with a guide line only while a single table is selected
   const maxYGuide =
     single !== undefined && single.element.type === "table"
       ? single.element.maxY
       : null;
 
   return (
-    <div className="apx-overlay">
+    <div className="dr-overlay">
       {[...errorRules.entries()].map(([id, rule]) => {
         const view = byId.get(id);
         if (view === undefined) {
           return null;
         }
         return (
-          <div key={id} className="apx-err-box" style={boxVars(view.box)}>
-            <span className="apx-el-chip apx-el-chip--error">
+          <div key={id} className="dr-err-box" style={boxVars(view.box)}>
+            <span className="dr-el-chip dr-el-chip--error">
               {rule} · {id}
             </span>
           </div>
@@ -301,11 +354,11 @@ export function SelectionOverlay(props: {
       {maxYGuide !== null && (
         <>
           <span
-            className="apx-maxy-line"
+            className="dr-maxy-line"
             style={{ "--gy": maxYGuide } as CSSProperties}
           />
           <span
-            className="apx-maxy-chip"
+            className="dr-maxy-chip"
             style={{ "--gy": maxYGuide } as CSSProperties}
           >
             maxY {maxYGuide}
@@ -313,44 +366,118 @@ export function SelectionOverlay(props: {
         </>
       )}
 
-      {selectedViews.map((view) => (
-        <div key={view.id} className="apx-sel-box" style={boxVars(view.box)}>
-          {single !== undefined && (
-            <span className="apx-el-chip">
-              {ELEMENT_TYPE_LABEL[view.element.type]} · {view.id}
-            </span>
-          )}
-        </div>
-      ))}
+      {selectedViews.map((view) => {
+        const rot = view === single ? rotationDeg(view.element) : 0;
+        return (
+          <div
+            key={view.id}
+            className="dr-sel-box"
+            style={
+              {
+                ...boxVars(view.box),
+                ...(rot !== 0 ? { "--rot": `${rot}deg` } : {}),
+              } as CSSProperties
+            }
+          >
+            {single !== undefined && (
+              <span className="dr-el-chip">
+                {m.elementTypes[view.element.type]} · {view.id}
+              </span>
+            )}
+          </div>
+        );
+      })}
 
       {single !== undefined &&
         visibleInContext(single.pages, context) &&
-        handlesFor(single).map((handle) => (
-          <span
-            key={handle.id}
-            className="apx-h"
-            data-apx-handle={handle.id}
-            data-apx-id={single.id}
-            style={{ "--hx": handle.x, "--hy": handle.y } as CSSProperties}
-          />
-        ))}
+        (() => {
+          const singleRot = rotationDeg(single.element);
+          return handlesFor(single).map((handle) => (
+            <span
+              key={handle.id}
+              className="dr-h"
+              data-dr-handle={handle.id}
+              data-dr-id={single.id}
+              style={
+                {
+                  "--hx": handle.x,
+                  "--hy": handle.y,
+                  ...(singleRot !== 0 ? { "--rot": `${singleRot}deg` } : {}),
+                } as CSSProperties
+              }
+            />
+          ));
+        })()}
 
-      {dragGhosts.map((ghost) => (
+      {single !== undefined &&
+        visibleInContext(single.pages, context) &&
+        isRotatable(single.element.type) &&
+        (() => {
+          const singleRot = rotationDeg(single.element);
+          const cx = single.box.x + single.box.w / 2;
+          const cy = single.box.y + single.box.h / 2;
+          const p = rotatePointDeg(
+            { x: cx, y: single.box.y },
+            cx,
+            cy,
+            singleRot,
+          );
+          return (
+            <span
+              className="dr-h dr-h--rotate"
+              data-dr-handle="rotate"
+              data-dr-id={single.id}
+              style={
+                {
+                  "--hx": p.x,
+                  "--hy": p.y,
+                  ...(singleRot !== 0 ? { "--rot": `${singleRot}deg` } : {}),
+                } as CSSProperties
+              }
+            />
+          );
+        })()}
+
+      {rotatingGhost !== null && (
         <div
-          key={ghost.key}
-          className="apx-drag-ghost"
-          style={boxVars(ghost.box)}
+          className="dr-drag-ghost dr-drag-ghost--rotated"
+          style={
+            {
+              ...boxVars(rotatingGhost.box),
+              "--rot": `${rotatingGhost.rotate}deg`,
+            } as CSSProperties
+          }
         />
-      ))}
+      )}
+
+      {dragGhosts.map((ghost) => {
+        const rotate = ghost.rotate ?? 0;
+        return (
+          <div
+            key={ghost.key}
+            className={
+              rotate !== 0
+                ? "dr-drag-ghost dr-drag-ghost--rotated"
+                : "dr-drag-ghost"
+            }
+            style={
+              {
+                ...boxVars(ghost.box),
+                ...(rotate !== 0 ? { "--rot": `${rotate}deg` } : {}),
+              } as CSSProperties
+            }
+          />
+        );
+      })}
 
       {targetFlex !== undefined && (
-        <div className="apx-flex-target" style={boxVars(targetFlex.box)} />
+        <div className="dr-flex-target" style={boxVars(targetFlex.box)} />
       )}
 
       {insertLine !== null && (
         <span
           className={
-            insertLine.horizontal ? "apx-insert-line-h" : "apx-insert-line-v"
+            insertLine.horizontal ? "dr-insert-line-h" : "dr-insert-line-v"
           }
           style={
             {
@@ -365,26 +492,26 @@ export function SelectionOverlay(props: {
       {previewViews.map((view) => (
         <div
           key={view.id}
-          className="apx-sel-box apx-sel-box--preview"
+          className="dr-sel-box dr-sel-box--preview"
           style={boxVars(view.box)}
         />
       ))}
 
       {marquee !== null && (
-        <div className="apx-marquee" style={boxVars(marquee)} />
+        <div className="dr-marquee" style={boxVars(marquee)} />
       )}
 
       {guides.map((guide) =>
         guide.axis === "x" ? (
           <span
             key={`x${guide.positionMm}`}
-            className="apx-guide-v"
+            className="dr-guide-v"
             style={{ "--gx": guide.positionMm } as CSSProperties}
           />
         ) : (
           <span
             key={`y${guide.positionMm}`}
-            className="apx-guide-h"
+            className="dr-guide-h"
             style={{ "--gy": guide.positionMm } as CSSProperties}
           />
         ),
@@ -392,7 +519,7 @@ export function SelectionOverlay(props: {
 
       {tip !== null && (
         <span
-          className="apx-coord-tip"
+          className="dr-coord-tip"
           style={
             {
               "--x": tip.box.x,
