@@ -12,8 +12,8 @@ import { zoomStepIn, zoomStepOut } from "./zoom";
 
 export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
   const { store } = props;
-  const state = useEditorState(store);
   const m = useMessages();
+  const state = useEditorState(store);
   const { view } = state;
   const lower = zoomStepOut(view.zoom);
   const higher = zoomStepIn(view.zoom);
@@ -76,7 +76,7 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
           <option value="">{m.canvas.envelopeNone}</option>
           {ENVELOPE_PRESETS.map((preset) => (
             <option key={preset.id} value={preset.id}>
-              {preset.label}
+              {m.envelopePresets[preset.id]}
             </option>
           ))}
         </select>

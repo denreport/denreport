@@ -10,6 +10,7 @@ import {
   vi,
 } from "vitest";
 import type { Locale } from "../i18n/locale";
+import { ja } from "../i18n/messages/ja";
 import * as publicExports from "../index";
 import { addScenario, parseSampleDataStorage } from "../state/sample-scenarios";
 import type { EditorStore } from "../state/store";
@@ -202,6 +203,10 @@ async function toolbarButton(
 
 function click(el: Element): void {
   el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+}
+
+function parseSample(json: string): ReturnType<typeof parseSampleDataStorage> {
+  return parseSampleDataStorage(json, ja.defaults);
 }
 
 function makeDirty(designer: Designer): void {
@@ -473,13 +478,13 @@ describe("onChange", () => {
 describe("サンプルデータ API", () => {
   it("getSampleData は封筒形式（シナリオ一式）を返す", () => {
     const { designer: blank } = mount();
-    const blankSet = parseSampleDataStorage(blank.getSampleData());
+    const blankSet = parseSample(blank.getSampleData());
     expect(blankSet.items).toHaveLength(1);
     expect(blankSet.items[0]?.json).toBe("");
 
     const raw = '{ "customerName":  "甲" }';
     const { designer } = mount({ initialSampleData: raw });
-    const migrated = parseSampleDataStorage(designer.getSampleData());
+    const migrated = parseSample(designer.getSampleData());
     expect(migrated.items).toHaveLength(1);
     expect(migrated.items[0]?.json).toBe(raw);
   });
@@ -487,14 +492,10 @@ describe("サンプルデータ API", () => {
   it("setSampleData / getSampleData は封筒形式で往復し、不正 JSON も受理する", () => {
     const { designer } = mount();
     designer.setSampleData("{oops");
-    expect(
-      parseSampleDataStorage(designer.getSampleData()).items[0]?.json,
-    ).toBe("{oops");
+    expect(parseSample(designer.getSampleData()).items[0]?.json).toBe("{oops");
 
     const { designer: broken } = mount({ initialSampleData: "{oops" });
-    expect(parseSampleDataStorage(broken.getSampleData()).items[0]?.json).toBe(
-      "{oops",
-    );
+    expect(parseSample(broken.getSampleData()).items[0]?.json).toBe("{oops");
   });
 
   it("getSampleData の返り値を initialSampleData に渡すと往復する", () => {
@@ -530,11 +531,11 @@ describe("サンプルデータ API", () => {
     });
 
     const store = storeOf(designer);
-    store.setSampleScenarios(addScenario(store.getState().sampleScenarios));
-    expect(sampleFired).toBe(1);
-    expect(parseSampleDataStorage(designer.getSampleData()).items).toHaveLength(
-      2,
+    store.setSampleScenarios(
+      addScenario(store.getState().sampleScenarios, ja.defaults),
     );
+    expect(sampleFired).toBe(1);
+    expect(parseSample(designer.getSampleData()).items).toHaveLength(2);
   });
 
   it("文書変更（commit / loadIr）では onSampleDataChange が発火せず、サンプルは維持される", () => {
@@ -550,9 +551,9 @@ describe("サンプルデータ API", () => {
     makeDirty(designer);
     designer.loadIr(VALID_IR);
     expect(sampleFired).toBe(0);
-    expect(
-      parseSampleDataStorage(designer.getSampleData()).items[0]?.json,
-    ).toBe('{"a": 1}');
+    expect(parseSample(designer.getSampleData()).items[0]?.json).toBe(
+      '{"a": 1}',
+    );
   });
 
   it("解除関数でリスナーが外れる", () => {

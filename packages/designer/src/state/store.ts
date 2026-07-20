@@ -1,7 +1,9 @@
 import type { CompatTargetId, IrDocument, IrError } from "@denreport/core";
 import { checkQualifiedInvoice, validateIr } from "@denreport/core";
 import type { Locale } from "../i18n/locale";
+import { ja } from "../i18n/messages/ja";
 import type { ClipboardState } from "./clipboard";
+import type { DefaultsMessages } from "./defaults";
 import type { EnvelopePresetId } from "./envelope-presets";
 import type { RegisteredFont } from "./fonts";
 import type { ElementGroup } from "./groups";
@@ -33,6 +35,8 @@ export class EditorStore {
     initialDocument: IrDocument,
     initialSampleData?: string,
     initialExportTarget?: CompatTargetId,
+    // 省略時 ja。呼び出し元の大半（既存テスト等）はロケールを意識しないため既定値を持つ
+    messages: DefaultsMessages = ja.defaults,
   ) {
     this.#state = {
       document: initialDocument,
@@ -40,7 +44,10 @@ export class EditorStore {
       view: INITIAL_VIEW,
       ...this.#validation(initialDocument),
       dirty: false,
-      sampleScenarios: parseSampleDataStorage(initialSampleData ?? ""),
+      sampleScenarios: parseSampleDataStorage(
+        initialSampleData ?? "",
+        messages,
+      ),
       fontRegistry: new Map(),
       customGuides: [],
       envelopePresetId: null,

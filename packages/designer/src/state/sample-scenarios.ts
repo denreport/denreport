@@ -1,3 +1,5 @@
+import type { DefaultsMessages } from "./defaults";
+
 export interface SampleScenario {
   /** セット内一意（"s" + 正整数） */
   readonly id: string;
@@ -65,18 +67,27 @@ function nextId(items: readonly SampleScenario[]): string {
 }
 
 /** 既存名と衝突しない最小の正整数から「シナリオ N」を作る */
-function nextName(items: readonly SampleScenario[]): string {
+function nextName(
+  items: readonly SampleScenario[],
+  m: DefaultsMessages,
+): string {
   const used = new Set(items.map((item) => item.name));
   let n = 1;
-  while (used.has(`シナリオ ${n}`)) {
+  while (used.has(m.scenarioName(n))) {
     n += 1;
   }
-  return `シナリオ ${n}`;
+  return m.scenarioName(n);
 }
 
-/** json（旧来の生サンプル文字列）1本から既定1件のセットを作る。省略時は空 json */
-export function defaultScenarioSet(json = ""): SampleScenarioSet {
-  return { items: [{ id: "s1", name: "シナリオ 1", json }], activeId: "s1" };
+/** json（旧来の生サンプル文字列）1本から既定1件のセットを作る */
+export function defaultScenarioSet(
+  json: string,
+  m: DefaultsMessages,
+): SampleScenarioSet {
+  return {
+    items: [{ id: "s1", name: m.scenarioName(1), json }],
+    activeId: "s1",
+  };
 }
 
 /** アクティブシナリオの json。従来の state.sampleData に相当する唯一の読み出し口 */
@@ -95,10 +106,13 @@ export function selectScenario(
 }
 
 /** 空 json の新規シナリオを作りアクティブにする */
-export function addScenario(set: SampleScenarioSet): SampleScenarioSet {
+export function addScenario(
+  set: SampleScenarioSet,
+  m: DefaultsMessages,
+): SampleScenarioSet {
   const item: SampleScenario = {
     id: nextId(set.items),
-    name: nextName(set.items),
+    name: nextName(set.items, m),
     json: "",
   };
   return { items: [...set.items, item], activeId: item.id };
@@ -107,11 +121,12 @@ export function addScenario(set: SampleScenarioSet): SampleScenarioSet {
 /** アクティブシナリオの json を引き継いだ新規シナリオを作りアクティブにする */
 export function duplicateActiveScenario(
   set: SampleScenarioSet,
+  m: DefaultsMessages,
 ): SampleScenarioSet {
   const active = set.items.find((item) => item.id === set.activeId);
   const item: SampleScenario = {
     id: nextId(set.items),
-    name: `${active?.name ?? ""} のコピー`,
+    name: m.copyOf(active?.name ?? ""),
     json: active?.json ?? "",
   };
   return { items: [...set.items, item], activeId: item.id };
@@ -169,12 +184,15 @@ export function updateActiveJson(
 }
 
 /** 封筒形式またはレガシー生文字列を読む。常に不変条件を満たすセットを返し、throw しない */
-export function parseSampleDataStorage(raw: string): SampleScenarioSet {
+export function parseSampleDataStorage(
+  raw: string,
+  m: DefaultsMessages,
+): SampleScenarioSet {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
   } catch {
-    return defaultScenarioSet(raw);
+    return defaultScenarioSet(raw, m);
   }
   if (
     typeof parsed !== "object" ||
@@ -183,11 +201,11 @@ export function parseSampleDataStorage(raw: string): SampleScenarioSet {
     (parsed as Record<string, unknown>).format !== ENVELOPE_FORMAT ||
     (parsed as Record<string, unknown>).version !== ENVELOPE_VERSION
   ) {
-    return defaultScenarioSet(raw);
+    return defaultScenarioSet(raw, m);
   }
   return isValidEnvelope(parsed)
     ? { items: parsed.scenarios, activeId: parsed.activeId }
-    : defaultScenarioSet();
+    : defaultScenarioSet("", m);
 }
 
 /** 封筒形式へ直列化。parseSampleDataStorage との往復で同値 */

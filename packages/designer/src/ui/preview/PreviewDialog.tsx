@@ -307,11 +307,13 @@ export function PreviewDialog(props: {
               )
             }
             onAdd={() =>
-              store.setSampleScenarios(addScenario(state.sampleScenarios))
+              store.setSampleScenarios(
+                addScenario(state.sampleScenarios, m.defaults),
+              )
             }
             onDuplicate={() =>
               store.setSampleScenarios(
-                duplicateActiveScenario(state.sampleScenarios),
+                duplicateActiveScenario(state.sampleScenarios, m.defaults),
               )
             }
             onRemove={() => setConfirmingRemove(true)}

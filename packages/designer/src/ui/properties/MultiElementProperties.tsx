@@ -2,7 +2,6 @@ import type { IrElement, IrFlexChild } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useMessages } from "../../i18n/context";
-import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
 import type { PlacedElementView } from "../../state/geometry";
 import { updateElements } from "../../state/properties";
 import type { EditorStore } from "../../state/store";
@@ -87,9 +86,7 @@ export function MultiElementProperties(props: {
     <>
       <div className="apx-props-head">
         {uniformType !== undefined && (
-          <span className="apx-type-badge">
-            {ELEMENT_TYPE_LABEL[uniformType]}
-          </span>
+          <span className="apx-type-badge">{m.elementTypes[uniformType]}</span>
         )}
         <span className="apx-props-id">
           {m.propertiesBulk.selectedCount(views.length)}

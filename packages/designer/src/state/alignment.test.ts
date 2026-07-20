@@ -1,5 +1,6 @@
 import type { IrDocument, IrElement, IrTextElement } from "@denreport/core";
 import { describe, expect, it } from "vitest";
+import { ja } from "../i18n/messages/ja";
 import {
   alignmentDeltas,
   applyMoveDeltas,
@@ -209,7 +210,13 @@ describe("applyMoveDeltas", () => {
   });
 
   it("table: first 文脈では y を動かし、未分離の continuationY が追従する", () => {
-    const table = createDefaultElement(blankDocument(), "table", 15, 90);
+    const table = createDefaultElement(
+      blankDocument(),
+      "table",
+      15,
+      90,
+      ja.defaults,
+    );
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const deltas = new Map([[table.id, { dx: 5, dy: 10 }]]);
     const next = applyMoveDeltas(doc, "first", deltas);
@@ -222,7 +229,7 @@ describe("applyMoveDeltas", () => {
 
   it("table: first 文脈で分離済み continuationY は追従しない", () => {
     const table = {
-      ...createDefaultElement(blankDocument(), "table", 15, 90),
+      ...createDefaultElement(blankDocument(), "table", 15, 90, ja.defaults),
       continuationY: 30,
     };
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
@@ -232,7 +239,13 @@ describe("applyMoveDeltas", () => {
   });
 
   it("table: rest/last 文脈では continuationY のみ動き、y は不変", () => {
-    const table = createDefaultElement(blankDocument(), "table", 15, 90);
+    const table = createDefaultElement(
+      blankDocument(),
+      "table",
+      15,
+      90,
+      ja.defaults,
+    );
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const deltas = new Map([[table.id, { dx: 5, dy: 10 }]]);
     const next = applyMoveDeltas(doc, "rest", deltas);

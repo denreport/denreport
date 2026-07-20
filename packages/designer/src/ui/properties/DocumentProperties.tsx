@@ -64,8 +64,8 @@ export function DocumentProperties(props: {
   readonly store: EditorStore;
 }): ReactNode {
   const { store } = props;
-  const state = useEditorState(store);
   const m = useMessages();
+  const state = useEditorState(store);
   const d = m.propertiesBulk.document;
   const [fontDialogSlot, setFontDialogSlot] = useState<IrFontSlot | null>(null);
   const docTypeCheckId = useId();
@@ -112,7 +112,7 @@ export function DocumentProperties(props: {
           options={[
             ...paperPresets.map((preset) => ({
               value: preset.id,
-              label: preset.label,
+              label: m.paperPresets[preset.id],
             })),
             { value: CUSTOM_PAPER_PRESET, label: d.custom },
           ]}

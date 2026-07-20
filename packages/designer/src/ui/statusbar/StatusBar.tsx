@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { useMemo } from "react";
 import { useMessages } from "../../i18n/context";
-import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
 import { layoutDocument } from "../../state/geometry";
 import type { EditorStore } from "../../state/store";
 import type { MmPoint } from "../canvas/interaction";
@@ -31,7 +30,7 @@ export function StatusBar(props: {
         <span>
           {m.statusBar.selectionLabel}
           <span className="apx-mono">{view.id}</span>
-          {m.statusBar.selectionType(ELEMENT_TYPE_LABEL[view.element.type])}{" "}
+          {m.statusBar.selectionType(m.elementTypes[view.element.type])}{" "}
           <span className="apx-mono">
             {fmt(view.box.x)}, {fmt(view.box.y)} / {fmt(view.box.w)}×
             {fmt(view.box.h)} mm

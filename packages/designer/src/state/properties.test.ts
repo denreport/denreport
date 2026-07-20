@@ -9,6 +9,7 @@ import type {
 } from "@denreport/core";
 import { parseIr, validateIr } from "@denreport/core";
 import { describe, expect, it } from "vitest";
+import { ja } from "../i18n/messages/ja";
 import {
   addTableCellSpan,
   addTableColumn,
@@ -187,7 +188,7 @@ describe("replaceElement", () => {
     replaceElement(BASE, "t1", { ...TEXT, fontSize: 12 });
     setFlexDirection(BASE, "f1", "row");
     setFlexMainSize(BASE, "f2", 30);
-    addTableColumn(BASE, "tbl1");
+    addTableColumn(BASE, "tbl1", ja.defaults);
     removeTableColumn(BASE, "tbl1", 0);
     moveTableColumn(BASE, "tbl1", 0, 1);
     updateTableColumn(BASE, "tbl1", 0, { width: 50 });
@@ -308,7 +309,7 @@ describe("列操作", () => {
   }
 
   it("addTableColumn は table 内の最小空き番号で末尾に追加する", () => {
-    const doc = addTableColumn(BASE, "tbl1");
+    const doc = addTableColumn(BASE, "tbl1", ja.defaults);
     expect(columnsOf(doc).at(-1)).toEqual({
       key: "col2",
       label: "列2",
@@ -520,7 +521,7 @@ describe("セル結合の操作", () => {
   });
 
   it("removeTableColumn は被覆列の削除で colSpan を切り詰める", () => {
-    const three = addTableColumn(BASE, "tbl1");
+    const three = addTableColumn(BASE, "tbl1", ja.defaults);
     const withSpan = updateTableCellSpan(
       addTableCellSpan(three, "tbl1"),
       "tbl1",
@@ -587,7 +588,7 @@ describe("セル結合の操作", () => {
   });
 
   it("moveTableColumn で mergeSameValue 列に掛かる結合は切り詰める", () => {
-    const three = addTableColumn(BASE, "tbl1");
+    const three = addTableColumn(BASE, "tbl1", ja.defaults);
     const merged = updateTableColumn(three, "tbl1", 2, {
       mergeSameValue: true,
     });
@@ -604,7 +605,7 @@ describe("セル結合の操作", () => {
   });
 
   it("moveTableColumn で先行する結合に重なった結合は破棄する", () => {
-    const three = addTableColumn(BASE, "tbl1");
+    const three = addTableColumn(BASE, "tbl1", ja.defaults);
     const first = updateTableCellSpan(
       addTableCellSpan(three, "tbl1"),
       "tbl1",

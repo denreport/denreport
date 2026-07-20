@@ -13,6 +13,7 @@ import {
   textTemplateKeys,
 } from "@denreport/core";
 import type { Locale } from "../i18n/locale";
+import { getMessages } from "../i18n/messages";
 import { parseSampleJson } from "./sample-data";
 
 /** プレビュー用のデータ補完の記録。source = "json"（パース不能）| "data"（C01/C02 の補完） */
@@ -40,7 +41,10 @@ export function buildPreview(
   const warnings: PreviewWarning[] = [];
   const parsed = parseSampleJson(sampleJson);
   if (parsed.warning !== undefined) {
-    warnings.push(parsed.warning);
+    warnings.push({
+      source: "json",
+      message: getMessages(locale).sampleJson[parsed.warning],
+    });
   }
   const data = parsed.data;
 

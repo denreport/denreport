@@ -1,5 +1,6 @@
 import type { IrDocument, IrElement, IrFlexElement } from "@denreport/core";
 import { describe, expect, it } from "vitest";
+import { ja } from "../../i18n/messages/ja";
 import { layoutDocument } from "../../state/geometry";
 import type { ElementGroup } from "../../state/groups";
 import type { CustomGuide } from "../../state/guides";
@@ -117,7 +118,7 @@ function makeCtx(
     validationErrors: [],
     validationWarnings: [],
     dirty: false,
-    sampleScenarios: defaultScenarioSet(),
+    sampleScenarios: defaultScenarioSet("", ja.defaults),
     fontRegistry: new Map(),
     customGuides,
     envelopePresetId: null,
@@ -128,6 +129,7 @@ function makeCtx(
     state,
     layout: layoutDocument(document, state.view.pageContext),
     toleranceMm: 2,
+    messages: ja.defaults,
   };
 }
 

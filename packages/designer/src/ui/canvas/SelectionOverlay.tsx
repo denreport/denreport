@@ -1,6 +1,6 @@
 import type { IrFlexElement } from "@denreport/core";
 import type { CSSProperties, ReactNode } from "react";
-import { ELEMENT_TYPE_LABEL } from "../../state/element-labels";
+import { useMessages } from "../../i18n/context";
 import { errorElementIds } from "../../state/error-index";
 import type { MmBox, PlacedElementView } from "../../state/geometry";
 import { rotationDeg, visibleInContext } from "../../state/geometry";
@@ -181,6 +181,7 @@ export function SelectionOverlay(props: {
   readonly interaction: InteractionState;
 }): ReactNode {
   const { state, layout, interaction } = props;
+  const m = useMessages();
   const context = state.view.pageContext;
   const byId = new Map(layout.map((view) => [view.id, view]));
 
@@ -379,7 +380,7 @@ export function SelectionOverlay(props: {
           >
             {single !== undefined && (
               <span className="apx-el-chip">
-                {ELEMENT_TYPE_LABEL[view.element.type]} · {view.id}
+                {m.elementTypes[view.element.type]} · {view.id}
               </span>
             )}
           </div>

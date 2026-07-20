@@ -14,18 +14,18 @@ describe("parseSampleJson", () => {
     });
   });
 
-  it("不正 JSON は空データ + source: json の警告になる", () => {
+  it("不正 JSON は空データ + invalidJson の警告になる", () => {
     const result = parseSampleJson("{not json");
     expect(result.data).toEqual({});
-    expect(result.warning).toMatchObject({ source: "json" });
+    expect(result.warning).toBe("invalidJson");
   });
 
-  it("トップレベルが配列・非オブジェクトなら空データ + 警告になる", () => {
-    expect(parseSampleJson("[1, 2]").data).toEqual({});
-    expect(parseSampleJson("[1, 2]").warning).toMatchObject({ source: "json" });
-    expect(parseSampleJson("42").data).toEqual({});
-    expect(parseSampleJson("42").warning).toMatchObject({ source: "json" });
-    expect(parseSampleJson("null").data).toEqual({});
-    expect(parseSampleJson("null").warning).toMatchObject({ source: "json" });
+  it("トップレベルが配列・非オブジェクトなら空データ + notObject の警告になる", () => {
+    expect(parseSampleJson("[1, 2]")).toEqual({
+      data: {},
+      warning: "notObject",
+    });
+    expect(parseSampleJson("42")).toEqual({ data: {}, warning: "notObject" });
+    expect(parseSampleJson("null")).toEqual({ data: {}, warning: "notObject" });
   });
 });
