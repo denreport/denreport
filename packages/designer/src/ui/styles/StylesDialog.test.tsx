@@ -3,6 +3,8 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { MessagesContext } from "../../i18n/context";
+import { en } from "../../i18n/messages/en";
 import { EditorStore } from "../../state/store";
 import { StylesDialog } from "./StylesDialog";
 
@@ -299,5 +301,41 @@ describe("名称変更・削除", () => {
     const el = store.getState().document.elements[0];
     expect(el).not.toHaveProperty("style");
     expect(el).toMatchObject({ fontSize: 14 });
+  });
+});
+
+describe("en の MessagesContext", () => {
+  it("文言が英語で描画され、生成名も英語になる", () => {
+    const store = makeStore();
+    act(() => {
+      root.render(
+        <MessagesContext.Provider value={en}>
+          <StylesDialog store={store} onClose={() => {}} />
+        </MessagesContext.Provider>,
+      );
+    });
+    expect(container.textContent).toContain("No styles yet.");
+    click(buttonByText("+ New style"));
+    expect(store.getState().document.styles).toEqual([
+      { name: "Style 1", attrs: { fontSize: 10 } },
+    ]);
+  });
+
+  it("整列の選択肢と属性要約も英語になる", () => {
+    const store = makeStore({
+      styles: [{ name: "Heading", attrs: { fontSize: 14, align: "center" } }],
+    });
+    act(() => {
+      root.render(
+        <MessagesContext.Provider value={en}>
+          <StylesDialog store={store} onClose={() => {}} />
+        </MessagesContext.Provider>,
+      );
+    });
+    expect(container.textContent).toContain("Center");
+    click(buttonByText("Justify"));
+    expect(store.getState().document.styles).toEqual([
+      { name: "Heading", attrs: { fontSize: 14, align: "justify" } },
+    ]);
   });
 });

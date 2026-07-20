@@ -12,7 +12,7 @@ export function SampleDataEditor(props: {
   readonly parseError: string | undefined;
 }): ReactNode {
   const { value, onCommit, onGenerate, parseError } = props;
-  const m = useMessages();
+  const m = useMessages().sampleData;
   const handlers = useDraftValue(value, (raw) => {
     if (raw !== value) {
       onCommit(raw);
@@ -22,7 +22,7 @@ export function SampleDataEditor(props: {
   return (
     <div className="apx-sample">
       <label className="apx-sect-h" htmlFor={id}>
-        {m.preview.sampleData.label}
+        {m.label}
       </label>
       <span
         className={`apx-field apx-field-multi apx-sample-field${
@@ -47,7 +47,7 @@ export function SampleDataEditor(props: {
         className="apx-btn apx-btn-secondary"
         onClick={onGenerate}
       >
-        {m.preview.sampleData.generate}
+        {m.generate}
       </button>
     </div>
   );

@@ -52,17 +52,6 @@ export const dialogsExportJa = {
     jsonParseError: (detail: string): string =>
       `JSON として解釈できません: ${detail}`,
     pageAriaLabel: "プレビューページ",
-    scenarios: {
-      ariaLabel: "サンプルデータのシナリオ",
-      nameAriaLabel: "シナリオ名",
-      add: "追加",
-      duplicate: "複製",
-      remove: "削除",
-    },
-    sampleData: {
-      label: "サンプルデータ (JSON)",
-      generate: "bind キーから生成",
-    },
     removeScenario: {
       ariaLabel: "シナリオの削除",
       heading: "シナリオの削除",

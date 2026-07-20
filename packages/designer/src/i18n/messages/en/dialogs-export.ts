@@ -52,17 +52,6 @@ export const dialogsExportEn = {
     jsonParseError: (detail: string): string =>
       `Couldn't parse as JSON: ${detail}`,
     pageAriaLabel: "Preview page",
-    scenarios: {
-      ariaLabel: "Sample data scenario",
-      nameAriaLabel: "Scenario name",
-      add: "Add",
-      duplicate: "Duplicate",
-      remove: "Delete",
-    },
-    sampleData: {
-      label: "Sample data (JSON)",
-      generate: "Generate from bind keys",
-    },
     removeScenario: {
       ariaLabel: "Delete scenario",
       heading: "Delete scenario",
