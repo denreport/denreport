@@ -30,7 +30,7 @@ denreport is pre-1.0 and under active development. What exists today:
   integrated into the designer's validation panel. A ready-made template
   that satisfies every required field ships at
   [`examples/qualified-invoice.json`](examples/qualified-invoice.json); open
-  it in the designer via the Open IR button.
+  it in the designer via the Open button.
 - **An open IR**: a versioned JSON document format ([spec](packages/core/docs/ir-v1.md))
   with a parser and a validator, so a design isn't tied to denreport itself.
 - **Two export targets**: a pdfme template + input JSON, and a
