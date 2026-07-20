@@ -28,7 +28,7 @@ const designer = new Designer(container, {
 });
 
 const initialMessages = getHostMessages(designer.getLocale());
-const notice = createNoticeArea(document, initialMessages.noticeClose);
+const notice = createNoticeArea(document);
 document.body.prepend(notice.element);
 
 document.documentElement.lang = designer.getLocale();
@@ -40,9 +40,13 @@ designer.onLocaleChange(() => {
 });
 
 if (restoreIr(designer, localStorage) === "invalid") {
-  notice.show(initialMessages.notices.irLoadFailed);
+  notice.show(
+    initialMessages.notices.irLoadFailed,
+    initialMessages.noticeClose,
+  );
 }
 
 attachAutosave(designer, localStorage, window, () => {
-  notice.show(getHostMessages(designer.getLocale()).notices.autosaveFailed);
+  const messages = getHostMessages(designer.getLocale());
+  notice.show(messages.notices.autosaveFailed, messages.noticeClose);
 });
