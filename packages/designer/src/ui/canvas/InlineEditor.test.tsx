@@ -74,7 +74,7 @@ function keyDown(el: HTMLElement, key: string, isComposing = false): void {
 const BOX = { x: 10, y: 10, w: 40, h: 8 };
 
 describe("InlineEditor", () => {
-  it("初期値を入力へ表示し、マウント時にフォーカスする", () => {
+  it("displays the initial value in the input and focuses it on mount", () => {
     render(
       <InlineEditor
         box={BOX}
@@ -89,7 +89,7 @@ describe("InlineEditor", () => {
     expect(document.activeElement).toBe(field());
   });
 
-  it("multiline=false: 変更後 Enter で onCommit が新しい値で1回だけ呼ばれる", () => {
+  it("multiline=false: pressing Enter after a change calls onCommit once with the new value", () => {
     const onCommit = vi.fn();
     render(
       <InlineEditor
@@ -106,7 +106,7 @@ describe("InlineEditor", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("b");
   });
 
-  it("isComposing な Enter は確定しない", () => {
+  it("an Enter during IME composition does not commit", () => {
     const onCommit = vi.fn();
     render(
       <InlineEditor
@@ -123,7 +123,7 @@ describe("InlineEditor", () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 
-  it("multiline=true: Enter では確定せず、blur で確定する", () => {
+  it("multiline=true: Enter does not commit, blur commits", () => {
     const onCommit = vi.fn();
     render(
       <InlineEditor
@@ -142,7 +142,7 @@ describe("InlineEditor", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("a\nb");
   });
 
-  it("Escape で onCancel が呼ばれ、onCommit は呼ばれない。直後の blur でも二重にならない", () => {
+  it("Escape calls onCancel and not onCommit, and a blur right after does not double-fire", () => {
     const onCommit = vi.fn();
     const onCancel = vi.fn();
     render(
@@ -161,7 +161,7 @@ describe("InlineEditor", () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 
-  it("入力上の pointerdown・dblclick は親へ伝播しない", () => {
+  it("pointerdown and dblclick on the input do not propagate to the parent", () => {
     const onParentPointerDown = vi.fn();
     const onParentDoubleClick = vi.fn();
     render(

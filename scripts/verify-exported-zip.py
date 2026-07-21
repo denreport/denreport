@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""E2E が保存した ReportLab 書き出し zip を展開し、report.py を実行して PDF を検証する。
+"""Extracts a ReportLab export zip saved by e2e, runs report.py, and verifies the PDF.
 
-使い方: python scripts/verify-exported-zip.py <zip のパス>
-検査: エントリが report.py + FONTS の全フォント（OFL.txt は任意）/ report.py の実行成功 /
-生成 PDF のページ数 == ソース中の PAGE_COUNT。失敗時は非 0 終了。
+Usage: python scripts/verify-exported-zip.py <path-to-zip>
+Checks: entries are report.py + all fonts from FONTS (OFL.txt is optional) / report.py
+runs successfully / generated PDF page count == PAGE_COUNT in the source. Exits non-zero
+on failure.
 """
 
 import re
@@ -40,7 +41,7 @@ def verify(zip_path):
         font_files = FONT_ENTRY_RE.findall(source)
         if not font_files:
             return "FONTS constant not found"
-        # OFL.txt は同梱フォント使用時にのみ添付されるため、あってもなくても許容する。
+        # OFL.txt is attached only when bundled fonts are used, so allow it either way.
         expected = sorted([CODE_FILE, *font_files])
         actual = sorted(n for n in names if n != OFL_FILE)
         if actual != expected:

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# 各パッケージの dist/ 配下に配布物（エントリ JS・型定義）が揃っていること、
-# dist のエントリが node で実際に import できること、
-# および targets の同梱フォント資材が dist からの相対パスで実在することを検証する
-# 前提: pnpm run build:packages を先に実行していること
+# Verifies that each package's dist/ has its distributable files (entry JS + type defs),
+# that the dist entry can actually be imported by node,
+# and that targets' bundled font assets resolve from dist via relative paths.
+# Prerequisite: run pnpm run build:packages first.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -13,25 +13,26 @@ for pkg in core targets designer; do
   entry_js="packages/${pkg}/dist/index.js"
   entry_dts="packages/${pkg}/dist/index.d.ts"
   if [ ! -f "$entry_js" ]; then
-    echo "NG: ${entry_js} が見つかりません（pnpm run build:packages を先に実行してください）。" >&2
+    echo "NG: ${entry_js} not found (run pnpm run build:packages first)." >&2
     fail=1
   fi
   if [ ! -f "$entry_dts" ]; then
-    echo "NG: ${entry_dts} が見つかりません（pnpm run build:packages を先に実行してください）。" >&2
+    echo "NG: ${entry_dts} not found (run pnpm run build:packages first)." >&2
     fail=1
   fi
 done
 
 if [ "$fail" -eq 0 ]; then
-  echo "check-build-output: エントリ JS / d.ts の存在 OK"
+  echo "check-build-output: entry JS / d.ts presence OK"
 fi
 
 if [ "$fail" -eq 1 ]; then
   exit 1
 fi
 
-# ワークスペース内では @denreport/* は開発用 exports（src 直指し）に解決されるため、
-# 公開後の dist 同士の解決を模して @denreport/* を dist エントリへ差し替えてから import する
+# Within the workspace, @denreport/* resolves to dev exports (pointing straight at src),
+# so alias @denreport/* to the dist entries before importing, to mimic dist-to-dist
+# resolution after publishing.
 if ! node --input-type=module -e '
   import { register } from "node:module";
   import { pathToFileURL } from "node:url";
@@ -55,19 +56,20 @@ if ! node --input-type=module -e '
     try {
       await import(pathToFileURL(resolvePath(entry)).href);
     } catch (err) {
-      console.error(`NG: ${entry} の import に失敗しました: ${err.message}`);
+      console.error(`NG: failed to import ${entry}: ${err.message}`);
       process.exit(1);
     }
   }
 '; then
-  echo "NG: dist エントリの import 検証に失敗しました。" >&2
+  echo "NG: dist entry import verification failed." >&2
   exit 1
 fi
 
-echo "check-build-output: dist エントリの import OK"
+echo "check-build-output: dist entry import OK"
 
-# EMBEDDED_FONT_URL 等は import.meta.url からの相対パスで解決するため、
-# dist に配置した状態で実際に import してパスを解決させないと構造保持を検証できない
+# EMBEDDED_FONT_URL and friends resolve relative to import.meta.url, so we must
+# actually import them once placed in dist to let the paths resolve — only then
+# can structural preservation be verified.
 if ! node --input-type=module -e '
   import * as fs from "node:fs";
   import {
@@ -80,14 +82,14 @@ if ! node --input-type=module -e '
   let missing = false;
   for (const [name, url] of Object.entries(urls)) {
     if (!fs.existsSync(url)) {
-      console.error(`NG: ${name} の解決先が存在しません: ${url}`);
+      console.error(`NG: resolved path for ${name} does not exist: ${url}`);
       missing = true;
     }
   }
   if (missing) process.exit(1);
 '; then
-  echo "NG: targets のフォント資材の相対解決に失敗しました。" >&2
+  echo "NG: relative resolution of targets' font assets failed." >&2
   exit 1
 fi
 
-echo "check-build-output: フォント資材の相対解決 OK"
+echo "check-build-output: font asset relative resolution OK"

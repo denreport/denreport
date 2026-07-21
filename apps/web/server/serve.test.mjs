@@ -8,29 +8,29 @@ import { contentTypeFor, createHandler, resolveFilePath } from "./serve.mjs";
 describe("resolveFilePath", () => {
   const rootDir = "/app/dist";
 
-  it("/ を /index.html として解決する", () => {
+  it("resolves / to /index.html", () => {
     expect(resolveFilePath(rootDir, "/")).toBe("/app/dist/index.html");
   });
 
-  it("通常のパスを rootDir 配下へ解決する", () => {
+  it("resolves a normal path under rootDir", () => {
     expect(resolveFilePath(rootDir, "/assets/app.js")).toBe(
       "/app/dist/assets/app.js",
     );
   });
 
-  it("rootDir の外へ出るパスは null を返す", () => {
+  it("returns null for a path that escapes rootDir", () => {
     expect(resolveFilePath(rootDir, "/../../etc/passwd")).toBeNull();
   });
 
-  it("エンコード済みのトラバーサルは null を返す", () => {
+  it("returns null for an encoded traversal", () => {
     expect(resolveFilePath(rootDir, "/%2e%2e/%2e%2e/etc/passwd")).toBeNull();
   });
 
-  it("NUL 混入は null を返す", () => {
+  it("returns null when NUL is embedded", () => {
     expect(resolveFilePath(rootDir, "/index.html%00.png")).toBeNull();
   });
 
-  it("root 内で完結する .. は解決される", () => {
+  it("resolves .. that stays within root", () => {
     expect(resolveFilePath(rootDir, "/assets/../index.html")).toBe(
       "/app/dist/index.html",
     );
@@ -52,7 +52,7 @@ describe("contentTypeFor", () => {
     expect(contentTypeFor(filePath)).toBe(expected);
   });
 
-  it("未知の拡張子は application/octet-stream", () => {
+  it("unknown extensions return application/octet-stream", () => {
     expect(contentTypeFor("/dist/report.pdf")).toBe("application/octet-stream");
   });
 });
@@ -84,7 +84,7 @@ describe("createHandler", () => {
     await rm(rootDir, { recursive: true, force: true });
   });
 
-  it("GET / は index.html を返す", async () => {
+  it("GET / returns index.html", async () => {
     const res = await fetch(`${baseUrl}/`);
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("text/html; charset=utf-8");
@@ -92,7 +92,7 @@ describe("createHandler", () => {
     expect(await res.text()).toContain('id="app"');
   });
 
-  it("GET /assets/ 配下は immutable な Cache-Control を返す", async () => {
+  it("GET /assets/ returns an immutable Cache-Control", async () => {
     const res = await fetch(`${baseUrl}/assets/app.js`);
     expect(res.status).toBe(200);
     expect(res.headers.get("cache-control")).toBe(
@@ -100,23 +100,23 @@ describe("createHandler", () => {
     );
   });
 
-  it("HEAD はボディなしで 200 を返す", async () => {
+  it("HEAD returns 200 with no body", async () => {
     const res = await fetch(`${baseUrl}/`, { method: "HEAD" });
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("");
   });
 
-  it("GET/HEAD 以外は 405 を返す", async () => {
+  it("returns 405 for methods other than GET/HEAD", async () => {
     const res = await fetch(`${baseUrl}/`, { method: "POST" });
     expect(res.status).toBe(405);
   });
 
-  it("未存在ファイルは 404 を返す", async () => {
+  it("returns 404 for a non-existent file", async () => {
     const res = await fetch(`${baseUrl}/no-such-file.txt`);
     expect(res.status).toBe(404);
   });
 
-  it("/healthz は 200 で ok を返す", async () => {
+  it("/healthz returns 200 with ok", async () => {
     const res = await fetch(`${baseUrl}/healthz`);
     expect(res.status).toBe(200);
     expect(await res.text()).toBe("ok");

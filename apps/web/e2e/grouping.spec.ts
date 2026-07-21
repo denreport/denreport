@@ -116,7 +116,9 @@ async function waitForXChange(
   );
 }
 
-test("要素のグループ化: クリック選択・移動・複製・解除", async ({ page }) => {
+test("element grouping: click select, move, duplicate, ungroup", async ({
+  page,
+}) => {
   await page.goto("/");
   const props = page.getByRole("complementary", { name: "プロパティ" });
 
@@ -164,7 +166,7 @@ test("要素のグループ化: クリック選択・移動・複製・解除", 
   await expect(props.locator(".dr-props-id")).toHaveText("text3");
 });
 
-test("要素のグループ化: 保存・リロードを跨いでグループが維持される", async ({
+test("element grouping: group is preserved across save and reload", async ({
   page,
 }) => {
   await page.goto("/");

@@ -37,17 +37,17 @@ export async function loadPreviewFont(
 ): Promise<PreviewFont> {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`同梱フォントを取得できません (HTTP ${response.status})`);
+    throw new Error(`Cannot fetch the bundled font (HTTP ${response.status})`);
   }
   const buffer = await response.arrayBuffer();
   const data = new Uint8Array(buffer);
   const ascentPerEm = readAscentPerEm(data);
   if (ascentPerEm === null) {
-    throw new Error("同梱フォントの計量を読み取れません");
+    throw new Error("Cannot read the bundled font's metrics");
   }
   const charWidths = readCharWidths(data);
   if (charWidths === null) {
-    throw new Error("同梱フォントの字幅を読み取れません");
+    throw new Error("Cannot read the bundled font's char widths");
   }
   if (!hasRegistered(doc, family)) {
     const face = new FontFace(family, buffer);

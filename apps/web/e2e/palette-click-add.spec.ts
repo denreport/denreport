@@ -11,7 +11,7 @@ function paletteButton(page: Page) {
     .getByRole("button", { name: /^テキスト/ });
 }
 
-test("パレットのクリックで要素をページ中央に追加し選択状態にする", async ({
+test("clicking the palette adds the element to the page center and selects it", async ({
   page,
 }) => {
   await page.goto("/");
@@ -40,7 +40,7 @@ test("パレットのクリックで要素をページ中央に追加し選択�
   );
 });
 
-test("クリック追加とドラッグ配置は二重発火せずそれぞれ1個ずつ追加する", async ({
+test("click-add and drag placement don't double-fire, each adds exactly one", async ({
   page,
 }) => {
   await page.goto("/");
@@ -52,7 +52,7 @@ test("クリック追加とドラッグ配置は二重発火せずそれぞれ1�
   await expect(page.locator('.dr-el[data-dr-id="text3"]')).toHaveCount(0);
 });
 
-test("クリック追加は1 commit として undo できる", async ({ page }) => {
+test("click-add can be undone as a single commit", async ({ page }) => {
   await page.goto("/");
   await paletteButton(page).click();
   await expect(page.locator('.dr-el[data-dr-id="text1"]')).toBeVisible();

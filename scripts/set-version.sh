@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# ワークスペース内の各パッケージの package.json の version フィールドを一括更新する
-# jq は再フォーマットしてしまうため使わず、node で対象行だけを置換する
+# Bulk-updates the version field in package.json across the workspace's packages.
+# Avoids jq (it reformats the file) and uses node to replace only the target line.
 set -euo pipefail
 
 usage() {
-  echo "使い方: scripts/set-version.sh <version>" >&2
-  echo "  <version> は X.Y.Z 形式（semver、プレリリースは非対応）" >&2
+  echo "usage: scripts/set-version.sh <version>" >&2
+  echo "  <version> must be in X.Y.Z format (semver; pre-release is not supported)" >&2
 }
 
 version="${1:-}"
@@ -16,7 +16,7 @@ if [ -z "$version" ]; then
 fi
 
 if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "NG: '$version' は X.Y.Z 形式の semver ではありません。" >&2
+  echo "NG: '$version' is not valid X.Y.Z semver." >&2
   usage
   exit 1
 fi
@@ -25,7 +25,7 @@ cd "$(git rev-parse --show-toplevel)"
 
 mapfile -t files < <(git ls-files 'packages/*/package.json' 'apps/*/package.json')
 if [ "${#files[@]}" -eq 0 ]; then
-  echo "NG: 対象の package.json が見つかりません（ワークスペース構成を確認してください）。" >&2
+  echo "NG: no target package.json found (check the workspace configuration)." >&2
   exit 1
 fi
 

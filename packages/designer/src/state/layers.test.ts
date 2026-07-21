@@ -81,7 +81,7 @@ function flatten(nodes: readonly LayerNode[]): LayerNode[] {
 }
 
 describe("buildLayerTree", () => {
-  it("トップレベルの順序を保つ", () => {
+  it("preserves top-level order", () => {
     const doc = makeDocument([
       { ...TABLE, id: "a" },
       { ...TABLE, id: "b" },
@@ -90,7 +90,7 @@ describe("buildLayerTree", () => {
     expect(tree.map((n) => n.id)).toEqual(["a", "b"]);
   });
 
-  it("ネストした flex を再帰構造として保つ", () => {
+  it("preserves nested flex as a recursive structure", () => {
     const tree = buildLayerTree(makeDocument([NESTED_FLEX]));
     const outer = tree[0];
     expect(outer?.id).toBe("outer");
@@ -99,7 +99,7 @@ describe("buildLayerTree", () => {
     expect(inner?.children?.map((n) => n.id)).toEqual(["r1", "l1"]);
   });
 
-  it("flex 子の pages は親 flex の pages を継承する（入れ子でも）", () => {
+  it("flex children inherit the parent flex's pages (even when nested)", () => {
     const tree = buildLayerTree(makeDocument([NESTED_FLEX]));
     const byId = new Map(flatten(tree).map((n) => [n.id, n]));
     expect(byId.get("outer")?.pages).toBe("rest");
@@ -109,12 +109,12 @@ describe("buildLayerTree", () => {
     expect(byId.get("l1")?.pages).toBe("rest");
   });
 
-  it("table の pages は null", () => {
+  it("table's pages is null", () => {
     const tree = buildLayerTree(makeDocument([TABLE]));
     expect(tree[0]?.pages).toBeNull();
   });
 
-  it("葉ノードの children は null、flex ノードの children は非 null", () => {
+  it("leaf node children is null, flex node children is non-null", () => {
     const tree = buildLayerTree(makeDocument([NESTED_FLEX, TABLE]));
     expect(tree[0]?.children).not.toBeNull();
     expect(tree[1]?.children).toBeNull();
@@ -122,7 +122,7 @@ describe("buildLayerTree", () => {
     expect(leaf?.children).toBeNull();
   });
 
-  it("LayerNode.pages は layoutDocument の pages と全 id で一致する", () => {
+  it("LayerNode.pages matches layoutDocument's pages for every id", () => {
     const doc = makeDocument([NESTED_FLEX, TABLE]);
     const tree = flatten(buildLayerTree(doc));
     const views = layoutDocument(doc, "first");
@@ -148,20 +148,20 @@ describe("layerLabel", () => {
     return layerLabel(element, ja.elementTypes, ja.layers.imagePlaceholder);
   }
 
-  it("トークンを含む text も先頭12文字を超えると … で切り詰める", () => {
+  it("text containing a token is also truncated with … past the first 12 characters", () => {
     expect(label({ ...base, text: "{customerName}" })).toBe("{customerNam…");
   });
 
-  it("静的 text は先頭12文字を超えると … で切り詰める", () => {
+  it("static text is truncated with … past the first 12 characters", () => {
     expect(label({ ...base, text: "123456789012345" })).toBe("123456789012…");
     expect(label({ ...base, text: "短い本文" })).toBe("短い本文");
   });
 
-  it("空の text は型ラベル「テキスト」", () => {
+  it('empty text falls back to the type label "テキスト"', () => {
     expect(label({ ...base, text: "" })).toBe("テキスト");
   });
 
-  it("pageNumber は format 文字列", () => {
+  it("pageNumber is the format string", () => {
     expect(
       label({
         type: "pageNumber",
@@ -176,7 +176,7 @@ describe("layerLabel", () => {
     ).toBe("{page}/{total}");
   });
 
-  it("image はプレースホルダなら「画像未設定」、設定済みなら「画像」", () => {
+  it('image is "画像未設定" for the placeholder and "画像" once set', () => {
     expect(
       label({
         type: "image",
@@ -197,7 +197,7 @@ describe("layerLabel", () => {
     ).toBe("画像");
   });
 
-  it("line / rect / table / flex は型の日本語ラベル", () => {
+  it("line / rect / table / flex use the type's Japanese label", () => {
     expect(
       label({
         type: "line",
@@ -224,17 +224,17 @@ describe("layerLabel", () => {
     ).toBe("フレックス");
   });
 
-  it("name が指定されていれば自動ラベルより優先する", () => {
+  it("name, when specified, takes priority over the automatic label", () => {
     expect(label({ ...base, text: "見出し", name: "表題" })).toBe("表題");
     expect(label(TABLE)).toBe("表");
     expect(label({ ...TABLE, name: "明細表" })).toBe("明細表");
   });
 
-  it("name が空文字なら自動ラベルへフォールバックする", () => {
+  it("name falls back to the automatic label when it's an empty string", () => {
     expect(label({ ...base, text: "見出し", name: "" })).toBe("見出し");
   });
 
-  it("en メッセージでは image ラベルも英語になる", () => {
+  it("the image label is also in English with en messages", () => {
     const image = {
       type: "image" as const,
       id: "img1",

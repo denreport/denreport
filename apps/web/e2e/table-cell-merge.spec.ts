@@ -41,7 +41,7 @@ async function setSampleData(
   await expect(preview).toBeHidden();
 }
 
-test("同一値の連続行の結合がキャンバスとプレビューに反映される", async ({
+test("merging consecutive rows with identical values is reflected in the canvas and preview", async ({
   page,
 }) => {
   await page.goto("/");
@@ -81,7 +81,7 @@ test("同一値の連続行の結合がキャンバスとプレビューに反�
   await expect(preview.locator(".dr-preview-count")).toHaveText("1 ページ");
 });
 
-test("静的な結合をプロパティで作成し、プレビューと書き出しが検証エラーなく通る", async ({
+test("creating a static merge via properties passes preview and export without validation errors", async ({
   page,
 }) => {
   await page.goto("/");
@@ -132,7 +132,7 @@ test("静的な結合をプロパティで作成し、プレビューと書き�
   expect(artifact.inputs).toBeDefined();
 });
 
-test("セルをドラッグ選択して右クリックで結合し、解除できる", async ({
+test("drag-selecting cells and merging via right-click, then unmerging", async ({
   page,
 }) => {
   await page.goto("/");
@@ -178,7 +178,7 @@ test("セルをドラッグ選択して右クリックで結合し、解除で�
   await expect(props.getByLabel("結合1 の行数")).toHaveCount(0);
 });
 
-test("ヘッダ行は横ドラッグで結合できる", async ({ page }) => {
+test("the header row can be merged via horizontal drag", async ({ page }) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 130, y: 150 });
   const table = page.locator('.dr-el[data-dr-id="table1"]');
@@ -208,7 +208,9 @@ test("ヘッダ行は横ドラッグで結合できる", async ({ page }) => {
   await expect(preview.locator(".dr-preview-error")).toHaveCount(0);
 });
 
-test("mergeSameValue 列を含む範囲では結合が無効", async ({ page }) => {
+test("merging is disabled for a range that includes a mergeSameValue column", async ({
+  page,
+}) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 130, y: 150 });
   const table = page.locator('.dr-el[data-dr-id="table1"]');

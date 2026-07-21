@@ -159,7 +159,7 @@ function findById(
 }
 
 describe("replaceElement", () => {
-  it("トップレベル要素を置換し、無関係要素の参照を維持する", () => {
+  it("replaces a top-level element while keeping references to unrelated elements", () => {
     const next = { ...TEXT, fontSize: 12 };
     const doc = replaceElement(BASE, "t1", next);
     expect(doc).not.toBe(BASE);
@@ -169,7 +169,7 @@ describe("replaceElement", () => {
     expectValidIr(doc);
   });
 
-  it("入れ子 flex の子孫を置換できる", () => {
+  it("can replace a descendant inside nested flex", () => {
     const next = { ...INNER_RECT, borderWidth: 0.5 };
     const doc = replaceElement(BASE, "rc1", next);
     expect(findById(doc, "rc1")).toBe(next);
@@ -178,11 +178,11 @@ describe("replaceElement", () => {
     expectValidIr(doc);
   });
 
-  it("未知 id は同一参照を返す", () => {
+  it("returns the same reference for an unknown id", () => {
     expect(replaceElement(BASE, "nope", { ...TEXT, id: "nope" })).toBe(BASE);
   });
 
-  it("元の文書を変更しない", () => {
+  it("doesn't mutate the original document", () => {
     const snapshot = structuredClone(BASE);
     replaceElement(BASE, "t1", { ...TEXT, fontSize: 12 });
     setFlexDirection(BASE, "f1", "row");
@@ -205,7 +205,7 @@ describe("updateElements", () => {
     return "fontSize" in el ? { ...el, fontSize: el.fontSize + 2 } : el;
   }
 
-  it("複数 id へ同一 update を適用する", () => {
+  it("applies the same update to multiple ids", () => {
     const doc = updateElements(BASE, ["t1", "c1"], bumpFontSize);
     expect(findById(doc, "t1")).toMatchObject({ fontSize: 12 });
     expect(findById(doc, "c1")).toMatchObject({ fontSize: 12 });
@@ -214,7 +214,7 @@ describe("updateElements", () => {
     expectValidIr(doc);
   });
 
-  it("入れ子 flex の子孫 id を含めて適用できる", () => {
+  it("can apply including descendant ids inside nested flex", () => {
     const doc = updateElements(BASE, ["rc1"], (el) =>
       el.type === "rect" ? { ...el, borderWidth: 0.5 } : el,
     );
@@ -222,19 +222,19 @@ describe("updateElements", () => {
     expectValidIr(doc);
   });
 
-  it("全要素が無変化なら同一参照の document を返す", () => {
+  it("returns the same document reference when no element changes", () => {
     const noop = (el: IrElement | IrFlexChild): IrElement | IrFlexChild =>
       "fontSize" in el && el.fontSize !== 10 ? { ...el, fontSize: 10 } : el;
     expect(updateElements(BASE, ["t1", "c1"], noop)).toBe(BASE);
   });
 
-  it("存在しない id は無視する", () => {
+  it("ignores an id that doesn't exist", () => {
     expect(updateElements(BASE, ["nope"], bumpFontSize)).toBe(BASE);
   });
 });
 
 describe("setImageSrc", () => {
-  it("src のみを差し替える", () => {
+  it("replaces only src", () => {
     const doc = setImageSrc(BASE, "img1", "data:image/jpeg;base64,BB==");
     expect(findById(doc, "img1")).toEqual({
       ...IMAGE,
@@ -244,7 +244,7 @@ describe("setImageSrc", () => {
     expectValidIr(doc);
   });
 
-  it("先行する別属性の編集を巻き戻さない（非同期読込完了時の適用を想定）", () => {
+  it("doesn't roll back a prior edit to another attribute (models applying on async load completion)", () => {
     const resized = replaceElement(BASE, "img1", { ...IMAGE, w: 50 });
     const doc = setImageSrc(resized, "img1", "data:image/jpeg;base64,BB==");
     expect(findById(doc, "img1")).toMatchObject({
@@ -253,7 +253,7 @@ describe("setImageSrc", () => {
     });
   });
 
-  it("同値・非 image・未知 id では同一参照を返す", () => {
+  it("returns the same reference for an equal value, a non-image, or an unknown id", () => {
     expect(setImageSrc(BASE, "img1", IMAGE.src)).toBe(BASE);
     expect(setImageSrc(BASE, "t1", "data:image/png;base64,BB==")).toBe(BASE);
     expect(setImageSrc(BASE, "nope", "data:image/png;base64,BB==")).toBe(BASE);
@@ -261,7 +261,7 @@ describe("setImageSrc", () => {
 });
 
 describe("setFlexDirection", () => {
-  it("切替時に明示主軸寸法を除去し、children を維持する", () => {
+  it("removes the explicit main-axis size on switch and keeps children", () => {
     const doc = setFlexDirection(BASE, "f1", "row");
     const el = findById(doc, "f1");
     expect(el).toMatchObject({ direction: "row" });
@@ -271,25 +271,25 @@ describe("setFlexDirection", () => {
     expectValidIr(doc);
   });
 
-  it("同じ direction は同一参照を返す", () => {
+  it("returns the same reference for the same direction", () => {
     expect(setFlexDirection(BASE, "f1", "column")).toBe(BASE);
   });
 });
 
 describe("setFlexMainSize", () => {
-  it("row の主軸は w に roundMm 適用済みで入る", () => {
+  it("row's main axis is set on w with roundMm already applied", () => {
     const doc = setFlexMainSize(BASE, "f2", 30.14);
     expect(findById(doc, "f2")).toMatchObject({ w: 30.1 });
     expectValidIr(doc);
   });
 
-  it("column の主軸は h に入る", () => {
+  it("column's main axis is set on h", () => {
     const doc = setFlexMainSize(BASE, "f1", 40);
     expect(findById(doc, "f1")).toMatchObject({ h: 40 });
     expectValidIr(doc);
   });
 
-  it("undefined で属性を除去し、元々ないときは同一参照", () => {
+  it("undefined removes the attribute, and returns the same reference when it was already absent", () => {
     const doc = setFlexMainSize(BASE, "f1", undefined);
     const el = findById(doc, "f1");
     expect(el !== undefined && "h" in el && el.h !== undefined).toBe(false);
@@ -298,7 +298,7 @@ describe("setFlexMainSize", () => {
   });
 });
 
-describe("列操作", () => {
+describe("Column operations", () => {
   function columnsOf(document: IrDocument): IrTableElement["columns"] {
     const el = findById(document, "tbl1");
     if (el?.type !== "table") {
@@ -307,7 +307,7 @@ describe("列操作", () => {
     return el.columns;
   }
 
-  it("addTableColumn は table 内の最小空き番号で末尾に追加する", () => {
+  it("addTableColumn appends using the table's smallest free number", () => {
     const doc = addTableColumn(BASE, "tbl1");
     expect(columnsOf(doc).at(-1)).toEqual({
       key: "col2",
@@ -318,7 +318,7 @@ describe("列操作", () => {
     expectValidIr(doc);
   });
 
-  it("removeTableColumn は指定列を消し、最後の1列では何もしない", () => {
+  it("removeTableColumn deletes the given column and does nothing on the last remaining column", () => {
     const doc = removeTableColumn(BASE, "tbl1", 0);
     expect(columnsOf(doc).map((c) => c.key)).toEqual(["col3"]);
     expect(removeTableColumn(doc, "tbl1", 0)).toBe(doc);
@@ -326,7 +326,7 @@ describe("列操作", () => {
     expectValidIr(doc);
   });
 
-  it("removeTableColumn は削除した列を指す上書きも破棄する", () => {
+  it("removeTableColumn also discards overrides pointing at the removed column", () => {
     const withOverride = setTableCellOverride(
       BASE,
       "tbl1",
@@ -342,7 +342,7 @@ describe("列操作", () => {
     expectValidIr(doc);
   });
 
-  it("moveTableColumn は隣と入れ替え、端では何もしない", () => {
+  it("moveTableColumn swaps with the neighbor and does nothing at the ends", () => {
     const doc = moveTableColumn(BASE, "tbl1", 0, 1);
     expect(columnsOf(doc).map((c) => c.key)).toEqual(["col3", "col1"]);
     expect(moveTableColumn(BASE, "tbl1", 0, -1)).toBe(BASE);
@@ -350,7 +350,7 @@ describe("列操作", () => {
     expectValidIr(doc);
   });
 
-  it("updateTableColumn は patch を適用し、変化がなければ同一参照", () => {
+  it("updateTableColumn applies the patch, returning the same reference if unchanged", () => {
     const doc = updateTableColumn(BASE, "tbl1", 1, { width: 55, key: "qty" });
     expect(columnsOf(doc)[1]).toEqual({
       key: "qty",
@@ -363,7 +363,7 @@ describe("列操作", () => {
     expectValidIr(doc);
   });
 
-  it("updateTableColumn は key 変更時に上書きの key を付け替える", () => {
+  it("updateTableColumn re-keys overrides when the key changes", () => {
     const withOverride = setTableCellOverride(
       BASE,
       "tbl1",
@@ -379,7 +379,7 @@ describe("列操作", () => {
     expectValidIr(doc);
   });
 
-  it("updateTableColumn は mergeSameValue を設定し、false で属性ごと除去する", () => {
+  it("updateTableColumn sets mergeSameValue, and false removes the attribute entirely", () => {
     const on = updateTableColumn(BASE, "tbl1", 0, { mergeSameValue: true });
     expect(columnsOf(on)[0]).toEqual({
       key: "col1",
@@ -397,7 +397,7 @@ describe("列操作", () => {
   });
 });
 
-describe("セル結合の操作", () => {
+describe("Cell-span operations", () => {
   function spansOf(document: IrDocument): IrTableElement["cellSpans"] {
     const el = findById(document, "tbl1");
     if (el?.type !== "table") {
@@ -406,13 +406,13 @@ describe("セル結合の操作", () => {
     return el.cellSpans;
   }
 
-  it("addTableCellSpan は先頭列・行0・縦2行の結合を末尾に追加する", () => {
+  it("addTableCellSpan appends a first-column, row-0, 2-row vertical span", () => {
     const doc = addTableCellSpan(BASE, "tbl1");
     expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", rowSpan: 2 }]);
     expectValidIr(doc);
   });
 
-  it("updateTableCellSpan は patch を適用し、rowSpan/colSpan の 1 は属性を持たせない", () => {
+  it("updateTableCellSpan applies the patch, and a rowSpan/colSpan of 1 gets no attribute", () => {
     const base = addTableCellSpan(BASE, "tbl1");
     const doc = updateTableCellSpan(base, "tbl1", 0, {
       key: "col3",
@@ -424,7 +424,7 @@ describe("セル結合の操作", () => {
     expectValidIr(doc);
   });
 
-  it("updateTableCellSpan は header 行への切替で rowSpan を除去する", () => {
+  it("updateTableCellSpan removes rowSpan when switching to the header row", () => {
     const base = addTableCellSpan(BASE, "tbl1");
     const doc = updateTableCellSpan(base, "tbl1", 0, {
       row: "header",
@@ -434,13 +434,13 @@ describe("セル結合の操作", () => {
     expectValidIr(doc);
   });
 
-  it("updateTableCellSpan は無変化・不在 index で同一参照を返す", () => {
+  it("updateTableCellSpan returns the same reference for no change or a missing index", () => {
     const base = addTableCellSpan(BASE, "tbl1");
     expect(updateTableCellSpan(base, "tbl1", 0, { rowSpan: 2 })).toBe(base);
     expect(updateTableCellSpan(base, "tbl1", 9, { rowSpan: 3 })).toBe(base);
   });
 
-  it("removeTableCellSpan は指定 index を消し、0件になれば属性ごと除去する", () => {
+  it("removeTableCellSpan deletes the given index and removes the attribute entirely once empty", () => {
     const one = addTableCellSpan(BASE, "tbl1");
     const two = addTableCellSpan(one, "tbl1");
     const doc = removeTableCellSpan(two, "tbl1", 1);
@@ -454,14 +454,14 @@ describe("セル結合の操作", () => {
     expectValidIr(none);
   });
 
-  it("appendTableCellSpan は cellSpans 未定義の表に追加する", () => {
+  it("appendTableCellSpan adds to a table with cellSpans undefined", () => {
     const span = { row: "header" as const, key: "col1", colSpan: 2 };
     const doc = appendTableCellSpan(BASE, "tbl1", span);
     expect(spansOf(doc)).toEqual([span]);
     expectValidIr(doc);
   });
 
-  it("appendTableCellSpan は既存の cellSpans に追記する", () => {
+  it("appendTableCellSpan appends to existing cellSpans", () => {
     const base = addTableCellSpan(BASE, "tbl1");
     const span = { row: "header" as const, key: "col3", colSpan: 2 };
     const doc = appendTableCellSpan(base, "tbl1", span);
@@ -469,7 +469,7 @@ describe("セル結合の操作", () => {
     expectValidIr(doc);
   });
 
-  it("removeTableCellSpansAt は複数 index をまとめて削除する", () => {
+  it("removeTableCellSpansAt deletes multiple indexes at once", () => {
     const one = addTableCellSpan(BASE, "tbl1");
     const two = addTableCellSpan(one, "tbl1");
     const three = addTableCellSpan(two, "tbl1");
@@ -478,7 +478,7 @@ describe("セル結合の操作", () => {
     expectValidIr(doc);
   });
 
-  it("removeTableCellSpansAt は 0件になれば cellSpans 属性ごと除去する", () => {
+  it("removeTableCellSpansAt removes the cellSpans attribute entirely once empty", () => {
     const one = addTableCellSpan(BASE, "tbl1");
     const two = addTableCellSpan(one, "tbl1");
     const doc = removeTableCellSpansAt(two, "tbl1", [0, 1]);
@@ -489,13 +489,13 @@ describe("セル結合の操作", () => {
     expectValidIr(doc);
   });
 
-  it("removeTableCellSpansAt は該当なしなら同一参照を返す", () => {
+  it("removeTableCellSpansAt returns the same reference when nothing matches", () => {
     const one = addTableCellSpan(BASE, "tbl1");
     expect(removeTableCellSpansAt(one, "tbl1", [9])).toBe(one);
     expect(removeTableCellSpansAt(BASE, "tbl1", [0])).toBe(BASE);
   });
 
-  it("removeTableColumn は削除した列を起点に指す結合も破棄する", () => {
+  it("removeTableColumn also discards spans anchored on the removed column", () => {
     const withSpan = addTableCellSpan(BASE, "tbl1");
     const doc = removeTableColumn(withSpan, "tbl1", 0);
     const table = findById(doc, "tbl1");
@@ -505,21 +505,21 @@ describe("セル結合の操作", () => {
     expectValidIr(doc);
   });
 
-  it("updateTableColumn の key 変更に結合の key が追随する", () => {
+  it("a span's key follows updateTableColumn's key change", () => {
     const withSpan = addTableCellSpan(BASE, "tbl1");
     const doc = updateTableColumn(withSpan, "tbl1", 0, { key: "renamed" });
     expect(spansOf(doc)).toEqual([{ row: 0, key: "renamed", rowSpan: 2 }]);
     expectValidIr(doc);
   });
 
-  it("moveTableColumn では結合は key 起点のまま列と一緒に動く", () => {
+  it("moveTableColumn moves spans along with the column, staying anchored by key", () => {
     const withSpan = addTableCellSpan(BASE, "tbl1");
     const doc = moveTableColumn(withSpan, "tbl1", 0, 1);
     expect(spansOf(doc)).toEqual([{ row: 0, key: "col1", rowSpan: 2 }]);
     expectValidIr(doc);
   });
 
-  it("removeTableColumn は被覆列の削除で colSpan を切り詰める", () => {
+  it("removeTableColumn truncates colSpan when a covered column is removed", () => {
     const three = addTableColumn(BASE, "tbl1");
     const withSpan = updateTableCellSpan(
       addTableCellSpan(three, "tbl1"),
@@ -532,7 +532,7 @@ describe("セル結合の操作", () => {
     expect(validateIr(doc)).toEqual([]);
   });
 
-  it("removeTableColumn で 1×1 になる結合は破棄する", () => {
+  it("removeTableColumn discards a span that becomes 1x1", () => {
     const withSpan = updateTableCellSpan(
       addTableCellSpan(BASE, "tbl1"),
       "tbl1",
@@ -547,7 +547,7 @@ describe("セル結合の操作", () => {
     expect(validateIr(doc)).toEqual([]);
   });
 
-  it("removeTableColumn の切り詰めで縦結合は維持される", () => {
+  it("removeTableColumn's truncation preserves a vertical span", () => {
     const withSpan = updateTableCellSpan(
       addTableCellSpan(BASE, "tbl1"),
       "tbl1",
@@ -559,7 +559,7 @@ describe("セル結合の操作", () => {
     expect(validateIr(doc)).toEqual([]);
   });
 
-  it("moveTableColumn で列範囲からはみ出す結合は切り詰め、1×1 なら破棄する", () => {
+  it("moveTableColumn truncates a span that overflows the column range, discarding it if it becomes 1x1", () => {
     const withSpan = updateTableCellSpan(
       addTableCellSpan(BASE, "tbl1"),
       "tbl1",
@@ -574,7 +574,7 @@ describe("セル結合の操作", () => {
     expect(validateIr(doc)).toEqual([]);
   });
 
-  it("moveTableColumn の切り詰めで縦結合は維持される", () => {
+  it("moveTableColumn's truncation preserves a vertical span", () => {
     const withSpan = updateTableCellSpan(
       addTableCellSpan(BASE, "tbl1"),
       "tbl1",
@@ -586,7 +586,7 @@ describe("セル結合の操作", () => {
     expect(validateIr(doc)).toEqual([]);
   });
 
-  it("moveTableColumn で mergeSameValue 列に掛かる結合は切り詰める", () => {
+  it("moveTableColumn truncates a span overlapping a mergeSameValue column", () => {
     const three = addTableColumn(BASE, "tbl1");
     const merged = updateTableColumn(three, "tbl1", 2, {
       mergeSameValue: true,
@@ -603,7 +603,7 @@ describe("セル結合の操作", () => {
     expect(validateIr(doc)).toEqual([]);
   });
 
-  it("moveTableColumn で先行する結合に重なった結合は破棄する", () => {
+  it("moveTableColumn discards a span that overlaps a preceding span", () => {
     const three = addTableColumn(BASE, "tbl1");
     const first = updateTableCellSpan(
       addTableCellSpan(three, "tbl1"),
@@ -625,7 +625,7 @@ describe("セル結合の操作", () => {
 });
 
 describe("setTableCellOverride", () => {
-  it("新規の (row, key) は末尾に追加される", () => {
+  it("a new (row, key) is appended", () => {
     const doc = setTableCellOverride(BASE, "tbl1", 0, "col1", "固定値");
     const table = findById(doc, "tbl1");
     expect(table?.type === "table" ? table.cellOverrides : undefined).toEqual([
@@ -634,7 +634,7 @@ describe("setTableCellOverride", () => {
     expectValidIr(doc);
   });
 
-  it("既存の (row, key) は置換される", () => {
+  it("an existing (row, key) is replaced", () => {
     const once = setTableCellOverride(BASE, "tbl1", 0, "col1", "旧値");
     const doc = setTableCellOverride(once, "tbl1", 0, "col1", "新値");
     const table = findById(doc, "tbl1");
@@ -643,7 +643,7 @@ describe("setTableCellOverride", () => {
     ]);
   });
 
-  it("空文字列は上書きを削除し、0件になれば cellOverrides 属性ごと除去する", () => {
+  it("an empty string deletes the override and removes the cellOverrides attribute entirely once empty", () => {
     const withOverride = setTableCellOverride(
       BASE,
       "tbl1",
@@ -661,15 +661,15 @@ describe("setTableCellOverride", () => {
     expectValidIr(doc);
   });
 
-  it("削除対象が無ければ同一参照、同値への再設定も同一参照", () => {
+  it("returns the same reference when there's nothing to delete, and when re-setting to the same value", () => {
     expect(setTableCellOverride(BASE, "tbl1", 0, "col1", "")).toBe(BASE);
     const once = setTableCellOverride(BASE, "tbl1", 0, "col1", "固定値");
     expect(setTableCellOverride(once, "tbl1", 0, "col1", "固定値")).toBe(once);
   });
 });
 
-describe("文書設定", () => {
-  it("setPage は page を置換し、同値なら同一参照", () => {
+describe("Document settings", () => {
+  it("setPage replaces page, returning the same reference for an equal value", () => {
     const doc = setPage(BASE, { width: 297, height: 420 });
     expect(doc.page).toEqual({ width: 297, height: 420 });
     expect(doc.elements).toBe(BASE.elements);
@@ -677,14 +677,14 @@ describe("文書設定", () => {
     expectValidIr(doc);
   });
 
-  it("setFontRegular は regular を置換し、同値なら同一参照", () => {
+  it("setFontRegular replaces regular, returning the same reference for an equal value", () => {
     const doc = setFontRegular(BASE, "IPAexGothic");
     expect(doc.font.regular).toBe("IPAexGothic");
     expect(setFontRegular(BASE, "NotoSansJP")).toBe(BASE);
     expectValidIr(doc);
   });
 
-  it("setFontSlot はスロットを設定し、他スロットを保持する", () => {
+  it("setFontSlot sets the slot and preserves other slots", () => {
     const doc = setFontSlot(BASE, "bold", "NotoSansJPBold");
     expect(doc.font).toEqual({
       regular: "NotoSansJP",
@@ -694,7 +694,7 @@ describe("文書設定", () => {
     expectValidIr(doc);
   });
 
-  it("setFontSlot(undefined) はスロット属性を除去し、未設定なら同一参照", () => {
+  it("setFontSlot(undefined) removes the slot attribute, returning the same reference when already unset", () => {
     const withBold = setFontSlot(BASE, "bold", "NotoSansJPBold");
     const cleared = setFontSlot(withBold, "bold", undefined);
     expect(cleared.font).toEqual({ regular: "NotoSansJP" });
@@ -703,14 +703,14 @@ describe("文書設定", () => {
     expectValidIr(cleared);
   });
 
-  it("setDocType(true) は docType を付与し、既に付与済みなら同一参照", () => {
+  it("setDocType(true) sets docType, returning the same reference when already set", () => {
     const doc = setDocType(BASE, true);
     expect(doc.docType).toBe("qualifiedInvoice");
     expect(setDocType(doc, true)).toBe(doc);
     expectValidIr(doc);
   });
 
-  it("setDocType(false) は docType をキーごと除去し、未付与なら同一参照", () => {
+  it("setDocType(false) removes the docType key entirely, returning the same reference when unset", () => {
     const withType = setDocType(BASE, true);
     const doc = setDocType(withType, false);
     expect("docType" in doc).toBe(false);

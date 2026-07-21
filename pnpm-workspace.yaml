@@ -2,7 +2,7 @@ packages:
   - "packages/*"
   - "apps/*"
 
-# pnpm 既定のリリース経過時間ポリシーが公開直後の biome バイナリを弾くため、pnpm が自動追記した除外
+# Exclusion pnpm auto-appended because its default minimum-release-age policy rejects biome binaries right after publication
 minimumReleaseAgeExclude:
   - '@biomejs/biome@2.5.4'
   - '@biomejs/cli-darwin-arm64@2.5.4'

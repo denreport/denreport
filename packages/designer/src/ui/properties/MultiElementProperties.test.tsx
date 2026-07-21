@@ -141,7 +141,7 @@ function viewsOf(store: EditorStore, ids: readonly string[]) {
 }
 
 describe("applicableDescriptors", () => {
-  it("text 2件では位置・文字系ディスクリプタが揃う", () => {
+  it("2 text elements yield position and text descriptors", () => {
     const store = makeStore();
     const keys = applicableDescriptors(
       viewsOf(store, ["t1", "t2"]),
@@ -159,7 +159,7 @@ describe("applicableDescriptors", () => {
     ]);
   });
 
-  it("text + rect では pages/x/y/w/h のみに絞られる", () => {
+  it("text + rect narrows down to only pages/x/y/w/h", () => {
     const store = makeStore();
     const keys = applicableDescriptors(
       viewsOf(store, ["t1", "r1"]),
@@ -168,7 +168,7 @@ describe("applicableDescriptors", () => {
     expect(keys).toEqual(["pages", "x", "y", "w", "h"]);
   });
 
-  it("text + table では x/y と fontSize に絞られる", () => {
+  it("text + table narrows down to x/y and fontSize", () => {
     const store = makeStore();
     const keys = applicableDescriptors(
       viewsOf(store, ["t1", "tbl1"]),
@@ -177,7 +177,7 @@ describe("applicableDescriptors", () => {
     expect(keys).toEqual(["x", "y", "fontSize"]);
   });
 
-  it("line + table では table が pages を持たないため x/y のみに絞られる", () => {
+  it("line + table narrows down to only x/y since table has no pages", () => {
     const store = makeStore();
     const keys = applicableDescriptors(
       viewsOf(store, ["l1", "tbl1"]),
@@ -186,7 +186,7 @@ describe("applicableDescriptors", () => {
     expect(keys).toEqual(["x", "y"]);
   });
 
-  it("flex 子要素を含む選択では pages/x/y が消える", () => {
+  it("pages/x/y disappear when the selection includes a flex child", () => {
     const store = makeStore();
     const keys = applicableDescriptors(
       viewsOf(store, ["c1", "t1"]),
@@ -202,14 +202,14 @@ describe("bulkValueFor", () => {
     throw new Error("fontSize ディスクリプタがない");
   }
 
-  it("全要素の値が一致すれば uniform", () => {
+  it("uniform when all elements' values match", () => {
     expect(bulkValueFor(fontSize, [T1, T2])).toEqual({
       kind: "uniform",
       value: 10,
     });
   });
 
-  it("値が一致しなければ mixed", () => {
+  it("mixed when values don't match", () => {
     expect(bulkValueFor(fontSize, [T1, T3])).toEqual({ kind: "mixed" });
   });
 });
@@ -314,7 +314,7 @@ function elementById(store: EditorStore, id: string): IrElement | IrFlexChild {
 }
 
 describe("MultiElementProperties", () => {
-  it("fontSize が uniform の text 2件を一括変更し、undo 1回で両方戻る", () => {
+  it("bulk-changes fontSize for 2 uniform text elements, and one undo reverts both", () => {
     const store = makeStore();
     renderSelection(store, ["t1", "t2"]);
     const fontSizeInput = inputByLabel("文字サイズ");
@@ -332,7 +332,7 @@ describe("MultiElementProperties", () => {
     expect(elementById(store, "t2")).toMatchObject({ fontSize: 10 });
   });
 
-  it("fontSize が混在する text 2件は「混在」表示になり、入力で両方に上書きされる", () => {
+  it('shows "混在" for 2 text elements with mixed fontSize, and input overwrites both', () => {
     const store = makeStore();
     renderSelection(store, ["t1", "t3"]);
     const fontSizeInput = inputByLabel("文字サイズ");
@@ -346,7 +346,7 @@ describe("MultiElementProperties", () => {
     expect(elementById(store, "t3")).toMatchObject({ fontSize: 10 });
   });
 
-  it("text + rect の選択では「文字」セクションが出ず「配置」のみ出る", () => {
+  it('no "文字" section for a text + rect selection; only "配置" appears', () => {
     const store = makeStore();
     renderSelection(store, ["t1", "r1"]);
     const headings = [...container.querySelectorAll(".dr-sect-h")].map(
@@ -355,7 +355,7 @@ describe("MultiElementProperties", () => {
     expect(headings).toEqual(["配置"]);
   });
 
-  it("全要素同型なら型バッジ、異型なら件数表示のみのヘッダになる", () => {
+  it("shows a type badge for a uniform selection, or a count-only header for mixed types", () => {
     const store = makeStore();
     renderSelection(store, ["t1", "t2"]);
     expect(container.querySelector(".dr-type-badge")?.textContent).toBe(
@@ -368,7 +368,7 @@ describe("MultiElementProperties", () => {
     expect(container.textContent).toContain("2 個の要素を選択中");
   });
 
-  it("uniform と同値の確定では履歴が増えない", () => {
+  it("no history entry added when uniform value is committed unchanged", () => {
     const store = makeStore();
     const document = store.getState().document;
     renderSelection(store, ["t1", "t2"]);
@@ -379,7 +379,7 @@ describe("MultiElementProperties", () => {
     expect(store.getState().document).toBe(document);
   });
 
-  it("整列に「均等」を選べ、選択全要素に一括適用される", () => {
+  it('can select "均等" for alignment, applying to all selected elements at once', () => {
     const store = makeStore();
     renderSelection(store, ["t1", "t2"]);
     click(buttonByText("均等"));
@@ -387,7 +387,7 @@ describe("MultiElementProperties", () => {
     expect(elementById(store, "t2")).toMatchObject({ align: "justify" });
   });
 
-  it("en Provider ではセクション見出しと件数表示が英語になる", () => {
+  it("section headings and count display are in English with the en Provider", () => {
     const store = makeStore();
     render(
       <MessagesContext.Provider value={en}>

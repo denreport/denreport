@@ -99,14 +99,14 @@ async function realClick(el: Element): Promise<void> {
 }
 
 describe("Toolbar", () => {
-  it("保存クリックで chrome.requestSave が1回呼ばれる", async () => {
+  it("calls chrome.requestSave once when clicking save", async () => {
     const chrome = makeChrome();
     await renderToolbar(chrome);
     click(buttonByText("保存"));
     expect(chrome.requestSave).toHaveBeenCalledOnce();
   });
 
-  it("その他の操作ボタンでメニューが開き、resolvedTheme に応じたテーマ項目が表示される", async () => {
+  it("opens the menu via the more-actions button and shows a theme item matching resolvedTheme", async () => {
     await renderToolbar(makeChrome({ resolvedTheme: "dark" }));
     const trigger = buttonByText("その他の操作");
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
@@ -118,7 +118,7 @@ describe("Toolbar", () => {
     expect(themeItem.getAttribute("role")).toBe("menuitem");
   });
 
-  it("開いた状態でトリガーを実クリック（pointerdown→click）すると閉じたまま留まる", async () => {
+  it("a real click (pointerdown→click) on an open trigger leaves the menu closed", async () => {
     await renderToolbar(makeChrome());
     const trigger = buttonByText("その他の操作");
     await realClick(trigger);
@@ -133,7 +133,7 @@ describe("Toolbar", () => {
     expect(container.querySelector('[role="menu"]')).toBeNull();
   });
 
-  it("テーマ項目のクリックで chrome.toggleTheme が呼ばれ、メニューが閉じる", async () => {
+  it("calls chrome.toggleTheme and closes the menu when clicking the theme item", async () => {
     const chrome = makeChrome();
     await renderToolbar(chrome);
     click(buttonByText("その他の操作"));
@@ -147,21 +147,21 @@ describe("Toolbar", () => {
     });
   });
 
-  it("プレビュークリックで onPreview が1回呼ばれる", async () => {
+  it("calls onPreview once when clicking preview", async () => {
     const onPreview = vi.fn();
     await renderToolbar(makeChrome(), onPreview);
     click(buttonByText("プレビュー"));
     expect(onPreview).toHaveBeenCalledOnce();
   });
 
-  it("書き出しクリックで onExport が1回呼ばれる", async () => {
+  it("calls onExport once when clicking export", async () => {
     const onExport = vi.fn();
     await renderToolbar(makeChrome(), () => {}, onExport);
     click(buttonByText("書き出し"));
     expect(onExport).toHaveBeenCalledOnce();
   });
 
-  it("スタイルクリックで onManageStyles が1回呼ばれる", async () => {
+  it("calls onManageStyles once when clicking styles", async () => {
     const onManageStyles = vi.fn();
     await renderToolbar(
       makeChrome(),
@@ -179,7 +179,7 @@ describe("Toolbar", () => {
     expect(onManageStyles).toHaveBeenCalledOnce();
   });
 
-  it("ショートカット項目のクリックで onShowShortcuts が1回呼ばれる", async () => {
+  it("calls onShowShortcuts once when clicking the shortcuts item", async () => {
     const onShowShortcuts = vi.fn();
     await renderToolbar(
       makeChrome(),
@@ -196,7 +196,7 @@ describe("Toolbar", () => {
     expect(onShowShortcuts).toHaveBeenCalledOnce();
   });
 
-  it("プレビュー・書き出し・スタイル・開く・保存はすべて活性である", async () => {
+  it("preview, export, styles, open, and save are all enabled", async () => {
     await renderToolbar(makeChrome());
     expect(buttonByText("プレビュー").disabled).toBe(false);
     expect(buttonByText("書き出し").disabled).toBe(false);
@@ -205,7 +205,7 @@ describe("Toolbar", () => {
     expect(buttonByText("保存").disabled).toBe(false);
   });
 
-  it("選択/移動セグメントは canvasMode に追従し、クリックで setView される", async () => {
+  it("the select/pan segment follows canvasMode, and clicking calls setView", async () => {
     const store = await renderToolbar(makeChrome());
     const select = buttonByText("選択");
     const pan = buttonByText("移動");
@@ -225,7 +225,7 @@ describe("Toolbar", () => {
     });
   });
 
-  it("保存状態インジケータは非 dirty でも常にマウントされる", async () => {
+  it("the save-state indicator is always mounted even when not dirty", async () => {
     await renderToolbar(makeChrome());
     const indicator = container.querySelector(".dr-doc-dirty");
     expect(indicator).not.toBeNull();
@@ -233,7 +233,7 @@ describe("Toolbar", () => {
     expect(indicator?.getAttribute("title")).toBeNull();
   });
 
-  it("dirty 遷移でインジケータのクラスと title が切り替わり、要素数は1のまま", async () => {
+  it("the indicator's class and title toggle on dirty transitions, and the element count stays at 1", async () => {
     const store = await renderToolbar(makeChrome());
     store.commit({ ...store.getState().document, elements: [] });
     await vi.waitFor(() => {
@@ -260,7 +260,7 @@ describe("Toolbar", () => {
     expect(container.querySelectorAll(".dr-doc-dirty")).toHaveLength(1);
   });
 
-  it("左右パネルトグルの aria-expanded は props を反映する", async () => {
+  it("aria-expanded of the left/right panel toggles reflects props", async () => {
     await renderToolbar(
       makeChrome(),
       () => {},
@@ -278,7 +278,7 @@ describe("Toolbar", () => {
     );
   });
 
-  it("左パネルトグルのクリックで onToggleSidebar が1回呼ばれる", async () => {
+  it("calls onToggleSidebar once when clicking the left-panel toggle", async () => {
     const onToggleSidebar = vi.fn();
     await renderToolbar(
       makeChrome(),
@@ -294,7 +294,7 @@ describe("Toolbar", () => {
     expect(onToggleSidebar).toHaveBeenCalledOnce();
   });
 
-  it("書き出しターゲットの select は state.selectedExportTarget に追従し、選択で setSelectedExportTarget が呼ばれる", async () => {
+  it("the export-target select follows state.selectedExportTarget, and selecting calls setSelectedExportTarget", async () => {
     const store = await renderToolbar(makeChrome());
     const select = container.querySelector<HTMLSelectElement>(
       'select[aria-label="書き出しターゲット"]',
@@ -315,7 +315,7 @@ describe("Toolbar", () => {
     });
   });
 
-  it("右パネルトグルのクリックで onToggleProps が1回呼ばれる", async () => {
+  it("calls onToggleProps once when clicking the right-panel toggle", async () => {
     const onToggleProps = vi.fn();
     await renderToolbar(
       makeChrome(),
@@ -332,7 +332,7 @@ describe("Toolbar", () => {
     expect(onToggleProps).toHaveBeenCalledOnce();
   });
 
-  it("Esc でメニューが閉じ、トリガーへフォーカスが戻る", async () => {
+  it("closes the menu on Esc and returns focus to the trigger", async () => {
     await renderToolbar(makeChrome());
     const trigger = buttonByText("その他の操作");
     click(trigger);
@@ -356,7 +356,7 @@ describe("Toolbar", () => {
     });
   });
 
-  it("言語項目のクリックで toggleLocale が呼ばれる", async () => {
+  it("calls toggleLocale when clicking the language item", async () => {
     const chrome = makeChrome();
     await renderToolbar(chrome);
     click(buttonByText("その他の操作"));
@@ -367,7 +367,7 @@ describe("Toolbar", () => {
     expect(chrome.toggleLocale).toHaveBeenCalledOnce();
   });
 
-  it("en の MessagesContext では文言が英語で描画される", async () => {
+  it("renders text in English under the en MessagesContext", async () => {
     root.render(
       <MessagesContext.Provider value={en}>
         <Toolbar

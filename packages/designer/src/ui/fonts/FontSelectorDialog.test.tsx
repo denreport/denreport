@@ -151,8 +151,8 @@ function click(el: Element): void {
   el.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 }
 
-describe("一覧表示・検索", () => {
-  it("候補一覧を表示し、検索で絞り込む", async () => {
+describe("List display / search", () => {
+  it("shows the candidate list and filters by search", async () => {
     stubQueryLocalFonts(async () => [TTF_A, TTF_B]);
     await renderDialog();
     await vi.waitFor(() => {
@@ -172,8 +172,8 @@ describe("一覧表示・検索", () => {
   });
 });
 
-describe("確定", () => {
-  it("TTF 候補の確定で検証済み RegisteredFont が onSelect に渡る", async () => {
+describe("Confirm", () => {
+  it("passes a validated RegisteredFont to onSelect when confirming a TTF candidate", async () => {
     stubQueryLocalFonts(async () => [TTF_A]);
     const { onSelect } = await renderDialog();
     await vi.waitFor(() => fontRowButton("A Font"));
@@ -191,7 +191,7 @@ describe("確定", () => {
     expect(font.ascentPerEm).toBeCloseTo(0.8, 6);
   });
 
-  it("非 TTF の確定は issues を表示し閉じない", async () => {
+  it("shows issues and does not close when confirming a non-TTF font", async () => {
     stubQueryLocalFonts(async () => [{ ...TTF_A, bytes: syntheticCff() }]);
     const { onSelect, onClose } = await renderDialog();
     await vi.waitFor(() => fontRowButton("A Font"));
@@ -208,7 +208,7 @@ describe("確定", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("「同梱フォントに戻す」で onSelectEmbedded にスロットの同梱名が渡る", async () => {
+  it("passes the slot's bundled font name to onSelectEmbedded via 「同梱フォント（NotoSansJP）に戻す」", async () => {
     stubQueryLocalFonts(async () => [TTF_A]);
     const { onSelectEmbedded } = await renderDialog();
     await vi.waitFor(() => buttonByText("同梱フォント（NotoSansJP）に戻す"));
@@ -217,7 +217,7 @@ describe("確定", () => {
     expect(onSelectEmbedded).toHaveBeenCalledExactlyOnceWith("NotoSansJP");
   });
 
-  it("bold スロットでは同梱行が NotoSansJPBold になり、「未設定に戻す」で onClear が呼ばれる", async () => {
+  it("shows NotoSansJPBold as the bundled row for the bold slot, and calls onClear via 「未設定に戻す（標準フォントで代替）」", async () => {
     stubQueryLocalFonts(async () => [TTF_A]);
     const { onSelectEmbedded, onClear } = await renderDialog(
       "NotoSansJPBold",
@@ -234,21 +234,21 @@ describe("確定", () => {
     expect(onClear).toHaveBeenCalledOnce();
   });
 
-  it("italic スロットでは同梱行を出さず、「未設定に戻す」行だけ出す", async () => {
+  it("hides the bundled row and shows only the 「未設定に戻す」 row for the italic slot", async () => {
     stubQueryLocalFonts(async () => [TTF_A]);
     await renderDialog(undefined, "italic");
     await vi.waitFor(() => buttonByText("未設定に戻す（標準フォントで代替）"));
     expect(container.textContent).not.toContain("同梱フォント（");
   });
 
-  it("regular スロットでは「未設定に戻す」行を出さない", async () => {
+  it("does not show the 「未設定に戻す」 row for the regular slot", async () => {
     stubQueryLocalFonts(async () => [TTF_A]);
     await renderDialog();
     await vi.waitFor(() => buttonByText("同梱フォント（NotoSansJP）に戻す"));
     expect(container.textContent).not.toContain("未設定に戻す");
   });
 
-  it("キャンセルで onClose が呼ばれる", async () => {
+  it("calls onClose on cancel", async () => {
     stubQueryLocalFonts(async () => [TTF_A]);
     const { onClose } = await renderDialog();
 
@@ -257,8 +257,8 @@ describe("確定", () => {
   });
 });
 
-describe("非対応・拒否・失敗の表示", () => {
-  it("unsupported: queryLocalFonts が無い環境の説明文を表示する", async () => {
+describe("Unsupported / denied / failed states", () => {
+  it("unsupported: shows explanatory text when queryLocalFonts is unavailable", async () => {
     await renderDialog();
     await vi.waitFor(() => {
       expect(container.textContent).toContain(
@@ -267,7 +267,7 @@ describe("非対応・拒否・失敗の表示", () => {
     });
   });
 
-  it("denied: NotAllowedError で許可されなかった旨を表示する", async () => {
+  it("denied: shows that permission was not granted on NotAllowedError", async () => {
     stubQueryLocalFontsRejecting(
       Object.assign(new Error("denied"), { name: "NotAllowedError" }),
     );
@@ -277,7 +277,7 @@ describe("非対応・拒否・失敗の表示", () => {
     });
   });
 
-  it("error: その他の失敗は再試行ボタン付きで表示する", async () => {
+  it("error: shows other failures with a retry button", async () => {
     stubQueryLocalFontsRejecting(new Error("boom"));
     await renderDialog();
     await vi.waitFor(() => {
@@ -287,8 +287,8 @@ describe("非対応・拒否・失敗の表示", () => {
   });
 });
 
-describe("en の MessagesContext", () => {
-  it("文言が英語で描画される", async () => {
+describe("en MessagesContext", () => {
+  it("renders text in English", async () => {
     stubQueryLocalFonts(async () => []);
     root.render(
       <MessagesContext.Provider value={en}>

@@ -149,8 +149,8 @@ function down(
   };
 }
 
-describe("クリックと選択", () => {
-  it("クリック（閾値未満）は選択のみで、pointerUp に文書 effect がない", () => {
+describe("Click and selection", () => {
+  it("a click below threshold only selects; pointerUp has no document effect", () => {
     const ctx = makeCtx();
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     expect(pressed.state.kind).toBe("pressing");
@@ -165,7 +165,7 @@ describe("クリックと選択", () => {
     expect(up.effect).toBeNull();
   });
 
-  it("Shift+クリックで選択に追加・選択済みなら除外する", () => {
+  it("shift+click adds to the selection, or removes it if already selected", () => {
     const add = reduceInteraction(
       IDLE,
       down({ x: 110, y: 15 }, "b", { shiftKey: true }),
@@ -183,7 +183,7 @@ describe("クリックと選択", () => {
     expect(remove.state).toEqual(IDLE);
   });
 
-  it("空白の pointerDown は選択を解除して marquee に入る", () => {
+  it("pointerDown on empty space clears the selection and enters marquee", () => {
     const result = reduceInteraction(
       IDLE,
       down({ x: 5, y: 5 }, null),
@@ -194,18 +194,18 @@ describe("クリックと選択", () => {
   });
 });
 
-describe("グループ所属要素の選択展開", () => {
+describe("Expanding selection to group members", () => {
   const GROUPS: readonly ElementGroup[] = [
     { id: "group1", memberIds: ["a", "b"] },
   ];
 
-  it("クリックでグループの全メンバーが選択される", () => {
+  it("clicking selects all group members", () => {
     const ctx = makeCtx([], {}, ELEMENTS, GROUPS);
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     expect(pressed.effect).toEqual({ selection: ["a", "b"] });
   });
 
-  it("Shift+クリックはグループ単位で加算・除去する", () => {
+  it("shift+click adds/removes at the group level", () => {
     const add = reduceInteraction(
       IDLE,
       down({ x: 12, y: 12 }, "a", { shiftKey: true }),
@@ -222,7 +222,7 @@ describe("グループ所属要素の選択展開", () => {
     expect(remove.state).toEqual(IDLE);
   });
 
-  it("マーキーの部分ヒットでもグループ全体が previewIds になる", () => {
+  it("a partial marquee hit still makes the whole group previewIds", () => {
     const ctx = makeCtx([], {}, ELEMENTS, GROUPS);
     const started = reduceInteraction(IDLE, down({ x: 5, y: 5 }, null), ctx);
     // The rectangle (5,5)-(60,20) intersects only a; b (x100–140) is nowhere near it
@@ -237,7 +237,7 @@ describe("グループ所属要素の選択展開", () => {
     }
   });
 
-  it("選択済みグループのドラッグは全メンバーを移動対象にする", () => {
+  it("dragging a selected group moves all its members", () => {
     const ctx = makeCtx(["a", "b"], {}, ELEMENTS, GROUPS);
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     expect(pressed.effect).toBeNull();
@@ -254,8 +254,8 @@ describe("グループ所属要素の選択展開", () => {
   });
 });
 
-describe("移動", () => {
-  it("閾値超過で moving に遷移し、pointerUp で effect がちょうど1回返る", () => {
+describe("Move", () => {
+  it("exceeding the threshold transitions to moving, and pointerUp returns exactly one effect", () => {
     const ctx = makeCtx(["a"]);
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     expect(pressed.effect).toBeNull();
@@ -284,7 +284,7 @@ describe("移動", () => {
     expect(movedEl).toMatchObject({ x: 30, y: 10 });
   });
 
-  it("Esc / cancel で effect なしに idle へ戻る", () => {
+  it("Esc / cancel returns to idle with no effect", () => {
     const ctx = makeCtx(["a"]);
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const moved = reduceInteraction(
@@ -297,7 +297,7 @@ describe("移動", () => {
     expect(cancelled.effect).toBeNull();
   });
 
-  it("ゴースト（現文脈外要素）はスナップ候補に入らない", () => {
+  it("a ghost (element outside the current context) is not a snap candidate", () => {
     // Even when moved near ghost g's left edge x=13.0, no element guide appears and it snaps to the grid
     const ctx = makeCtx(["a"]);
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
@@ -314,7 +314,7 @@ describe("移動", () => {
     }
   });
 
-  it("customGuides への移動吸着が snapContextFor 経由で効く（同座標のグリッドより優先されガイドが返る）", () => {
+  it("snapping to customGuides works via snapContextFor (takes priority over a grid line at the same position, returning the guide)", () => {
     const ctx = makeCtx(
       ["a"],
       {},
@@ -339,7 +339,7 @@ describe("移動", () => {
     }
   });
 
-  it("rest 文脈では table の縦移動が continuationY に反映される", () => {
+  it("in the rest context, a table's vertical move is reflected in continuationY", () => {
     const table: IrElement = {
       type: "table",
       id: "tbl",
@@ -372,7 +372,7 @@ describe("移動", () => {
     expect(el).toMatchObject({ x: 18, y: 90, continuationY: 37 });
   });
 
-  it("first 文脈では continuationY が y と等値の table の縦移動が continuationY にも反映される", () => {
+  it("in the first context, a table whose continuationY equals y also reflects a vertical move in continuationY", () => {
     const table: IrElement = {
       type: "table",
       id: "tbl",
@@ -411,7 +411,7 @@ describe("移動", () => {
     expect(restView?.box.y).toBe(97);
   });
 
-  it("first 文脈でも continuationY が y と異なる table は縦移動しても continuationY が不変", () => {
+  it("in the first context, a table whose continuationY differs from y keeps continuationY unchanged after a vertical move", () => {
     const table: IrElement = {
       type: "table",
       id: "tbl",
@@ -445,8 +445,8 @@ describe("移動", () => {
   });
 });
 
-describe("リサイズ", () => {
-  it("ハンドル押下 → 閾値超過で resizing、pointerUp で寸法が反映される", () => {
+describe("Resize", () => {
+  it("handle press then exceeding the threshold enters resizing, and pointerUp applies the dimensions", () => {
     const ctx = makeCtx(["b"]);
     const pressed = reduceInteraction(
       IDLE,
@@ -474,7 +474,7 @@ describe("リサイズ", () => {
     expect(el).toMatchObject({ w: 50, h: 30 });
   });
 
-  it("動かして元に戻して離すと effect なし（無変更の履歴を作らない）", () => {
+  it("moving back to the original position before releasing produces no effect (no unchanged history entry)", () => {
     const ctx = makeCtx(["b"]);
     const pressed = reduceInteraction(
       IDLE,
@@ -510,7 +510,7 @@ describe("リサイズ", () => {
     expect(up.effect).toBeNull();
   });
 
-  it("最小寸法 1mm でクランプされる", () => {
+  it("clamps to the minimum size of 1mm", () => {
     const ctx = makeCtx(["b"], { snapEnabled: false });
     const pressed = reduceInteraction(
       IDLE,
@@ -531,7 +531,7 @@ describe("リサイズ", () => {
   });
 });
 
-describe("回転要素のリサイズ", () => {
+describe("Resizing a rotated element", () => {
   // b is x100 y10 w40 h20 → center (120, 20)
   const B_ORIG = { x: 100, y: 10, w: 40, h: 20 };
 
@@ -556,7 +556,7 @@ describe("回転要素のリサイズ", () => {
     };
   }
 
-  it("rot=90・e ハンドル（見た目の下辺）・縦ドラッグで幅が伸びる", () => {
+  it("rot=90, e handle (visually the bottom edge), vertical drag extends the width", () => {
     const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
     const pressed = reduceInteraction(
       IDLE,
@@ -594,7 +594,7 @@ describe("回転要素のリサイズ", () => {
     expect(el).toMatchObject({ x: 95, y: 15, w: 50, h: 20 });
   });
 
-  it("rot=90・e ハンドル・横ドラッグではサイズ不変（回転前の生差分は写像されない）", () => {
+  it("rot=90, e handle, horizontal drag leaves the size unchanged (the pre-rotation raw delta isn't mapped)", () => {
     const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
     const pressed = reduceInteraction(
       IDLE,
@@ -622,7 +622,7 @@ describe("回転要素のリサイズ", () => {
     expect(up.effect).toBeNull();
   });
 
-  it("rot=90・n ハンドル（見た目の右辺）・横ドラッグで反対側の辺が固定される", () => {
+  it("rot=90, n handle (visually the right edge), horizontal drag keeps the opposite edge fixed", () => {
     const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
     const pressed = reduceInteraction(
       IDLE,
@@ -655,7 +655,7 @@ describe("回転要素のリサイズ", () => {
     }
   });
 
-  it("rot=45・se ハンドル・ローカル +x 方向ドラッグでアンカー（nw）が画面上不動", () => {
+  it("rot=45, se handle, dragging in the local +x direction keeps the anchor (nw) fixed on screen", () => {
     const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(45));
     const seHandle = { x: 127.07106781186548, y: 41.21320343559643 };
     const pressed = reduceInteraction(
@@ -693,7 +693,7 @@ describe("回転要素のリサイズ", () => {
     }
   });
 
-  it("回転あり・元に戻して離す → effect なし", () => {
+  it("rotated, moving back to the original position before releasing produces no effect", () => {
     const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
     const pressed = reduceInteraction(
       IDLE,
@@ -727,7 +727,7 @@ describe("回転要素のリサイズ", () => {
     expect(up.effect).toBeNull();
   });
 
-  it("クランプで w が最小寸法に切られても、掴んでいない辺は画面上不動", () => {
+  it("even when clamping cuts w to the minimum size, the edge not being grabbed stays fixed on screen", () => {
     const ctx = makeCtx(["b"], { snapEnabled: false }, withBRotate(90));
     const pressed = reduceInteraction(
       IDLE,
@@ -757,7 +757,7 @@ describe("回転要素のリサイズ", () => {
     }
   });
 
-  it("スナップはモデル箱基準のまま働き、回転補正は後段に乗る", () => {
+  it("snapping still works against the model box, with rotation correction applied afterward", () => {
     const ctx = makeCtx(["b"], {}, withBRotate(90));
     const pressed = reduceInteraction(
       IDLE,
@@ -779,7 +779,7 @@ describe("回転要素のリサイズ", () => {
     }
   });
 
-  it("回転した line（退化箱）は交差軸成分が常に 0 で成立する", () => {
+  it("a rotated line (a degenerate box) always keeps its cross-axis component at 0", () => {
     const lineEl: IrElement = {
       type: "line",
       id: "ln",
@@ -819,7 +819,7 @@ describe("回転要素のリサイズ", () => {
     expect(el).toMatchObject({ x: 15, y: 55, length: 40 });
   });
 
-  it("回転した flex 子は逆回転のみ適用され、x/y は書かれない", () => {
+  it("a rotated flex child only gets the inverse rotation applied, and x/y are not written", () => {
     const elements = ELEMENTS.map((el) =>
       el.id === "f" && el.type === "flex"
         ? {
@@ -861,7 +861,7 @@ describe("回転要素のリサイズ", () => {
   });
 });
 
-describe("回転", () => {
+describe("Rotate", () => {
   // b is x100 y10 w40 h20 → center (120, 20). The handle press point is the top edge's midpoint (120, 10)
   function pressRotate(ctx: InteractionContext) {
     return reduceInteraction(
@@ -871,7 +871,7 @@ describe("回転", () => {
     );
   }
 
-  it("ハンドル押下 → 閾値超過で rotating、pointerUp で rotate が文書に入る", () => {
+  it("handle press then exceeding the threshold enters rotating, and pointerUp writes rotate to the document", () => {
     const ctx = makeCtx(["b"]);
     const pressed = pressRotate(ctx);
     expect(pressed.state.kind).toBe("pressing");
@@ -900,7 +900,7 @@ describe("回転", () => {
     expect(el).toMatchObject({ rotate: 90 });
   });
 
-  it("閾値未満では pressing のまま", () => {
+  it("stays pressing below the threshold", () => {
     const ctx = makeCtx(["b"]);
     const pressed = pressRotate(ctx);
     const moved = reduceInteraction(
@@ -911,7 +911,7 @@ describe("回転", () => {
     expect(moved.state.kind).toBe("pressing");
   });
 
-  it("現在角は 0.1° に丸められ、Shift で 15° にスナップする", () => {
+  it("the current angle rounds to 0.1° and snaps to 15° increments with Shift", () => {
     const ctx = makeCtx(["b"]);
     const pressed = pressRotate(ctx);
     // (130, 25) is atan2(5, 10) ≈ 26.565° from center → a rotation of 116.565°
@@ -930,7 +930,7 @@ describe("回転", () => {
     expect(snapped.state).toMatchObject({ kind: "rotating", rotate: 120 });
   });
 
-  it("既存の rotate を基点に回転する", () => {
+  it("rotates from the existing rotate as a baseline", () => {
     const elements = ELEMENTS.map((el) =>
       el.id === "b" ? { ...el, rotate: 30 } : el,
     );
@@ -944,7 +944,7 @@ describe("回転", () => {
     expect(moved.state).toMatchObject({ kind: "rotating", rotate: 120 });
   });
 
-  it("回転量が無変化なら pointerUp で commit しない", () => {
+  it("pointerUp doesn't commit when the rotation amount is unchanged", () => {
     const ctx = makeCtx(["b"]);
     const pressed = pressRotate(ctx);
     // Exceeds the threshold, but the angle is still the same straight-up direction as at press time
@@ -963,7 +963,7 @@ describe("回転", () => {
     expect(up.effect).toBeNull();
   });
 
-  it("Esc で rotating がキャンセルされ effect なし", () => {
+  it("Esc cancels rotating with no effect", () => {
     const ctx = makeCtx(["b"]);
     const pressed = pressRotate(ctx);
     const moved = reduceInteraction(
@@ -977,7 +977,7 @@ describe("回転", () => {
     expect(cancelled.effect).toBeNull();
   });
 
-  it("flex への rotate ハンドル操作は idle に落ちる", () => {
+  it("a rotate handle operation on a flex falls back to idle", () => {
     const ctx = makeCtx(["f"]);
     const pressed = reduceInteraction(
       IDLE,
@@ -993,8 +993,8 @@ describe("回転", () => {
   });
 });
 
-describe("マーキー", () => {
-  it("矩形交差でトップレベル要素のみ選択される（flex 子・ゴースト除外）", () => {
+describe("Marquee", () => {
+  it("rectangle intersection selects only top-level elements (excluding flex children and ghosts)", () => {
     const ctx = makeCtx();
     const started = reduceInteraction(IDLE, down({ x: 5, y: 5 }, null), ctx);
     const moved = reduceInteraction(
@@ -1014,8 +1014,8 @@ describe("マーキー", () => {
   });
 });
 
-describe("マーキーのプレビュー", () => {
-  it("しきい値超の move で previewIds が交差要素を含む（flex 子・ゴーストは除外）", () => {
+describe("Marquee preview", () => {
+  it("a move beyond the threshold makes previewIds include intersecting elements (excluding flex children and ghosts)", () => {
     const ctx = makeCtx();
     const started = reduceInteraction(IDLE, down({ x: 5, y: 5 }, null), ctx);
     const moved = reduceInteraction(
@@ -1029,7 +1029,7 @@ describe("マーキーのプレビュー", () => {
     }
   });
 
-  it("しきい値未満の move では previewIds が空", () => {
+  it("previewIds is empty for a move below the threshold", () => {
     const ctx = makeCtx();
     const started = reduceInteraction(IDLE, down({ x: 5, y: 5 }, null), ctx);
     const moved = reduceInteraction(
@@ -1043,7 +1043,7 @@ describe("マーキーのプレビュー", () => {
     }
   });
 
-  it("pointerUp の effect.selection は直前の previewIds と一致する", () => {
+  it("pointerUp's effect.selection matches the previewIds just before it", () => {
     const ctx = makeCtx();
     const started = reduceInteraction(IDLE, down({ x: 5, y: 5 }, null), ctx);
     const moved = reduceInteraction(
@@ -1083,7 +1083,7 @@ describe("liveBoxFor", () => {
     guides: [],
   };
 
-  it("moving 中は対象 id にオフセット加算後の box を返す", () => {
+  it("during moving, returns the box with the offset added for the target id", () => {
     const ctx = makeCtx(["a"]);
     const view = ctx.layout.find((v) => v.id === "a");
     if (view === undefined) {
@@ -1093,7 +1093,7 @@ describe("liveBoxFor", () => {
     expect(liveBoxFor(MOVING, view)).toEqual({ x: 15, y: 13, w: 40, h: 8 });
   });
 
-  it("moving 中でも対象外の id には null を返す", () => {
+  it("during moving, returns null for an id that isn't the target", () => {
     const ctx = makeCtx(["a"]);
     const view = ctx.layout.find((v) => v.id === "b");
     if (view === undefined) {
@@ -1103,7 +1103,7 @@ describe("liveBoxFor", () => {
     expect(liveBoxFor(MOVING, view)).toBeNull();
   });
 
-  it("resizing 中は対象 id に interaction.box を返す", () => {
+  it("during resizing, returns interaction.box for the target id", () => {
     const ctx = makeCtx(["b"]);
     const view = ctx.layout.find((v) => v.id === "b");
     if (view === undefined) {
@@ -1113,7 +1113,7 @@ describe("liveBoxFor", () => {
     expect(liveBoxFor(RESIZING, view)).toEqual({ x: 100, y: 10, w: 50, h: 30 });
   });
 
-  it("resizing 中でも対象外の id には null を返す", () => {
+  it("during resizing, returns null for an id that isn't the target", () => {
     const ctx = makeCtx(["b"]);
     const view = ctx.layout.find((v) => v.id === "a");
     if (view === undefined) {
@@ -1123,7 +1123,7 @@ describe("liveBoxFor", () => {
     expect(liveBoxFor(RESIZING, view)).toBeNull();
   });
 
-  it("idle・marquee では null を返す", () => {
+  it("returns null for idle and marquee", () => {
     const ctx = makeCtx();
     const view = ctx.layout.find((v) => v.id === "a");
     if (view === undefined) {
@@ -1141,8 +1141,8 @@ describe("liveBoxFor", () => {
   });
 });
 
-describe("パレット配置", () => {
-  it("紙外ドロップはキャンセルされる", () => {
+describe("Palette placement", () => {
+  it("a drop outside the paper is cancelled", () => {
     const ctx = makeCtx();
     const started = reduceInteraction(
       IDLE,
@@ -1168,7 +1168,7 @@ describe("パレット配置", () => {
     expect(up.effect).toBeNull();
   });
 
-  it("紙上ドロップで既定寸法の要素が追加され、新要素が単一選択になる", () => {
+  it("a drop on the paper adds an element at its default size and singly selects the new element", () => {
     const ctx = makeCtx();
     const started = reduceInteraction(
       IDLE,
@@ -1196,7 +1196,7 @@ describe("パレット配置", () => {
     expect(added).toMatchObject({ type: "rect", x: 30, y: 50, w: 40, h: 20 });
   });
 
-  it("flex コンテナ上では挿入に切り替わる", () => {
+  it("switches to insertion mode over a flex container", () => {
     const ctx = makeCtx();
     const started = reduceInteraction(
       IDLE,
@@ -1230,7 +1230,7 @@ describe("パレット配置", () => {
     expect(up.effect?.selection).toEqual(["text1"]);
   });
 
-  it("table は flex 上でも挿入に切り替わらない", () => {
+  it("table doesn't switch to insertion mode even over flex", () => {
     const ctx = makeCtx();
     const started = reduceInteraction(
       IDLE,
@@ -1251,8 +1251,8 @@ describe("パレット配置", () => {
   });
 });
 
-describe("flex 子の並び替え", () => {
-  it("子のドラッグは reordering になり、ドロップで並びが変わる", () => {
+describe("Reordering flex children", () => {
+  it("dragging a child enters reordering, and dropping changes the order", () => {
     const ctx = makeCtx(["ct1"]);
     const pressed = reduceInteraction(
       IDLE,
@@ -1287,7 +1287,7 @@ describe("flex 子の並び替え", () => {
     expect(up.effect?.selection).toEqual(["ct1"]);
   });
 
-  it("同位置に戻すドロップは effect なし", () => {
+  it("a drop back at the same position has no effect", () => {
     const ctx = makeCtx(["ct1"]);
     const pressed = reduceInteraction(
       IDLE,
@@ -1310,28 +1310,28 @@ describe("flex 子の並び替え", () => {
   });
 });
 
-describe("段階的選択 resolveClickTarget", () => {
-  it("選択なしでは最外側の要素を返す", () => {
+describe("Progressive selection: resolveClickTarget", () => {
+  it("returns the outermost element when nothing is selected", () => {
     expect(resolveClickTarget(makeCtx(), "ct1")).toBe("f");
   });
 
-  it("親（flex）選択中は子を返す", () => {
+  it("returns the child while the parent (flex) is selected", () => {
     expect(resolveClickTarget(makeCtx(["f"]), "ct1")).toBe("ct1");
   });
 
-  it("子選択中は同じ子を維持する（末端で深くしない）", () => {
+  it("keeps the same child selected while a child is selected (doesn't go deeper at a leaf)", () => {
     expect(resolveClickTarget(makeCtx(["ct1"]), "ct1")).toBe("ct1");
   });
 
-  it("兄弟の矩形を直接クリックすると即座にその兄弟が選ばれる", () => {
+  it("clicking a sibling rectangle directly selects that sibling immediately", () => {
     expect(resolveClickTarget(makeCtx(["ct1"]), "ct2")).toBe("ct2");
   });
 
-  it("無関係な選択中のクリックは最外側にリセットされる", () => {
+  it("clicking while an unrelated selection is active resets to the outermost element", () => {
     expect(resolveClickTarget(makeCtx(["b"]), "ct1")).toBe("f");
   });
 
-  it("入れ子 flex では1クリックごとに1段ずつ深くなる", () => {
+  it("nested flex goes one level deeper per click", () => {
     const nested: IrFlexElement = {
       type: "flex",
       id: "of",
@@ -1372,8 +1372,8 @@ describe("段階的選択 resolveClickTarget", () => {
   });
 });
 
-describe("#5 既存要素のドラッグ挿入", () => {
-  it("単一・非 table のドラッグは flex 上で flexId/insertIndex を持ち guides が空になる", () => {
+describe("#5 Drag-inserting existing elements", () => {
+  it("dragging a single non-table element over flex sets flexId/insertIndex and clears guides", () => {
     const ctx = makeCtx(["a"]);
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const moved = reduceInteraction(
@@ -1389,7 +1389,7 @@ describe("#5 既存要素のドラッグ挿入", () => {
     }
   });
 
-  it("flex 外へ出ると flexId が null に戻る", () => {
+  it("flexId reverts to null once dragged out of flex", () => {
     const ctx = makeCtx(["a"]);
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const onFlex = reduceInteraction(
@@ -1409,7 +1409,7 @@ describe("#5 既存要素のドラッグ挿入", () => {
     }
   });
 
-  it("pointerUp でトップレベルから消え children に入る（1 effect）", () => {
+  it("pointerUp removes it from the top level and moves it into children (1 effect)", () => {
     const ctx = makeCtx(["a"]);
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const moved = reduceInteraction(
@@ -1435,7 +1435,7 @@ describe("#5 既存要素のドラッグ挿入", () => {
     expect(up.effect?.selection).toEqual(["a"]);
   });
 
-  it("table は flex 上でも flexId が付かない", () => {
+  it("table doesn't get a flexId even over flex", () => {
     const table: IrElement = {
       type: "table",
       id: "tbl",
@@ -1464,7 +1464,7 @@ describe("#5 既存要素のドラッグ挿入", () => {
     }
   });
 
-  it("複数選択では flexId が付かない", () => {
+  it("a multi-selection doesn't get a flexId", () => {
     const ctx = makeCtx(["a", "b"]);
     const pressed = reduceInteraction(IDLE, down({ x: 12, y: 12 }, "a"), ctx);
     const moved = reduceInteraction(
@@ -1479,7 +1479,7 @@ describe("#5 既存要素のドラッグ挿入", () => {
     }
   });
 
-  it("flex 自身をその子孫（入れ子 flex）へ落とせない（exclude）", () => {
+  it("a flex can't be dropped onto its own descendant (nested flex) (exclude)", () => {
     const outer: IrFlexElement = {
       type: "flex",
       id: "outer",
@@ -1532,8 +1532,8 @@ describe("#5 既存要素のドラッグ挿入", () => {
   });
 });
 
-describe("#5 flex からの取り出し・移し替え", () => {
-  it("子ドラッグで flex 外に出ると targetFlexId が null になる", () => {
+describe("#5 Taking out of / moving between flex containers", () => {
+  it("dragging a child out of flex sets targetFlexId to null", () => {
     const ctx = makeCtx(["ct1"]);
     const pressed = reduceInteraction(
       IDLE,
@@ -1551,7 +1551,7 @@ describe("#5 flex からの取り出し・移し替え", () => {
     }
   });
 
-  it("紙内ドロップでトップレベル化する（x/y はゴースト位置、pages はトップレベル祖先）", () => {
+  it("a drop inside the paper promotes it to top level (x/y from the ghost position, pages from the top-level ancestor)", () => {
     const ctx = makeCtx(["ct1"]);
     const pressed = reduceInteraction(
       IDLE,
@@ -1579,7 +1579,7 @@ describe("#5 flex からの取り出し・移し替え", () => {
     expect(up.effect?.selection).toEqual(["ct1"]);
   });
 
-  it("紙外ドロップは effect なし", () => {
+  it("a drop outside the paper has no effect", () => {
     const ctx = makeCtx(["ct1"]);
     const pressed = reduceInteraction(
       IDLE,
@@ -1600,7 +1600,7 @@ describe("#5 flex からの取り出し・移し替え", () => {
     expect(up.effect).toBeNull();
   });
 
-  it("別 flex の上でドロップすると children 間を移動する", () => {
+  it("dropping over another flex moves it between children", () => {
     const other: IrFlexElement = {
       type: "flex",
       id: "f2",
@@ -1659,8 +1659,8 @@ describe("#5 flex からの取り出し・移し替え", () => {
   });
 });
 
-describe("#15 flex 子のリサイズ", () => {
-  it("ハンドル押下→resizing→pointerUp で resizeFlexChild の結果が反映され guides は常に空", () => {
+describe("#15 Resizing flex children", () => {
+  it("handle press then resizing then pointerUp applies resizeFlexChild's result, and guides is always empty", () => {
     const ctx = makeCtx(["ct1"]);
     const pressed = reduceInteraction(
       IDLE,
@@ -1692,7 +1692,7 @@ describe("#15 flex 子のリサイズ", () => {
     }
   });
 
-  it("無変更ドロップは effect なし", () => {
+  it("an unchanged drop has no effect", () => {
     const ctx = makeCtx(["ct1"]);
     const pressed = reduceInteraction(
       IDLE,
@@ -1718,7 +1718,7 @@ describe("#15 flex 子のリサイズ", () => {
     expect(up.effect).toBeNull();
   });
 
-  it("1mm クランプが効く", () => {
+  it("the 1mm clamp applies", () => {
     const ctx = makeCtx(["ct1"]);
     const pressed = reduceInteraction(
       IDLE,

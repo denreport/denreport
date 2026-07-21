@@ -228,8 +228,8 @@ function spyAnchorClicks(): HTMLAnchorElement[] {
   return clicked;
 }
 
-describe("Designer のマウントと破棄", () => {
-  it("マウントで container 内に .dr-designer が描画される", async () => {
+describe("Designer mount and destroy", () => {
+  it("mounting renders .dr-designer inside the container", async () => {
     const { container } = mount();
     const rootEl = container.querySelector(".dr-designer");
     expect(rootEl).not.toBeNull();
@@ -238,7 +238,7 @@ describe("Designer のマウントと破棄", () => {
     });
   });
 
-  it("既存の container 内容は占有時に取り除かれる", () => {
+  it("existing container content is removed when claimed", () => {
     const container = document.createElement("div");
     container.innerHTML = "<p>previous</p>";
     document.body.append(container);
@@ -247,14 +247,14 @@ describe("Designer のマウントと破棄", () => {
     expect(container.querySelector("p")).toBeNull();
   });
 
-  it("destroy で container が空に戻り、冪等である", () => {
+  it("destroy empties the container and is idempotent", () => {
     const { container, designer } = mount();
     designer.destroy();
     expect(container.childNodes).toHaveLength(0);
     expect(() => designer.destroy()).not.toThrow();
   });
 
-  it("destroy 後の他メソッド呼び出しは throw する", () => {
+  it("calling other methods after destroy throws", () => {
     const { designer } = mount();
     designer.destroy();
     expect(() => designer.loadIr(VALID_IR)).toThrow();
@@ -272,15 +272,15 @@ describe("Designer のマウントと破棄", () => {
     expect(() => designer.onLocaleChange(() => {})).toThrow();
   });
 
-  it("不正な initialIr はコンストラクタで throw する", () => {
+  it("an invalid initialIr throws in the constructor", () => {
     const container = document.createElement("div");
     containers.push(container);
     expect(() => new Designer(container, { initialIr: "{" })).toThrow();
   });
 });
 
-describe("IR の入出力", () => {
-  it("省略時は白紙文書（A4 縦・NotoSansJP・elements 空）になる", () => {
+describe("IR input/output", () => {
+  it("defaults to a blank document (portrait A4, NotoSansJP, empty elements) when omitted", () => {
     const { designer } = mount();
     const result = parseIr(designer.saveIr());
     expect(result.ok).toBe(true);
@@ -294,7 +294,7 @@ describe("IR の入出力", () => {
     }
   });
 
-  it("loadIr が成功すると文書が置き換わり ok を返す", () => {
+  it("a successful loadIr replaces the document and returns ok", () => {
     const { designer } = mount();
     const result = designer.loadIr(VALID_IR);
     expect(result).toEqual({ ok: true });
@@ -305,7 +305,7 @@ describe("IR の入出力", () => {
     }
   });
 
-  it("不正 IR の loadIr は ok: false と errors を返し、文書を変えない", () => {
+  it("loadIr with invalid IR returns ok: false and errors, leaving the document unchanged", () => {
     const { designer } = mount({ initialIr: VALID_IR });
     const before = designer.saveIr();
     const result = designer.loadIr('{"version":"1.0"}');
@@ -320,13 +320,13 @@ describe("IR の入出力", () => {
     expect(designer.saveIr()).toBe(before);
   });
 
-  it("saveIr の出力は parseIr で ok になる（往復の整合）", () => {
+  it("saveIr's output parses ok with parseIr (round-trip consistency)", () => {
     const { designer } = mount({ initialIr: VALID_IR });
     const result = parseIr(designer.saveIr());
     expect(result.ok).toBe(true);
   });
 
-  it("saveIr は正規化済み（任意属性のデフォルト明示済み）の JSON を返す", () => {
+  it("saveIr returns normalized JSON (optional attributes made explicit with defaults)", () => {
     const { designer } = mount({ initialIr: VALID_IR });
     const parsed = JSON.parse(designer.saveIr()) as IrDocument;
     const element = parsed.elements.at(0);
@@ -338,7 +338,7 @@ describe("IR の入出力", () => {
     });
   });
 
-  it("saveIr → loadIr → saveIr で全要素種を含む文書が同値に復元される", () => {
+  it("saveIr then loadIr then saveIr restores a document with every element type to an equal value", () => {
     const { designer } = mount({ initialIr: ROUND_TRIP_IR });
     const saved = designer.saveIr();
     const types = (JSON.parse(saved) as IrDocument).elements.map(
@@ -362,7 +362,7 @@ describe("IR の入出力", () => {
     expect(reloaded.saveIr()).toBe(saved);
   });
 
-  it("saveIr は生存グループを groups キーへ直列化する", () => {
+  it("saveIr serializes surviving groups under the groups key", () => {
     const { designer } = mount({ initialIr: ROUND_TRIP_IR });
     storeOf(designer).setGroups([
       { id: "group1", memberIds: ["title", "customer"] },
@@ -373,14 +373,14 @@ describe("IR の入出力", () => {
     ]);
   });
 
-  it("生存メンバーが2未満のグループは groups キーごと省かれる", () => {
+  it("a group with fewer than 2 surviving members omits the groups key entirely", () => {
     const { designer } = mount({ initialIr: ROUND_TRIP_IR });
     storeOf(designer).setGroups([{ id: "group1", memberIds: ["title"] }]);
     const parsed = JSON.parse(designer.saveIr()) as IrDocument;
     expect(parsed).not.toHaveProperty("groups");
   });
 
-  it("saveIr → loadIr → saveIr でグループが同値に復元される", () => {
+  it("saveIr then loadIr then saveIr restores groups to an equal value", () => {
     const { designer } = mount({ initialIr: ROUND_TRIP_IR });
     storeOf(designer).setGroups([
       { id: "group1", memberIds: ["title", "customer"] },
@@ -395,7 +395,7 @@ describe("IR の入出力", () => {
     expect(reloaded.saveIr()).toBe(saved);
   });
 
-  it("loadIr は読み込んだ IR に groups が無ければ旧グループをリセットする", () => {
+  it("loadIr resets old groups when the loaded IR has none", () => {
     const { designer } = mount({ initialIr: VALID_IR });
     const store = storeOf(designer);
     store.setGroups([{ id: "group1", memberIds: ["title"] }]);
@@ -407,7 +407,7 @@ describe("IR の入出力", () => {
 });
 
 describe("onChange", () => {
-  it("文書 commit で発火し、setSelection / setView / markSaved では発火しない", () => {
+  it("fires on document commit, but not on setSelection / setView / markSaved", () => {
     const { designer } = mount({ initialIr: VALID_IR });
     const store = storeOf(designer);
     let fired = 0;
@@ -428,7 +428,7 @@ describe("onChange", () => {
     expect(fired).toBe(1);
   });
 
-  it("undo / redo / loadIr でも発火する", () => {
+  it("also fires on undo / redo / loadIr", () => {
     const { designer } = mount({ initialIr: VALID_IR });
     const store = storeOf(designer);
     const parsed = parseIr(VALID_IR);
@@ -449,7 +449,7 @@ describe("onChange", () => {
     expect(fired).toBe(3);
   });
 
-  it("解除関数でリスナーが外れる", () => {
+  it("the unsubscribe function detaches the listener", () => {
     const { designer } = mount();
     let fired = 0;
     const unsubscribe = designer.onChange(() => {
@@ -460,7 +460,7 @@ describe("onChange", () => {
     expect(fired).toBe(0);
   });
 
-  it("グループ化・解除（setGroups）は文書を変えなくても発火する", () => {
+  it("grouping/ungrouping (setGroups) fires even without changing the document", () => {
     const { designer } = mount({ initialIr: ROUND_TRIP_IR });
     const store = storeOf(designer);
     let fired = 0;
@@ -476,8 +476,8 @@ describe("onChange", () => {
   });
 });
 
-describe("サンプルデータ API", () => {
-  it("getSampleData は封筒形式（シナリオ一式）を返す", () => {
+describe("Sample data API", () => {
+  it("getSampleData returns the envelope format (the full scenario set)", () => {
     const { designer: blank } = mount();
     const blankSet = parseSample(blank.getSampleData());
     expect(blankSet.items).toHaveLength(1);
@@ -490,7 +490,7 @@ describe("サンプルデータ API", () => {
     expect(migrated.items[0]?.json).toBe(raw);
   });
 
-  it("setSampleData / getSampleData は封筒形式で往復し、不正 JSON も受理する", () => {
+  it("setSampleData / getSampleData round-trip in envelope format and accept invalid JSON too", () => {
     const { designer } = mount();
     designer.setSampleData("{oops");
     expect(parseSample(designer.getSampleData()).items[0]?.json).toBe("{oops");
@@ -499,7 +499,7 @@ describe("サンプルデータ API", () => {
     expect(parseSample(broken.getSampleData()).items[0]?.json).toBe("{oops");
   });
 
-  it("getSampleData の返り値を initialSampleData に渡すと往復する", () => {
+  it("passing getSampleData's return value to initialSampleData round-trips", () => {
     const { designer } = mount();
     designer.setSampleData('{"a": 1}');
     const envelope = designer.getSampleData();
@@ -508,7 +508,7 @@ describe("サンプルデータ API", () => {
     expect(restored.getSampleData()).toBe(envelope);
   });
 
-  it("setSampleData で onSampleDataChange が発火し、onChange は発火しない", () => {
+  it("setSampleData fires onSampleDataChange but not onChange", () => {
     const { designer } = mount({ initialIr: VALID_IR });
     let sampleFired = 0;
     let changeFired = 0;
@@ -524,7 +524,7 @@ describe("サンプルデータ API", () => {
     expect(changeFired).toBe(0);
   });
 
-  it("シナリオ操作（store.setSampleScenarios 経由）でも onSampleDataChange が発火する", () => {
+  it("scenario operations (via store.setSampleScenarios) also fire onSampleDataChange", () => {
     const { designer } = mount();
     let sampleFired = 0;
     designer.onSampleDataChange(() => {
@@ -539,7 +539,7 @@ describe("サンプルデータ API", () => {
     expect(parseSample(designer.getSampleData()).items).toHaveLength(2);
   });
 
-  it("文書変更（commit / loadIr）では onSampleDataChange が発火せず、サンプルは維持される", () => {
+  it("document changes (commit / loadIr) don't fire onSampleDataChange, and the sample is preserved", () => {
     const { designer } = mount({
       initialIr: VALID_IR,
       initialSampleData: '{"a": 1}',
@@ -557,7 +557,7 @@ describe("サンプルデータ API", () => {
     );
   });
 
-  it("解除関数でリスナーが外れる", () => {
+  it("the unsubscribe function detaches the listener", () => {
     const { designer } = mount();
     let fired = 0;
     const unsubscribe = designer.onSampleDataChange(() => {
@@ -569,18 +569,18 @@ describe("サンプルデータ API", () => {
   });
 });
 
-describe("書き出しターゲット API", () => {
-  it("省略時は既定の pdfme になる", () => {
+describe("Export target API", () => {
+  it("defaults to pdfme when omitted", () => {
     const { designer } = mount();
     expect(designer.getExportTarget()).toBe("pdfme");
   });
 
-  it("initialExportTarget を渡すと初期値になる", () => {
+  it("passing initialExportTarget sets the initial value", () => {
     const { designer } = mount({ initialExportTarget: "reportlab" });
     expect(designer.getExportTarget()).toBe("reportlab");
   });
 
-  it("store 経由の選択変更（ツールバー・書き出しダイアログ相当）で onExportTargetChange が発火し、onChange は発火しない", () => {
+  it("a selection change via the store (equivalent to toolbar / export dialog) fires onExportTargetChange but not onChange", () => {
     const { designer } = mount({ initialIr: VALID_IR });
     let targetFired = 0;
     let changeFired = 0;
@@ -597,7 +597,7 @@ describe("書き出しターゲット API", () => {
     expect(designer.getExportTarget()).toBe("reportlab");
   });
 
-  it("解除関数でリスナーが外れる", () => {
+  it("the unsubscribe function detaches the listener", () => {
     const { designer } = mount();
     let fired = 0;
     const unsubscribe = designer.onExportTargetChange(() => {
@@ -609,8 +609,8 @@ describe("書き出しターゲット API", () => {
   });
 });
 
-describe("テーマ", () => {
-  it("setTheme で data-theme 属性が切り替わる", () => {
+describe("Theme", () => {
+  it("setTheme switches the data-theme attribute", () => {
     const { container, designer } = mount();
     const rootEl = container.querySelector(".dr-designer");
     designer.setTheme("dark");
@@ -619,7 +619,7 @@ describe("テーマ", () => {
     expect(rootEl?.getAttribute("data-theme")).toBe("light");
   });
 
-  it('"auto" は OS 設定の解決値になる（jsdom では light）', () => {
+  it('"auto" resolves to the OS setting (light under jsdom)', () => {
     const { container, designer } = mount();
     const rootEl = container.querySelector(".dr-designer");
     expect(rootEl?.getAttribute("data-theme")).toBe("light");
@@ -629,8 +629,8 @@ describe("テーマ", () => {
   });
 });
 
-describe("保存ボタンと onSaveRequest", () => {
-  it("リスナーなしでは保存クリックでダウンロードが走り dirty が下りる", async () => {
+describe("Save button and onSaveRequest", () => {
+  it("without a listener, clicking save triggers a download and clears dirty", async () => {
     const { container, designer } = mount({ initialIr: VALID_IR });
     makeDirty(designer);
     const clicked = spyAnchorClicks();
@@ -645,7 +645,7 @@ describe("保存ボタンと onSaveRequest", () => {
     expect(storeOf(designer).getState().dirty).toBe(false);
   });
 
-  it("リスナー登録中は通知のみで、ダウンロードも markSaved も起きない", async () => {
+  it("while a listener is registered, only the notification fires, with no download and no markSaved", async () => {
     const { container, designer } = mount({ initialIr: VALID_IR });
     makeDirty(designer);
     const clicked = spyAnchorClicks();
@@ -667,15 +667,15 @@ describe("保存ボタンと onSaveRequest", () => {
     expect(storeOf(designer).getState().dirty).toBe(false);
   });
 
-  it("保存ボタンはクリーンな文書でも活性である", async () => {
+  it("the save button is enabled even for a clean document", async () => {
     const { container } = mount({ initialIr: VALID_IR });
     const save = await toolbarButton(container, "保存");
     expect(save.disabled).toBe(false);
   });
 });
 
-describe("テーマトグル", () => {
-  it("その他の操作メニューのテーマ項目で data-theme が裏返り、auto から明示テーマに移る", async () => {
+describe("Theme toggle", () => {
+  it("the theme item in the more-actions menu flips data-theme, moving from auto to an explicit theme", async () => {
     const { container } = mount();
     const rootEl = container.querySelector(".dr-designer");
     expect(rootEl?.getAttribute("data-theme")).toBe("light");
@@ -696,8 +696,8 @@ describe("テーマトグル", () => {
   });
 });
 
-describe("言語切替", () => {
-  it('locale 省略時は "auto"（jsdom の navigator.languages は en-US のため en に解決される）', () => {
+describe("Language switching", () => {
+  it('locale defaults to "auto" (resolves to en because jsdom navigator.languages is en-US)', () => {
     const container = document.createElement("div");
     containers.push(container);
     const designer = new Designer(container);
@@ -705,7 +705,7 @@ describe("言語切替", () => {
     expect(designer.getLocale()).toBe("en");
   });
 
-  it("setLocale で表示言語と rootEl.lang が切り替わり、onLocaleChange が発火する", async () => {
+  it("setLocale switches the display language and rootEl.lang, and fires onLocaleChange", async () => {
     const { container, designer } = mount();
     const rootEl = container.querySelector(".dr-designer");
     expect(rootEl?.getAttribute("lang")).toBe("ja");
@@ -728,7 +728,7 @@ describe("言語切替", () => {
     await toolbarButton(container, "保存");
   });
 
-  it("解決値が変わらない setLocale では onLocaleChange が発火しない", () => {
+  it("onLocaleChange doesn't fire for a setLocale whose resolved value is unchanged", () => {
     const { designer } = mount();
     let fired = 0;
     designer.onLocaleChange(() => {
@@ -738,7 +738,7 @@ describe("言語切替", () => {
     expect(fired).toBe(0);
   });
 
-  it("解除関数でリスナーが外れる", () => {
+  it("the unsubscribe function detaches the listener", () => {
     const { designer } = mount();
     let fired = 0;
     const unsubscribe = designer.onLocaleChange(() => {
@@ -750,7 +750,7 @@ describe("言語切替", () => {
   });
 });
 
-describe("core / targets への locale 伝搬", () => {
+describe("Locale propagation to core / targets", () => {
   async function openedDrawer(container: HTMLElement): Promise<HTMLElement> {
     const bar = await vi.waitFor(() => {
       const el = container.querySelector<HTMLButtonElement>(".dr-drawer-bar");
@@ -765,7 +765,7 @@ describe("core / targets への locale 伝搬", () => {
     });
   }
 
-  it("setLocale で検証エラーの文言が切り替わる", async () => {
+  it("setLocale switches the validation error text", async () => {
     const { container, designer } = mount({ initialIr: VALID_IR });
     const store = storeOf(designer);
     const document_ = store.getState().document;
@@ -785,7 +785,7 @@ describe("core / targets への locale 伝搬", () => {
     });
   });
 
-  it("setLocale で互換警告の文言が切り替わる", async () => {
+  it("setLocale switches the compatibility warning text", async () => {
     const { container, designer } = mount({ initialIr: VALID_IR });
     const body = await openedDrawer(container);
     await vi.waitFor(() => {
@@ -799,7 +799,7 @@ describe("core / targets への locale 伝搬", () => {
     });
   });
 
-  it("書き出しダイアログの互換警告が setLocale で切り替わる", async () => {
+  it("the export dialog's compatibility warning switches with setLocale", async () => {
     const { container, designer } = mount({ initialIr: VALID_IR });
     click(await toolbarButton(container, "書き出し"));
     const dialog = await vi.waitFor(() => {
@@ -816,7 +816,7 @@ describe("core / targets への locale 伝搬", () => {
     });
   });
 
-  it("loadIr の失敗メッセージが解決済み locale に従う", () => {
+  it("loadIr's failure message follows the resolved locale", () => {
     const { designer } = mount();
     const jaResult = designer.loadIr("{");
     expect(jaResult.ok).toBe(false);
@@ -830,13 +830,13 @@ describe("core / targets への locale 伝搬", () => {
   });
 });
 
-describe("公開面の型（React 非漏洩）", () => {
-  it("値のエクスポートは Designer クラスのみ", () => {
+describe("Public surface types (no React leakage)", () => {
+  it("the only value export is the Designer class", () => {
     expectTypeOf<keyof typeof publicExports>().toEqualTypeOf<"Designer">();
     expect(Object.keys(publicExports)).toEqual(["Designer"]);
   });
 
-  it("公開シグネチャは DOM 標準型・プリミティブ・core の型だけで閉じる", () => {
+  it("the public signature is closed over DOM standard types, primitives, and core types only", () => {
     // A deep equality comparison via expectTypeOf that expands every attribute of HTMLElement
     // isn't practical, so the constructor is verified via assignability (a compile-time check) instead
     const construct: new (

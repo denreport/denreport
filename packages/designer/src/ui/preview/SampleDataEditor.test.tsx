@@ -33,7 +33,7 @@ function buttonByText(text: string): HTMLButtonElement {
 }
 
 describe("SampleDataEditor", () => {
-  it("ラベルと生成ボタンを日本語で描画する", () => {
+  it("renders labels and the generate button in Japanese", () => {
     act(() => {
       root.render(
         <SampleDataEditor
@@ -48,7 +48,7 @@ describe("SampleDataEditor", () => {
     expect(buttonByText("bind キーから生成")).not.toBeUndefined();
   });
 
-  it("en の MessagesContext では文言が英語で描画される", () => {
+  it("renders text in English under the en MessagesContext", () => {
     act(() => {
       root.render(
         <MessagesContext.Provider value={en}>

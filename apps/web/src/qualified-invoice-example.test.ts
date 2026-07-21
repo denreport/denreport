@@ -15,7 +15,7 @@ const EXAMPLE_PATH = resolve(
 // examples/ is the repo's standalone template collection (not a package fixture), read
 // from its real location so this test also proves the designer's load path for it
 describe("examples/qualified-invoice.json", () => {
-  it("parseIr が成功し、validateIr・適格請求書チェックともに指摘がない", () => {
+  it("parseIr succeeds, and both validateIr and the qualified invoice check report no issues", () => {
     const json = readFileSync(EXAMPLE_PATH, "utf8");
     const parsed = parseIr(json);
     expect(parsed.ok).toBe(true);

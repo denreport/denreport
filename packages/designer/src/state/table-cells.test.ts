@@ -43,7 +43,7 @@ function docOf(
 }
 
 describe("tableCellSources / cellView", () => {
-  it("bind 行と上書きを合成する（上書きが優先）", () => {
+  it("combines bind rows with overrides (overrides take priority)", () => {
     const doc = docOf(
       table({ cellOverrides: [{ row: 0, key: "name", value: "固定値" }] }),
     );
@@ -71,7 +71,7 @@ describe("tableCellSources / cellView", () => {
     });
   });
 
-  it("bind 行の一部の型が不正でも、他のセルは表示する", () => {
+  it("still displays other cells even if some bind row types are invalid", () => {
     const doc = docOf(table());
     const sampleJson = JSON.stringify({
       items: [{ name: "item0", amount: 10 }, "not an object"],
@@ -94,7 +94,7 @@ describe("tableCellSources / cellView", () => {
     });
   });
 
-  it("bind が欠落していても上書きだけは表示する", () => {
+  it("shows only the override even when the bind is missing", () => {
     const doc = docOf(
       table({ cellOverrides: [{ row: 0, key: "name", value: "仮値" }] }),
     );
@@ -112,7 +112,7 @@ describe("tableCellSources / cellView", () => {
     });
   });
 
-  it("不正 JSON・空文字列でも空行扱いで例外を投げない", () => {
+  it("treats invalid JSON or an empty string as empty rows without throwing", () => {
     const doc = docOf(table());
     expect(() => tableCellSources(doc, "{not json")).not.toThrow();
     expect(() => tableCellSources(doc, "")).not.toThrow();
@@ -132,7 +132,7 @@ describe("sketchMerges", () => {
     return source;
   }
 
-  it("bind 行の同一値連続を結合し、表示行数で打ち切る", () => {
+  it("merges consecutive identical values in bind rows, capped at the displayed row count", () => {
     const doc = docOf(
       table({
         columns: [
@@ -161,7 +161,7 @@ describe("sketchMerges", () => {
     expect([...merges.covered]).toEqual(["1:0"]);
   });
 
-  it("上書き適用後の値で結合を判定する（上書きで区間が切れる）", () => {
+  it("judges merging using post-override values (an override breaks the run)", () => {
     const doc = docOf(
       table({
         columns: [
@@ -190,7 +190,7 @@ describe("sketchMerges", () => {
     expect(merges.rects).toEqual([]);
   });
 
-  it("cells が空でも静的 cellSpans は結合される", () => {
+  it("merges static cellSpans even when cells is empty", () => {
     const doc = docOf(
       table({ cellSpans: [{ row: "header", key: "name", colSpan: 2 }] }),
     );
@@ -203,7 +203,7 @@ describe("sketchMerges", () => {
     expect([...merges.covered]).toEqual(["header:1"]);
   });
 
-  it("minRows の空行（空文字列）は誤結合しない", () => {
+  it("does not falsely merge minRows empty rows (empty strings)", () => {
     const doc = docOf(
       table({
         columns: [
@@ -237,17 +237,17 @@ function rect(patch: Partial<TableCellRect> = {}): TableCellRect {
 }
 
 describe("canMergeCellRect", () => {
-  it("1×1 は拒否する", () => {
+  it("rejects a 1x1 rect", () => {
     expect(canMergeCellRect(table(), rect())).toBe(false);
   });
 
-  it("列範囲が表の列数を超える範囲は拒否する", () => {
+  it("rejects a range whose columns exceed the table's column count", () => {
     expect(canMergeCellRect(table(), rect({ colStart: 0, colEnd: 2 }))).toBe(
       false,
     );
   });
 
-  it("mergeSameValue 列を含む範囲は拒否する（起点列を含む）", () => {
+  it("rejects a range that includes a mergeSameValue column (including the origin column)", () => {
     const mergeAtOrigin = table({
       columns: [
         {
@@ -281,7 +281,7 @@ describe("canMergeCellRect", () => {
     );
   });
 
-  it("既存の明細結合と重なる範囲は拒否する", () => {
+  it("rejects a range overlapping an existing detail-row merge", () => {
     const t = table({ cellSpans: [{ row: 0, key: "name", rowSpan: 2 }] });
     expect(
       canMergeCellRect(
@@ -291,7 +291,7 @@ describe("canMergeCellRect", () => {
     ).toBe(false);
   });
 
-  it("既存のヘッダ結合と重なる範囲は拒否する", () => {
+  it("rejects a range overlapping an existing header merge", () => {
     const t = table({
       cellSpans: [{ row: "header", key: "name", colSpan: 2 }],
     });
@@ -300,7 +300,7 @@ describe("canMergeCellRect", () => {
     ).toBe(false);
   });
 
-  it("ヘッダの結合は明細の範囲とは重ならない", () => {
+  it("a header merge does not overlap with the detail-row range", () => {
     const t = table({
       cellSpans: [{ row: "header", key: "name", colSpan: 2 }],
     });
@@ -312,13 +312,13 @@ describe("canMergeCellRect", () => {
     ).toBe(true);
   });
 
-  it("ヘッダ横2列の結合は許可する", () => {
+  it("allows merging 2 header columns horizontally", () => {
     expect(
       canMergeCellRect(table(), rect({ header: true, colStart: 0, colEnd: 1 })),
     ).toBe(true);
   });
 
-  it("正常な縦2行・横2列の結合は許可する", () => {
+  it("allows a normal 2-row-by-2-column merge", () => {
     expect(
       canMergeCellRect(
         table(),
@@ -335,7 +335,7 @@ describe("canMergeCellRect", () => {
 });
 
 describe("cellSpanForRect", () => {
-  it("縦のみの結合は rowSpan のみを持つ", () => {
+  it("a vertical-only merge has only rowSpan", () => {
     const span = cellSpanForRect(
       table(),
       rect({ rowStart: 0, rowEnd: 1, colStart: 0, colEnd: 0 }),
@@ -343,7 +343,7 @@ describe("cellSpanForRect", () => {
     expect(span).toEqual({ row: 0, key: "name", rowSpan: 2 });
   });
 
-  it("横のみの結合は colSpan のみを持つ", () => {
+  it("a horizontal-only merge has only colSpan", () => {
     const span = cellSpanForRect(
       table(),
       rect({ rowStart: 0, rowEnd: 0, colStart: 0, colEnd: 1 }),
@@ -351,7 +351,7 @@ describe("cellSpanForRect", () => {
     expect(span).toEqual({ row: 0, key: "name", colSpan: 2 });
   });
 
-  it('header 矩形は row: "header" に変換し rowSpan を持たない', () => {
+  it('converts a header rect to row: "header" with no rowSpan', () => {
     const span = cellSpanForRect(
       table(),
       rect({ header: true, colStart: 0, colEnd: 1 }),
@@ -359,7 +359,7 @@ describe("cellSpanForRect", () => {
     expect(span).toEqual({ row: "header", key: "name", colSpan: 2 });
   });
 
-  it("colStart の列 key を起点にする", () => {
+  it("uses colStart's column key as the origin", () => {
     const span = cellSpanForRect(
       table(),
       rect({ rowStart: 0, rowEnd: 1, colStart: 1, colEnd: 1 }),
@@ -367,14 +367,14 @@ describe("cellSpanForRect", () => {
     expect(span).toEqual({ row: 0, key: "amount", rowSpan: 2 });
   });
 
-  it("colStart の列が存在しなければ null を返す", () => {
+  it("returns null when colStart's column does not exist", () => {
     const span = cellSpanForRect(table(), rect({ colStart: 5, colEnd: 5 }));
     expect(span).toBeNull();
   });
 });
 
 describe("spanIndicesIntersecting", () => {
-  it("交差する結合の index を列挙する", () => {
+  it("lists indices of merges that intersect", () => {
     const t = table({ cellSpans: [{ row: 0, key: "name", rowSpan: 2 }] });
     expect(
       spanIndicesIntersecting(
@@ -384,7 +384,7 @@ describe("spanIndicesIntersecting", () => {
     ).toEqual([0]);
   });
 
-  it("交差しない結合は含まない", () => {
+  it("excludes merges that don't intersect", () => {
     const t = table({ cellSpans: [{ row: 0, key: "name", rowSpan: 2 }] });
     expect(
       spanIndicesIntersecting(

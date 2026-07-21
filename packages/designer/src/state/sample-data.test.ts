@@ -2,25 +2,25 @@ import { describe, expect, it } from "vitest";
 import { parseSampleJson } from "./sample-data";
 
 describe("parseSampleJson", () => {
-  it("空文字列は警告なしの空データになる", () => {
+  it("an empty string becomes empty data with no warning", () => {
     expect(parseSampleJson("")).toEqual({ data: {}, warning: undefined });
     expect(parseSampleJson("   ")).toEqual({ data: {}, warning: undefined });
   });
 
-  it("正常な JSON オブジェクトはそのまま data になる", () => {
+  it("a valid JSON object becomes data as-is", () => {
     expect(parseSampleJson('{"title": "見本", "n": 1}')).toEqual({
       data: { title: "見本", n: 1 },
       warning: undefined,
     });
   });
 
-  it("不正 JSON は空データ + invalidJson の警告になる", () => {
+  it("invalid JSON becomes empty data plus an invalidJson warning", () => {
     const result = parseSampleJson("{not json");
     expect(result.data).toEqual({});
     expect(result.warning).toBe("invalidJson");
   });
 
-  it("トップレベルが配列・非オブジェクトなら空データ + notObject の警告になる", () => {
+  it("a top-level array or non-object becomes empty data plus a notObject warning", () => {
     expect(parseSampleJson("[1, 2]")).toEqual({
       data: {},
       warning: "notObject",

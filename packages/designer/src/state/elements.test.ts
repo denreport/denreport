@@ -73,7 +73,7 @@ function flexElement(id: string, childIds: readonly string[]): IrFlexElement {
 }
 
 describe("moveElements", () => {
-  it("対象だけを動かし、旧文書と無関係要素の参照を共有する（structural sharing）", () => {
+  it("moves only the target, sharing references to unrelated elements with the old document (structural sharing)", () => {
     const a = textElement("a", 10, 10);
     const b = textElement("b", 50, 50);
     const doc: IrDocument = { ...blankDocument(), elements: [a, b] };
@@ -86,7 +86,7 @@ describe("moveElements", () => {
     expect(next.elements[1]).toBe(b);
   });
 
-  it("出口で 0.1mm に丸める", () => {
+  it("rounds to 0.1mm on the way out", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [textElement("a", 10, 10)],
@@ -95,14 +95,14 @@ describe("moveElements", () => {
     expect(next.elements[0]).toMatchObject({ x: 10.1, y: 10.1 });
   });
 
-  it("table: continuationY が y と等値なら縦移動に追従する", () => {
+  it("table: continuationY follows a vertical move when it equals y", () => {
     const table = createDefaultElement(blankDocument(), "table", 15, 90);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const next = moveElements(doc, [table.id], 0, 10);
     expect(next.elements[0]).toMatchObject({ y: 100, continuationY: 100 });
   });
 
-  it("table: continuationY が y と異なるなら縦移動しても変わらない", () => {
+  it("table: continuationY stays unchanged by a vertical move when it differs from y", () => {
     const table = {
       ...createDefaultElement(blankDocument(), "table", 15, 90),
       continuationY: 30,
@@ -112,7 +112,7 @@ describe("moveElements", () => {
     expect(next.elements[0]).toMatchObject({ y: 100, continuationY: 30 });
   });
 
-  it("table: 連動状態でも横移動のみなら y・continuationY は不変", () => {
+  it("table: y and continuationY stay unchanged for a horizontal-only move even while linked", () => {
     const table = createDefaultElement(blankDocument(), "table", 15, 90);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const next = moveElements(doc, [table.id], 5, 0);
@@ -125,7 +125,7 @@ describe("moveElements", () => {
 });
 
 describe("resizeElement", () => {
-  it("箱を x/y/w/h へ反映し 0.1mm に丸める", () => {
+  it("reflects the box into x/y/w/h, rounded to 0.1mm", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [textElement("a")],
@@ -139,7 +139,7 @@ describe("resizeElement", () => {
     expect(next.elements[0]).toMatchObject({ x: 1, y: 2.1, w: 30.6, h: 8 });
   });
 
-  it("line は箱の主軸寸法を length に反映する", () => {
+  it("line reflects the box's main-axis size into length", () => {
     const line: IrElement = {
       type: "line",
       id: "l",
@@ -155,7 +155,7 @@ describe("resizeElement", () => {
     expect(next.elements[0]).toMatchObject({ x: 8, length: 62.3 });
   });
 
-  it("table は x/y のみ反映する（幅は Σ列幅の導出）", () => {
+  it("table reflects only x/y (width is derived from the sum of column widths)", () => {
     const table = createDefaultElement(blankDocument(), "table", 15, 90);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const next = resizeElement(doc, table.id, { x: 20, y: 95, w: 999, h: 999 });
@@ -169,30 +169,30 @@ describe("rotateElement", () => {
     return { ...blankDocument(), elements: [textElement("t1")] };
   }
 
-  it("0.1° 単位に丸めて設定する", () => {
+  it("rounds to 0.1° units when setting", () => {
     const next = rotateElement(docWithText(), "t1", 45.04);
     expect(next.elements[0]).toMatchObject({ rotate: 45 });
     const next2 = rotateElement(docWithText(), "t1", -30.55);
     expect(next2.elements[0]).toMatchObject({ rotate: -30.5 });
   });
 
-  it("丸め後 0 なら属性を除去する", () => {
+  it("removes the attribute when the rounded value is 0", () => {
     const rotated = rotateElement(docWithText(), "t1", 45);
     const cleared = rotateElement(rotated, "t1", 0.04);
     expect(cleared.elements[0]).not.toHaveProperty("rotate");
   });
 
-  it("rotate なしの要素へ 0 を設定しても文書をそのまま返す", () => {
+  it("setting 0 on an element without rotate still returns the document unchanged", () => {
     const doc = docWithText();
     expect(rotateElement(doc, "t1", 0)).toBe(doc);
   });
 
-  it("同値の設定では文書をそのまま返す", () => {
+  it("returns the document unchanged when set to the same value", () => {
     const rotated = rotateElement(docWithText(), "t1", 45);
     expect(rotateElement(rotated, "t1", 45)).toBe(rotated);
   });
 
-  it("table / flex・未知 id では文書をそのまま返す", () => {
+  it("returns the document unchanged for table / flex or an unknown id", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [
@@ -205,7 +205,7 @@ describe("rotateElement", () => {
     expect(rotateElement(doc, "missing", 45)).toBe(doc);
   });
 
-  it("flex 子にも作用する", () => {
+  it("also applies to flex children", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [flexElement("f", ["c1"])],
@@ -221,7 +221,7 @@ describe("rotateElement", () => {
 });
 
 describe("setTableContinuationY", () => {
-  it("continuationY だけを 0.1mm 丸めで更新する", () => {
+  it("updates only continuationY, rounded to 0.1mm", () => {
     const table = createDefaultElement(blankDocument(), "table", 15, 90);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const next = setTableContinuationY(doc, table.id, 30.06);
@@ -230,7 +230,7 @@ describe("setTableContinuationY", () => {
 });
 
 describe("deleteElements", () => {
-  it("トップレベル要素と flex 子（入れ子含む）の両方を消せる", () => {
+  it("can delete both top-level elements and flex children (including nested)", () => {
     const base = flexElement("outer", ["c1"]);
     const outer: IrFlexElement = {
       ...base,
@@ -265,7 +265,7 @@ describe("deleteElements", () => {
     }
   });
 
-  it("最後の1子を削除すると children が空になる（コンテナは残る）", () => {
+  it("deleting the last remaining child empties children (the container stays)", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [flexElement("f", ["c1"])],
@@ -278,7 +278,7 @@ describe("deleteElements", () => {
     }
   });
 
-  it("無関係な要素の参照は保たれ、対象がなければ文書ごと同一参照を返す", () => {
+  it("keeps references to unrelated elements, returning the whole document unchanged when there's no target", () => {
     const a = textElement("a");
     const doc: IrDocument = { ...blankDocument(), elements: [a] };
     expect(deleteElements(doc, ["nothing"])).toBe(doc);
@@ -289,7 +289,7 @@ describe("deleteElements", () => {
 });
 
 describe("insertFlexChild / reorderFlexChild", () => {
-  it("指定位置に挿入できる（入れ子の flex にも id で届く）", () => {
+  it("can insert at a given position (reaches nested flex by id too)", () => {
     const outer: IrFlexElement = {
       ...flexElement("outer", ["c1"]),
       children: [
@@ -323,7 +323,7 @@ describe("insertFlexChild / reorderFlexChild", () => {
     }
   });
 
-  it("reorder: 先頭・末尾へ動かせる", () => {
+  it("reorder: can move to the front or the back", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [flexElement("f", ["c1", "c2", "c3"])],
@@ -338,7 +338,7 @@ describe("insertFlexChild / reorderFlexChild", () => {
     expect(idsOf(toTail)).toEqual(["c2", "c3", "c1"]);
   });
 
-  it("reorder: 同位置は no-op で同一参照を返す", () => {
+  it("reorder: same position is a no-op, returning the same reference", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [flexElement("f", ["c1", "c2"])],
@@ -348,7 +348,7 @@ describe("insertFlexChild / reorderFlexChild", () => {
 });
 
 describe("toFlexChild / toTopLevelElement", () => {
-  it("往復すると x/y/pages を除いて元に戻る", () => {
+  it("round-tripping restores the original except for x/y/pages", () => {
     const el = textElement("a", 12, 34) as Exclude<IrElement, IrTableElement>;
     const child = toFlexChild(el);
     expect(child).not.toHaveProperty("x");
@@ -358,7 +358,7 @@ describe("toFlexChild / toTopLevelElement", () => {
     expect(back).toEqual(el);
   });
 
-  it("toTopLevelElement は x/y/pages を付与し 0.1mm に丸める", () => {
+  it("toTopLevelElement adds x/y/pages, rounded to 0.1mm", () => {
     const child: IrFlexChild = {
       type: "rect",
       id: "r1",
@@ -372,7 +372,7 @@ describe("toFlexChild / toTopLevelElement", () => {
 });
 
 describe("resizeFlexChild", () => {
-  it("子の w/h のみ更新し 0.1mm に丸める", () => {
+  it("updates only the child's w/h, rounded to 0.1mm", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [flexElement("f", ["c1"])],
@@ -392,7 +392,7 @@ describe("resizeFlexChild", () => {
     }
   });
 
-  it("line 子は length を更新する", () => {
+  it("a line child updates length", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [
@@ -419,7 +419,7 @@ describe("resizeFlexChild", () => {
     }
   });
 
-  it("入れ子 flex の子孫にも届く", () => {
+  it("also reaches descendants inside nested flex", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [
@@ -453,7 +453,7 @@ describe("resizeFlexChild", () => {
     }
   });
 
-  it("table・入れ子 flex には作用しない", () => {
+  it("doesn't apply to table or nested flex", () => {
     const table = createDefaultElement(blankDocument(), "table", 10, 10);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     expect(resizeFlexChild(doc, table.id, { x: 0, y: 0, w: 20, h: 9 })).toBe(
@@ -484,7 +484,7 @@ describe("resizeFlexChild", () => {
     );
   });
 
-  it("トップレベル要素には作用しない", () => {
+  it("doesn't apply to top-level elements", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [textElement("top1")],
@@ -492,7 +492,7 @@ describe("resizeFlexChild", () => {
     expect(resizeFlexChild(doc, "top1", { x: 0, y: 0, w: 20, h: 9 })).toBe(doc);
   });
 
-  it("structural sharing: 無関係な子の参照を維持する", () => {
+  it("structural sharing: preserves references to unrelated children", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [flexElement("f", ["c1", "c2"])],
@@ -508,7 +508,7 @@ describe("resizeFlexChild", () => {
   });
 });
 
-describe("ストア操作: 全8要素型の 配置 → 選択 → 移動/リサイズ → 削除 → undo/redo", () => {
+describe("Store operations: place, select, move/resize, delete, undo/redo across all 8 element types", () => {
   const ALL_TYPES: readonly IrElementType[] = [
     "text",
     "line",
@@ -529,7 +529,7 @@ describe("ストア操作: 全8要素型の 配置 → 選択 → 移動/リサ�
   ];
 
   for (const type of ALL_TYPES) {
-    it(`${type}: 一連の編集が undo/redo で往復する`, () => {
+    it(`${type}: a sequence of edits round-trips through undo/redo`, () => {
       const store = new EditorStore(blankDocument());
 
       // Place
@@ -593,7 +593,7 @@ describe("ストア操作: 全8要素型の 配置 → 選択 → 移動/リサ�
     });
   }
 
-  it("複数選択の移動と削除が1 commit = 1履歴エントリで往復する", () => {
+  it("moving and deleting a multi-selection round-trips as 1 commit = 1 history entry", () => {
     const store = new EditorStore({
       ...blankDocument(),
       elements: [textElement("a", 10, 10), textElement("b", 60, 10)],

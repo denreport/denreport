@@ -18,9 +18,9 @@ function themeBody(selector: string): string {
 
 // Ensure the CTA color is a token separate from --color-accent (shared across the UI for the focus ring etc.),
 // and that it's defined in both the light and dark themes
-describe("tokens.css の CTA 専用アクセントカラー", () => {
+describe("tokens.css CTA-only accent color", () => {
   it.each([".dr-designer", '.dr-designer[data-theme="dark"]'])(
-    "%s に --color-cta 系トークンが定義される",
+    "%s defines --color-cta family tokens",
     (selector) => {
       const body = themeBody(selector);
       expect(body).toMatch(/--color-cta:\s*#[0-9a-f]{6};/);
@@ -31,7 +31,7 @@ describe("tokens.css の CTA 専用アクセントカラー", () => {
   );
 
   it.each([".dr-designer", '.dr-designer[data-theme="dark"]'])(
-    "%s の --color-cta は --color-accent と異なる値を持つ",
+    "%s's --color-cta differs in value from --color-accent",
     (selector) => {
       const body = themeBody(selector);
       const accent = body.match(/--color-accent:\s*(#[0-9a-f]{6});/)?.[1];

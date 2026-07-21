@@ -10,7 +10,7 @@ export async function dragFromPalette(
   const paper = page.getByRole("application", { name: "キャンバス" });
   const box = await paper.boundingBox();
   if (box === null) {
-    throw new Error("キャンバスが表示されていません");
+    throw new Error("Canvas is not displayed");
   }
   const pxPerMm = box.width / PAGE_WIDTH_MM;
   await page

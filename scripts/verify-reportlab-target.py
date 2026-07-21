@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""ReportLab 書き出し器のスナップショット .py を同梱フォント配置つきで実行し、
-実フォント埋め込みの PDF 生成とページ数を検証する。"""
+"""Runs the ReportLab exporter's snapshot .py files with bundled fonts placed alongside,
+and verifies PDF generation with real font embedding and page counts."""
 
 import argparse
 import glob
@@ -27,7 +27,7 @@ FONT_ENTRY_RE = re.compile(r'^    "[^"]+": \("([^"]+)", [-\d.eE+]+\),$', re.MULT
 
 
 def font_files_of(source):
-    """生成コードの FONTS 定数から同梱すべきフォントファイル名を集める。"""
+    """Collect the font file names to bundle from the generated code's FONTS constant."""
     return FONT_ENTRY_RE.findall(source)
 
 
@@ -106,7 +106,7 @@ def verify_template(path, keep_dir=None):
             return font_error
         out_pdf = Path(tmp_dir) / "out.pdf"
 
-        # __main__ ブロックを発火させずに build を直接呼ぶ
+        # Call build directly without triggering the __main__ block
         module = runpy.run_path(str(script))
         module["build"](str(out_pdf), payload["data"])
 
@@ -139,7 +139,7 @@ def main():
         "--keep",
         type=Path,
         metavar="DIR",
-        help="検証に合格した生成 PDF をこのディレクトリへ保存する",
+        help="save generated PDFs that pass verification to this directory",
     )
     args = parser.parse_args()
 

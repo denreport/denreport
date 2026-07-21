@@ -70,7 +70,7 @@ function parseInitialIr(json: string): IrDocument {
     const detail = result.errors
       .map((e) => `${e.rule} ${e.path}: ${e.message}`)
       .join("\n");
-    throw new Error(`initialIr が不正な IR です:\n${detail}`);
+    throw new Error(`initialIr is an invalid IR:\n${detail}`);
   }
   return result.document;
 }
@@ -348,7 +348,7 @@ export class Designer {
 
   private assertAlive(): void {
     if (this.destroyed) {
-      throw new Error("この Designer は destroy 済みです");
+      throw new Error("This Designer has already been destroyed");
     }
   }
 }

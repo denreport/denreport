@@ -16,7 +16,7 @@ const SAMPLE_DATA = JSON.stringify({
   ],
 });
 
-test("fixture IR を localStorage から復元し pdfme JSON を書き出す", async ({
+test("restores fixture IR from localStorage and exports pdfme JSON", async ({
   page,
 }) => {
   await page.addInitScript(
@@ -60,7 +60,7 @@ test("fixture IR を localStorage から復元し pdfme JSON を書き出す", a
   expect(inputs[titleKey ?? ""]).toBe("請求書");
 });
 
-test("フォント全体埋め込みをオンにすると font ブロック付きの pdfme JSON を書き出す", async ({
+test("enabling full font embedding exports pdfme JSON with a font block", async ({
   page,
 }) => {
   await page.addInitScript(

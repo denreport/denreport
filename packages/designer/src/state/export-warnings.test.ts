@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { EXPORT_TARGET_IDS, groupCompatFindings } from "./export-warnings";
 
 describe("EXPORT_TARGET_IDS", () => {
-  it("COMPAT_MATRICES の全キーを過不足なく含む", () => {
+  it("contains exactly all keys of COMPAT_MATRICES", () => {
     expect([...EXPORT_TARGET_IDS].sort()).toEqual(
       Object.keys(COMPAT_MATRICES).sort(),
     );
@@ -25,11 +25,11 @@ function finding(overrides: Partial<CompatFinding>): CompatFinding {
 }
 
 describe("groupCompatFindings", () => {
-  it("空入力で空配列を返す", () => {
+  it("returns an empty array for empty input", () => {
     expect(groupCompatFindings([])).toEqual([]);
   });
 
-  it("(level, userMessage) ごとに集約する", () => {
+  it("aggregates by (level, userMessage)", () => {
     const groups = groupCompatFindings([
       finding({ elementId: "a", userMessage: "理由X" }),
       finding({ elementId: "b", userMessage: "理由Y" }),
@@ -42,7 +42,7 @@ describe("groupCompatFindings", () => {
     expect(groups[1]?.elementIds).toEqual(["b"]);
   });
 
-  it("同じ userMessage でも level が違えば別グループになる", () => {
+  it("forms separate groups when level differs even with the same userMessage", () => {
     const groups = groupCompatFindings([
       finding({ elementId: "a", level: "approximated", userMessage: "同文" }),
       finding({ elementId: "b", level: "unsupported", userMessage: "同文" }),
@@ -51,7 +51,7 @@ describe("groupCompatFindings", () => {
     expect(groups.map((g) => g.level)).toEqual(["unsupported", "approximated"]);
   });
 
-  it("elementIds は出現順を保ち重複を除く", () => {
+  it("elementIds preserves order of appearance and removes duplicates", () => {
     const groups = groupCompatFindings([
       finding({ elementId: "b", path: "elements[0]" }),
       finding({ elementId: "a", path: "elements[1]" }),
@@ -60,7 +60,7 @@ describe("groupCompatFindings", () => {
     expect(groups[0]?.elementIds).toEqual(["b", "a"]);
   });
 
-  it("findingCount は属性判定を含む延べ数になる", () => {
+  it("findingCount is a total count that includes attribute-level findings", () => {
     const groups = groupCompatFindings([
       finding({ elementId: "a" }),
       finding({ elementId: "a", attribute: "thickness" }),
@@ -70,7 +70,7 @@ describe("groupCompatFindings", () => {
     expect(groups[0]?.elementIds).toEqual(["a", "b"]);
   });
 
-  it("unsupported のグループが先頭に来て、同レベル内は初出順を保つ", () => {
+  it("unsupported groups come first, and order of first appearance is preserved within the same level", () => {
     const groups = groupCompatFindings([
       finding({ elementId: "a", level: "approximated", userMessage: "近似1" }),
       finding({ elementId: "b", level: "unsupported", userMessage: "非対応1" }),

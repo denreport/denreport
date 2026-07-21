@@ -8,7 +8,7 @@ export const pdfmeCompatMatrix = {
     text: {
       element: {
         level: "approximated",
-        note: "折り返し・行頭禁則・均等割付はコンパイラ計算で両ターゲット一致。縦方向のはみ出し時の挙動のみ IR が規定せず、pdfme の描画に従う",
+        note: "Wrapping, line-start prohibition (kinsoku), and justification are computed by the compiler and match both targets. Only vertical-overflow behavior is unspecified by the IR and follows pdfme's rendering.",
         userMessage: (locale) => getMessages(locale).compat.pdfme.textElement,
       },
       attributes: {
@@ -16,7 +16,7 @@ export const pdfmeCompatMatrix = {
         rotate: { level: "supported" },
         underline: {
           level: "approximated",
-          note: "下線の位置・太さは IR が規定せず、pdfme text スキーマの underline 描画に従う",
+          note: "The underline's position and thickness are unspecified by the IR and follow the underline rendering of pdfme's text schema.",
           userMessage: (locale) =>
             getMessages(locale).compat.pdfme.textUnderline,
         },
@@ -28,13 +28,13 @@ export const pdfmeCompatMatrix = {
         color: { level: "supported" },
         thickness: {
           level: "approximated",
-          note: "太さ分の塗りが基準線のどちら側に付くかは IR が規定せず、ターゲットの描画に従う",
+          note: "Which side of the baseline the thickness fill lands on is unspecified by the IR and follows the target's rendering.",
           userMessage: (locale) =>
             getMessages(locale).compat.pdfme.lineThickness,
         },
         strokeStyle: {
           level: "approximated",
-          note: "pdfme のスキーマは破線指定を持たないため、短い実線線分の列へ静的展開して近似する（パターン端数・位相はターゲット近似）",
+          note: "pdfme's schema has no dashed-line option, so it is approximated by statically expanding into a series of short solid segments (the pattern's fractional remainder and phase are target-approximated).",
           userMessage: (locale) =>
             getMessages(locale).compat.pdfme.lineStrokeStyle,
         },
@@ -48,13 +48,13 @@ export const pdfmeCompatMatrix = {
         fillColor: { level: "supported" },
         borderWidth: {
           level: "approximated",
-          note: "枠線の太さ分の塗りの位置は IR が規定せず、ターゲットの描画に従う",
+          note: "The position of the border-thickness fill is unspecified by the IR and follows the target's rendering.",
           userMessage: (locale) =>
             getMessages(locale).compat.pdfme.rectBorderWidth,
         },
         borderStyle: {
           level: "approximated",
-          note: "pdfme のスキーマは破線指定を持たないため、4辺を線分列に分解して近似する（角でパターンが継続しない）",
+          note: "pdfme's schema has no dashed-line option, so it is approximated by decomposing the four sides into line segments (the pattern does not continue across corners).",
           userMessage: (locale) =>
             getMessages(locale).compat.pdfme.rectBorderStyle,
         },
@@ -73,32 +73,32 @@ export const pdfmeCompatMatrix = {
     table: {
       element: {
         level: "approximated",
-        note: "明細の分割・ページ割当は書き出し時に確定するため対応。セル文字列の描画（折り返し・行頭禁則・均等割付は対応、縦方向のはみ出しのみ近似）は text と同じ扱い",
+        note: "Row splitting and page assignment are supported since they're resolved at export time. Cell-string rendering (wrapping, line-start prohibition (kinsoku), and justification are supported; only vertical overflow is approximated) is handled the same as text.",
         userMessage: (locale) => getMessages(locale).compat.pdfme.tableElement,
       },
       attributes: {
         stripeColor: { level: "supported" },
         frameWidth: {
           level: "approximated",
-          note: "枠線の太さ分の塗りの位置は IR が規定せず、ターゲットの描画に従う",
+          note: "The position of the border-thickness fill is unspecified by the IR and follows the target's rendering.",
           userMessage: (locale) =>
             getMessages(locale).compat.pdfme.tableFrameWidth,
         },
         gridWidth: {
           level: "approximated",
-          note: "太さ分の塗りが基準線のどちら側に付くかは IR が規定せず、ターゲットの描画に従う",
+          note: "Which side of the baseline the thickness fill lands on is unspecified by the IR and follows the target's rendering.",
           userMessage: (locale) =>
             getMessages(locale).compat.pdfme.tableGridWidth,
         },
         frameStyle: {
           level: "approximated",
-          note: "pdfme のスキーマは破線指定を持たないため、4辺を線分列に分解して近似する（角でパターンが継続しない）",
+          note: "pdfme's schema has no dashed-line option, so it is approximated by decomposing the four sides into line segments (the pattern does not continue across corners).",
           userMessage: (locale) =>
             getMessages(locale).compat.pdfme.tableFrameStyle,
         },
         gridStyle: {
           level: "approximated",
-          note: "pdfme のスキーマは破線指定を持たないため、短い実線線分の列へ静的展開して近似する（パターン端数・位相はターゲット近似）",
+          note: "pdfme's schema has no dashed-line option, so it is approximated by statically expanding into a series of short solid segments (the pattern's fractional remainder and phase are target-approximated).",
           userMessage: (locale) =>
             getMessages(locale).compat.pdfme.tableGridStyle,
         },
@@ -116,7 +116,7 @@ export const pdfmeCompatMatrix = {
     pageNumber: {
       element: {
         level: "approximated",
-        note: "確定文字列に展開されるため対応。文字列の描画（折り返し・行頭禁則・均等割付は対応、縦方向のはみ出しのみ近似）は text と同じ扱い",
+        note: "Supported since it's expanded into a resolved string. String rendering (wrapping, line-start prohibition (kinsoku), and justification are supported; only vertical overflow is approximated) is handled the same as text.",
         userMessage: (locale) =>
           getMessages(locale).compat.pdfme.pageNumberElement,
       },
@@ -128,7 +128,7 @@ export const pdfmeCompatMatrix = {
     barcode: {
       element: {
         level: "approximated",
-        note: "規格は qrcode / code39 / code128 / ean13。w×h への伸縮のみ IR が規定し、バー太さ・クワイエットゾーン・人間可読文字（ean13 のみあり）の細部はターゲットの描画に従う。値の規格適合（チェックデジット等）は検証しない",
+        note: "Formats are qrcode / code39 / code128 / ean13. The IR only specifies scaling to w×h; details such as bar thickness, quiet zone, and human-readable text (ean13 only) follow the target's rendering. Value format compliance (e.g. check digits) is not validated.",
         userMessage: (locale) =>
           getMessages(locale).compat.pdfme.barcodeElement,
       },

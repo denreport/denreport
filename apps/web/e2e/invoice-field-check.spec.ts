@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("記載事項チェックを有効化すると警告が出て、欄を配置すると消え、警告があっても書き出しできる", async ({
+test("enabling the invoice field check surfaces warnings, placing a field clears them, and export still works despite warnings", async ({
   page,
 }) => {
   await page.goto("/");

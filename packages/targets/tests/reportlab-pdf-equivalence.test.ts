@@ -33,7 +33,7 @@ function loadFixture(
 }
 
 describe.skipIf(reportlabPdfDir === undefined || reportlabPdfDir === "")(
-  "ReportLab 実 PDF — 参照適合とクロスターゲット照合",
+  "ReportLab real PDFs — reference conformance and cross-target comparison",
   () => {
     const pdfDir = isAbsolute(reportlabPdfDir ?? "")
       ? (reportlabPdfDir ?? "")
@@ -74,7 +74,7 @@ describe.skipIf(reportlabPdfDir === undefined || reportlabPdfDir === "")(
       expect(checkCrossTarget(pdfmePdf, reportlabPdf, expectation)).toEqual([]);
     });
 
-    it("table-merge: テンプレート経路（実行時データ）の PDF が lowerIr の参照意味論と一致する", async () => {
+    it("table-merge: PDF from the template path (runtime data) matches lowerIr's reference semantics", async () => {
       const { document, data } = loadFixture(
         "table-merge.json",
         "table-merge-data.json",
@@ -101,7 +101,7 @@ describe.skipIf(reportlabPdfDir === undefined || reportlabPdfDir === "")(
     const MM_PER_PT = 25.4 / 72;
     const EMBEDDED_ASCENT_PER_EM = 1.16;
 
-    // Where the normative baseline origin maps to for text rotated by the IR's rotate (clockwise, about the bounding box center)
+    // Where the reference baseline origin maps to for text rotated by the IR's rotate (clockwise, about the bounding box center)
     function rotatedBaselineOrigin(
       el: { x: number; y: number; w: number; h: number },
       fontSize: number,
@@ -135,7 +135,7 @@ describe.skipIf(reportlabPdfDir === undefined || reportlabPdfDir === "")(
       return item;
     }
 
-    it("rotation: 回転テキストの原点が両ターゲットで写像先に一致する", async () => {
+    it("rotation: rotated text origin matches the mapped position in both targets", async () => {
       const { document, data } = loadFixture(
         "rotation.json",
         "rotation-data.json",

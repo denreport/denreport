@@ -6,21 +6,21 @@ import {
 } from "./splitter";
 
 describe("clampPaletteHeight", () => {
-  it("通常域では希望値をそのまま返す", () => {
+  it("returns the requested value as-is within the normal range", () => {
     expect(clampPaletteHeight(200, 600)).toBe(200);
   });
 
-  it("下限（MIN_PALETTE_HEIGHT）未満の希望値は下限に切り上げる", () => {
+  it("clamps up to the lower bound (MIN_PALETTE_HEIGHT) when the requested value is below it", () => {
     expect(clampPaletteHeight(10, 600)).toBe(MIN_PALETTE_HEIGHT);
   });
 
-  it("上限（sidebarHeight - 5 - MIN_LAYERS_HEIGHT）超の希望値は上限に切り下げる", () => {
+  it("clamps down to the upper bound (sidebarHeight - 5 - MIN_LAYERS_HEIGHT) when the requested value exceeds it", () => {
     const sidebarHeight = 600;
     const max = sidebarHeight - 5 - MIN_LAYERS_HEIGHT;
     expect(clampPaletteHeight(max + 100, sidebarHeight)).toBe(max);
   });
 
-  it("サイドバーが極端に低く両最小値を満たせない場合は MIN_PALETTE_HEIGHT に縮退する", () => {
+  it("falls back to MIN_PALETTE_HEIGHT when the sidebar is too short to satisfy both minimums", () => {
     const sidebarHeight = 100;
     expect(clampPaletteHeight(80, sidebarHeight)).toBe(MIN_PALETTE_HEIGHT);
     expect(clampPaletteHeight(10, sidebarHeight)).toBe(MIN_PALETTE_HEIGHT);

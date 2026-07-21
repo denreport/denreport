@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { paperPresetIdForSize, paperPresetsForLanguage } from "./paper-presets";
 
 describe("paperPresetsForLanguage", () => {
-  it("ja 系の言語タグでは日本語向けセット（A3/A4/A5/B4(JIS)/B5(JIS)/はがき/レター）を返す", () => {
+  it("returns the Japan-oriented preset set (A3/A4/A5/B4(JIS)/B5(JIS)/postcard/letter) for ja-family language tags", () => {
     const ids = paperPresetsForLanguage("ja").map((p) => p.id);
     expect(ids).toEqual([
       "a3",
@@ -15,18 +15,18 @@ describe("paperPresetsForLanguage", () => {
     ]);
   });
 
-  it("ja-JP のような地域付きタグも日本語向けセットに含める", () => {
+  it("includes region-qualified tags like ja-JP in the Japan-oriented set", () => {
     expect(paperPresetsForLanguage("ja-JP").map((p) => p.id)).toContain(
       "b4jis",
     );
   });
 
-  it("ja 以外の言語タグでは国際セット（A3/A4/A5/B5(ISO)/Letter/Legal）を返す", () => {
+  it("returns the international preset set (A3/A4/A5/B5(ISO)/Letter/Legal) for non-ja language tags", () => {
     const ids = paperPresetsForLanguage("en-US").map((p) => p.id);
     expect(ids).toEqual(["a3", "a4", "a5", "b5iso", "letter", "legal"]);
   });
 
-  it("Letter/Legal は規格値どおりの mm 寸法（8.5x11in / 8.5x14in）を持つ", () => {
+  it("Letter/Legal have mm dimensions matching the standard values (8.5x11in / 8.5x14in)", () => {
     const intl = paperPresetsForLanguage("en-US");
     const letter = intl.find((p) => p.id === "letter");
     const legal = intl.find((p) => p.id === "legal");
@@ -48,12 +48,12 @@ describe("paperPresetsForLanguage", () => {
 describe("paperPresetIdForSize", () => {
   const presets = paperPresetsForLanguage("ja");
 
-  it("寸法が一致するプリセットの id を返す", () => {
+  it("returns the id of the preset matching the dimensions", () => {
     expect(paperPresetIdForSize(presets, 210, 297)).toBe("a4");
     expect(paperPresetIdForSize(presets, 182, 257)).toBe("b5jis");
   });
 
-  it("どのプリセットとも一致しない寸法では undefined を返す", () => {
+  it("returns undefined for dimensions that match no preset", () => {
     expect(paperPresetIdForSize(presets, 210, 300)).toBeUndefined();
   });
 });

@@ -81,17 +81,17 @@ const ALL_SATISFIED: readonly IrElement[] = [
 ];
 
 describe("checkQualifiedInvoice", () => {
-  it("docType なしなら欠落だらけでも空配列", () => {
+  it("returns an empty array when docType is absent, even with everything missing", () => {
     expect(checkQualifiedInvoice(baseDocument([]))).toEqual([]);
   });
 
-  it("docType あり・6項目すべて配置なら空配列", () => {
+  it("returns an empty array when docType is set and all 6 items are placed", () => {
     expect(
       checkQualifiedInvoice(baseDocument(ALL_SATISFIED, "qualifiedInvoice")),
     ).toEqual([]);
   });
 
-  it("1項目欠落なら Q01 が1件、message に記載事項名を含む", () => {
+  it("reports one Q01 with the item name in the message when one item is missing", () => {
     const elements = ALL_SATISFIED.filter((el) => el.id !== "t1");
     const result = checkQualifiedInvoice(
       baseDocument(elements, "qualifiedInvoice"),
@@ -101,13 +101,13 @@ describe("checkQualifiedInvoice", () => {
     expect(result[0]?.message).toContain("発行者の登録番号");
   });
 
-  it("全欠落なら項目単位で6件", () => {
+  it("reports six errors, one per item, when everything is missing", () => {
     const result = checkQualifiedInvoice(baseDocument([], "qualifiedInvoice"));
     expect(result).toHaveLength(6);
     expect(result.every((error) => error.rule === "Q01")).toBe(true);
   });
 
-  it("table の列キーだけで充足できる", () => {
+  it("can be satisfied by a table's column key alone", () => {
     const elements = ALL_SATISFIED.filter((el) => el.id !== "t3").concat(
       tableElement("tbl1", ["description"]),
     );
@@ -117,7 +117,7 @@ describe("checkQualifiedInvoice", () => {
     expect(result).toEqual([]);
   });
 
-  it("flex 子孫の text トークンで充足できる", () => {
+  it("can be satisfied by a text token in a flex descendant", () => {
     const flex: IrElement = {
       type: "flex",
       id: "f1",
@@ -137,7 +137,7 @@ describe("checkQualifiedInvoice", () => {
     expect(result).toEqual([]);
   });
 
-  it("代替キー taxableAmount10 で項目4が充足できる", () => {
+  it("item 4 can be satisfied via the alternate key taxableAmount10", () => {
     const elements = ALL_SATISFIED.filter((el) => el.id !== "t4").concat(
       textElement("t4b", "{taxableAmount10}"),
     );
@@ -147,7 +147,7 @@ describe("checkQualifiedInvoice", () => {
     expect(result).toEqual([]);
   });
 
-  it("table.bind や cellOverrides の一致では充足しない", () => {
+  it("is not satisfied by a match on table.bind or cellOverrides", () => {
     // bind is the array name of row data, and cellOverrides.value is a fixed display value — neither is a template-slot key
     const table = {
       ...tableElement(

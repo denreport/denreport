@@ -71,7 +71,7 @@ function buttonByText(label: string): HTMLButtonElement {
 }
 
 describe("Dialog", () => {
-  it("role / aria-modal / aria-label と見出し・本文・フッタを描画する", async () => {
+  it("renders role / aria-modal / aria-label plus heading, body, and footer", async () => {
     const dialog = await renderDialog(() => {});
     expect(dialog.getAttribute("role")).toBe("dialog");
     expect(dialog.getAttribute("aria-modal")).toBe("true");
@@ -81,7 +81,7 @@ describe("Dialog", () => {
     expect(dialog.querySelector(".dr-dialog-f")?.textContent).toContain("実行");
   });
 
-  it("wide 指定で dr-dialog-wide が付く", async () => {
+  it("adds dr-dialog-wide when wide is specified", async () => {
     root.render(
       <Dialog title="広い" onClose={() => {}} footer={null} wide>
         <p>本文</p>
@@ -92,14 +92,14 @@ describe("Dialog", () => {
     });
   });
 
-  it("Esc で onClose が呼ばれる", async () => {
+  it("calls onClose on Esc", async () => {
     const onClose = vi.fn();
     const dialog = await renderDialog(onClose);
     pressKey(dialog, "Escape");
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("スクリムクリックでは閉じない", async () => {
+  it("does not close on scrim click", async () => {
     const onClose = vi.fn();
     await renderDialog(onClose);
     const scrim = container.querySelector(".dr-dialog-scrim");
@@ -107,14 +107,14 @@ describe("Dialog", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("表示時に最初のフォーカス可能要素へフォーカスする", async () => {
+  it("focuses the first focusable element when shown", async () => {
     await renderDialog(() => {});
     await vi.waitFor(() => {
       expect(document.activeElement).toBe(buttonByText("本文ボタン"));
     });
   });
 
-  it("末尾で Tab すると先頭に巡回する（フォーカストラップ）", async () => {
+  it("wraps to the first element when Tab is pressed at the end (focus trap)", async () => {
     const dialog = await renderDialog(() => {});
     const last = buttonByText("実行");
     last.focus();
@@ -123,7 +123,7 @@ describe("Dialog", () => {
     expect(document.activeElement).toBe(buttonByText("本文ボタン"));
   });
 
-  it("先頭で Shift+Tab すると末尾に巡回する", async () => {
+  it("wraps to the last element when Shift+Tab is pressed at the start", async () => {
     const dialog = await renderDialog(() => {});
     buttonByText("本文ボタン").focus();
     const event = pressKey(dialog, "Tab", true);
@@ -131,7 +131,7 @@ describe("Dialog", () => {
     expect(document.activeElement).toBe(buttonByText("実行"));
   });
 
-  it("中間要素の Tab はブラウザ既定に任せる（preventDefault しない）", async () => {
+  it("leaves Tab on a middle element to the browser default (no preventDefault)", async () => {
     const dialog = await renderDialog(() => {});
     buttonByText("キャンセル").focus();
     const event = pressKey(dialog, "Tab");

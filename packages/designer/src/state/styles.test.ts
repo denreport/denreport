@@ -84,7 +84,7 @@ const HEADING: IrNamedStyle = {
 };
 
 describe("applyStyle", () => {
-  it("該当属性だけを定義値で書き込み、非該当属性は無視する", () => {
+  it("writes only the applicable attributes from the definition, ignoring non-applicable ones", () => {
     const doc = blankDocument([HEADING]);
     const withEl = { ...doc, elements: [textElement("t1", { lineHeight: 2 })] };
     const next = applyStyle(withEl, "t1", "見出し");
@@ -96,7 +96,7 @@ describe("applyStyle", () => {
     });
   });
 
-  it("flex 子孫にも適用できる", () => {
+  it("applies to flex descendants as well", () => {
     const doc = blankDocument([HEADING]);
     const withEl = { ...doc, elements: [flexOf("f1", [textElement("c1")])] };
     const next = applyStyle(withEl, "c1", "見出し");
@@ -105,19 +105,19 @@ describe("applyStyle", () => {
     expect(flex.children[0]).toMatchObject({ style: "見出し", fontSize: 16 });
   });
 
-  it("未知の id では同一参照を返す", () => {
+  it("returns the same reference for an unknown id", () => {
     const doc = blankDocument([HEADING]);
     const withEl = { ...doc, elements: [textElement("t1")] };
     expect(applyStyle(withEl, "nope", "見出し")).toBe(withEl);
   });
 
-  it("未知の name では同一参照を返す", () => {
+  it("returns the same reference for an unknown name", () => {
     const doc = blankDocument([HEADING]);
     const withEl = { ...doc, elements: [textElement("t1")] };
     expect(applyStyle(withEl, "t1", "nope")).toBe(withEl);
   });
 
-  it("要素型に適用可能な属性が1つも無いスタイルは参照だけ付く", () => {
+  it("a style with no attributes applicable to the element type only attaches the reference", () => {
     const border: IrNamedStyle = { name: "枠", attrs: { borderWidth: 2 } };
     const doc = blankDocument([border]);
     const withEl = { ...doc, elements: [textElement("t1")] };
@@ -132,7 +132,7 @@ describe("applyStyle", () => {
 });
 
 describe("clearStyle", () => {
-  it("style 属性を除去し、具体値は保持する", () => {
+  it("removes the style attribute and keeps the concrete values", () => {
     const doc = blankDocument([HEADING]);
     const withEl = {
       ...doc,
@@ -145,7 +145,7 @@ describe("clearStyle", () => {
     expect(next.elements[0]).toMatchObject({ fontSize: 16, align: "center" });
   });
 
-  it("すでに style が無ければ同一参照を返す", () => {
+  it("returns the same reference when style is already absent", () => {
     const doc = blankDocument();
     const withEl = { ...doc, elements: [textElement("t1")] };
     expect(clearStyle(withEl, "t1")).toBe(withEl);
@@ -153,20 +153,20 @@ describe("clearStyle", () => {
 });
 
 describe("upsertStyle", () => {
-  it("同名が無ければ追加する", () => {
+  it("adds it when no style with the same name exists", () => {
     const doc = blankDocument();
     const next = upsertStyle(doc, HEADING);
     expect(next.styles).toEqual([HEADING]);
   });
 
-  it("同名があれば置換する", () => {
+  it("replaces it when a style with the same name exists", () => {
     const doc = blankDocument([HEADING]);
     const replaced: IrNamedStyle = { name: "見出し", attrs: { fontSize: 20 } };
     const next = upsertStyle(doc, replaced);
     expect(next.styles).toEqual([replaced]);
   });
 
-  it("参照中の全要素（flex 子孫含む）を新しい定義値で再同期する", () => {
+  it("resynchronizes all referencing elements (including flex descendants) with the new definition values", () => {
     const doc = blankDocument([HEADING]);
     const withEls = {
       ...doc,
@@ -188,7 +188,7 @@ describe("upsertStyle", () => {
     expect(flex.children[0]).toMatchObject({ fontSize: 20, align: "right" });
   });
 
-  it("個別に逸脱した具体値も定義更新で上書きされる", () => {
+  it("overwrites individually deviated concrete values when the definition is updated", () => {
     const doc = blankDocument([HEADING]);
     const withEl = {
       ...doc,
@@ -200,7 +200,7 @@ describe("upsertStyle", () => {
     expect(next.elements[0]).toMatchObject({ fontSize: 16, align: "center" });
   });
 
-  it("参照していない要素には影響しない", () => {
+  it("does not affect elements that don't reference it", () => {
     const doc = blankDocument([HEADING]);
     const other = textElement("t2", { fontSize: 8 });
     const withEls = { ...doc, elements: [other] };
@@ -213,7 +213,7 @@ describe("upsertStyle", () => {
 });
 
 describe("renameStyle", () => {
-  it("定義の name と全参照要素の style を書き換える", () => {
+  it("rewrites the definition's name and the style of all referencing elements", () => {
     const doc = blankDocument([HEADING]);
     const withEl = {
       ...doc,
@@ -224,25 +224,25 @@ describe("renameStyle", () => {
     expect(next.elements[0]).toMatchObject({ style: "タイトル" });
   });
 
-  it("衝突名へは変更せず同一参照を返す", () => {
+  it("does not rename to a conflicting name and returns the same reference", () => {
     const other: IrNamedStyle = { name: "本文", attrs: { fontSize: 10 } };
     const doc = blankDocument([HEADING, other]);
     expect(renameStyle(doc, "見出し", "本文")).toBe(doc);
   });
 
-  it("未知の name では同一参照を返す", () => {
+  it("returns the same reference for an unknown name", () => {
     const doc = blankDocument([HEADING]);
     expect(renameStyle(doc, "nope", "タイトル")).toBe(doc);
   });
 
-  it("同名への変更は同一参照を返す", () => {
+  it("returns the same reference when renaming to the same name", () => {
     const doc = blankDocument([HEADING]);
     expect(renameStyle(doc, "見出し", "見出し")).toBe(doc);
   });
 });
 
 describe("removeStyle", () => {
-  it("定義を除去し、参照要素の style を除去する（具体値は保持）", () => {
+  it("removes the definition and removes the style from referencing elements (keeps concrete values)", () => {
     const doc = blankDocument([HEADING]);
     const withEl = {
       ...doc,
@@ -256,21 +256,21 @@ describe("removeStyle", () => {
     expect(next.elements[0]).toMatchObject({ fontSize: 16 });
   });
 
-  it("削除後も他のスタイルが残る場合は styles 属性を保つ", () => {
+  it("keeps the styles attribute when other styles remain after removal", () => {
     const other: IrNamedStyle = { name: "本文", attrs: { fontSize: 10 } };
     const doc = blankDocument([HEADING, other]);
     const next = removeStyle(doc, "見出し");
     expect(next.styles).toEqual([other]);
   });
 
-  it("未知の name では同一参照を返す", () => {
+  it("returns the same reference for an unknown name", () => {
     const doc = blankDocument([HEADING]);
     expect(removeStyle(doc, "nope")).toBe(doc);
   });
 });
 
 describe("styleFromElement", () => {
-  it("要素の適用可能属性から IrNamedStyle を組み立てる", () => {
+  it("builds an IrNamedStyle from the element's applicable attributes", () => {
     const el = textElement("t1", { fontSize: 18, align: "right" });
     const style = styleFromElement(el, "新規");
     expect(style).toEqual({
@@ -279,13 +279,13 @@ describe("styleFromElement", () => {
     });
   });
 
-  it("rect は borderWidth のみを取る", () => {
+  it("rect takes only borderWidth", () => {
     const el = rectElement("r1", { borderWidth: 1.2 });
     const style = styleFromElement(el, "枠");
     expect(style).toEqual({ name: "枠", attrs: { borderWidth: 1.2 } });
   });
 
-  it("適用可能属性が無い要素型は null を返す", () => {
+  it("returns null for an element type with no applicable attributes", () => {
     const el = flexOf("f1", [textElement("c1")]);
     expect(styleFromElement(el, "x")).toBeNull();
   });

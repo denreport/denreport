@@ -7,7 +7,7 @@ afterEach(() => {
 });
 
 describe("fetchEmbeddedFontData", () => {
-  it("応答バイト列を Uint8Array で返す", async () => {
+  it("returns the response byte sequence as a Uint8Array", async () => {
     const bytes = new Uint8Array([0, 1, 0, 0, 42]);
     const fetchMock = vi.fn(async () => {
       return {
@@ -23,7 +23,7 @@ describe("fetchEmbeddedFontData", () => {
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
-  it("非 2xx 応答で reject する", async () => {
+  it("rejects on a non-2xx response", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => {
@@ -35,7 +35,7 @@ describe("fetchEmbeddedFontData", () => {
     );
   });
 
-  it("ネットワーク失敗で reject する", async () => {
+  it("rejects on a network failure", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.reject(new Error("ネットワーク不通"))),

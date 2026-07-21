@@ -45,8 +45,8 @@ function rowsOf(...values: readonly (readonly string[])[]): IrTableRow[] {
   }));
 }
 
-describe("computeChunkMerges — 静的 cellSpans", () => {
-  it("ヘッダの colSpan は全チャンクで rect と被覆・垂直罫線スキップを生む", () => {
+describe("computeChunkMerges — static cellSpans", () => {
+  it("header colSpan produces a rect plus covered cells and vertical rule skips in every chunk", () => {
     const t = table({ cellSpans: [{ row: "header", key: "a", colSpan: 2 }] });
     for (const rowOffset of [0, 5]) {
       const merges = computeChunkMerges(t, [], rowOffset, 3);
@@ -59,7 +59,7 @@ describe("computeChunkMerges — 静的 cellSpans", () => {
     }
   });
 
-  it("明細の rowSpan × colSpan が被覆セルと罫線スキップを過不足なく生む", () => {
+  it("detail rowSpan × colSpan produces exactly the right covered cells and rule skips", () => {
     const t = table({
       cellSpans: [{ row: 1, key: "a", rowSpan: 2, colSpan: 2 }],
     });
@@ -71,7 +71,7 @@ describe("computeChunkMerges — 静的 cellSpans", () => {
     expect(merges.verticalSkips.has(2)).toBe(false);
   });
 
-  it("チャンク境界で打ち切られ、前後の双方に起点 rect ができる", () => {
+  it("cut off at a chunk boundary produces an origin rect on both sides", () => {
     const t = table({ cellSpans: [{ row: 1, key: "b", rowSpan: 4 }] });
     const rows = rowsOf([], [], [], [], []);
     const first = computeChunkMerges(t, rows, 0, 3);
@@ -80,7 +80,7 @@ describe("computeChunkMerges — 静的 cellSpans", () => {
     expect(second.rects).toEqual([{ q: 0, col: 1, rowSpan: 2, colSpan: 1 }]);
   });
 
-  it("起点が出力範囲外の結合は不活性、colSpan の範囲超過は切り詰める", () => {
+  it("a merge whose origin is outside the output range is inactive, and colSpan exceeding the range is clamped", () => {
     const t = table({
       cellSpans: [
         { row: 9, key: "a", rowSpan: 2 },
@@ -91,15 +91,15 @@ describe("computeChunkMerges — 静的 cellSpans", () => {
     expect(merges.rects).toEqual([{ q: 0, col: 1, rowSpan: 1, colSpan: 2 }]);
   });
 
-  it("columns に無い key の結合は無視する", () => {
+  it("ignores a merge whose key isn't in columns", () => {
     const t = table({ cellSpans: [{ row: 0, key: "zzz", rowSpan: 2 }] });
     const merges = computeChunkMerges(t, rowsOf([], []), 0, 2);
     expect(merges.rects).toEqual([]);
   });
 });
 
-describe("computeChunkMerges — データ駆動 mergeSameValue", () => {
-  it("連続する同一値の極大区間を1結合にし、単独行と空文字列は結合しない", () => {
+describe("computeChunkMerges — data-driven mergeSameValue", () => {
+  it("merges the maximal run of consecutive identical values into one, without merging single rows or empty strings", () => {
     const t = table({
       columns: [
         mergeCol("a"),
@@ -126,7 +126,7 @@ describe("computeChunkMerges — データ駆動 mergeSameValue", () => {
     expect(merges.horizontalSkips.has(4)).toBe(false);
   });
 
-  it("左の mergeSameValue 列の区間境界で右の列の結合が切れる", () => {
+  it("a run boundary in the left mergeSameValue column cuts the merge in the right column", () => {
     const t = table({
       columns: [
         mergeCol("a"),
@@ -144,7 +144,7 @@ describe("computeChunkMerges — データ駆動 mergeSameValue", () => {
     ]);
   });
 
-  it("境界の伝播は転移的（左端列の境界が3列目にも効く）", () => {
+  it("boundary propagation is transitive (a boundary in the leftmost column also affects the third column)", () => {
     const t = table({
       columns: [mergeCol("a"), mergeCol("b"), mergeCol("c")],
     });
@@ -164,7 +164,7 @@ describe("computeChunkMerges — データ駆動 mergeSameValue", () => {
     ]);
   });
 
-  it("チャンク打ち切りで双方に起点ができ、ページ割りには影響しない形の rect を返す", () => {
+  it("chunk truncation creates an origin on both sides, returning rects shaped so pagination is unaffected", () => {
     const t = table({ columns: [mergeCol("a"), mergeCol("b"), mergeCol("c")] });
     const rows = rowsOf(["x"], ["x"], ["x"], ["x"]);
     const first = computeChunkMerges(t, rows, 0, 2);
@@ -173,7 +173,7 @@ describe("computeChunkMerges — データ駆動 mergeSameValue", () => {
     expect(second.rects).toEqual([{ q: 0, col: 0, rowSpan: 2, colSpan: 1 }]);
   });
 
-  it("covered・skips が rects の内部境界と過不足なく一致する", () => {
+  it("covered and skips exactly match the internal boundaries of rects", () => {
     const t = table({
       columns: [mergeCol("a"), mergeCol("b"), mergeCol("c")],
       cellSpans: [{ row: "header", key: "b", colSpan: 2 }],
@@ -217,7 +217,7 @@ describe("computeChunkMerges — データ駆動 mergeSameValue", () => {
     expect(new Map(merges.verticalSkips)).toEqual(expectedV);
   });
 
-  it("結合なしの表では全構造が空", () => {
+  it("a table with no merges has all-empty structures", () => {
     const merges = computeChunkMerges(table(), rowsOf(["x"], ["x"]), 0, 2);
     expect(merges.rects).toEqual([]);
     expect(merges.covered.size).toBe(0);
@@ -227,12 +227,12 @@ describe("computeChunkMerges — データ駆動 mergeSameValue", () => {
 });
 
 describe("subtractSkips", () => {
-  it("スキップなしは全域1区間を返す", () => {
+  it("with no skips, returns the whole range as one segment", () => {
     expect(subtractSkips(-1, 5, undefined)).toEqual([{ start: -1, end: 5 }]);
     expect(subtractSkips(0, 3, [])).toEqual([{ start: 0, end: 3 }]);
   });
 
-  it("中間・端のスキップを除いた残り区間を返す", () => {
+  it("returns the remaining segments after removing skips in the middle and at the ends", () => {
     expect(
       subtractSkips(0, 6, [
         { start: 4, end: 5 },
@@ -248,7 +248,7 @@ describe("subtractSkips", () => {
     ]);
   });
 
-  it("全域スキップは空、重なる・域外のスキップも許容する", () => {
+  it("a full-range skip yields empty, and overlapping/out-of-range skips are tolerated", () => {
     expect(subtractSkips(0, 2, [{ start: 0, end: 2 }])).toEqual([]);
     expect(
       subtractSkips(0, 4, [
@@ -259,8 +259,8 @@ describe("subtractSkips", () => {
   });
 });
 
-describe("computeChunkMerges — rect 型", () => {
-  it("rects の q は number または 'header' を持つ", () => {
+describe("computeChunkMerges — rect type", () => {
+  it("rects' q holds either a number or 'header'", () => {
     const t = table({
       columns: [mergeCol("a"), mergeCol("b"), mergeCol("c")],
       cellSpans: [{ row: "header", key: "b", colSpan: 2 }],

@@ -61,8 +61,8 @@ function render(props: {
   });
 }
 
-describe("GuidesLayer のガイド描画", () => {
-  it("axis ごとに dr-cguide-v / dr-cguide-h を描画する", () => {
+describe("GuidesLayer guide rendering", () => {
+  it("renders dr-cguide-v / dr-cguide-h per axis", () => {
     const guides: readonly CustomGuide[] = [
       { id: "guide1", axis: "x", positionMm: 30 },
       { id: "guide2", axis: "y", positionMm: 50 },
@@ -79,7 +79,7 @@ describe("GuidesLayer のガイド描画", () => {
     );
   });
 
-  it("掴みハンドルの pointerdown が startFromGuide に届き、親要素へ伝播しない", () => {
+  it("pointerdown on the grab handle reaches startFromGuide and doesn't propagate to the parent element", () => {
     const guides: readonly CustomGuide[] = [
       { id: "guide1", axis: "x", positionMm: 30 },
     ];
@@ -111,14 +111,14 @@ describe("GuidesLayer のガイド描画", () => {
   });
 });
 
-describe("GuidesLayer の封筒プリセット", () => {
-  it("envelopePreset が null なら封筒枠を描かない", () => {
+describe("GuidesLayer envelope preset", () => {
+  it("doesn't draw the envelope frame when envelopePreset is null", () => {
     render({ guides: [], envelopePreset: null, drag: noopDrag() });
     expect(container.querySelector(".dr-env-window")).toBeNull();
     expect(container.querySelector(".dr-env-safe")).toBeNull();
   });
 
-  it("envelopePreset があれば windowBox / safeBox を描く", () => {
+  it("draws windowBox / safeBox when envelopePreset is present", () => {
     render({ guides: [], envelopePreset: ENVELOPE, drag: noopDrag() });
     const windowEl = container.querySelector(".dr-env-window");
     const safeEl = container.querySelector(".dr-env-safe");

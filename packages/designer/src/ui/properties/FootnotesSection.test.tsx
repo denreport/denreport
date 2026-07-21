@@ -110,15 +110,15 @@ function blur(el: HTMLElement): void {
   });
 }
 
-describe("脚注未定義の状態", () => {
-  it("「脚注を使う」ボタンのみを表示する", () => {
+describe("when footnotes are undefined", () => {
+  it('shows only the "脚注を使う" button', () => {
     const store = new EditorStore(makeDocument());
     render(store);
     expect(container.textContent).toContain("脚注を使う");
     expect(() => buttonByText("脚注を削除")).toThrow();
   });
 
-  it("「脚注を使う」で既定値の footnotes を1 commit で追加する", () => {
+  it('clicking "脚注を使う" adds default footnotes in a single commit', () => {
     const store = new EditorStore(makeDocument());
     render(store);
     click(buttonByText("脚注を使う"));
@@ -138,7 +138,7 @@ describe("脚注未定義の状態", () => {
   });
 });
 
-describe("脚注定義済みの状態", () => {
+describe("when footnotes are already defined", () => {
   function storeWithFootnotes(): EditorStore {
     return new EditorStore({
       ...makeDocument(),
@@ -154,7 +154,7 @@ describe("脚注定義済みの状態", () => {
     });
   }
 
-  it("ブロック設定の編集が commit に到達する", () => {
+  it("editing block settings reaches a commit", () => {
     const store = storeWithFootnotes();
     render(store);
     const xInput = inputByLabel("x");
@@ -163,7 +163,7 @@ describe("脚注定義済みの状態", () => {
     expect(store.getState().document.footnotes?.x).toBe(20);
   });
 
-  it("注記の追加・編集・削除が1 commitずつになる", () => {
+  it("adding, editing, and deleting a note each becomes a single commit", () => {
     const store = storeWithFootnotes();
     render(store);
 
@@ -194,14 +194,14 @@ describe("脚注定義済みの状態", () => {
     ]);
   });
 
-  it("「脚注を削除」で footnotes キーを除去する", () => {
+  it('clicking "脚注を削除" removes the footnotes key', () => {
     const store = storeWithFootnotes();
     render(store);
     click(buttonByText("脚注を削除"));
     expect(store.getState().document.footnotes).toBeUndefined();
   });
 
-  it("footnotes.* の検証エラーをフィールドに対応付けて表示する", () => {
+  it("displays footnotes.* validation errors mapped to their fields", () => {
     const store = new EditorStore({
       ...makeDocument(),
       footnotes: {
@@ -218,14 +218,14 @@ describe("脚注定義済みの状態", () => {
     expect(container.textContent).toContain("x は 0 以上である必要があります");
   });
 
-  it("{#id} 構文と採番順の案内文を表示する", () => {
+  it("displays guidance text for the {#id} syntax and numbering order", () => {
     const store = storeWithFootnotes();
     render(store);
     expect(container.textContent).toContain("{#id}");
     expect(container.textContent).toContain("出現順");
   });
 
-  it("「id をコピー」「{#id} をコピー」でクリップボードへ書き込む", () => {
+  it('clicking "id をコピー" / "{#id} をコピー" writes to the clipboard', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText },
@@ -254,7 +254,7 @@ describe("脚注定義済みの状態", () => {
 });
 
 describe("en Provider", () => {
-  it("脚注のフィールドラベルと案内文が英語になる", () => {
+  it("footnote field labels and guidance text are in English", () => {
     const store = new EditorStore({
       ...makeDocument(),
       footnotes: {

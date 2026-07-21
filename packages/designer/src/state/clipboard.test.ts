@@ -89,7 +89,7 @@ function flexElement(id: string, childId: string): IrFlexElement {
 }
 
 describe("clipboardFromSelection", () => {
-  it("選択順と逆でも文書順で格納される", () => {
+  it("stores elements in document order even when selected in reverse", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [textElement("a"), textElement("b")],
@@ -98,13 +98,13 @@ describe("clipboardFromSelection", () => {
     expect(clipboard?.elements.map((el) => el.id)).toEqual(["a", "b"]);
   });
 
-  it("flex 子 id を渡しても含まれない", () => {
+  it("excludes a flex child id even if passed in", () => {
     const flex = flexElement("f", "c1");
     const doc: IrDocument = { ...blankDocument(), elements: [flex] };
     expect(clipboardFromSelection(doc, ["c1"], [])).toBeNull();
   });
 
-  it("トップレベル該当が 0 件なら null", () => {
+  it("returns null when zero top-level ids match", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [textElement("a")],
@@ -112,7 +112,7 @@ describe("clipboardFromSelection", () => {
     expect(clipboardFromSelection(doc, ["nothing"], [])).toBeNull();
   });
 
-  it("pasteCount は 0 で初期化される", () => {
+  it("initializes pasteCount to 0", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [textElement("a")],
@@ -120,7 +120,7 @@ describe("clipboardFromSelection", () => {
     expect(clipboardFromSelection(doc, ["a"], [])?.pasteCount).toBe(0);
   });
 
-  it("グループ全員を格納すると groupIndexes に添字集合が記録される", () => {
+  it("records an index set in groupIndexes when all group members are stored", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [textElement("a"), textElement("b"), textElement("c")],
@@ -132,7 +132,7 @@ describe("clipboardFromSelection", () => {
     expect(clipboard?.groupIndexes).toEqual([[0, 2]]);
   });
 
-  it("グループの一部のみ格納した場合、格納された分が2件以上なら記録される", () => {
+  it("records it when only part of a group is stored, as long as 2 or more are stored", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [textElement("a"), textElement("b"), textElement("c")],
@@ -144,7 +144,7 @@ describe("clipboardFromSelection", () => {
     expect(clipboard?.groupIndexes).toEqual([[0, 1]]);
   });
 
-  it("グループの1件のみ格納した場合は記録されない", () => {
+  it("doesn't record it when only one member of a group is stored", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [textElement("a"), textElement("b")],
@@ -158,7 +158,7 @@ describe("clipboardFromSelection", () => {
 });
 
 describe("pasteFromClipboard", () => {
-  it("既存 id text1, text3 がある文書へ text をペーストすると text2 が採番される", () => {
+  it("pasting text into a document with existing ids text1, text3 assigns text2", () => {
     const source = textElement("src", 10, 10);
     const doc: IrDocument = {
       ...blankDocument(),
@@ -171,7 +171,7 @@ describe("pasteFromClipboard", () => {
     expect(result.pastedIds).toEqual(["text2"]);
   });
 
-  it("複数要素で新 id が文書内で一意になる", () => {
+  it("new ids for multiple elements are unique within the document", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [textElement("a"), textElement("b")],
@@ -184,7 +184,7 @@ describe("pasteFromClipboard", () => {
     expect(new Set(result.pastedIds).size).toBe(2);
   });
 
-  it("flex コンテナのペーストで子孫 id もすべて再採番され、元の flex とその子は不変", () => {
+  it("pasting a flex container renumbers all descendant ids too, leaving the original flex and its children unchanged", () => {
     const flex = flexElement("f", "c1");
     const doc: IrDocument = { ...blankDocument(), elements: [flex] };
     const clipboard = clipboardFromSelection(doc, ["f"], []);
@@ -205,7 +205,7 @@ describe("pasteFromClipboard", () => {
     expect(doc.elements[0]).toBe(flex);
   });
 
-  it("x/y に +5mm、table は continuationY にも +5mm、maxY は不変", () => {
+  it("+5mm to x/y; for a table, continuationY also gets +5mm, while maxY is unchanged", () => {
     const table = tableElement("tbl", 90);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const clipboard = clipboardFromSelection(doc, ["tbl"], []);
@@ -221,7 +221,7 @@ describe("pasteFromClipboard", () => {
     });
   });
 
-  it("複数要素の相対位置（x/y の差）が保存される", () => {
+  it("preserves the relative position (x/y difference) of multiple elements", () => {
     const a = textElement("a", 10, 10);
     const b = textElement("b", 60, 40);
     const doc: IrDocument = { ...blankDocument(), elements: [a, b] };
@@ -237,7 +237,7 @@ describe("pasteFromClipboard", () => {
     expect(pastedB).toMatchObject({ x: 65, y: 45 });
   });
 
-  it("連続ペーストでオフセットが 10mm・15mm と累積する", () => {
+  it("successive pastes accumulate the offset as 10mm, 15mm", () => {
     const a = textElement("a", 10, 10);
     const doc: IrDocument = { ...blankDocument(), elements: [a] };
     const clipboard = clipboardFromSelection(doc, ["a"], []);
@@ -256,7 +256,7 @@ describe("pasteFromClipboard", () => {
     expect(third.document.elements[3]).toMatchObject({ x: 25, y: 25 });
   });
 
-  it("ペースト結果の文書は parseIr で正規化済み完全形として通る", () => {
+  it("the pasted document passes parseIr as an already-normalized, complete form", () => {
     const flex = flexElement("f", "c1");
     const doc: IrDocument = {
       ...blankDocument(),
@@ -273,7 +273,7 @@ describe("pasteFromClipboard", () => {
     }
   });
 
-  it("元文書の未変更要素の参照が保持される", () => {
+  it("preserves references to unchanged elements from the original document", () => {
     const a = textElement("a", 10, 10);
     const b = textElement("b", 60, 10);
     const doc: IrDocument = { ...blankDocument(), elements: [a, b] };
@@ -285,7 +285,7 @@ describe("pasteFromClipboard", () => {
     expect(result.document.elements[1]).toBe(b);
   });
 
-  it("ペースト結果は文書配列の末尾（最前面）に追加される", () => {
+  it("the pasted result is appended to the end (frontmost) of the elements array", () => {
     const a = textElement("a", 10, 10);
     const b = textElement("b", 60, 10);
     const doc: IrDocument = { ...blankDocument(), elements: [a, b] };
@@ -297,7 +297,7 @@ describe("pasteFromClipboard", () => {
     expect(result.document.elements[2]?.id).toBe(result.pastedIds[0]);
   });
 
-  it("groupIndexes は pastedIds と同じ添字で新要素を指す", () => {
+  it("groupIndexes point to new elements using the same indices as pastedIds", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [textElement("a"), textElement("b"), textElement("c")],

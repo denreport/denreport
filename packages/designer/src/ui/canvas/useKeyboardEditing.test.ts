@@ -102,8 +102,8 @@ beforeEach(() => {
   commands = { requestSave: vi.fn(), openShortcutHelp: vi.fn() };
 });
 
-describe("矢印キー移動", () => {
-  it("スナップ無効時は 1mm 移動", () => {
+describe("Arrow-key move", () => {
+  it("moves 1mm when snapping is disabled", () => {
     const store = makeStore();
     store.setView({ snapEnabled: false });
     expect(applyEditingKey(store, false, commands, key("ArrowRight"))).toBe(
@@ -114,7 +114,7 @@ describe("矢印キー移動", () => {
     expect(elementAt(store, "a")).toMatchObject({ x: 13, y: 22 });
   });
 
-  it("Shift+矢印は 0.1mm 移動", () => {
+  it("shift+arrow moves 0.1mm", () => {
     const store = makeStore();
     expect(
       applyEditingKey(
@@ -127,7 +127,7 @@ describe("矢印キー移動", () => {
     expect(elementAt(store, "a")).toMatchObject({ x: 12, y: 23.1 });
   });
 
-  it("スナップ有効時は次の 5mm グリッド線へ量子化して移動する", () => {
+  it("quantizes to the next 5mm grid line when snapping is enabled", () => {
     const store = makeStore();
     applyEditingKey(store, false, commands, key("ArrowRight"));
     expect(elementAt(store, "a")).toMatchObject({ x: 15 });
@@ -139,7 +139,7 @@ describe("矢印キー移動", () => {
     expect(elementAt(store, "a")).toMatchObject({ y: 20 });
   });
 
-  it("1回の keydown = 1 履歴エントリ", () => {
+  it("one keydown equals one history entry", () => {
     const store = makeStore();
     applyEditingKey(store, false, commands, key("ArrowRight"));
     applyEditingKey(store, false, commands, key("ArrowRight"));
@@ -149,7 +149,7 @@ describe("矢印キー移動", () => {
     expect(elementAt(store, "a")).toMatchObject({ x: 12 });
   });
 
-  it("選択が空なら何もしない", () => {
+  it("does nothing when the selection is empty", () => {
     const store = makeStore([textElement("a", 12, 23)], []);
     expect(applyEditingKey(store, false, commands, key("ArrowRight"))).toBe(
       false,
@@ -157,7 +157,7 @@ describe("矢印キー移動", () => {
     expect(elementAt(store, "a")).toMatchObject({ x: 12 });
   });
 
-  it("first 文脈: continuationY が y と等値の table は ArrowDown で continuationY も動く", () => {
+  it("first context: ArrowDown also moves continuationY for a table whose continuationY equals y", () => {
     const store = makeStore([tableElement("tbl", 90, 90)], ["tbl"]);
     store.setView({ snapEnabled: false });
     applyEditingKey(store, false, commands, key("ArrowDown"));
@@ -166,22 +166,22 @@ describe("矢印キー移動", () => {
 });
 
 describe("Delete / Backspace", () => {
-  it("選択要素を削除して選択を空にする", () => {
+  it("deletes the selected elements and clears the selection", () => {
     const store = makeStore();
     expect(applyEditingKey(store, false, commands, key("Delete"))).toBe(true);
     expect(store.getState().document.elements).toEqual([]);
     expect(store.getState().selection).toEqual([]);
   });
 
-  it("Backspace でも削除される", () => {
+  it("Backspace also deletes", () => {
     const store = makeStore();
     applyEditingKey(store, false, commands, key("Backspace"));
     expect(store.getState().document.elements).toEqual([]);
   });
 });
 
-describe("undo / redo ショートカット", () => {
-  it("Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y が対応する操作を行う", () => {
+describe("undo / redo shortcuts", () => {
+  it("Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y perform the corresponding operations", () => {
     const store = makeStore();
     store.setView({ snapEnabled: false });
     applyEditingKey(store, false, commands, key("ArrowRight"));
@@ -209,7 +209,7 @@ describe("undo / redo ショートカット", () => {
     expect(elementAt(store, "a")).toMatchObject({ x: 13 });
   });
 
-  it("メタキー（⌘）でも効く", () => {
+  it("also works with the meta key (⌘)", () => {
     const store = makeStore();
     store.setView({ snapEnabled: false });
     applyEditingKey(store, false, commands, key("ArrowRight"));
@@ -221,21 +221,21 @@ describe("undo / redo ショートカット", () => {
 });
 
 describe("Escape", () => {
-  it("ドラッグ中でなければ選択を解除する", () => {
+  it("clears the selection when not dragging", () => {
     const store = makeStore();
     expect(applyEditingKey(store, false, commands, key("Escape"))).toBe(true);
     expect(store.getState().selection).toEqual([]);
   });
 
-  it("ドラッグ中はドラッグ側のキャンセルに譲る（false を返す）", () => {
+  it("defers to the drag's own cancel while dragging (returns false)", () => {
     const store = makeStore();
     expect(applyEditingKey(store, true, commands, key("Escape"))).toBe(false);
     expect(store.getState().selection).toEqual(["a"]);
   });
 });
 
-describe("フォーム要素フォーカス中は無視", () => {
-  it("input がターゲットのときは何もしない", () => {
+describe("Ignored while a form element is focused", () => {
+  it("does nothing when the target is an input", () => {
     const store = makeStore();
     const input = document.createElement("input");
     expect(
@@ -244,7 +244,7 @@ describe("フォーム要素フォーカス中は無視", () => {
     expect(store.getState().document.elements).toHaveLength(1);
   });
 
-  it("textarea がターゲットのときも何もしない（インライン編集中の Delete）", () => {
+  it("does nothing when the target is a textarea either (Delete during inline editing)", () => {
     const store = makeStore();
     const textarea = document.createElement("textarea");
     expect(
@@ -258,7 +258,7 @@ describe("フォーム要素フォーカス中は無視", () => {
     expect(store.getState().document.elements).toHaveLength(1);
   });
 
-  it("Ctrl+C / Ctrl+X / Ctrl+V も無視される", () => {
+  it("Ctrl+C / Ctrl+X / Ctrl+V are also ignored", () => {
     const store = makeStore();
     const input = document.createElement("input");
     expect(
@@ -290,8 +290,8 @@ describe("フォーム要素フォーカス中は無視", () => {
   });
 });
 
-describe("Ctrl+C コピー", () => {
-  it("選択ありで true・クリップボードに格納・文書と履歴は不変", () => {
+describe("Ctrl+C copy", () => {
+  it("returns true with a selection, stores to the clipboard, and leaves the document and history unchanged", () => {
     const store = makeStore();
     const before = store.getState().document;
 
@@ -304,7 +304,7 @@ describe("Ctrl+C コピー", () => {
     expect(store.canUndo()).toBe(false);
   });
 
-  it("メタキー（⌘）でも効く", () => {
+  it("also works with the meta key (⌘)", () => {
     const store = makeStore();
     expect(
       applyEditingKey(store, false, commands, key("c", { metaKey: true })),
@@ -312,7 +312,7 @@ describe("Ctrl+C コピー", () => {
     expect(store.getClipboard()).not.toBeNull();
   });
 
-  it("選択が空なら false", () => {
+  it("returns false when the selection is empty", () => {
     const store = makeStore([textElement("a", 12, 23)], []);
     expect(
       applyEditingKey(store, false, commands, key("c", { ctrlKey: true })),
@@ -320,7 +320,7 @@ describe("Ctrl+C コピー", () => {
     expect(store.getClipboard()).toBeNull();
   });
 
-  it("flex 子のみの選択では false", () => {
+  it("returns false when only flex children are selected", () => {
     const store = makeStore([flexWithChild("f", "c1")], ["c1"]);
     expect(
       applyEditingKey(store, false, commands, key("c", { ctrlKey: true })),
@@ -329,8 +329,8 @@ describe("Ctrl+C コピー", () => {
   });
 });
 
-describe("Ctrl+X 切り取り", () => {
-  it("要素が消え選択が空になり、1回の undo で復元される（1 commit）", () => {
+describe("Ctrl+X cut", () => {
+  it("the element disappears and the selection clears, restored by a single undo (1 commit)", () => {
     const store = makeStore();
     expect(
       applyEditingKey(store, false, commands, key("x", { ctrlKey: true })),
@@ -344,7 +344,7 @@ describe("Ctrl+X 切り取り", () => {
     expect(store.canUndo()).toBe(false);
   });
 
-  it("undo 後もペーストできる", () => {
+  it("can still paste after undo", () => {
     const store = makeStore();
     applyEditingKey(store, false, commands, key("x", { ctrlKey: true }));
     store.undo();
@@ -356,15 +356,15 @@ describe("Ctrl+X 切り取り", () => {
   });
 });
 
-describe("Ctrl+V ペースト", () => {
-  it("クリップボードが空なら false", () => {
+describe("Ctrl+V paste", () => {
+  it("returns false when the clipboard is empty", () => {
     const store = makeStore();
     expect(
       applyEditingKey(store, false, commands, key("v", { ctrlKey: true })),
     ).toBe(false);
   });
 
-  it("ペースト後の選択が新要素 id になり、2回のペーストで id が衝突しない", () => {
+  it("the selection after paste becomes the new element's id, and two pastes don't collide on id", () => {
     const store = makeStore();
     applyEditingKey(store, false, commands, key("c", { ctrlKey: true }));
 
@@ -382,8 +382,8 @@ describe("Ctrl+V ペースト", () => {
   });
 });
 
-describe("Ctrl+A 全選択", () => {
-  it("トップレベル全要素を選択する", () => {
+describe("Ctrl+A select all", () => {
+  it("selects all top-level elements", () => {
     const store = makeStore(
       [textElement("a", 12, 23), textElement("b", 40, 50)],
       [],
@@ -394,14 +394,14 @@ describe("Ctrl+A 全選択", () => {
     expect(store.getState().selection).toEqual(["a", "b"]);
   });
 
-  it("要素が 0 件なら false", () => {
+  it("returns false when there are 0 elements", () => {
     const store = makeStore([], []);
     expect(
       applyEditingKey(store, false, commands, key("a", { ctrlKey: true })),
     ).toBe(false);
   });
 
-  it("フォーム要素上では発火しない", () => {
+  it("doesn't fire on a form element", () => {
     const store = makeStore([textElement("a", 12, 23)], []);
     const input = document.createElement("input");
     expect(
@@ -416,8 +416,8 @@ describe("Ctrl+A 全選択", () => {
   });
 });
 
-describe("Ctrl+D 複製", () => {
-  it("新 id・+5mm オフセットで複製し、選択が新要素になり、store のクリップボードは変化しない", () => {
+describe("Ctrl+D duplicate", () => {
+  it("duplicates with a new id and +5mm offset, selects the new element, and leaves the store's clipboard unchanged", () => {
     const store = makeStore();
     expect(store.getClipboard()).toBeNull();
     expect(
@@ -431,7 +431,7 @@ describe("Ctrl+D 複製", () => {
     expect(store.getClipboard()).toBeNull();
   });
 
-  it("table の continuationY もオフセットされる", () => {
+  it("table's continuationY is offset too", () => {
     const store = makeStore([tableElement("tbl", 90, 90)], ["tbl"]);
     applyEditingKey(store, false, commands, key("d", { ctrlKey: true }));
     const pastedId = store.getState().selection[0];
@@ -441,7 +441,7 @@ describe("Ctrl+D 複製", () => {
     });
   });
 
-  it("選択が空なら false", () => {
+  it("returns false when the selection is empty", () => {
     const store = makeStore([textElement("a", 12, 23)], []);
     expect(
       applyEditingKey(store, false, commands, key("d", { ctrlKey: true })),
@@ -449,7 +449,7 @@ describe("Ctrl+D 複製", () => {
     expect(store.getState().document.elements).toHaveLength(1);
   });
 
-  it("textarea がターゲット（インライン編集中）では発火しない", () => {
+  it("doesn't fire when the target is a textarea (inline editing)", () => {
     const store = makeStore();
     const textarea = document.createElement("textarea");
     expect(
@@ -464,8 +464,8 @@ describe("Ctrl+D 複製", () => {
   });
 });
 
-describe("Ctrl+G グループ化・Ctrl+Shift+G グループ解除", () => {
-  it("選択2件以上で成立し、グループが追加される", () => {
+describe("Ctrl+G group / Ctrl+Shift+G ungroup", () => {
+  it("succeeds with 2 or more selected and adds a group", () => {
     const store = makeStore(
       [textElement("a", 12, 23), textElement("b", 60, 60)],
       ["a", "b"],
@@ -478,14 +478,14 @@ describe("Ctrl+G グループ化・Ctrl+Shift+G グループ解除", () => {
     ]);
   });
 
-  it("選択1件では不成立", () => {
+  it("fails with only 1 selected", () => {
     const store = makeStore([textElement("a", 12, 23)], ["a"]);
     expect(
       applyEditingKey(store, false, commands, key("g", { ctrlKey: true })),
     ).toBe(false);
   });
 
-  it("Ctrl+Shift+G は交差する生存グループを解除する", () => {
+  it("Ctrl+Shift+G ungroups intersecting surviving groups", () => {
     const store = makeStore(
       [textElement("a", 12, 23), textElement("b", 60, 60)],
       ["a", "b"],
@@ -502,7 +502,7 @@ describe("Ctrl+G グループ化・Ctrl+Shift+G グループ解除", () => {
     expect(store.getState().groups).toEqual([]);
   });
 
-  it("textarea がターゲット（インライン編集中）では発火しない", () => {
+  it("doesn't fire when the target is a textarea (inline editing)", () => {
     const store = makeStore(
       [textElement("a", 12, 23), textElement("b", 60, 60)],
       ["a", "b"],
@@ -520,8 +520,8 @@ describe("Ctrl+G グループ化・Ctrl+Shift+G グループ解除", () => {
   });
 });
 
-describe("Ctrl+S 保存", () => {
-  it("requestSave が呼ばれ true が返る（選択なしでも）", () => {
+describe("Ctrl+S save", () => {
+  it("calls requestSave and returns true (even with no selection)", () => {
     const store = makeStore([textElement("a", 12, 23)], []);
     expect(
       applyEditingKey(store, false, commands, key("s", { ctrlKey: true })),
@@ -530,8 +530,8 @@ describe("Ctrl+S 保存", () => {
   });
 });
 
-describe("ズームショートカット", () => {
-  it("Ctrl+「+」「=」でズームインする", () => {
+describe("Zoom shortcuts", () => {
+  it('Ctrl+"+"/"=" zooms in', () => {
     const store = makeStore();
     expect(
       applyEditingKey(store, false, commands, key("+", { ctrlKey: true })),
@@ -543,7 +543,7 @@ describe("ズームショートカット", () => {
     expect(store.getState().view.zoom).toBe(1.5);
   });
 
-  it("Ctrl+「-」でズームアウトする", () => {
+  it('Ctrl+"-" zooms out', () => {
     const store = makeStore();
     expect(
       applyEditingKey(store, false, commands, key("-", { ctrlKey: true })),
@@ -551,7 +551,7 @@ describe("ズームショートカット", () => {
     expect(store.getState().view.zoom).toBe(0.75);
   });
 
-  it("端では false になり文書・履歴は変化しない", () => {
+  it("returns false at the limit and leaves the document/history unchanged", () => {
     const store = makeStore();
     store.setView({ zoom: 4 });
     expect(
@@ -562,8 +562,8 @@ describe("ズームショートカット", () => {
   });
 });
 
-describe("V / H でのキャンバスモード切替", () => {
-  it("v で選択モード、h で移動モードへ切り替わり true を返す", () => {
+describe("Canvas mode switching via V / H", () => {
+  it("v switches to select mode, h to pan mode, returning true", () => {
     const store = makeStore();
     store.setView({ canvasMode: "pan" });
     expect(applyEditingKey(store, false, commands, key("v"))).toBe(true);
@@ -573,7 +573,7 @@ describe("V / H でのキャンバスモード切替", () => {
     expect(store.getState().view.canvasMode).toBe("pan");
   });
 
-  it("Ctrl/⌘+V（貼り付け）は従来どおり動く", () => {
+  it("Ctrl/⌘+V (paste) still works as before", () => {
     const store = makeStore();
     applyEditingKey(store, false, commands, key("c", { ctrlKey: true }));
     expect(
@@ -583,7 +583,7 @@ describe("V / H でのキャンバスモード切替", () => {
     expect(store.getState().document.elements).toHaveLength(2);
   });
 
-  it("フォーム要素発では発火しない", () => {
+  it("doesn't fire on a form element", () => {
     const store = makeStore();
     const input = document.createElement("input");
     expect(
@@ -592,13 +592,13 @@ describe("V / H でのキャンバスモード切替", () => {
     expect(store.getState().view.canvasMode).toBe("select");
   });
 
-  it("ドラッグ中（interactionActive）では未処理", () => {
+  it("isn't handled while dragging (interactionActive)", () => {
     const store = makeStore();
     expect(applyEditingKey(store, true, commands, key("h"))).toBe(false);
     expect(store.getState().view.canvasMode).toBe("select");
   });
 
-  it("Shift 併用では未処理", () => {
+  it("isn't handled when combined with Shift", () => {
     const store = makeStore();
     expect(
       applyEditingKey(store, false, commands, key("h", { shiftKey: true })),
@@ -607,15 +607,15 @@ describe("V / H でのキャンバスモード切替", () => {
   });
 });
 
-describe("ショートカット一覧を開く", () => {
-  it("「?」または F1 で openShortcutHelp が呼ばれる", () => {
+describe("Opening the shortcut list", () => {
+  it('"?" or F1 calls openShortcutHelp', () => {
     const store = makeStore();
     expect(applyEditingKey(store, false, commands, key("?"))).toBe(true);
     expect(applyEditingKey(store, false, commands, key("F1"))).toBe(true);
     expect(commands.openShortcutHelp).toHaveBeenCalledTimes(2);
   });
 
-  it("Ctrl+「?」では発火しない", () => {
+  it('Ctrl+"?" doesn\'t fire', () => {
     const store = makeStore();
     expect(
       applyEditingKey(store, false, commands, key("?", { ctrlKey: true })),

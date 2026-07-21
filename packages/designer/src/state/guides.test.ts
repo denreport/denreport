@@ -8,7 +8,7 @@ import {
 } from "./guides";
 
 describe("addGuide", () => {
-  it("最小空きの guide<n> を id として採番する", () => {
+  it("assigns the smallest available guide<n> as the id", () => {
     const first = addGuide([], "x", 10);
     expect(first.id).toBe("guide1");
     expect(first.guides).toEqual([{ id: "guide1", axis: "x", positionMm: 10 }]);
@@ -18,7 +18,7 @@ describe("addGuide", () => {
     expect(second.guides).toHaveLength(2);
   });
 
-  it("既存 id の欠番があれば最小の空きを採る", () => {
+  it("takes the smallest gap when an existing id is missing", () => {
     const guides: readonly CustomGuide[] = [
       { id: "guide1", axis: "x", positionMm: 10 },
       { id: "guide3", axis: "x", positionMm: 30 },
@@ -29,7 +29,7 @@ describe("addGuide", () => {
 });
 
 describe("moveGuide", () => {
-  it("指定 id の positionMm だけを更新し、他は不変のまま", () => {
+  it("updates only the positionMm of the specified id, leaving the rest unchanged", () => {
     const guides: readonly CustomGuide[] = [
       { id: "guide1", axis: "x", positionMm: 10 },
       { id: "guide2", axis: "y", positionMm: 20 },
@@ -42,7 +42,7 @@ describe("moveGuide", () => {
     expect(result).not.toBe(guides);
   });
 
-  it("存在しない id を指定しても配列を素通しする", () => {
+  it("passes the array through unchanged when given a nonexistent id", () => {
     const guides: readonly CustomGuide[] = [
       { id: "guide1", axis: "x", positionMm: 10 },
     ];
@@ -51,7 +51,7 @@ describe("moveGuide", () => {
 });
 
 describe("removeGuide", () => {
-  it("指定 id を取り除く", () => {
+  it("removes the specified id", () => {
     const guides: readonly CustomGuide[] = [
       { id: "guide1", axis: "x", positionMm: 10 },
       { id: "guide2", axis: "y", positionMm: 20 },
@@ -65,7 +65,7 @@ describe("removeGuide", () => {
 describe("guidesInPage", () => {
   const page = { width: 210, height: 297 };
 
-  it("軸ごとのページサイズ範囲 [0, size] 内のガイドのみ残す", () => {
+  it("keeps only guides within the per-axis page size range [0, size]", () => {
     const guides: readonly CustomGuide[] = [
       { id: "guide1", axis: "x", positionMm: -1 },
       { id: "guide2", axis: "x", positionMm: 0 },

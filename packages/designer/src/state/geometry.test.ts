@@ -67,7 +67,7 @@ const NESTED_FLEX: IrElement = {
 };
 
 describe("layoutDocument: flex", () => {
-  it("flex 子（入れ子含む）の座標が core の resolveFlex と一致する", () => {
+  it("flex children (including nested) have coordinates matching core's resolveFlex", () => {
     const doc = makeDocument([NESTED_FLEX]);
     const views = new Map(layoutDocument(doc, "first").map((v) => [v.id, v]));
     for (const placed of resolveFlex(doc)) {
@@ -78,13 +78,13 @@ describe("layoutDocument: flex", () => {
     }
   });
 
-  it("コンテナの箱: 主軸明示 h=50、交差軸は max(子の幅)", () => {
+  it("container box: explicit main axis h=50, cross axis is max(children's width)", () => {
     const views = layoutDocument(makeDocument([NESTED_FLEX]), "first");
     const outer = views.find((v) => v.id === "outer");
     expect(outer?.box).toEqual({ x: 20, y: 40, w: 60, h: 50 });
   });
 
-  it("入れ子コンテナの箱: 導出寸法（幅 10+1+0、高さ max(8,12)）と親内の配置", () => {
+  it("nested container box: derived dimensions (width 10+1+0, height max(8,12)) and placement within parent", () => {
     const views = layoutDocument(makeDocument([NESTED_FLEX]), "first");
     const inner = views.find((v) => v.id === "inner");
     // content height = 6 + 2 + 12 = 20, center within main axis 50 -> offset 15
@@ -97,7 +97,7 @@ describe("layoutDocument: flex", () => {
     expect(inner?.childIndex).toBe(1);
   });
 
-  it("子は pages をコンテナから継承する", () => {
+  it("children inherit pages from the container", () => {
     const views = layoutDocument(makeDocument([NESTED_FLEX]), "first");
     const t1 = views.find((v) => v.id === "t1");
     expect(t1?.pages).toBe("first");
@@ -124,7 +124,7 @@ describe("layoutDocument: table", () => {
     minRows: 10,
   };
 
-  it("first 文脈: y 起点・幅 Σ列幅・min(minRows, k_first) 行", () => {
+  it("first context: y origin, width Σ column widths, min(minRows, k_first) rows", () => {
     const views = layoutDocument(makeDocument([TABLE]), "first");
     const view = views.find((v) => v.id === "items");
     // k_first = floor((240-90-9)/9) = 16 -> the row count is minRows's 10
@@ -132,14 +132,14 @@ describe("layoutDocument: table", () => {
     expect(view?.pages).toBeNull();
   });
 
-  it("rest 文脈: continuationY 起点・k_cont 行", () => {
+  it("rest context: continuationY origin, k_cont rows", () => {
     const views = layoutDocument(makeDocument([TABLE]), "rest");
     const view = views.find((v) => v.id === "items");
     // k_cont = floor((240-30-9)/9) = 22
     expect(view?.box).toEqual({ x: 15, y: 30, w: 125, h: 9 + 22 * 9 });
   });
 
-  it("領域が不成立（容量が負）でもヘッダのみの箱に落ちる", () => {
+  it("falls back to a header-only box even when the area is invalid (negative capacity)", () => {
     const broken: IrElement = { ...TABLE, y: 239 };
     const views = layoutDocument(makeDocument([broken]), "first");
     const view = views.find((v) => v.id === "items");
@@ -147,8 +147,8 @@ describe("layoutDocument: table", () => {
   });
 });
 
-describe("layoutDocument: line と描画順", () => {
-  it("line は orientation に応じて length×0 / 0×length の箱になる", () => {
+describe("layoutDocument: line and draw order", () => {
+  it("line becomes a length×0 / 0×length box depending on orientation", () => {
     const doc = makeDocument([
       {
         type: "line",
@@ -179,7 +179,7 @@ describe("layoutDocument: line と描画順", () => {
 });
 
 describe("flexMainContentSize", () => {
-  it("C = Σ子の主軸寸法 + gap×(子数−1)。入れ子の flex は導出寸法で数える", () => {
+  it("C = Σ children's main-axis size + gap×(count−1); nested flex counts using derived dimensions", () => {
     if (NESTED_FLEX.type !== "flex") {
       throw new Error("フィクスチャが flex でない");
     }
@@ -193,7 +193,7 @@ describe("flexMainContentSize", () => {
     expect(flexMainContentSize(inner)).toBeCloseTo(11, 10);
   });
 
-  it("主軸明示なしのコンテナ箱の主軸寸法と一致する", () => {
+  it("matches the main-axis size of a container box with no explicit main axis", () => {
     if (NESTED_FLEX.type !== "flex") {
       throw new Error("フィクスチャが flex でない");
     }
@@ -205,7 +205,7 @@ describe("flexMainContentSize", () => {
 });
 
 describe("roundMm", () => {
-  it("0.1mm 単位に丸める（.05 は切り上げ）", () => {
+  it("rounds to 0.1mm units (.05 rounds up)", () => {
     expect(roundMm(1.25)).toBe(1.3);
     expect(roundMm(1.2499)).toBe(1.2);
     expect(roundMm(10)).toBe(10);
@@ -214,7 +214,7 @@ describe("roundMm", () => {
 });
 
 describe("visibleInContext", () => {
-  it("pages が文脈一致か all、または table（null）のとき可視", () => {
+  it("visible when pages matches the context, is all, or is a table (null)", () => {
     expect(visibleInContext("first", "first")).toBe(true);
     expect(visibleInContext("all", "rest")).toBe(true);
     expect(visibleInContext(null, "last")).toBe(true);
