@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { dragFromPalette } from "./helpers/designer-actions";
 
-test("text 要素のダブルクリック編集は blur で確定し、Ctrl+Z 1回で戻る", async ({
+test("double-click editing of a text element commits on blur and reverts with one Ctrl+Z", async ({
   page,
 }) => {
   await page.goto("/");
@@ -32,7 +32,7 @@ test("text 要素のダブルクリック編集は blur で確定し、Ctrl+Z 1�
   await expect(textEl).toHaveText("text1");
 });
 
-test("表の列見出しのダブルクリック編集は Enter で確定する", async ({
+test("double-click editing of a table column header commits on Enter", async ({
   page,
 }) => {
   await page.goto("/");
@@ -53,7 +53,7 @@ test("表の列見出しのダブルクリック編集は Enter で確定する"
   await expect(header).toHaveText("品名");
 });
 
-test("Escape で閉じると文書は変わらない", async ({ page }) => {
+test("closing with Escape leaves the document unchanged", async ({ page }) => {
   await page.goto("/");
   await dragFromPalette(page, /^テキスト/, { x: 60, y: 40 });
   const textEl = page.locator('.dr-el[data-dr-id="text1"]');

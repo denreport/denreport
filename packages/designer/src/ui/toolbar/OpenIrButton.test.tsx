@@ -71,8 +71,8 @@ function selectFile(content: string): void {
   input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
-describe("開くフロー", () => {
-  it("非 dirty では確認なしでファイル選択に進む", async () => {
+describe("open flow", () => {
+  it("proceeds to file selection without confirmation when not dirty", async () => {
     const picker = spyFilePicker();
     await renderButton({
       dirty: false,
@@ -83,7 +83,7 @@ describe("開くフロー", () => {
     expect(container.querySelector(".dr-dialog")).toBeNull();
   });
 
-  it("dirty では確認が出て、キャンセルで何も起きない", async () => {
+  it("shows confirmation when dirty, and cancel does nothing", async () => {
     const picker = spyFilePicker();
     const importIr = vi.fn((): LoadIrResult => ({ ok: true }));
     await renderButton({ dirty: true, importIr });
@@ -102,7 +102,7 @@ describe("開くフロー", () => {
     expect(importIr).not.toHaveBeenCalled();
   });
 
-  it("dirty の確認で続行するとファイル選択に進む", async () => {
+  it("proceeds to file selection when continuing past the dirty confirmation", async () => {
     const picker = spyFilePicker();
     await renderButton({
       dirty: true,
@@ -120,7 +120,7 @@ describe("開くフロー", () => {
     });
   });
 
-  it("importIr が ok: false を返すと規則ID / path / message を一覧し、閉じると消える", async () => {
+  it("lists rule ID / path / message when importIr returns ok: false, and closing dismisses it", async () => {
     const errors: readonly IrError[] = [
       {
         rule: "S03",
@@ -148,7 +148,7 @@ describe("開くフロー", () => {
     });
   });
 
-  it("importIr が ok: true ならダイアログは出ない", async () => {
+  it("shows no dialog when importIr returns ok: true", async () => {
     const importIr = vi.fn((): LoadIrResult => ({ ok: true }));
     await renderButton({ dirty: false, importIr });
 
@@ -159,7 +159,7 @@ describe("開くフロー", () => {
     expect(container.querySelector(".dr-dialog")).toBeNull();
   });
 
-  it("ファイル読み取り自体の失敗は1行メッセージのダイアログになる", async () => {
+  it("shows a one-line message dialog when the file read itself fails", async () => {
     class FailingFileReader {
       onload: (() => void) | null = null;
       onerror: (() => void) | null = null;

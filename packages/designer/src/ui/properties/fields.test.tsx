@@ -91,7 +91,7 @@ function keyDown(el: HTMLElement, key: string): void {
 }
 
 describe("NumberField", () => {
-  it("blur で量子化済みの値を1回だけ commit する", () => {
+  it("commits the quantized value exactly once on blur", () => {
     const onCommit = vi.fn();
     render(
       <NumberField label="x" value={12} precision={0.1} onCommit={onCommit} />,
@@ -102,7 +102,7 @@ describe("NumberField", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(34.3);
   });
 
-  it("Enter でも commit する", () => {
+  it("commits on Enter too", () => {
     const onCommit = vi.fn();
     render(
       <NumberField label="x" value={12} precision={0.1} onCommit={onCommit} />,
@@ -112,7 +112,7 @@ describe("NumberField", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(5);
   });
 
-  it("Escape はドラフトを破棄して commit しない", () => {
+  it("discards the draft and does not commit on Escape", () => {
     const onCommit = vi.fn();
     render(
       <NumberField label="x" value={12} precision={0.1} onCommit={onCommit} />,
@@ -123,7 +123,7 @@ describe("NumberField", () => {
     expect(input().value).toBe("12.0");
   });
 
-  it("非数値・空文字は commit せず現在値に復帰する", () => {
+  it("does not commit non-numeric or empty input, and reverts to the current value", () => {
     const onCommit = vi.fn();
     render(
       <NumberField label="x" value={12} precision={0.1} onCommit={onCommit} />,
@@ -138,7 +138,7 @@ describe("NumberField", () => {
     expect(input().value).toBe("12.0");
   });
 
-  it("量子化後に現在値と同値なら commit しない", () => {
+  it("does not commit when the quantized value equals the current value", () => {
     const onCommit = vi.fn();
     render(
       <NumberField label="x" value={12} precision={0.1} onCommit={onCommit} />,
@@ -149,7 +149,7 @@ describe("NumberField", () => {
     expect(input().value).toBe("12.0");
   });
 
-  it("precision 1 は整数へ量子化する", () => {
+  it("quantizes to an integer when precision is 1", () => {
     const onCommit = vi.fn();
     render(
       <NumberField
@@ -165,7 +165,7 @@ describe("NumberField", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith(5);
   });
 
-  it("precision 0.05 は10の累乗でない刻みでも表示と量子化が一致し、無編集の blur では commit しない", () => {
+  it("keeps display and quantization consistent for a non-power-of-10 step like precision 0.05, and does not commit on blur without editing", () => {
     const onCommit = vi.fn();
     render(
       <NumberField
@@ -180,7 +180,7 @@ describe("NumberField", () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 
-  it("外部変更（undo 等）でドラフトを破棄して追従する", () => {
+  it("discards the draft and follows external changes (e.g. undo)", () => {
     render(
       <NumberField label="x" value={12} precision={0.1} onCommit={() => {}} />,
     );
@@ -191,7 +191,7 @@ describe("NumberField", () => {
     expect(input().value).toBe("20.0");
   });
 
-  it("error があるとフィールドがエラー表示になる", () => {
+  it("shows the field as an error when error is set", () => {
     render(
       <NumberField
         label="x"
@@ -207,7 +207,7 @@ describe("NumberField", () => {
     );
   });
 
-  it("value が null（混在）だと空欄になり placeholder が「混在」になる", () => {
+  it("becomes blank with placeholder 「混在」 when value is null (mixed)", () => {
     render(
       <NumberField
         label="x"
@@ -220,7 +220,7 @@ describe("NumberField", () => {
     expect(input().placeholder).toBe("混在");
   });
 
-  it("混在から値を入力すると、一部要素の現在値と同値でも commit する", () => {
+  it("commits even when the entered value matches the current value of some elements, when starting from mixed state", () => {
     const onCommit = vi.fn();
     render(
       <NumberField
@@ -237,7 +237,7 @@ describe("NumberField", () => {
 });
 
 describe("TextField", () => {
-  it("blur で1回だけ commit し、同値では commit しない", () => {
+  it("commits exactly once on blur, and does not commit for the same value", () => {
     const onCommit = vi.fn();
     render(<TextField label="バインド" value="items" onCommit={onCommit} />);
     setValue(input(), "rows");
@@ -251,7 +251,7 @@ describe("TextField", () => {
     expect(onCommit).not.toHaveBeenCalled();
   });
 
-  it("suggestions は datalist として提示される", () => {
+  it("presents suggestions as a datalist", () => {
     render(
       <TextField
         label="バインド"
@@ -271,7 +271,7 @@ describe("TextField", () => {
 });
 
 describe("TextAreaField", () => {
-  it("Enter は改行のままで、blur で commit する", () => {
+  it("keeps Enter as a newline, and commits on blur", () => {
     const onCommit = vi.fn();
     render(<TextAreaField label="テキスト" value="a" onCommit={onCommit} />);
     const textarea = container.querySelector("textarea");
@@ -285,7 +285,7 @@ describe("TextAreaField", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("a\nb");
   });
 
-  it("error があるとフィールドがエラー表示になる", () => {
+  it("shows the field as an error when error is set", () => {
     render(
       <TextAreaField
         label="テキスト"
@@ -300,7 +300,7 @@ describe("TextAreaField", () => {
     );
   });
 
-  it("hint があると案内文を表示する", () => {
+  it("shows the hint text when hint is set", () => {
     render(
       <TextAreaField
         label="テキスト"
@@ -316,7 +316,7 @@ describe("TextAreaField", () => {
 });
 
 describe("SegmentField", () => {
-  it("別の選択肢のクリックで即 commit し、現在値のクリックでは commit しない", () => {
+  it("commits immediately on clicking a different option, and does not commit when clicking the current value", () => {
     const onCommit = vi.fn();
     render(
       <SegmentField
@@ -343,7 +343,7 @@ describe("SegmentField", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("center");
   });
 
-  it("value が null（混在）だとどのボタンも is-active にならず、クリックで commit する", () => {
+  it("no button becomes is-active when value is null (mixed), and clicking commits", () => {
     const onCommit = vi.fn();
     render(
       <SegmentField
@@ -369,7 +369,7 @@ describe("SegmentField", () => {
 });
 
 describe("ColorField", () => {
-  it("値の変更で即 commit する（type=color の入力）", () => {
+  it("commits immediately on value change (type=color input)", () => {
     const onCommit = vi.fn();
     render(<ColorField label="色" value="#000000" onCommit={onCommit} />);
     expect(input().type).toBe("color");
@@ -379,7 +379,7 @@ describe("ColorField", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("#ff0000");
   });
 
-  it("allowNone なしで value が null のとき既定色を表示し、入力は有効なまま（編集可能）", () => {
+  it("shows the default color when value is null without allowNone, keeping the input enabled (editable)", () => {
     const onCommit = vi.fn();
     render(<ColorField label="色" value={null} onCommit={onCommit} />);
     expect(input().value).toBe("#000000");
@@ -388,7 +388,7 @@ describe("ColorField", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("#ff0000");
   });
 
-  it("allowNone かつ value が null のとき入力を無効化する", () => {
+  it("disables the input when allowNone is set and value is null", () => {
     render(
       <ColorField label="色" value={null} allowNone onCommit={() => {}} />,
     );
@@ -396,12 +396,12 @@ describe("ColorField", () => {
     expect(input().disabled).toBe(true);
   });
 
-  it("allowNone なし（既定）では「なし」トグルを出さない", () => {
+  it("does not render a 「なし」 toggle without allowNone (the default)", () => {
     render(<ColorField label="色" value="#000000" onCommit={() => {}} />);
     expect(container.querySelector('input[type="checkbox"]')).toBeNull();
   });
 
-  it("allowNone ではチェックで null を commit し、外すと表示中の色を commit する", () => {
+  it("commits null when checked and the displayed color when unchecked, under allowNone", () => {
     const onCommit = vi.fn();
     render(
       <ColorField
@@ -436,7 +436,7 @@ describe("ColorField", () => {
     expect(onCommit).toHaveBeenCalledExactlyOnceWith("#000000");
   });
 
-  it("noneLabel を指定するとトグルの表示文言が変わる", () => {
+  it("changes the toggle's label text when noneLabel is specified", () => {
     render(
       <ColorField
         label="縞の色"
@@ -451,7 +451,7 @@ describe("ColorField", () => {
 });
 
 describe("SelectField", () => {
-  it("選択の変更で commit する", () => {
+  it("commits on selection change", () => {
     const onCommit = vi.fn();
     render(
       <SelectField

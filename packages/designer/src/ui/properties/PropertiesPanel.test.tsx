@@ -278,8 +278,8 @@ function requireSelectByLabel(text: string): HTMLSelectElement {
   return el;
 }
 
-describe("PropertiesPanel の振り分け", () => {
-  it("非選択では文書設定を表示する", () => {
+describe("PropertiesPanel routing", () => {
+  it("shows document settings when nothing is selected", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     expect(container.textContent).toContain("文書設定");
@@ -288,7 +288,7 @@ describe("PropertiesPanel の振り分け", () => {
     expect(inputByLabel("フォント名").value).toBe("NotoSansJP");
   });
 
-  it("単一選択では型ごとのフォームを表示する（全8型）", () => {
+  it("shows a type-specific form for a single selection (all 8 types)", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     const cases: readonly (readonly [string, keyof typeof ja.elementTypes])[] =
@@ -312,7 +312,7 @@ describe("PropertiesPanel の振り分け", () => {
     }
   });
 
-  it("複数選択では選択件数とともに一括編集フォームを表示する", () => {
+  it("shows a bulk-edit form with the selection count for a multi-selection", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["t1", "r1"]);
@@ -321,14 +321,14 @@ describe("PropertiesPanel の振り分け", () => {
     expect(container.querySelector(".dr-type-badge")).toBeNull();
   });
 
-  it("選択 id が文書に無い場合は非選択扱い", () => {
+  it("treats a selected id absent from the document as no selection", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["ghost"]);
     expect(container.textContent).toContain("文書設定");
   });
 
-  it("適格請求書チェックのチェックボックス操作は1 commit で docType を付与・除去する", () => {
+  it("toggling the qualified-invoice checkbox adds/removes docType in a single commit", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     const checkbox = container.querySelector('input[type="checkbox"]');
@@ -346,7 +346,7 @@ describe("PropertiesPanel の振り分け", () => {
     expect(store.canUndo()).toBe(false);
   });
 
-  it("適格請求書チェックのラベルは「チェック」部分が単語内分断されないよう nowrap で囲む", () => {
+  it("wraps the 「チェック」 part of the qualified-invoice label in nowrap so it isn't split mid-word", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     const labels = [...container.querySelectorAll(".dr-frow-label")];
@@ -355,7 +355,7 @@ describe("PropertiesPanel の振り分け", () => {
     expect(label?.querySelector(".dr-nowrap")?.textContent).toBe("チェック");
   });
 
-  it("flex 子の選択では x / y / ページを出さず、注記を表示する", () => {
+  it("hides x / y / page for a flex-child selection and shows a note instead", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["c1"]);
@@ -372,7 +372,7 @@ describe("PropertiesPanel の振り分け", () => {
   });
 });
 
-describe("用紙サイズプリセット", () => {
+describe("Paper size presets", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
@@ -381,7 +381,7 @@ describe("用紙サイズプリセット", () => {
     vi.spyOn(window.navigator, "language", "get").mockReturnValue(language);
   }
 
-  it("英語圏 UI では A3/A4/A5/B5(ISO)/Letter/Legal を選択肢に出し、A4 の白紙初期値を選択済みにする", () => {
+  it("shows A3/A4/A5/B5(ISO)/Letter/Legal as options in the English UI, with the blank A4 default preselected", () => {
     stubLanguage("en-US");
     const store = makeStore();
     // The preset candidate set follows navigator.language; the labels follow the UI locale (here, en)
@@ -397,7 +397,7 @@ describe("用紙サイズプリセット", () => {
     expect(select.value).toBe("a4");
   });
 
-  it("日本語 UI では A3/A4/A5/B4(JIS)/B5(JIS)/はがき/レターを選択肢に出す", () => {
+  it("shows A3/A4/A5/B4/B5/はがき/レター/カスタム as options in the Japanese UI", () => {
     stubLanguage("ja-JP");
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
@@ -407,7 +407,7 @@ describe("用紙サイズプリセット", () => {
     ).toEqual(["A3", "A4", "A5", "B4", "B5", "はがき", "レター", "カスタム"]);
   });
 
-  it("プリセットを選ぶと幅・高さが一括で commit される", () => {
+  it("selecting a preset commits width and height together", () => {
     stubLanguage("ja-JP");
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
@@ -417,7 +417,7 @@ describe("用紙サイズプリセット", () => {
     expect(inputByLabel("高さ").value).toBe("257.0");
   });
 
-  it("レターを選ぶと規格値（215.9x279.4mm）がそのまま commit される", () => {
+  it("selecting Letter commits the standard dimensions (215.9x279.4mm) as-is", () => {
     stubLanguage("ja-JP");
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
@@ -430,7 +430,7 @@ describe("用紙サイズプリセット", () => {
     expect(inputByLabel("高さ").value).toBe("279.4");
   });
 
-  it("どのプリセットとも一致しない寸法では「カスタム」を選択済みにする", () => {
+  it("preselects Custom for dimensions that don't match any preset", () => {
     stubLanguage("ja-JP");
     const store = makeStore();
     act(() => {
@@ -443,7 +443,7 @@ describe("用紙サイズプリセット", () => {
     expect(requireSelectByLabel("サイズ").value).toBe("custom");
   });
 
-  it("幅・高さ欄を手動編集してプリセットに一致させると select 表示が追従する", () => {
+  it("the select display follows when manually editing width/height to match a preset", () => {
     stubLanguage("ja-JP");
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
@@ -455,8 +455,8 @@ describe("用紙サイズプリセット", () => {
   });
 });
 
-describe("名前フィールド", () => {
-  it("ヘッダーの名前欄への入力が commit に到達し、undo で戻る", () => {
+describe("Name field", () => {
+  it("input in the header's name field reaches commit and reverts with undo", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["r1"]);
@@ -473,7 +473,7 @@ describe("名前フィールド", () => {
     expect(elementById(store, "r1")).not.toHaveProperty("name");
   });
 
-  it("空欄への変更は name 属性を除去する", () => {
+  it("changing to blank removes the name attribute", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["r1"]);
@@ -488,7 +488,7 @@ describe("名前フィールド", () => {
     expect(elementById(store, "r1")).not.toHaveProperty("name");
   });
 
-  it("flex 子でも名前欄を表示・編集できる", () => {
+  it("shows and allows editing the name field for flex children too", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["c1"]);
@@ -503,8 +503,8 @@ describe("名前フィールド", () => {
   });
 });
 
-describe("回転フィールド", () => {
-  it("table / flex 以外で回転欄を表示し、table / flex では表示しない", () => {
+describe("Rotate field", () => {
+  it("shows the rotate field except for table / flex", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["r1"]);
@@ -525,7 +525,7 @@ describe("回転フィールド", () => {
     ).toBe(false);
   });
 
-  it("入力が 0.1° 丸めで commit に到達し、undo で戻る", () => {
+  it("input reaches commit rounded to 0.1° and reverts with undo", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["r1"]);
@@ -542,7 +542,7 @@ describe("回転フィールド", () => {
     expect(elementById(store, "r1")).not.toHaveProperty("rotate");
   });
 
-  it("0 への変更は rotate 属性を除去する", () => {
+  it("changing to 0 removes the rotate attribute", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["r1"]);
@@ -557,7 +557,7 @@ describe("回転フィールド", () => {
     expect(elementById(store, "r1")).not.toHaveProperty("rotate");
   });
 
-  it("flex 子でも回転欄を表示・編集できる", () => {
+  it("shows and allows editing the rotate field for flex children too", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["c1"]);
@@ -572,8 +572,8 @@ describe("回転フィールド", () => {
   });
 });
 
-describe("スタイルセクション", () => {
-  it("スタイル対象の型（text）でのみ select を表示し、対象外（image）では表示しない", () => {
+describe("Style section", () => {
+  it("shows the select only for style-eligible types (text), not for ineligible ones (image)", () => {
     const store = makeStoreWithStyle();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["t1"]);
@@ -582,7 +582,7 @@ describe("スタイルセクション", () => {
     expect(selectByLabel("スタイル")).toBeNull();
   });
 
-  it("select でスタイルを適用すると該当属性が反映され、undo で戻る", () => {
+  it("applying a style via select reflects the matching attributes and reverts with undo", () => {
     const store = makeStoreWithStyle();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["t1"]);
@@ -604,7 +604,7 @@ describe("スタイルセクション", () => {
     expect(reverted).toMatchObject({ fontSize: 10, align: "left" });
   });
 
-  it("スタイルなしを選ぶと style 属性のみ除去し、具体値は保持する", () => {
+  it("selecting no style removes only the style attribute and keeps the concrete values", () => {
     const store = makeStoreWithStyle();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["t1"]);
@@ -619,8 +619,8 @@ describe("スタイルセクション", () => {
   });
 });
 
-describe("代表的な編集経路", () => {
-  it("テキスト欄への {key} 入力が commit に到達する", () => {
+describe("Representative edit paths", () => {
+  it("{key} input in the text field reaches commit", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["t1"]);
@@ -637,7 +637,7 @@ describe("代表的な編集経路", () => {
     expect(elementById(store, "t1")).toMatchObject({ text: "見出し" });
   });
 
-  it("テキスト編集欄に {#id} 構文の案内文を表示する", () => {
+  it("shows guidance text for {#id} syntax in the text edit field", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["t1"]);
@@ -646,7 +646,7 @@ describe("代表的な編集経路", () => {
     );
   });
 
-  it("未定義の脚注 id を参照する（F03）とテキスト編集欄にエラーを表示する", () => {
+  it("referencing an undefined footnote id (F03) shows an error in the text edit field", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["t1"]);
@@ -661,7 +661,7 @@ describe("代表的な編集経路", () => {
     );
   });
 
-  it("flex 内の text に脚注マークを書く（F04）とテキスト編集欄にエラーを表示する", () => {
+  it("writing a footnote mark on text inside flex (F04) shows an error in the text edit field", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["c1"]);
@@ -675,7 +675,7 @@ describe("代表的な編集経路", () => {
     );
   });
 
-  it("列追加 → width 変更で Σ列幅の表示が更新される", () => {
+  it("adding a column then changing width updates the sum-of-column-widths display", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["tbl1"]);
@@ -699,7 +699,7 @@ describe("代表的な編集経路", () => {
     expect(container.textContent).toContain("Σ列幅 = 140.0 mm");
   });
 
-  it("文字サイズと整列の編集が commit に到達する", () => {
+  it("editing font size and alignment reaches commit", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["t1"]);
@@ -713,7 +713,7 @@ describe("代表的な編集経路", () => {
     expect(elementById(store, "t1")).toMatchObject({ align: "right" });
   });
 
-  it("table の minRows / maxY の編集が commit に到達する", () => {
+  it("editing table minRows / maxY reaches commit", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["tbl1"]);
@@ -729,7 +729,7 @@ describe("代表的な編集経路", () => {
     expect(elementById(store, "tbl1")).toMatchObject({ maxY: 250 });
   });
 
-  it("flex の主軸寸法トグルは内容寸法を初期値に明示し、OFF で属性を除去する", () => {
+  it("the flex main-axis size toggle shows the content size as the explicit initial value, and OFF removes the attribute", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["f1"]);
@@ -756,7 +756,7 @@ describe("代表的な編集経路", () => {
     expect("h" in flex && flex.h !== undefined).toBe(false);
   });
 
-  it("画像の読込完了前に別属性を編集しても src の commit が上書きしない", async () => {
+  it("editing another attribute before the image finishes loading doesn't overwrite the src commit", async () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["img1"]);
@@ -787,7 +787,7 @@ describe("代表的な編集経路", () => {
     expect(elementById(store, "img1")).toMatchObject({ w: 50 });
   });
 
-  it("バーコードの規格切替・値編集が commit に到達する", () => {
+  it("switching barcode symbology and editing the value reaches commit", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["bc1"]);
@@ -804,8 +804,8 @@ describe("代表的な編集経路", () => {
   });
 });
 
-describe("図形スタイル（色・線種・角丸・網掛け）の編集経路", () => {
-  it("line の色・線種の commit と、既定値への復帰による属性除去", () => {
+describe("Shape style (color, stroke style, corner radius, stripe) edit paths", () => {
+  it("line color/stroke-style commit, and attribute removal on reverting to defaults", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["l1"]);
@@ -825,7 +825,7 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     expect("strokeStyle" in l1 && l1.strokeStyle !== undefined).toBe(false);
   });
 
-  it("rect の枠線色・角丸半径の commit と、既定値への復帰による属性除去", () => {
+  it("rect border color/corner radius commit, and attribute removal on reverting to defaults", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["r1"]);
@@ -848,7 +848,7 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     expect("borderColor" in r1 && r1.borderColor !== undefined).toBe(false);
   });
 
-  it("rect の線種の commit と、既定値への復帰による属性除去", () => {
+  it("rect stroke style commit, and attribute removal on reverting to the default", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["r1"]);
@@ -861,7 +861,7 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     expect("borderStyle" in r1 && r1.borderStyle !== undefined).toBe(false);
   });
 
-  it("rect の塗り色は allowNone トグルで属性の有無を切り替える", () => {
+  it("rect fill color toggles attribute presence via the allowNone toggle", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["r1"]);
@@ -883,7 +883,7 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     expect("fillColor" in r1 && r1.fillColor !== undefined).toBe(false);
   });
 
-  it("ellipse の配置・枠線・塗りの commit が到達する", () => {
+  it("ellipse placement/border/fill commits reach the store", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["e1"]);
@@ -905,7 +905,7 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     expect(elementById(store, "e1")).toMatchObject({ fillColor: "#abcdef" });
   });
 
-  it("table の外枠・内部罫線の太さ・線種の commit と、既定値への復帰による属性除去", () => {
+  it("table frame/grid line width and style commit, and attribute removal on reverting to defaults", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["tbl1"]);
@@ -941,7 +941,7 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     expect("gridStyle" in tbl1 && tbl1.gridStyle !== undefined).toBe(false);
   });
 
-  it("table の網掛けトグルは ON で既定色を設定し、OFF で stripeColor を除去する", () => {
+  it("the table stripe toggle sets the default color when ON and removes stripeColor when OFF", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     select(store, ["tbl1"]);
@@ -968,7 +968,7 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
     expect("stripeColor" in tbl1).toBe(false);
   });
 
-  it("text / pageNumber の文字色の commit と、既定値への復帰による属性除去", () => {
+  it("text / pageNumber font-color commit, and attribute removal on reverting to the default", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
 
@@ -988,7 +988,7 @@ describe("図形スタイル（色・線種・角丸・網掛け）の編集経�
   });
 });
 
-describe("maxY ガイド線の表示条件", () => {
+describe("Conditions for showing the maxY guide line", () => {
   function renderOverlay(store: EditorStore): void {
     const state = store.getState();
     render(
@@ -1000,7 +1000,7 @@ describe("maxY ガイド線の表示条件", () => {
     );
   }
 
-  it("table 単一選択中のみ表示する", () => {
+  it("shows only while a single table is selected", () => {
     const store = makeStore();
     store.setSelection(["tbl1"]);
     renderOverlay(store);
@@ -1010,7 +1010,7 @@ describe("maxY ガイド線の表示条件", () => {
     );
   });
 
-  it("table 以外の単一選択・複数選択では表示しない", () => {
+  it("doesn't show for a non-table single selection or a multi-selection", () => {
     const store = makeStore();
     store.setSelection(["t1"]);
     renderOverlay(store);
@@ -1022,8 +1022,8 @@ describe("maxY ガイド線の表示条件", () => {
   });
 });
 
-describe("ドラッグ中のライブ表示", () => {
-  it("idle のときは committed 値を表示する", () => {
+describe("Live display while dragging", () => {
+  it("shows the committed value when idle", () => {
     const store = makeStore();
     select(store, ["r1"]);
     render(<PropertiesPanel store={store} interaction={IDLE} />);
@@ -1031,7 +1031,7 @@ describe("ドラッグ中のライブ表示", () => {
     expect(inputByLabel("w").value).toBe("40.0");
   });
 
-  it("moving 中は選択中の id の x/y にオフセット加算後の値を表示する", () => {
+  it("shows the offset-added x/y for the selected id while moving", () => {
     const store = makeStore();
     select(store, ["t1"]);
     const interaction: InteractionState = {
@@ -1048,7 +1048,7 @@ describe("ドラッグ中のライブ表示", () => {
     expect(inputByLabel("y").value).toBe("13.0");
   });
 
-  it("resizing 中は w/h に interaction.box の値を表示する", () => {
+  it("shows interaction.box's values for w/h while resizing", () => {
     const store = makeStore();
     select(store, ["r1"]);
     const interaction: InteractionState = {
@@ -1064,7 +1064,7 @@ describe("ドラッグ中のライブ表示", () => {
     expect(inputByLabel("h").value).toBe("25.0");
   });
 
-  it("table + rest 文脈 + moving では y はライブ表示しない", () => {
+  it("doesn't show y live for table + rest context + moving", () => {
     const store = makeStore();
     act(() => {
       store.setView({ pageContext: "rest" });
@@ -1119,12 +1119,12 @@ function stubQueryLocalFonts(): void {
   );
 }
 
-describe("PC のフォントから選択", () => {
+describe("Selecting from PC fonts", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("ボタンでダイアログが開き、選択確定で font.regular が commit されレジストリに登録される", async () => {
+  it("the button opens the dialog, and confirming a selection commits font.regular and registers it", async () => {
     stubQueryLocalFonts();
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
@@ -1171,7 +1171,7 @@ describe("PC のフォントから選択", () => {
     expect(inputByLabel("フォント名").value).toBe("LocalFont");
   });
 
-  it("非対応環境ではボタンの代わりに説明文が出る", () => {
+  it("shows explanatory text instead of the button in unsupported environments", () => {
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     expect(container.textContent).toContain(
@@ -1180,7 +1180,7 @@ describe("PC のフォントから選択", () => {
     expect(() => buttonByText("PC のフォントから選択…")).toThrow();
   });
 
-  it("レジストリにも同梱名にも無い font.name は missing の注意表示になる", () => {
+  it("a font.name absent from both the registry and bundled names shows a missing notice", () => {
     const store = makeStore();
     act(() => {
       store.commit({
@@ -1195,8 +1195,8 @@ describe("PC のフォントから選択", () => {
   });
 });
 
-describe("en ロケール表示", () => {
-  it("要素別パネルが英語の MessagesContext で描画される", () => {
+describe("en locale display", () => {
+  it("the per-element panel renders with an English MessagesContext", () => {
     const store = makeStore();
     render(
       <MessagesContext.Provider value={en}>
@@ -1223,7 +1223,7 @@ describe("en ロケール表示", () => {
     expect(container.textContent).toContain("Symbology");
   });
 
-  it("文書設定パネルのフォントスロット名が英語で描画される", () => {
+  it("the document settings panel's font slot names render in English", () => {
     const store = makeStore();
     render(
       <MessagesContext.Provider value={en}>
@@ -1239,7 +1239,7 @@ describe("en ロケール表示", () => {
     expect(container.textContent).not.toContain("太字");
   });
 
-  it("パネルの aria-label が英語になる", () => {
+  it("the panel's aria-label is in English", () => {
     render(
       <MessagesContext.Provider value={en}>
         <PropertiesPanel store={makeStore()} interaction={IDLE} />

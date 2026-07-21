@@ -30,7 +30,7 @@ async function dragHorizontalGuideFromRuler(
   return page.locator(".dr-cguide-h");
 }
 
-test("上定規からのドラッグで水平ガイドが作成され、離しても消えない", async ({
+test("dragging from the top ruler creates a horizontal guide that persists after release", async ({
   page,
 }) => {
   await page.goto("/");
@@ -48,7 +48,7 @@ test("上定規からのドラッグで水平ガイドが作成され、離し�
   await expect(guide).toBeVisible();
 });
 
-test("要素をガイド近傍へドラッグすると、要素の座標がガイド位置へ吸着する", async ({
+test("dragging an element near a guide snaps its coordinates to the guide position", async ({
   page,
 }) => {
   await page.goto("/");
@@ -76,7 +76,7 @@ test("要素をガイド近傍へドラッグすると、要素の座標がガ�
   await expect(yField).toHaveValue(guideMm.toFixed(1));
 });
 
-test("ガイドを定規側へドラッグすると消える", async ({ page }) => {
+test("dragging a guide back toward the ruler removes it", async ({ page }) => {
   await page.goto("/");
   const paperBox = await paper(page).boundingBox();
   if (paperBox === null) {
@@ -104,7 +104,7 @@ test("ガイドを定規側へドラッグすると消える", async ({ page }) 
   await expect(page.locator(".dr-cguide-h")).toHaveCount(0);
 });
 
-test("封筒プリセットを選択すると1ページ目文脈で窓枠が表示され、継続ページ文脈では表示されない", async ({
+test("selecting an envelope preset shows the window frame in the first-page context and hides it in the continuation-page context", async ({
   page,
 }) => {
   await page.goto("/");

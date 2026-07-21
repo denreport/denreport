@@ -21,7 +21,7 @@ async function addTextElement(page: Page): Promise<void> {
   await expect(page.locator('.dr-el[data-dr-id="text1"]')).toBeVisible();
 }
 
-test("言語切替はリロード後も保持され、title・lang・UI 文言が追随する", async ({
+test("language switching persists after reload, with title, lang, and UI text following", async ({
   page,
 }) => {
   await page.goto("/");
@@ -38,7 +38,7 @@ test("言語切替はリロード後も保持され、title・lang・UI 文言�
   await expect(page.getByRole("button", { name: "Undo" })).toBeVisible();
 });
 
-test("en から ja へ戻すと日本語表示に復帰し、それもリロード後に保持される", async ({
+test("switching from en back to ja restores Japanese display, and that also persists after reload", async ({
   page,
 }) => {
   await page.goto("/");
@@ -64,7 +64,7 @@ test("en から ja へ戻すと日本語表示に復帰し、それもリロー�
   await expect(page.getByRole("button", { name: "元に戻す" })).toBeVisible();
 });
 
-test("en ではプロパティパネルの要素型名・見出し・欄ラベルが英語になる", async ({
+test("in en, the properties panel's element type name, headings, and field labels become English", async ({
   page,
 }) => {
   await page.goto("/");
@@ -86,7 +86,7 @@ test("en ではプロパティパネルの要素型名・見出し・欄ラベ�
   await expect(props.getByRole("button", { name: "Bold" })).toBeVisible();
 });
 
-test("en では書き出しダイアログの見出し・ボタン・説明文が英語になる", async ({
+test("in en, the export dialog's heading, buttons, and description become English", async ({
   page,
 }) => {
   await page.goto("/");
@@ -112,7 +112,7 @@ test("en では書き出しダイアログの見出し・ボタン・説明文�
   await expect(dialog.getByRole("button", { name: "Close" })).toBeVisible();
 });
 
-test("en ではプレビューダイアログの見出し・ボタン・説明文が英語になる", async ({
+test("in en, the preview dialog's heading, buttons, and description become English", async ({
   page,
 }) => {
   await page.goto("/");
@@ -132,7 +132,7 @@ test("en ではプレビューダイアログの見出し・ボタン・説明�
   await expect(dialog.getByRole("button", { name: "Close" })).toBeVisible();
 });
 
-test("en では検証ペインの core 由来メッセージが英語になる", async ({
+test("in en, core-originated messages in the validation pane become English", async ({
   page,
 }) => {
   await page.goto("/");
@@ -157,7 +157,9 @@ test("en では検証ペインの core 由来メッセージが英語になる",
   );
 });
 
-test("en では記載事項チェックの警告が英語になる", async ({ page }) => {
+test("in en, the required-items check warnings become English", async ({
+  page,
+}) => {
   await page.goto("/");
   await switchToEnglish(page);
   await propertiesPanel(page).getByLabel("Enable").check();
@@ -169,7 +171,9 @@ test("en では記載事項チェックの警告が英語になる", async ({ pa
   ).toHaveCount(1);
 });
 
-test("en では互換警告の userMessage が英語になる", async ({ page }) => {
+test("in en, the compatibility warning's userMessage becomes English", async ({
+  page,
+}) => {
   await page.goto("/");
   await switchToEnglish(page);
   await addTextElement(page);
@@ -184,7 +188,9 @@ test("en では互換警告の userMessage が英語になる", async ({ page })
   await expect(card.locator(".dr-warn-count")).toHaveText("1 location");
 });
 
-test("en では復元失敗のホスト通知が英語になる", async ({ page }) => {
+test("in en, the host notification for restore failure becomes English", async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     localStorage.setItem("denreport-designer.locale", "en");
     localStorage.setItem("denreport-designer.ir", "{broken");

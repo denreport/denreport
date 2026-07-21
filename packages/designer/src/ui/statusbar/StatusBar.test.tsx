@@ -53,7 +53,7 @@ afterEach(() => {
 });
 
 describe("StatusBar", () => {
-  it("単一選択でテキスト型・座標を表示する", () => {
+  it("shows the text type and coordinates for a single selection", () => {
     const store = makeStore([TEXT_EL]);
     store.setSelection(["t1"]);
     act(() => {
@@ -63,7 +63,7 @@ describe("StatusBar", () => {
     expect(container.textContent).toContain("（テキスト）");
   });
 
-  it("複数選択では件数を表示する", () => {
+  it("shows the count for a multi-selection", () => {
     const store = makeStore([TEXT_EL, { ...TEXT_EL, id: "t2" }]);
     store.setSelection(["t1", "t2"]);
     act(() => {
@@ -72,7 +72,7 @@ describe("StatusBar", () => {
     expect(container.textContent).toContain("選択: 2個");
   });
 
-  it("dirty により保存状態の文言が切り替わる", () => {
+  it("switches the saved-status text based on dirty state", () => {
     const store = makeStore([]);
     act(() => {
       root.render(<StatusBar store={store} cursorMm={null} />);
@@ -88,7 +88,7 @@ describe("StatusBar", () => {
     );
   });
 
-  it("en の MessagesContext では文言が英語で描画される", () => {
+  it("renders text in English under the en MessagesContext", () => {
     const store = makeStore([TEXT_EL]);
     store.setSelection(["t1"]);
     act(() => {

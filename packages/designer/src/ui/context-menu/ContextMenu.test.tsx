@@ -66,8 +66,8 @@ function pressKey(target: Element, key: string): KeyboardEvent {
   return event;
 }
 
-describe("ContextMenu 描画", () => {
-  it("items のラベル・ショートカットを描画し、無効項目に aria-disabled が付く", async () => {
+describe("ContextMenu rendering", () => {
+  it("renders item labels/shortcuts and sets aria-disabled on disabled items", async () => {
     const menu = await renderMenu(ITEMS);
     const buttons = itemButtons(menu);
     expect(buttons.map((b) => b.textContent)).toEqual([
@@ -81,7 +81,7 @@ describe("ContextMenu 描画", () => {
     expect(buttons[0]?.getAttribute("aria-disabled")).toBe("false");
   });
 
-  it("role=menu / role=menuitem が付く", async () => {
+  it("sets role=menu / role=menuitem", async () => {
     const menu = await renderMenu(ITEMS);
     expect(menu.getAttribute("role")).toBe("menu");
     expect(
@@ -90,15 +90,15 @@ describe("ContextMenu 描画", () => {
   });
 });
 
-describe("フォーカス管理", () => {
-  it("マウント時に最初の有効項目へフォーカスする", async () => {
+describe("focus management", () => {
+  it("focuses the first enabled item on mount", async () => {
     const menu = await renderMenu(ITEMS);
     await vi.waitFor(() => {
       expect(document.activeElement).toBe(itemButtons(menu)[0]);
     });
   });
 
-  it("先頭が無効な場合は最初の有効項目へフォーカスする", async () => {
+  it("focuses the first enabled item when the first item is disabled", async () => {
     const items = ITEMS.map((item, i) =>
       i === 0 ? { ...item, disabled: true } : item,
     );
@@ -108,7 +108,7 @@ describe("フォーカス管理", () => {
     });
   });
 
-  it("visibility が visible に確定してから focus() を呼ぶ", async () => {
+  it("calls focus() only after visibility settles to visible", async () => {
     const original = HTMLButtonElement.prototype.focus;
     const visibilityAtCall: string[] = [];
     const spy = vi
@@ -128,8 +128,8 @@ describe("フォーカス管理", () => {
   });
 });
 
-describe("キーボード操作", () => {
-  it("↓/↑ で項目を循環移動する", async () => {
+describe("keyboard operations", () => {
+  it("cycles through items with Down/Up", async () => {
     const menu = await renderMenu(ITEMS);
     const buttons = itemButtons(menu);
     await vi.waitFor(() => expect(document.activeElement).toBe(buttons[0]));
@@ -141,7 +141,7 @@ describe("キーボード操作", () => {
     expect(document.activeElement).toBe(buttons[0]);
   });
 
-  it("Home/End で先頭/末尾へ移動する", async () => {
+  it("moves to the first/last item with Home/End", async () => {
     const menu = await renderMenu(ITEMS);
     const buttons = itemButtons(menu);
     buttons[2]?.focus();
@@ -153,7 +153,7 @@ describe("キーボード操作", () => {
     expect(document.activeElement).toBe(buttons[0]);
   });
 
-  it("Enter で onAction が呼ばれる", async () => {
+  it("calls onAction on Enter", async () => {
     const onAction = vi.fn();
     const menu = await renderMenu(ITEMS, onAction);
     const buttons = itemButtons(menu);
@@ -163,7 +163,7 @@ describe("キーボード操作", () => {
     expect(onAction).toHaveBeenCalledWith("copy");
   });
 
-  it("無効項目上の Enter では onAction が呼ばれない", async () => {
+  it("does not call onAction on Enter over a disabled item", async () => {
     const onAction = vi.fn();
     const menu = await renderMenu(ITEMS, onAction);
     const buttons = itemButtons(menu);
@@ -173,28 +173,28 @@ describe("キーボード操作", () => {
     expect(onAction).not.toHaveBeenCalled();
   });
 
-  it("無効項目のクリックでは onAction が呼ばれない", async () => {
+  it("does not call onAction when clicking a disabled item", async () => {
     const onAction = vi.fn();
     const menu = await renderMenu(ITEMS, onAction);
     itemButtons(menu)[2]?.click();
     expect(onAction).not.toHaveBeenCalled();
   });
 
-  it("有効項目のクリックで onAction が呼ばれる", async () => {
+  it("calls onAction when clicking an enabled item", async () => {
     const onAction = vi.fn();
     const menu = await renderMenu(ITEMS, onAction);
     itemButtons(menu)[4]?.click();
     expect(onAction).toHaveBeenCalledWith("delete");
   });
 
-  it("Esc で onClose が呼ばれる", async () => {
+  it("calls onClose on Esc", async () => {
     const onClose = vi.fn();
     const menu = await renderMenu(ITEMS, undefined, onClose);
     pressKey(menu, "Escape");
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("任意キーの keydown が親（React ツリー上の onKeyDown）へ伝播しない", async () => {
+  it("does not propagate keydown of an arbitrary key to the parent (onKeyDown on the React tree)", async () => {
     const parentOnKeyDown = vi.fn();
     root.render(
       // biome-ignore lint/a11y/noStaticElementInteractions: mimics DesignerRoot's dr-layout (an ancestor with onKeyDown) for verification purposes
@@ -222,8 +222,8 @@ describe("キーボード操作", () => {
   });
 });
 
-describe("外側での閉じる操作", () => {
-  it("メニュー外の pointerdown で onClose が呼ばれる", async () => {
+describe("closing via outside interaction", () => {
+  it("calls onClose on pointerdown outside the menu", async () => {
     const onClose = vi.fn();
     await renderMenu(ITEMS, undefined, onClose);
     document.body.dispatchEvent(
@@ -232,7 +232,7 @@ describe("外側での閉じる操作", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("メニュー内の pointerdown では onClose が呼ばれない", async () => {
+  it("does not call onClose on pointerdown inside the menu", async () => {
     const onClose = vi.fn();
     const menu = await renderMenu(ITEMS, undefined, onClose);
     itemButtons(menu)[0]?.dispatchEvent(
@@ -241,7 +241,7 @@ describe("外側での閉じる操作", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("スクロール発生で onClose が呼ばれる", async () => {
+  it("calls onClose when scrolling occurs", async () => {
     const onClose = vi.fn();
     await renderMenu(ITEMS, undefined, onClose);
     document.body.dispatchEvent(new Event("scroll", { bubbles: false }));

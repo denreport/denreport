@@ -14,33 +14,33 @@ function documentWithFontName(name: string): IrDocument {
 }
 
 describe("sanitizeFontName", () => {
-  it("空白・記号を除去する", () => {
+  it("removes whitespace and symbols", () => {
     expect(sanitizeFontName("Noto Sans JP")).toBe("NotoSansJP");
     expect(sanitizeFontName("Yu-Gothic UI!")).toBe("YuGothicUI");
   });
 
-  it("先頭が数字なら _ を前置する", () => {
+  it("prefixes _ when the name starts with a digit", () => {
     expect(sanitizeFontName("07 Logo")).toBe("_07Logo");
   });
 
-  it("非該当文字しかなければ LocalFont になる", () => {
+  it("falls back to LocalFont when no valid characters remain", () => {
     expect(sanitizeFontName("！＠＃")).toBe("LocalFont");
     expect(sanitizeFontName("")).toBe("LocalFont");
   });
 
-  it("64 文字を超える名前は切り詰める", () => {
+  it("truncates names longer than 64 characters", () => {
     const raw = "A".repeat(80);
     const result = sanitizeFontName(raw);
     expect(result).toHaveLength(64);
     expect(result).toBe("A".repeat(64));
   });
 
-  it("既に識別子として妥当な名前は変えない", () => {
+  it("leaves names that are already valid identifiers unchanged", () => {
     expect(sanitizeFontName("NotoSansJP")).toBe("NotoSansJP");
     expect(sanitizeFontName("_already_valid")).toBe("_already_valid");
   });
 
-  it("出力は常に font.name の識別子検証（M07）を通る", () => {
+  it("output always passes the font.name identifier validation (M07)", () => {
     for (const raw of [
       "IPAex ゴシック",
       "123",
@@ -62,7 +62,7 @@ function font(name: string): RegisteredFont {
 const EMBEDDED = new Set(["NotoSansJP", "NotoSansJPBold"]);
 
 describe("resolveFont", () => {
-  it("レジストリに一致すれば registered になり、同梱名より優先される", () => {
+  it("resolves to registered when it matches the registry, taking priority over bundled names", () => {
     const registry = new Map([["NotoSansJP", font("NotoSansJP")]]);
     expect(resolveFont("NotoSansJP", registry, EMBEDDED)).toEqual({
       kind: "registered",
@@ -70,7 +70,7 @@ describe("resolveFont", () => {
     });
   });
 
-  it("レジストリに無く同梱名と一致すれば embedded に name が載る", () => {
+  it("resolves to embedded with the name when absent from the registry but matching a bundled name", () => {
     const registry = new Map<string, RegisteredFont>();
     expect(resolveFont("NotoSansJPBold", registry, EMBEDDED)).toEqual({
       kind: "embedded",
@@ -78,7 +78,7 @@ describe("resolveFont", () => {
     });
   });
 
-  it("どちらでもなければ missing に name が載る", () => {
+  it("resolves to missing with the name when neither matches", () => {
     const registry = new Map<string, RegisteredFont>();
     expect(resolveFont("IPAexGothic", registry, EMBEDDED)).toEqual({
       kind: "missing",
@@ -88,7 +88,7 @@ describe("resolveFont", () => {
 });
 
 describe("resolveFontSet", () => {
-  it("宣言スロットだけを解決し、登録・同梱・missing が混在できる", () => {
+  it("resolves only declared slots, allowing registered, embedded, and missing to mix", () => {
     const registry = new Map([["MyItalic", font("MyItalic")]]);
     const resolutions = resolveFontSet(
       {

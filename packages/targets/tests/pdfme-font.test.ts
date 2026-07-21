@@ -38,7 +38,7 @@ describe("buildPdfmeFontMap", () => {
     expect(Object.keys(map)).toEqual(["Base"]);
   });
 
-  it("subset: true でも subset フィールドを含まない（既定と同値）", () => {
+  it("subset: true still omits the subset field (equivalent to the default)", () => {
     const map = buildPdfmeFontMap(
       { regular: "NotoSansJP" },
       { regular: syntheticTtf() },
@@ -47,7 +47,7 @@ describe("buildPdfmeFontMap", () => {
     expect(map.NotoSansJP).not.toHaveProperty("subset");
   });
 
-  it("subset: false では全エントリに subset: false を含める", () => {
+  it("subset: false includes subset: false on every entry", () => {
     const map = buildPdfmeFontMap(
       { regular: "Base", bold: "BaseBold" },
       { regular: syntheticTtf(), bold: syntheticTtf() },

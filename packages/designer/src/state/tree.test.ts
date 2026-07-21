@@ -76,7 +76,7 @@ function baseDocument(): IrDocument {
 }
 
 describe("updateElementById", () => {
-  it("トップレベル要素を置換する", () => {
+  it("replaces a top-level element", () => {
     const doc = baseDocument();
     const next = updateElementById(doc, "top", (el) => ({
       ...el,
@@ -86,7 +86,7 @@ describe("updateElementById", () => {
     expect(next.elements[1]).toBe(doc.elements[1]);
   });
 
-  it("flex 子を置換する", () => {
+  it("replaces a flex child", () => {
     const doc = baseDocument();
     const next = updateElementById(doc, "child", (el) => ({
       ...el,
@@ -100,7 +100,7 @@ describe("updateElementById", () => {
     expect(next.elements[0]).toBe(doc.elements[0]);
   });
 
-  it("入れ子 flex の子孫まで届く", () => {
+  it("reaches descendants inside nested flex", () => {
     const doc = baseDocument();
     const next = updateElementById(doc, "grandchild", (el) => ({
       ...el,
@@ -119,12 +119,12 @@ describe("updateElementById", () => {
     }
   });
 
-  it("不在 id は同一参照を返す（no-op）", () => {
+  it("returns the same reference for a nonexistent id (no-op)", () => {
     const doc = baseDocument();
     expect(updateElementById(doc, "nope", (el) => el)).toBe(doc);
   });
 
-  it("無関係な部分の参照を維持する（structural sharing）", () => {
+  it("preserves references to unrelated parts (structural sharing)", () => {
     const doc = baseDocument();
     const next = updateElementById(doc, "grandchild", (el) => ({
       ...el,

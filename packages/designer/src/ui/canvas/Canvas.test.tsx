@@ -113,8 +113,8 @@ afterEach(() => {
   Reflect.deleteProperty(document, "elementFromPoint");
 });
 
-describe("Canvas パンモード", () => {
-  it("canvasMode が pan のとき viewport に is-pan が付く", () => {
+describe("Canvas pan mode", () => {
+  it("adds is-pan to the viewport when canvasMode is pan", () => {
     const store = makeStore();
     store.setView({ canvasMode: "pan" });
     act(() => {
@@ -124,7 +124,7 @@ describe("Canvas パンモード", () => {
     expect(viewport?.classList.contains("is-pan")).toBe(true);
   });
 
-  it("paper へのポインタドラッグは viewport のスクロールを動かし、選択・文書は不変。ドラッグ中は is-panning が付く", () => {
+  it("dragging the pointer over paper scrolls the viewport while selection and document stay unchanged; is-panning is added during the drag", () => {
     const store = makeStore();
     store.setView({ canvasMode: "pan" });
     act(() => {
@@ -170,7 +170,7 @@ describe("Canvas パンモード", () => {
     expect(store.getState().selection).toEqual(beforeSelection);
   });
 
-  it("window への Space keydown で is-pan になり、keyup で戻る", () => {
+  it("a Space keydown on window turns on is-pan, and keyup reverts it", () => {
     const store = makeStore();
     act(() => {
       root.render(<Host store={store} />);
@@ -197,7 +197,7 @@ describe("Canvas パンモード", () => {
     expect(viewport?.classList.contains("is-pan")).toBe(false);
   });
 
-  it("input へフォーカスがある間の Space では変化しない", () => {
+  it("Space doesn't change anything while an input is focused", () => {
     const store = makeStore();
     act(() => {
       root.render(<Host store={store} />);
@@ -219,7 +219,7 @@ describe("Canvas パンモード", () => {
     input.remove();
   });
 
-  it("pan モードの dblclick でインライン編集が開かない", () => {
+  it("dblclick in pan mode doesn't open inline editing", () => {
     const store = makeStore();
     store.setView({ canvasMode: "pan" });
     act(() => {
@@ -238,8 +238,8 @@ describe("Canvas パンモード", () => {
   });
 });
 
-describe("Canvas ダブルクリック編集開始", () => {
-  it("pointer capture でイベント標的が paper へ固定されていても、実際にカーソル直下にある要素を編集対象にする", () => {
+describe("Canvas double-click starts editing", () => {
+  it("targets the element actually under the cursor for editing even when pointer capture pins the event target to paper", () => {
     const store = makeStore();
     act(() => {
       root.render(<Host store={store} />);
@@ -264,7 +264,7 @@ describe("Canvas ダブルクリック編集開始", () => {
   });
 });
 
-describe("Canvas 表のデータ行セル編集", () => {
+describe("Canvas table data-row cell editing", () => {
   function dblclickCell(row: number, col: number): void {
     const cell = container.querySelector(
       `[data-dr-id="tbl1"] [data-dr-row="${row}"][data-dr-col="${col}"]`,
@@ -281,7 +281,7 @@ describe("Canvas 表のデータ行セル編集", () => {
     });
   }
 
-  it("セルのダブルクリックで bind 由来の値を表示する入力が開く", () => {
+  it("double-clicking a cell opens an input showing the bind-derived value", () => {
     const store = makeTableStore(
       JSON.stringify({ items: [{ name: "item0" }] }),
     );
@@ -294,7 +294,7 @@ describe("Canvas 表のデータ行セル編集", () => {
     expect((editor as HTMLInputElement).value).toBe("item0");
   });
 
-  it("値を変えて確定すると cellOverrides が1回の commit で反映される", () => {
+  it("changing the value and committing reflects it in cellOverrides with a single commit", () => {
     const store = makeTableStore(
       JSON.stringify({ items: [{ name: "item0" }] }),
     );
@@ -316,7 +316,7 @@ describe("Canvas 表のデータ行セル編集", () => {
     expect(store.getState().dirty).toBe(true);
   });
 
-  it("bind 表示値に改行が含まれていても、覗いて確定しただけなら commit されない", () => {
+  it("even when the bind display value contains a newline, simply peeking and confirming doesn't commit", () => {
     const store = makeTableStore(
       JSON.stringify({ items: [{ name: "item0\nline2" }] }),
     );
@@ -334,7 +334,7 @@ describe("Canvas 表のデータ行セル編集", () => {
     expect(store.getState().dirty).toBe(false);
   });
 
-  it("bind 表示値と同じ値で確定すると commit されない", () => {
+  it("doesn't commit when confirming with the same value as the bind display value", () => {
     const store = makeTableStore(
       JSON.stringify({ items: [{ name: "item0" }] }),
     );
@@ -354,7 +354,7 @@ describe("Canvas 表のデータ行セル編集", () => {
   });
 });
 
-describe("Canvas セル範囲選択", () => {
+describe("Canvas cell range selection", () => {
   const MM = 3.78; // MM_TO_PX (zoom 1)
 
   function firePointer(
@@ -384,7 +384,7 @@ describe("Canvas セル範囲選択", () => {
     HTMLElement.prototype.hasPointerCapture ??= () => false;
   });
 
-  it("表選択済みでのドラッグでセル範囲を選択し、表は動かずハイライトが残る", () => {
+  it("dragging while the table is already selected selects a cell range; the table doesn't move and the highlight remains", () => {
     const store = makeTableStore("{}");
     store.setSelection(["tbl1"]);
     act(() => {
@@ -412,7 +412,7 @@ describe("Canvas セル範囲選択", () => {
     expect(store.getState().selection).toEqual(["tbl1"]);
   });
 
-  it("Shift+pointerdown で既存の選択矩形を拡張する", () => {
+  it("Shift+pointerdown extends the existing selection rectangle", () => {
     const store = makeTableStore("{}");
     store.setSelection(["tbl1"]);
     act(() => {
@@ -436,7 +436,7 @@ describe("Canvas セル範囲選択", () => {
     expect(extended.style.getPropertyValue("--h")).toBe("16");
   });
 
-  it("表の選択が外れるとハイライトが消える", () => {
+  it("the highlight disappears when the table is deselected", () => {
     const store = makeTableStore("{}");
     store.setSelection(["tbl1"]);
     act(() => {

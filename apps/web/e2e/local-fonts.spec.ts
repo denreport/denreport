@@ -1,9 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("PC 内フォントからの選択（許可済み環境）", () => {
+test.describe("selecting from local PC fonts (permission granted)", () => {
   test.use({ permissions: ["local-fonts"] });
 
-  test("一覧取得〜選択〜プレビュー反映まで通しで動く", async ({ page }) => {
+  test("works end-to-end from listing through selection to preview", async ({
+    page,
+  }) => {
     await page.goto("/");
     const props = page.getByRole("complementary", { name: "プロパティ" });
     await props.getByRole("button", { name: "標準のフォントを選択…" }).click();
@@ -42,8 +44,10 @@ test.describe("PC 内フォントからの選択（許可済み環境）", () =>
   });
 });
 
-test.describe("PC 内フォント選択が非対応の環境", () => {
-  test("選択ボタンの代わりにフォールバックの説明文が出る", async ({ page }) => {
+test.describe("environment without local font selection support", () => {
+  test("shows fallback explanatory text instead of the selection button", async ({
+    page,
+  }) => {
     await page.addInitScript(() => {
       const win = window as unknown as { queryLocalFonts?: unknown };
       delete win.queryLocalFonts;

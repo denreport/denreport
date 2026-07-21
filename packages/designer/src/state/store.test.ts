@@ -37,7 +37,7 @@ function makeInvoiceDocument(
 }
 
 describe("EditorStore", () => {
-  it("初期状態は非 dirty・選択なし・既定ビュー", () => {
+  it("initial state is non-dirty, no selection, default view", () => {
     const store = new EditorStore(makeDocument());
     const state = store.getState();
     expect(state.dirty).toBe(false);
@@ -53,7 +53,7 @@ describe("EditorStore", () => {
     expect(state.validationWarnings).toEqual([]);
   });
 
-  it("commit は新しい状態オブジェクトを生成し、旧参照は不変のまま", () => {
+  it("commit creates a new state object, leaving the old reference unchanged", () => {
     const store = new EditorStore(makeDocument());
     const before = store.getState();
 
@@ -68,7 +68,7 @@ describe("EditorStore", () => {
     expect(after.selection).toEqual(["t1"]);
   });
 
-  it("commit / replaceDocument / setSelection / setView / markSaved のそれぞれで購読者に通知される", () => {
+  it("commit / replaceDocument / setSelection / setView / markSaved each notify subscribers", () => {
     const store = new EditorStore(makeDocument());
     let notified = 0;
     store.subscribe(() => {
@@ -83,7 +83,7 @@ describe("EditorStore", () => {
     expect(notified).toBe(5);
   });
 
-  it("subscribe の解除関数で通知が止まる", () => {
+  it("subscribe's unsubscribe function stops notifications", () => {
     const store = new EditorStore(makeDocument());
     let notified = 0;
     const unsubscribe = store.subscribe(() => {
@@ -94,7 +94,7 @@ describe("EditorStore", () => {
     expect(notified).toBe(0);
   });
 
-  it("commit 後に validationErrors が再計算される", () => {
+  it("validationErrors are recomputed after commit", () => {
     const store = new EditorStore(makeDocument());
     expect(store.getState().validationErrors).toEqual([]);
 
@@ -107,7 +107,7 @@ describe("EditorStore", () => {
     expect(store.getState().validationErrors).toEqual([]);
   });
 
-  it("setLocale は現在の文書で検証をやり直し、購読者へ通知する", () => {
+  it("setLocale re-validates the current document and notifies subscribers", () => {
     const store = new EditorStore(makeDocument([textElement("t1", 500)]));
     let notified = 0;
     store.subscribe(() => {
@@ -125,7 +125,7 @@ describe("EditorStore", () => {
     expect(notified).toBe(1);
   });
 
-  it("setLocale 後の commit も切り替えた言語で検証する", () => {
+  it("commit after setLocale also validates in the switched language", () => {
     const store = new EditorStore(makeDocument());
     store.setLocale("en");
     store.commit(makeDocument([textElement("t1", 500)]));
@@ -135,7 +135,7 @@ describe("EditorStore", () => {
     expect(enMessage).not.toBe(jaStore.getState().validationErrors[0]?.message);
   });
 
-  it("commit / replaceDocument / undo で validationWarnings が再計算される", () => {
+  it("validationWarnings are recomputed on commit / replaceDocument / undo", () => {
     const store = new EditorStore(makeInvoiceDocument());
     expect(store.getState().validationWarnings.length).toBe(6);
 
@@ -151,7 +151,7 @@ describe("EditorStore", () => {
     expect(store.getState().validationWarnings).toEqual([]);
   });
 
-  it("dirty は commit で立ち、markSaved で下りる", () => {
+  it("dirty is set by commit and cleared by markSaved", () => {
     const store = new EditorStore(makeDocument());
     store.commit(makeDocument([textElement("t1", 10)]));
     expect(store.getState().dirty).toBe(true);
@@ -159,7 +159,7 @@ describe("EditorStore", () => {
     expect(store.getState().dirty).toBe(false);
   });
 
-  it("replaceDocument は履歴と選択をクリアし dirty を下ろす", () => {
+  it("replaceDocument clears history and selection and drops dirty", () => {
     const store = new EditorStore(makeDocument());
     store.commit(makeDocument([textElement("t1", 10)]), ["t1"]);
     expect(store.canUndo()).toBe(true);
@@ -172,7 +172,7 @@ describe("EditorStore", () => {
     expect(state.dirty).toBe(false);
   });
 
-  it("undo / redo で文書と選択が往復し、setSelection / setView は履歴に積まれない", () => {
+  it("undo / redo round-trip the document and selection, and setSelection / setView aren't pushed to history", () => {
     const initial = makeDocument();
     const edited = makeDocument([textElement("t1", 10)]);
     const store = new EditorStore(initial);
@@ -194,7 +194,7 @@ describe("EditorStore", () => {
     expect(store.canRedo()).toBe(false);
   });
 
-  it("履歴が空の undo / redo は何もしない", () => {
+  it("undo / redo do nothing when history is empty", () => {
     const store = new EditorStore(makeDocument());
     const before = store.getState();
     store.undo();
@@ -203,8 +203,8 @@ describe("EditorStore", () => {
   });
 });
 
-describe("EditorStore のサンプルデータ", () => {
-  it("省略時は既定1件のシナリオ、コンストラクタ引数（レガシー生 JSON）はそのシナリオの json になる", () => {
+describe("EditorStore sample data", () => {
+  it("defaults to one scenario when omitted, and the constructor argument (legacy raw JSON) becomes that scenario's json", () => {
     expect(
       activeSampleJson(
         new EditorStore(makeDocument()).getState().sampleScenarios,
@@ -217,7 +217,7 @@ describe("EditorStore のサンプルデータ", () => {
     ).toBe('{"a": 1}');
   });
 
-  it("setSampleScenarios は購読者に通知し、履歴にも dirty にも影響しない", () => {
+  it("setSampleScenarios notifies subscribers and doesn't affect history or dirty", () => {
     const store = new EditorStore(makeDocument());
     let notified = 0;
     store.subscribe(() => {
@@ -233,7 +233,7 @@ describe("EditorStore のサンプルデータ", () => {
     expect(store.getState().dirty).toBe(false);
   });
 
-  it("undo で文書は戻るがサンプルデータは戻らない", () => {
+  it("undo reverts the document but not the sample data", () => {
     const initial = makeDocument();
     const store = new EditorStore(initial, "v1");
     store.commit(makeDocument([textElement("t1", 10)]));
@@ -246,26 +246,26 @@ describe("EditorStore のサンプルデータ", () => {
     expect(activeSampleJson(store.getState().sampleScenarios)).toBe("v2");
   });
 
-  it("replaceDocument はサンプルデータを維持する", () => {
+  it("replaceDocument preserves the sample data", () => {
     const store = new EditorStore(makeDocument(), '{"a": 1}');
     store.replaceDocument(makeDocument([textElement("t1", 10)]));
     expect(activeSampleJson(store.getState().sampleScenarios)).toBe('{"a": 1}');
   });
 });
 
-describe("EditorStore のクリップボード", () => {
+describe("EditorStore clipboard", () => {
   const clipboard: ClipboardState = {
     elements: [textElement("t1", 10)],
     pasteCount: 0,
     groupIndexes: [],
   };
 
-  it("初期値は null", () => {
+  it("initial value is null", () => {
     const store = new EditorStore(makeDocument());
     expect(store.getClipboard()).toBeNull();
   });
 
-  it("setClipboard はリスナーに通知せず、getState() の結果（dirty 含む）も変えない", () => {
+  it("setClipboard doesn't notify listeners and doesn't change getState()'s result (including dirty)", () => {
     const store = new EditorStore(makeDocument());
     const before = store.getState();
     let notified = 0;
@@ -280,7 +280,7 @@ describe("EditorStore のクリップボード", () => {
     expect(store.getClipboard()).toEqual(clipboard);
   });
 
-  it("undo / redo してもクリップボードは変わらない", () => {
+  it("clipboard is unchanged across undo / redo", () => {
     const store = new EditorStore(makeDocument());
     store.commit(makeDocument([textElement("t1", 10)]), ["t1"]);
     store.setClipboard(clipboard);
@@ -292,14 +292,14 @@ describe("EditorStore のクリップボード", () => {
   });
 });
 
-describe("EditorStore のカスタムガイド・封筒プリセット", () => {
-  it("初期値は空配列と null", () => {
+describe("EditorStore custom guides and envelope preset", () => {
+  it("initial value is an empty array and null", () => {
     const state = new EditorStore(makeDocument()).getState();
     expect(state.customGuides).toEqual([]);
     expect(state.envelopePresetId).toBeNull();
   });
 
-  it("setCustomGuides / setEnvelopePreset は購読者に通知し、履歴にも dirty にも影響しない", () => {
+  it("setCustomGuides / setEnvelopePreset notify subscribers and don't affect history or dirty", () => {
     const store = new EditorStore(makeDocument());
     let notified = 0;
     store.subscribe(() => {
@@ -318,7 +318,7 @@ describe("EditorStore のカスタムガイド・封筒プリセット", () => {
     expect(store.getState().dirty).toBe(false);
   });
 
-  it("undo / redo・commit・replaceDocument を経ても維持される", () => {
+  it("preserved across undo / redo, commit, and replaceDocument", () => {
     const store = new EditorStore(makeDocument());
     store.setCustomGuides([{ id: "guide1", axis: "y", positionMm: 20 }]);
     store.setEnvelopePreset("l3-w90h55");
@@ -338,13 +338,13 @@ describe("EditorStore のカスタムガイド・封筒プリセット", () => {
   });
 });
 
-describe("EditorStore の書き出しターゲット", () => {
-  it("省略時の初期値は pdfme", () => {
+describe("EditorStore export target", () => {
+  it("the default initial value is pdfme", () => {
     const state = new EditorStore(makeDocument()).getState();
     expect(state.selectedExportTarget).toBe("pdfme");
   });
 
-  it("コンストラクタ第3引数で初期値を指定できる", () => {
+  it("the initial value can be specified via the third constructor argument", () => {
     const state = new EditorStore(
       makeDocument(),
       undefined,
@@ -353,7 +353,7 @@ describe("EditorStore の書き出しターゲット", () => {
     expect(state.selectedExportTarget).toBe("reportlab");
   });
 
-  it("setSelectedExportTarget は購読者に通知し、履歴にも dirty にも影響しない", () => {
+  it("setSelectedExportTarget notifies subscribers and doesn't affect history or dirty", () => {
     const store = new EditorStore(makeDocument());
     let notified = 0;
     store.subscribe(() => {
@@ -368,7 +368,7 @@ describe("EditorStore の書き出しターゲット", () => {
     expect(store.getState().dirty).toBe(false);
   });
 
-  it("undo / redo・commit・replaceDocument を経ても維持される", () => {
+  it("preserved across undo / redo, commit, and replaceDocument", () => {
     const store = new EditorStore(makeDocument());
     store.setSelectedExportTarget("reportlab");
 
@@ -390,14 +390,14 @@ function registeredFont(name: string): RegisteredFont {
   };
 }
 
-describe("EditorStore のフォントレジストリ", () => {
-  it("初期状態は空", () => {
+describe("EditorStore font registry", () => {
+  it("initial state is empty", () => {
     expect(new EditorStore(makeDocument()).getState().fontRegistry.size).toBe(
       0,
     );
   });
 
-  it("registerFont は購読者に通知し、レジストリに追加する", () => {
+  it("registerFont notifies subscribers and adds to the registry", () => {
     const store = new EditorStore(makeDocument());
     let notified = 0;
     store.subscribe(() => {
@@ -411,14 +411,14 @@ describe("EditorStore のフォントレジストリ", () => {
     );
   });
 
-  it("履歴に積まれず dirty も変わらない", () => {
+  it("isn't pushed to history and doesn't change dirty", () => {
     const store = new EditorStore(makeDocument());
     store.registerFont(registeredFont("IPAexGothic"));
     expect(store.canUndo()).toBe(false);
     expect(store.getState().dirty).toBe(false);
   });
 
-  it("同名は上書きする", () => {
+  it("the same name overwrites", () => {
     const store = new EditorStore(makeDocument());
     store.registerFont(registeredFont("IPAexGothic"));
     const updated: RegisteredFont = {
@@ -430,7 +430,7 @@ describe("EditorStore のフォントレジストリ", () => {
     expect(store.getState().fontRegistry.get("IPAexGothic")).toEqual(updated);
   });
 
-  it("undo / redo・commit・replaceDocument を経てもレジストリは維持される", () => {
+  it("the registry is preserved across undo / redo, commit, and replaceDocument", () => {
     const store = new EditorStore(makeDocument());
     store.registerFont(registeredFont("IPAexGothic"));
 
@@ -443,12 +443,12 @@ describe("EditorStore のフォントレジストリ", () => {
   });
 });
 
-describe("EditorStore のグループ", () => {
-  it("初期状態は空", () => {
+describe("EditorStore groups", () => {
+  it("initial state is empty", () => {
     expect(new EditorStore(makeDocument()).getState().groups).toEqual([]);
   });
 
-  it("setGroups は購読者に通知し、履歴・dirty に影響しない", () => {
+  it("setGroups notifies subscribers and doesn't affect history or dirty", () => {
     const store = new EditorStore(makeDocument());
     let notified = 0;
     store.subscribe(() => {
@@ -464,7 +464,7 @@ describe("EditorStore のグループ", () => {
     expect(store.getState().dirty).toBe(false);
   });
 
-  it("replaceDocument は新文書に groups が無ければグループを空にする", () => {
+  it("replaceDocument empties groups when the new document has none", () => {
     const store = new EditorStore(makeDocument());
     store.setGroups([{ id: "group1", memberIds: ["a", "b"] }]);
 
@@ -472,7 +472,7 @@ describe("EditorStore のグループ", () => {
     expect(store.getState().groups).toEqual([]);
   });
 
-  it("replaceDocument は document.groups からグループを復元する", () => {
+  it("replaceDocument restores groups from document.groups", () => {
     const store = new EditorStore(makeDocument());
     const document: IrDocument = {
       ...makeDocument([textElement("t1", 10), textElement("t2", 60)]),
@@ -485,7 +485,7 @@ describe("EditorStore のグループ", () => {
     ]);
   });
 
-  it("replaceDocument は生存メンバー2未満のグループを復元しない", () => {
+  it("replaceDocument doesn't restore a group with fewer than 2 surviving members", () => {
     const store = new EditorStore(makeDocument());
     const document: IrDocument = {
       ...makeDocument([textElement("t1", 10)]),
@@ -496,7 +496,7 @@ describe("EditorStore のグループ", () => {
     expect(store.getState().groups).toEqual([]);
   });
 
-  it("undo / redo してもグループは変わらない", () => {
+  it("groups are unchanged across undo / redo", () => {
     const store = new EditorStore(makeDocument());
     store.commit(makeDocument([textElement("t1", 10)]), ["t1"]);
     store.setGroups([{ id: "group1", memberIds: ["t1"] }]);

@@ -486,7 +486,7 @@ interface StoredElement {
   readonly continuationY?: number;
 }
 
-test("適格請求書サンプルをデザイナー UI だけで再現し両ターゲットへ書き出す", async ({
+test("reproduces the qualified invoice sample using only the designer UI and exports to both targets", async ({
   page,
 }) => {
   await page.goto("/");
@@ -496,19 +496,19 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
 
   const props = page.getByRole("complementary", { name: "プロパティ" });
 
-  await test.step("要素配置: タイトル・メタ情報・宛先・発行者・ロゴ", async () => {
+  await test.step("place elements: title, meta info, recipient, issuer, logo", async () => {
     for (const spec of ELEMENTS.slice(0, 9)) {
       await placeElement(page, props, spec);
     }
   });
 
-  await test.step("要素配置: 挨拶文・請求金額ボックス・振込先ボックス", async () => {
+  await test.step("place elements: greeting text, invoice amount box, payee box", async () => {
     for (const spec of ELEMENTS.slice(9, 16)) {
       await placeElement(page, props, spec);
     }
   });
 
-  await test.step("要素配置: 明細表（8列）", async () => {
+  await test.step("place elements: line-item table (8 columns)", async () => {
     const table = ELEMENTS[16];
     if (table === undefined) {
       throw new Error("table1 の定義がありません");
@@ -516,13 +516,13 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
     await placeElement(page, props, table);
   });
 
-  await test.step("要素配置: 税率区分・合計・備考・ページ番号", async () => {
+  await test.step("place elements: tax rate breakdown, totals, notes, page number", async () => {
     for (const spec of ELEMENTS.slice(17)) {
       await placeElement(page, props, spec);
     }
   });
 
-  await test.step("要素配置: flex（発行者担当者情報）", async () => {
+  await test.step("place elements: flex (issuer contact info)", async () => {
     // flex1's final position overlaps the safe spot, so from here on we don't drop onto the safe spot.
     await dragFromPalette(page, FLEX_PALETTE, SAFE_SPOT);
     const flexEl = page.locator('.dr-el[data-dr-id="flex1"]');
@@ -545,7 +545,7 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
 
   const preview = page.getByRole("dialog", { name: "プレビュー" });
 
-  await test.step("サンプルデータ", async () => {
+  await test.step("sample data", async () => {
     await page.getByRole("button", { name: "プレビュー" }).click();
     await expect(preview).toBeVisible();
     const sampleField = preview.getByLabel("サンプルデータ (JSON)");
@@ -553,7 +553,7 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
     await sampleField.blur();
   });
 
-  await test.step("プレビュー確認", async () => {
+  await test.step("verify preview", async () => {
     await expect(preview.getByText("1 ページ", { exact: true })).toBeVisible();
     await expect(preview.locator(".dr-preview-warnings")).toHaveCount(0);
     // The "1 / 1" text at the bottom of the page and the preview's own page-number caption end up
@@ -566,7 +566,7 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
     await expect(preview).toBeHidden();
   });
 
-  await test.step("pdfme 書き出し", async () => {
+  await test.step("pdfme export", async () => {
     await page.getByRole("button", { name: "書き出し" }).click();
     const exportDialog = page.getByRole("dialog", { name: "書き出し" });
     await expect(exportDialog).toBeVisible();
@@ -633,7 +633,7 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
     expect(pageNumberSchema.type).toBe("text");
   });
 
-  await test.step("ReportLab 書き出し", async () => {
+  await test.step("ReportLab export", async () => {
     await page.getByRole("button", { name: "書き出し" }).click();
     const exportDialog = page.getByRole("dialog", { name: "書き出し" });
     await expect(exportDialog).toBeVisible();
@@ -686,7 +686,7 @@ test("適格請求書サンプルをデザイナー UI だけで再現し両タ�
     expect(code).toContain('["1 / 1"]');
   });
 
-  await test.step("IR 検査", async () => {
+  await test.step("inspect IR", async () => {
     await page.waitForFunction((text21) => {
       const raw = localStorage.getItem("denreport-designer.ir");
       if (raw === null) {

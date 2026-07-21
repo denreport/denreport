@@ -6,7 +6,7 @@ afterEach(() => {
 });
 
 describe("createNoticeArea", () => {
-  it("show で role=status 領域に文言が表示される", () => {
+  it("show displays the message in the role=status region", () => {
     const notice = createNoticeArea(document);
     document.body.append(notice.element);
     expect(notice.element.getAttribute("role")).toBe("status");
@@ -17,7 +17,7 @@ describe("createNoticeArea", () => {
     expect(notice.element.textContent).toContain("読み込めませんでした");
   });
 
-  it("2回目の show は前の通知を置き換える", () => {
+  it("a second show replaces the previous notice", () => {
     const notice = createNoticeArea(document);
     document.body.append(notice.element);
 
@@ -27,7 +27,7 @@ describe("createNoticeArea", () => {
     expect(notice.element.textContent).not.toContain("最初の通知");
   });
 
-  it("閉じるボタンで消える", () => {
+  it("disappears when the close button is clicked", () => {
     const notice = createNoticeArea(document);
     document.body.append(notice.element);
 
@@ -41,7 +41,7 @@ describe("createNoticeArea", () => {
     expect(notice.element.textContent).toContain("再表示");
   });
 
-  it("閉じるラベルは show ごとの指定文言になる", () => {
+  it("the close label uses the text given to each show call", () => {
     const notice = createNoticeArea(document);
     document.body.append(notice.element);
 

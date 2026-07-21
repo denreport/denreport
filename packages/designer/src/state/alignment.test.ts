@@ -64,7 +64,7 @@ function textElement(
 }
 
 describe("alignmentDeltas", () => {
-  it("left: 各箱の左辺を union の左端に揃える", () => {
+  it("left: aligns each box's left edge to the union's left edge", () => {
     const views = [
       view("a", { x: 10, y: 0, w: 20, h: 10 }),
       view("b", { x: 40, y: 0, w: 10, h: 10 }),
@@ -74,7 +74,7 @@ describe("alignmentDeltas", () => {
     expect(deltas.get("b")).toEqual({ dx: -30, dy: 0 });
   });
 
-  it("right: 各箱の右辺を union の右端に揃える", () => {
+  it("right: aligns each box's right edge to the union's right edge", () => {
     const views = [
       view("a", { x: 10, y: 0, w: 20, h: 10 }),
       view("b", { x: 40, y: 0, w: 10, h: 10 }),
@@ -85,7 +85,7 @@ describe("alignmentDeltas", () => {
     expect(deltas.get("b")).toBeUndefined();
   });
 
-  it("hcenter: 各箱の中心 x を union の中心 x に揃える", () => {
+  it("hcenter: aligns each box's center x to the union's center x", () => {
     const views = [
       view("a", { x: 0, y: 0, w: 20, h: 10 }),
       view("b", { x: 40, y: 0, w: 10, h: 10 }),
@@ -96,7 +96,7 @@ describe("alignmentDeltas", () => {
     expect(deltas.get("b")).toEqual({ dx: -20, dy: 0 });
   });
 
-  it("top / vcenter / bottom は y 軸のみを動かす", () => {
+  it("top / vcenter / bottom move only the y axis", () => {
     const views = [
       view("a", { x: 0, y: 0, w: 10, h: 20 }),
       view("b", { x: 0, y: 30, w: 10, h: 10 }),
@@ -117,7 +117,7 @@ describe("alignmentDeltas", () => {
     });
   });
 
-  it("既に揃っている要素の delta は空（エントリなし）", () => {
+  it("delta is empty (no entry) for an already-aligned element", () => {
     const views = [
       view("a", { x: 10, y: 0, w: 20, h: 10 }),
       view("b", { x: 10, y: 5, w: 10, h: 10 }),
@@ -125,7 +125,7 @@ describe("alignmentDeltas", () => {
     expect(alignmentDeltas(views, "left").size).toBe(0);
   });
 
-  it("line（幅/高さ 0 の箱）の中央揃えも算術どおり動く", () => {
+  it("line (a box with 0 width/height) centers correctly per the arithmetic", () => {
     const views = [
       view("a", { x: 0, y: 0, w: 40, h: 10 }),
       view("line", { x: 0, y: 0, w: 0, h: 20 }),
@@ -137,7 +137,7 @@ describe("alignmentDeltas", () => {
 });
 
 describe("distributionDeltas", () => {
-  it("3要素以上で gap が均等になり、両端は動かない", () => {
+  it("gaps become even with 3+ elements, and the ends don't move", () => {
     const views = [
       view("a", { x: 0, y: 0, w: 10, h: 10 }),
       view("b", { x: 20, y: 0, w: 10, h: 10 }),
@@ -151,7 +151,7 @@ describe("distributionDeltas", () => {
     expect(deltas.get("b")).toEqual({ dx: 10, dy: 0 });
   });
 
-  it("垂直方向も同様に動く", () => {
+  it("works the same way vertically", () => {
     const views = [
       view("a", { x: 0, y: 0, w: 10, h: 10 }),
       view("b", { x: 0, y: 20, w: 10, h: 10 }),
@@ -161,7 +161,7 @@ describe("distributionDeltas", () => {
     expect(deltas.get("b")).toEqual({ dx: 0, dy: 10 });
   });
 
-  it("同位置要素は文書順（配列順）を保つ安定ソート", () => {
+  it("stable sort preserves document order (array order) for elements at the same position", () => {
     const views = [
       view("a", { x: 0, y: 0, w: 10, h: 10 }),
       view("b", { x: 20, y: 0, w: 10, h: 10 }),
@@ -177,7 +177,7 @@ describe("distributionDeltas", () => {
     expect(deltas.get("c")).toEqual({ dx: 20, dy: 0 });
   });
 
-  it("重なり（負 gap）でも例外なく適用される", () => {
+  it("applies without error even with overlap (negative gap)", () => {
     const views = [
       view("a", { x: 0, y: 0, w: 30, h: 10 }),
       view("b", { x: 15, y: 0, w: 30, h: 10 }),
@@ -191,7 +191,7 @@ describe("distributionDeltas", () => {
 });
 
 describe("applyMoveDeltas", () => {
-  it("roundMm で丸めて x/y を書き戻す", () => {
+  it("rounds with roundMm and writes x/y back", () => {
     const doc: IrDocument = {
       ...blankDocument(),
       elements: [textElement("a", 10, 10)],
@@ -201,14 +201,14 @@ describe("applyMoveDeltas", () => {
     expect(next.elements[0]).toMatchObject({ x: 10.1, y: 10.1 });
   });
 
-  it("deltas にないエントリは変更しない（同一参照）", () => {
+  it("does not change entries absent from deltas (same reference)", () => {
     const a = textElement("a", 10, 10);
     const doc: IrDocument = { ...blankDocument(), elements: [a] };
     const next = applyMoveDeltas(doc, "first", new Map());
     expect(next.elements[0]).toBe(a);
   });
 
-  it("table: first 文脈では y を動かし、未分離の continuationY が追従する", () => {
+  it("table: in the first context, moves y and an unsplit continuationY follows", () => {
     const table = createDefaultElement(blankDocument(), "table", 15, 90);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const deltas = new Map([[table.id, { dx: 5, dy: 10 }]]);
@@ -220,7 +220,7 @@ describe("applyMoveDeltas", () => {
     });
   });
 
-  it("table: first 文脈で分離済み continuationY は追従しない", () => {
+  it("table: in the first context, a split continuationY does not follow", () => {
     const table = {
       ...createDefaultElement(blankDocument(), "table", 15, 90),
       continuationY: 30,
@@ -231,7 +231,7 @@ describe("applyMoveDeltas", () => {
     expect(next.elements[0]).toMatchObject({ y: 100, continuationY: 30 });
   });
 
-  it("table: rest/last 文脈では continuationY のみ動き、y は不変", () => {
+  it("table: in the rest/last context, only continuationY moves and y stays unchanged", () => {
     const table = createDefaultElement(blankDocument(), "table", 15, 90);
     const doc: IrDocument = { ...blankDocument(), elements: [table] };
     const deltas = new Map([[table.id, { dx: 5, dy: 10 }]]);

@@ -28,7 +28,7 @@ function boundText(id: string, key: string): IrElement {
 }
 
 describe("collectBindKeys", () => {
-  it("text / table / flex 子孫の bind を重複なし・辞書順で返す", () => {
+  it("returns text / table / flex descendant binds deduplicated and in lexical order", () => {
     const doc = makeDocument([
       boundText("t1", "customerName"),
       boundText("t2", "customerName"),
@@ -77,11 +77,11 @@ describe("collectBindKeys", () => {
     ]);
   });
 
-  it("空文字キーのトークンは候補にしない", () => {
+  it("excludes empty-string key tokens from candidates", () => {
     expect(collectBindKeys(makeDocument([boundText("t1", "")]))).toEqual([]);
   });
 
-  it("text 内の {key} トークンも候補に含める（重複なし）", () => {
+  it("includes {key} tokens inside text as candidates too (no duplicates)", () => {
     const doc = makeDocument([
       {
         type: "text",
@@ -101,7 +101,7 @@ describe("collectBindKeys", () => {
     expect(collectBindKeys(doc)).toEqual(["customerName", "total"]);
   });
 
-  it("barcode.value 内の {key} トークンも候補に含める", () => {
+  it("includes {key} tokens inside barcode.value as candidates too", () => {
     const doc = makeDocument([
       {
         type: "barcode",
@@ -119,7 +119,7 @@ describe("collectBindKeys", () => {
     expect(collectBindKeys(doc)).toEqual(["code", "customerName"]);
   });
 
-  it("トークンのない文書では空", () => {
+  it("is empty for a document with no tokens", () => {
     const doc = makeDocument([
       {
         type: "text",
@@ -140,16 +140,16 @@ describe("collectBindKeys", () => {
 });
 
 describe("sampleDataKeys", () => {
-  it("トップレベルキーを辞書順で返す", () => {
+  it("returns top-level keys in lexical order", () => {
     expect(sampleDataKeys('{"b": 1, "a": {"c": 2}}')).toEqual(["a", "b"]);
   });
 
-  it("パース不能なら空配列", () => {
+  it("returns an empty array when unparsable", () => {
     expect(sampleDataKeys("{oops")).toEqual([]);
     expect(sampleDataKeys("")).toEqual([]);
   });
 
-  it("トップレベルが非オブジェクトなら空配列", () => {
+  it("returns an empty array when the top level is not an object", () => {
     expect(sampleDataKeys("[1, 2]")).toEqual([]);
     expect(sampleDataKeys('"文字列"')).toEqual([]);
     expect(sampleDataKeys("null")).toEqual([]);

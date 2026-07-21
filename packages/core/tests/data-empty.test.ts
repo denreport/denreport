@@ -82,25 +82,25 @@ function table(id: string, bind: string): IrTableElement {
 }
 
 describe("emptyDataFor", () => {
-  it("text 内のトークンを空文字列に補完する", () => {
+  it("fills tokens in text with empty strings", () => {
     expect(emptyDataFor(docOf(boundText("t1", "title")))).toEqual({
       title: "",
     });
   });
 
-  it("table bind を空配列に補完する", () => {
+  it("fills a table bind with an empty array", () => {
     expect(emptyDataFor(docOf(table("items", "items")))).toEqual({
       items: [],
     });
   });
 
-  it("barcode.value 内のトークンを空文字列に補完する", () => {
+  it("fills tokens in barcode.value with empty strings", () => {
     expect(emptyDataFor(docOf(boundBarcode("bc1", "code")))).toEqual({
       code: "",
     });
   });
 
-  it("flex の子の text トークンも収集する", () => {
+  it("also collects text tokens from flex children", () => {
     const flex: IrFlexElement = {
       type: "flex",
       id: "block",
@@ -116,30 +116,30 @@ describe("emptyDataFor", () => {
     expect(emptyDataFor(docOf(flex))).toEqual({ issuerAddr: "" });
   });
 
-  it("text と table が同一キーを共有する場合は table を優先する", () => {
+  it("prefers table when text and table share the same key", () => {
     expect(
       emptyDataFor(docOf(boundText("t1", "shared"), table("items", "shared"))),
     ).toEqual({ shared: [] });
   });
 
-  it("静的テキストのみ・table bind なし文書は空オブジェクトになる", () => {
+  it("a document with only static text and no table bind becomes an empty object", () => {
     expect(emptyDataFor(docOf(staticText("t1")))).toEqual({});
     expect(emptyDataFor(docOf())).toEqual({});
   });
 
-  it("text 内の {key} トークンも空文字列に補完する", () => {
+  it("also fills {key} tokens in text with empty strings", () => {
     expect(emptyDataFor(docOf(staticText("t1", "合計: {total} 円")))).toEqual({
       total: "",
     });
   });
 
-  it("同一テキスト内の重複トークンキーは1件に集約する", () => {
+  it("duplicate token keys within the same text are consolidated into one entry", () => {
     expect(emptyDataFor(docOf(staticText("t1", "{a}-{a}")))).toEqual({
       a: "",
     });
   });
 
-  it("トークンキーと table bind が重なる場合は table を優先する", () => {
+  it("prefers table when a token key overlaps with a table bind", () => {
     expect(
       emptyDataFor(
         docOf(staticText("t1", "{shared}"), table("items", "shared")),
@@ -147,7 +147,7 @@ describe("emptyDataFor", () => {
     ).toEqual({ shared: [] });
   });
 
-  it("合成結果は validateData を空配列で満たす", () => {
+  it("the composed result satisfies validateData with an empty array", () => {
     const doc = docOf(
       boundText("t1", "title"),
       staticText("t2", "合計: {total} 円"),
@@ -156,7 +156,7 @@ describe("emptyDataFor", () => {
     expect(validateData(doc, emptyDataFor(doc))).toEqual([]);
   });
 
-  it("minRows の空行に cellOverrides の固定値が出る（雛形モード経路）", () => {
+  it("cellOverrides fixed values appear in minRows' empty rows (template mode path)", () => {
     const withOverride: IrTableElement = {
       ...table("items", "items"),
       cellOverrides: [{ row: 1, key: "name", value: "仮の品目" }],

@@ -133,8 +133,8 @@ function rowMain(id: string): HTMLElement {
   return main;
 }
 
-describe("ツリー描画", () => {
-  it("全要素が行として描画される", () => {
+describe("tree rendering", () => {
+  it("all elements render as rows", () => {
     const store = makeStore();
     render(<LayersPanel store={store} onReveal={() => {}} />);
     for (const id of ["f1", "c1", "f2", "c2", "t1", "tbl1"]) {
@@ -144,7 +144,7 @@ describe("ツリー描画", () => {
     }
   });
 
-  it("flex 行のキャレット操作で子行が消え/現れる", () => {
+  it("toggling the flex row's caret hides/shows child rows", () => {
     const store = makeStore();
     render(<LayersPanel store={store} onReveal={() => {}} />);
     const caret = rowEl("f1").querySelector(".dr-layer-caret");
@@ -158,7 +158,7 @@ describe("ツリー描画", () => {
     expect(container.querySelector('[data-dr-layer-id="c1"]')).not.toBeNull();
   });
 
-  it("要素追加（commit）で行が増える", () => {
+  it("adding an element (commit) adds a row", () => {
     const store = makeStore([TABLE]);
     render(<LayersPanel store={store} onReveal={() => {}} />);
     expect(container.querySelectorAll(".dr-layer-row").length).toBe(1);
@@ -169,8 +169,8 @@ describe("ツリー描画", () => {
   });
 });
 
-describe("選択同期", () => {
-  it("行クリックで単一選択になり onReveal が呼ばれる", () => {
+describe("selection sync", () => {
+  it("clicking a row selects it singly and calls onReveal", () => {
     const store = makeStore();
     const onReveal = vi.fn();
     render(<LayersPanel store={store} onReveal={onReveal} />);
@@ -179,7 +179,7 @@ describe("選択同期", () => {
     expect(onReveal).toHaveBeenCalledExactlyOnceWith("c1");
   });
 
-  it("pages が現文脈と異なる行のクリックで pageContext が切り替わる", () => {
+  it("clicking a row whose pages differs from the current context switches pageContext", () => {
     const store = makeStore();
     render(<LayersPanel store={store} onReveal={() => {}} />);
     expect(store.getState().view.pageContext).toBe("first");
@@ -188,14 +188,14 @@ describe("選択同期", () => {
     expect(store.getState().selection).toEqual(["t1"]);
   });
 
-  it("table（pages: null）のクリックでは pageContext を変えない", () => {
+  it("clicking a table (pages: null) does not change pageContext", () => {
     const store = makeStore();
     render(<LayersPanel store={store} onReveal={() => {}} />);
     click(rowMain("tbl1"));
     expect(store.getState().view.pageContext).toBe("first");
   });
 
-  it("setSelection で該当行に is-selected が付き、折りたたみ中の親 flex が自動展開される", () => {
+  it("setSelection adds is-selected to the matching row and auto-expands a collapsed parent flex", () => {
     const store = makeStore();
     render(<LayersPanel store={store} onReveal={() => {}} />);
     const caret = rowEl("f1").querySelector(".dr-layer-caret");
@@ -213,8 +213,8 @@ describe("選択同期", () => {
   });
 });
 
-describe("削除", () => {
-  it("削除ボタンで文書から要素が消え、selection から id が除かれる", () => {
+describe("deletion", () => {
+  it("the delete button removes the element from the document and removes its id from selection", () => {
     const store = makeStore();
     render(<LayersPanel store={store} onReveal={() => {}} />);
     act(() => {

@@ -7,7 +7,7 @@ afterEach(() => {
 });
 
 describe("triggerDownload", () => {
-  it("a[download] を生成して click し、Blob URL を revoke する", () => {
+  it("creates an a[download], clicks it, and revokes the Blob URL", () => {
     const createObjectURL = vi.fn((_blob: Blob) => "blob:denreport-test");
     const revokeObjectURL = vi.fn();
     // jsdom's URL lacks createObjectURL / revokeObjectURL, so stub it
@@ -38,7 +38,7 @@ describe("triggerDownload", () => {
     );
   });
 
-  it("Blob は MIME を含めそのまま保存対象になる", async () => {
+  it("keeps the Blob, including its MIME type, as the saved object", async () => {
     let captured: Blob | undefined;
     vi.stubGlobal("URL", {
       createObjectURL: (blob: Blob) => {

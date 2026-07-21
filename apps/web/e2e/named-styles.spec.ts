@@ -19,7 +19,7 @@ async function selectLayer(page: Page, id: string): Promise<void> {
   await page.locator(`[data-dr-layer-id="${id}"] .dr-layer-main`).click();
 }
 
-test("スタイル作成 → 複数要素へ適用 → 定義変更の一括反映 → 保存・再読込後も参照が維持される", async ({
+test("create a style → apply to multiple elements → definition changes propagate in bulk → reference persists after save and reload", async ({
   page,
 }) => {
   await page.goto("/");

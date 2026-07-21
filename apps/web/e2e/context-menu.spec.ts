@@ -7,7 +7,7 @@ function paletteButton(page: Page) {
     .getByRole("button", { name: /^テキスト/ });
 }
 
-test("要素上の右クリックからメニューで削除し、undo・コピー・貼り付けが行える", async ({
+test("right-clicking an element deletes it via the menu, and undo/copy/paste work", async ({
   page,
 }) => {
   await page.goto("/");
@@ -55,7 +55,7 @@ test("要素上の右クリックからメニューで削除し、undo・コピ�
   await expect(page.locator(".dr-el[data-dr-id]")).toHaveCount(2);
 });
 
-test("Esc でメニューが閉じる", async ({ page }) => {
+test("Esc closes the menu", async ({ page }) => {
   await page.goto("/");
   await paletteButton(page).click();
   const element = page.locator('.dr-el[data-dr-id="text1"]');

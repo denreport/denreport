@@ -15,7 +15,7 @@ import {
 } from "./zoom";
 
 describe("fitPageZoom", () => {
-  it("幅制約が厳しいときは幅比率が選ばれる", () => {
+  it("picks the width ratio when the width constraint is stricter", () => {
     const viewportWidth = 500;
     const viewportHeight = 2000;
     const zoom = fitPageZoom({
@@ -34,7 +34,7 @@ describe("fitPageZoom", () => {
     expect(zoom).toBeCloseTo(widthRatio, 10);
   });
 
-  it("高さ制約が厳しいときは高さ比率が選ばれる", () => {
+  it("picks the height ratio when the height constraint is stricter", () => {
     const viewportWidth = 2000;
     const viewportHeight = 500;
     const zoom = fitPageZoom({
@@ -53,7 +53,7 @@ describe("fitPageZoom", () => {
     expect(zoom).toBeCloseTo(heightRatio, 10);
   });
 
-  it("極端に大きいビューポートでは ZOOM_MAX にクランプされる", () => {
+  it("clamps to ZOOM_MAX for an extremely large viewport", () => {
     const zoom = fitPageZoom({
       viewportWidth: 100_000,
       viewportHeight: 100_000,
@@ -65,7 +65,7 @@ describe("fitPageZoom", () => {
     expect(zoom).toBe(ZOOM_MAX);
   });
 
-  it("極端に小さいビューポートでは ZOOM_MIN にクランプされる", () => {
+  it("clamps to ZOOM_MIN for an extremely small viewport", () => {
     const zoom = fitPageZoom({
       viewportWidth: 50,
       viewportHeight: 50,
@@ -77,7 +77,7 @@ describe("fitPageZoom", () => {
     expect(zoom).toBe(ZOOM_MIN);
   });
 
-  it("可用幅が 0 以下なら null", () => {
+  it("returns null when the available width is 0 or less", () => {
     const zoom = fitPageZoom({
       viewportWidth: 20,
       viewportHeight: 2000,
@@ -89,7 +89,7 @@ describe("fitPageZoom", () => {
     expect(zoom).toBeNull();
   });
 
-  it("可用高が 0 以下なら null", () => {
+  it("returns null when the available height is 0 or less", () => {
     const zoom = fitPageZoom({
       viewportWidth: 2000,
       viewportHeight: 20,
@@ -101,7 +101,7 @@ describe("fitPageZoom", () => {
     expect(zoom).toBeNull();
   });
 
-  it("A4 縦ページが代表的ビューポートに収まる", () => {
+  it("fits an A4 portrait page within a representative viewport", () => {
     const viewportWidth = 1200;
     const viewportHeight = 800;
     const rulerWidth = 24;
@@ -121,49 +121,49 @@ describe("fitPageZoom", () => {
 });
 
 describe("nextWheelZoom", () => {
-  it("deltaY > 0 で縮小する", () => {
+  it("zooms out when deltaY > 0", () => {
     expect(nextWheelZoom(1, 100, 0)).toBeLessThan(1);
   });
 
-  it("deltaY < 0 で拡大する", () => {
+  it("zooms in when deltaY < 0", () => {
     expect(nextWheelZoom(1, -100, 0)).toBeGreaterThan(1);
   });
 
-  it("ZOOM_MAX 到達後にさらに拡大しても変わらない", () => {
+  it("stays unchanged when zooming in further after reaching ZOOM_MAX", () => {
     expect(nextWheelZoom(ZOOM_MAX, -100, 0)).toBe(ZOOM_MAX);
   });
 
-  it("ZOOM_MIN 到達後にさらに縮小しても変わらない", () => {
+  it("stays unchanged when zooming out further after reaching ZOOM_MIN", () => {
     expect(nextWheelZoom(ZOOM_MIN, 100, 0)).toBe(ZOOM_MIN);
   });
 
-  it("deltaMode = 1（line）は pixel 換算より大きく効く", () => {
+  it("deltaMode = 1 (line) has a larger effect than pixel conversion", () => {
     const pixel = nextWheelZoom(1, 100, 0);
     const line = nextWheelZoom(1, 100, 1);
     expect(Math.abs(1 - line)).toBeGreaterThan(Math.abs(1 - pixel));
   });
 
-  it("deltaY = 0 で恒等", () => {
+  it("is identity when deltaY = 0", () => {
     expect(nextWheelZoom(1, 0, 0)).toBe(1);
   });
 });
 
 describe("zoomStepIn / zoomStepOut", () => {
-  it("段の中間値からは前後の段を返す", () => {
+  it("returns the adjacent step from a value between steps", () => {
     expect(zoomStepIn(1.13)).toBe(1.25);
     expect(zoomStepOut(1.13)).toBe(1);
   });
 
-  it("段ちょうどの値からは隣の段へ遷移する", () => {
+  it("transitions to the neighboring step from a value exactly on a step", () => {
     expect(zoomStepIn(1)).toBe(1.25);
     expect(zoomStepOut(1)).toBe(0.75);
   });
 
-  it("上端では zoomStepIn が null", () => {
+  it("zoomStepIn is null at the upper bound", () => {
     expect(zoomStepIn(ZOOM_STEPS[ZOOM_STEPS.length - 1] ?? 0)).toBeNull();
   });
 
-  it("下端では zoomStepOut が null", () => {
+  it("zoomStepOut is null at the lower bound", () => {
     expect(zoomStepOut(ZOOM_STEPS[0] ?? 0)).toBeNull();
   });
 });
@@ -180,7 +180,7 @@ describe("anchoredScroll", () => {
     scrollTop: 80,
   };
 
-  it("アンカー直下の紙上 mm 座標を保存する", () => {
+  it("preserves the paper mm coordinate directly under the anchor", () => {
     const cases = [
       base,
       { ...base, nextZoom: 0.5 },
@@ -198,13 +198,13 @@ describe("anchoredScroll", () => {
     }
   });
 
-  it("prevZoom === nextZoom で恒等", () => {
+  it("is identity when prevZoom === nextZoom", () => {
     const result = anchoredScroll({ ...base, nextZoom: base.prevZoom });
     expect(result.left).toBeCloseTo(base.scrollLeft, 10);
     expect(result.top).toBeCloseTo(base.scrollTop, 10);
   });
 
-  it("中心をアンカーにすると現行の中心維持計算と一致する", () => {
+  it("matches the existing center-preserving calculation when the anchor is the center", () => {
     const viewportWidth = 600;
     const viewportHeight = 400;
     const input = {

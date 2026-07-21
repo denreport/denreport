@@ -65,7 +65,7 @@ function makeStore(count: number): EditorStore {
 }
 
 describe("AlignmentButtons", () => {
-  it("選択0〜1個では何も描画しない", () => {
+  it("renders nothing with 0-1 selected", () => {
     render(<AlignmentButtons store={makeStore(0)} />);
     expect(container.querySelectorAll("button")).toHaveLength(0);
 
@@ -73,7 +73,7 @@ describe("AlignmentButtons", () => {
     expect(container.querySelectorAll("button")).toHaveLength(0);
   });
 
-  it("選択2個で整列ボタンが押せて、等間隔の2ボタンは disabled", () => {
+  it("with 2 selected, align buttons are clickable and the 2 distribute buttons are disabled", () => {
     render(<AlignmentButtons store={makeStore(2)} />);
     const buttons = [...container.querySelectorAll("button")];
     expect(buttons).toHaveLength(8);
@@ -92,7 +92,7 @@ describe("AlignmentButtons", () => {
     }
   });
 
-  it("選択3個で全ボタンが有効", () => {
+  it("with 3 selected, all buttons are enabled", () => {
     render(<AlignmentButtons store={makeStore(3)} />);
     const buttons = [...container.querySelectorAll("button")];
     expect(buttons).toHaveLength(8);
@@ -101,7 +101,7 @@ describe("AlignmentButtons", () => {
     }
   });
 
-  it("整列ボタン押下で文書の座標が変わる", () => {
+  it("clicking an align button changes the document coordinates", () => {
     const store = makeStore(2);
     render(<AlignmentButtons store={store} />);
     const button = [...container.querySelectorAll("button")].find(

@@ -68,7 +68,7 @@ function textEntry(name: string, text: string): ZipEntry {
 }
 
 describe("buildZip", () => {
-  it("2エントリの構造（ローカルヘッダ・セントラルディレクトリ・EOCD）が整合する", () => {
+  it("the structure of 2 entries (local header, central directory, EOCD) is consistent", () => {
     const zip = buildZip([
       textEntry("report.py", "print('hi')"),
       textEntry("NotoSansJP.ttf", "font-bytes"),
@@ -94,13 +94,13 @@ describe("buildZip", () => {
     expect(zip.length).toBe(archive.centralOffset + archive.centralSize + 22);
   });
 
-  it('既知データの CRC-32 が仕様値になる（"123456789" = 0xCBF43926）', () => {
+  it('CRC-32 of known data matches the spec value ("123456789" = 0xCBF43926)', () => {
     const zip = buildZip([textEntry("crc.txt", "123456789")]);
     const archive = readZip(zip);
     expect(archive.entries[0]?.crc).toBe(0xcbf43926);
   });
 
-  it("同一入力からバイト同一の出力を返す（決定性）", () => {
+  it("returns byte-identical output for the same input (determinism)", () => {
     const entries = [
       textEntry("a.txt", "同じ内容"),
       { name: "b.bin", data: new Uint8Array([0, 1, 2, 255]) },
@@ -108,14 +108,14 @@ describe("buildZip", () => {
     expect(buildZip(entries)).toEqual(buildZip(entries));
   });
 
-  it("空データのエントリを格納できる", () => {
+  it("stores an entry with empty data", () => {
     const zip = buildZip([{ name: "empty.txt", data: new Uint8Array(0) }]);
     const archive = readZip(zip);
     expect(archive.entries[0]?.size).toBe(0);
     expect(archive.entries[0]?.crc).toBe(0);
   });
 
-  it("数 MB 級のエントリを格納できる", () => {
+  it("stores a multi-megabyte entry", () => {
     const big = new Uint8Array(3 * 1024 * 1024);
     for (let i = 0; i < big.length; i++) {
       big[i] = i % 251;
@@ -129,7 +129,7 @@ describe("buildZip", () => {
     ).toBe(true);
   });
 
-  it("エントリ名は UTF-8 で格納される", () => {
+  it("entry names are stored as UTF-8", () => {
     const zip = buildZip([textEntry("帳票.py", "code")]);
     expect(readZip(zip).entries[0]?.name).toBe("帳票.py");
   });

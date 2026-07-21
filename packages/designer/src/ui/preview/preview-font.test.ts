@@ -86,7 +86,7 @@ afterEach(() => {
 });
 
 describe("loadPreviewFont", () => {
-  it("family と実フォント計量の ascentPerEm を返し、FontFace を登録する", async () => {
+  it("returns ascentPerEm from actual font metrics along with family, and registers a FontFace", async () => {
     stubOkFetch(sfntWith(1000, 1160));
     const { doc, fonts } = makeDoc();
 
@@ -101,7 +101,7 @@ describe("loadPreviewFont", () => {
     expect([...fonts][0]?.family).toBe("dr-embedded-notosansjp");
   });
 
-  it("同一 document には再登録しない", async () => {
+  it("does not re-register for the same document", async () => {
     stubOkFetch(sfntWith(1000, 1160));
     const { doc, fonts } = makeDoc();
 
@@ -115,7 +115,7 @@ describe("loadPreviewFont", () => {
     expect(second.ascentPerEm).toBeCloseTo(1.16, 6);
   });
 
-  it("fetch の失敗で reject する", async () => {
+  it("rejects when fetch fails", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.reject(new Error("ネットワーク不通"))),
@@ -130,7 +130,7 @@ describe("loadPreviewFont", () => {
     ).rejects.toThrow();
   });
 
-  it("HTTP エラー応答で reject する", async () => {
+  it("rejects on an HTTP error response", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => {
@@ -147,7 +147,7 @@ describe("loadPreviewFont", () => {
     ).rejects.toThrow("404");
   });
 
-  it("計量を読み取れないバイト列で reject し、登録もしない", async () => {
+  it("rejects on a byte sequence that metrics can't be read from, and does not register", async () => {
     stubOkFetch(new ArrayBuffer(4));
     const { doc, fonts } = makeDoc();
     await expect(
@@ -158,7 +158,7 @@ describe("loadPreviewFont", () => {
 });
 
 describe("registerPreviewFace", () => {
-  it("dr-local-<name> の family で FontFace を登録する", async () => {
+  it("registers a FontFace with family dr-local-<name>", async () => {
     vi.stubGlobal("FontFace", FakeFontFace);
     const { doc, fonts } = makeDoc();
 
@@ -172,7 +172,7 @@ describe("registerPreviewFace", () => {
     expect([...fonts][0]?.family).toBe("dr-local-MyFont");
   });
 
-  it("同一バイト列の再登録では FontFace を差し替えない", async () => {
+  it("does not replace the FontFace when re-registering the same byte sequence", async () => {
     vi.stubGlobal("FontFace", FakeFontFace);
     const { doc, fonts } = makeDoc();
 
@@ -183,7 +183,7 @@ describe("registerPreviewFace", () => {
     expect([...fonts][0]).toBe(first);
   });
 
-  it("同一 name でもバイト列が異なれば登録し直す", async () => {
+  it("re-registers when the byte sequence differs even for the same name", async () => {
     vi.stubGlobal("FontFace", FakeFontFace);
     const { doc, fonts } = makeDoc();
 

@@ -76,17 +76,17 @@ describe("charWidthsFor", () => {
     boldItalic: () => 0.4,
   };
 
-  it("regular のみのセットでは bold/italic 指定でも regular に劣化する", () => {
+  it("falls back to regular even with bold/italic specified when only regular is in the set", () => {
     expect(charWidthsFor(REGULAR_ONLY, "bold", "italic")).toBe(
       REGULAR_ONLY.regular,
     );
   });
 
-  it("bold ありのセットで bold 指定は bold を返す", () => {
+  it("returns bold when bold is specified and the set has bold", () => {
     expect(charWidthsFor(WITH_BOLD, "bold", "normal")).toBe(WITH_BOLD.bold);
   });
 
-  it("boldItalic → italic → bold → regular の劣化順で解決する", () => {
+  it("resolves in the fallback order boldItalic → italic → bold → regular", () => {
     expect(charWidthsFor(FULL, "bold", "italic")).toBe(FULL.boldItalic);
     expect(charWidthsFor(WITH_BOLD, "bold", "italic")).toBe(WITH_BOLD.bold);
     expect(charWidthsFor(REGULAR_ONLY, "bold", "italic")).toBe(
@@ -130,8 +130,8 @@ function probeText(): string {
 
 const EMPTY_REGISTRY: ReadonlyMap<string, RegisteredFont> = new Map();
 
-describe("useFontMetrics — 同梱フォント", () => {
-  it("fetch した TTF から字幅を解決し、同一 URL の再マウントでは fetch を再実行しない", async () => {
+describe("useFontMetrics — bundled font", () => {
+  it("resolves char widths from a fetched TTF, and does not refetch on remount with the same URL", async () => {
     const fetchMock = vi.fn(async () => {
       return {
         ok: true,
@@ -172,7 +172,7 @@ describe("useFontMetrics — 同梱フォント", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
-  it("fetch の失敗では null のまま留まり、未処理の reject を漏らさない", async () => {
+  it("stays null on fetch failure without leaking an unhandled rejection", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => Promise.reject(new Error("ネットワーク不通"))),
@@ -192,8 +192,8 @@ describe("useFontMetrics — 同梱フォント", () => {
   });
 });
 
-describe("useFontMetrics — 登録フォント", () => {
-  it("fontRegistry のフォントを fetch なしで解決する", async () => {
+describe("useFontMetrics — registered font", () => {
+  it("resolves a font from fontRegistry without fetching", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
     const registry = new Map<string, RegisteredFont>([

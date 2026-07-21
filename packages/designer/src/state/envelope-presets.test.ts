@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { ENVELOPE_PRESETS, envelopePresetById } from "./envelope-presets";
 
 describe("ENVELOPE_PRESETS", () => {
-  it("6件あり、80/90/100 × 45/55 の組み合わせと一致する", () => {
+  it("has 6 entries matching the 80/90/100 × 45/55 combinations", () => {
     expect(ENVELOPE_PRESETS).toHaveLength(6);
     const dims = ENVELOPE_PRESETS.map((p) => [p.windowBox.w, p.windowBox.h]);
     expect(dims).toEqual(
@@ -17,7 +17,7 @@ describe("ENVELOPE_PRESETS", () => {
     );
   });
 
-  it("safeBox は windowBox の内側に包含される", () => {
+  it("safeBox is contained within windowBox", () => {
     for (const preset of ENVELOPE_PRESETS) {
       const { windowBox, safeBox } = preset;
       expect(safeBox.x).toBeGreaterThanOrEqual(windowBox.x);
@@ -33,7 +33,7 @@ describe("ENVELOPE_PRESETS", () => {
 });
 
 describe("envelopePresetById", () => {
-  it("id に対応するプリセットを返す", () => {
+  it("returns the preset corresponding to the id", () => {
     expect(envelopePresetById("l3-w80h45")).toEqual({
       id: "l3-w80h45",
       windowBox: { x: 7.5, y: 11.5, w: 80, h: 45 },

@@ -32,7 +32,7 @@ function buttonFor(type: keyof typeof ja.elementTypes): HTMLButtonElement {
 }
 
 describe("Palette", () => {
-  it("ボタンの click で onQuickAdd がその型で1回呼ばれ、beginPlacement は呼ばれない", async () => {
+  it("calls onQuickAdd once with the type on button click, and does not call beginPlacement", async () => {
     const beginPlacement = vi.fn();
     const onQuickAdd = vi.fn();
     root.render(
@@ -50,7 +50,7 @@ describe("Palette", () => {
     expect(beginPlacement).not.toHaveBeenCalled();
   });
 
-  it("ボタンの pointerdown で beginPlacement が呼ばれる（既存挙動の回帰）", async () => {
+  it("calls beginPlacement on button pointerdown (regression check for existing behavior)", async () => {
     const beginPlacement = vi.fn();
     const onQuickAdd = vi.fn();
     root.render(
@@ -71,7 +71,7 @@ describe("Palette", () => {
     expect(onQuickAdd).not.toHaveBeenCalled();
   });
 
-  it("バーコード項目が表示される", async () => {
+  it("shows the barcode item", async () => {
     const beginPlacement = vi.fn();
     const onQuickAdd = vi.fn();
     root.render(
@@ -89,7 +89,7 @@ describe("Palette", () => {
     expect(onQuickAdd).toHaveBeenCalledExactlyOnceWith("barcode");
   });
 
-  it("text アイコンの字形見本がロケールで切り替わる", async () => {
+  it("switches the text icon's glyph sample by locale", async () => {
     root.render(<Palette beginPlacement={vi.fn()} onQuickAdd={vi.fn()} />);
     await vi.waitFor(() => {
       if (container.querySelector(".dr-palette") === null) {

@@ -23,7 +23,7 @@ async function cellCenter(
   };
 }
 
-test("選択中の表を上端エッジの移動バンドからドラッグすると移動する", async ({
+test("dragging the selected table from the top-edge move band moves it", async ({
   page,
 }) => {
   await page.goto("/");
@@ -53,7 +53,7 @@ test("選択中の表を上端エッジの移動バンドからドラッグす�
   await expect(page.locator(".dr-cell-sel")).toHaveCount(0);
 });
 
-test("表内部のドラッグは表を動かさずセル範囲選択になる（回帰確認）", async ({
+test("dragging inside the table selects a cell range without moving the table (regression check)", async ({
   page,
 }) => {
   await page.goto("/");

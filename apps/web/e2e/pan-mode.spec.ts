@@ -18,7 +18,7 @@ async function zoomToMax(page: Page): Promise<void> {
   }
 }
 
-test("移動モードのドラッグはビューをパンし、要素は動かない。選択モードに戻すとドラッグ移動が復活する", async ({
+test("dragging in move mode pans the view without moving elements; switching back to select mode restores drag-to-move", async ({
   page,
 }) => {
   await page.goto("/");

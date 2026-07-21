@@ -93,8 +93,8 @@ function openDrawer(): void {
   click(bar);
 }
 
-describe("折畳バー", () => {
-  it("エラーなしでは ✓ 問題なし を表示する", () => {
+describe("collapse bar", () => {
+  it("shows ✓ no issues when there are no errors", () => {
     // text elements always get an "approximated" note for vertical overflow behavior,
     // so use a document with no elements to also get zero compat findings
     const store = new EditorStore(makeDocument([]));
@@ -105,7 +105,7 @@ describe("折畳バー", () => {
     expect(container.querySelector(".dr-drawer-body")).toBeNull();
   });
 
-  it("エラーがあると件数バッジに切り替わり、展開で一覧が出る", () => {
+  it("switches to a count badge when there are errors, and expanding shows the list", () => {
     const store = new EditorStore(
       makeDocument([text("t1", { fontSize: 300 })]),
     );
@@ -117,7 +117,7 @@ describe("折畳バー", () => {
     expect(row?.textContent).toContain("elements[0].fontSize");
   });
 
-  it("警告のみのときは警告バッジと一覧を表示する", () => {
+  it("shows a warning badge and list when there are only warnings", () => {
     const store = new EditorStore(makeInvoiceDocument([]));
     render(<ValidationDrawer store={store} onReveal={() => {}} />);
     expect(container.querySelector(".dr-badge-warn")?.textContent).toBe("6");
@@ -130,7 +130,7 @@ describe("折畳バー", () => {
     );
   });
 
-  it("検証エラー・警告がなくても互換性判定があれば問題なしにせず件数を出す", () => {
+  it("shows a count instead of no issues when there's a compatibility finding, even without validation errors or warnings", () => {
     const store = new EditorStore(makeDocument([imageEl("img1")]));
     store.setSelectedExportTarget("reportlab");
     render(<ValidationDrawer store={store} onReveal={() => {}} />);
@@ -139,7 +139,7 @@ describe("折畳バー", () => {
     expect(container.querySelector(".dr-drawer-body")).toBeNull();
   });
 
-  it("エラーと警告が混在するとき、エラーバッジの件数に警告は混ざらず両方の一覧が並ぶ", () => {
+  it("when errors and warnings coexist, warnings don't mix into the error badge's count and both lists appear", () => {
     const store = new EditorStore(
       makeInvoiceDocument([text("t1", { fontSize: 300 })]),
     );
@@ -154,8 +154,8 @@ describe("折畳バー", () => {
   });
 });
 
-describe("行クリックのナビゲーション", () => {
-  it("該当要素を選択して onReveal を呼ぶ", () => {
+describe("row-click navigation", () => {
+  it("selects the matching element and calls onReveal", () => {
     const store = new EditorStore(
       makeDocument([text("t1", { fontSize: 300 })]),
     );
@@ -171,7 +171,7 @@ describe("行クリックのナビゲーション", () => {
     expect(onReveal).toHaveBeenCalledExactlyOnceWith("t1");
   });
 
-  it("現文脈で編集できない要素の行クリックは文脈を切り替える", () => {
+  it("clicking a row for an element not editable in the current context switches context", () => {
     const store = new EditorStore(
       makeDocument([text("t1", { pages: "last", fontSize: 300 })]),
     );
@@ -186,7 +186,7 @@ describe("行クリックのナビゲーション", () => {
     expect(store.getState().selection).toEqual(["t1"]);
   });
 
-  it("要素に対応しない行（page の違反）では選択を変えず onReveal も呼ばない", () => {
+  it("a row that doesn't correspond to an element (a page violation) doesn't change the selection or call onReveal", () => {
     const store = new EditorStore(
       makeDocument([], { width: 9999, height: 297 }),
     );
@@ -203,7 +203,7 @@ describe("行クリックのナビゲーション", () => {
     expect(onReveal).not.toHaveBeenCalled();
   });
 
-  it("flex 子のエラー行は子 id を選択する", () => {
+  it("an error row for a flex child selects the child's id", () => {
     const flex: IrElement = {
       type: "flex",
       id: "f1",
@@ -241,8 +241,8 @@ describe("行クリックのナビゲーション", () => {
   });
 });
 
-describe("書き出し互換性の常時表示", () => {
-  it("既定ターゲット（pdfme）で問題がなければ案内文言を表示する", () => {
+describe("always-on export compatibility display", () => {
+  it("shows the guidance text when there are no problems with the default target (pdfme)", () => {
     const store = new EditorStore(makeDocument([imageEl("img1")]));
     render(<ValidationDrawer store={store} onReveal={() => {}} />);
     openDrawer();
@@ -252,7 +252,7 @@ describe("書き出し互換性の常時表示", () => {
     );
   });
 
-  it("選択中ターゲットの互換性判定をカードで表示する", () => {
+  it("shows the selected target's compatibility finding in a card", () => {
     const store = new EditorStore(makeDocument([imageEl("img1")]));
     store.setSelectedExportTarget("reportlab");
     render(<ValidationDrawer store={store} onReveal={() => {}} />);
@@ -262,7 +262,7 @@ describe("書き出し互換性の常時表示", () => {
     expect(card?.querySelector(".dr-chip")?.textContent).toBe("img1");
   });
 
-  it("互換性チップのクリックで該当要素を選択して onReveal を呼ぶ", () => {
+  it("clicking the compatibility chip selects the matching element and calls onReveal", () => {
     const store = new EditorStore(makeDocument([imageEl("img1")]));
     store.setSelectedExportTarget("reportlab");
     const onReveal = vi.fn();
@@ -277,7 +277,7 @@ describe("書き出し互換性の常時表示", () => {
     expect(onReveal).toHaveBeenCalledExactlyOnceWith("img1");
   });
 
-  it("ターゲット切替で一覧が再計算される", () => {
+  it("the list is recalculated when the target is switched", () => {
     const store = new EditorStore(makeDocument([imageEl("img1")]));
     render(<ValidationDrawer store={store} onReveal={() => {}} />);
     openDrawer();

@@ -157,7 +157,7 @@ function makeLayout(pageContext: PageContext = "first") {
 }
 
 describe("resolveInlineEditTarget", () => {
-  it("トップレベルの静的 text は編集対象になる", () => {
+  it("a top-level static text becomes an edit target", () => {
     const layout = makeLayout();
     expect(
       resolveInlineEditTarget({
@@ -171,7 +171,7 @@ describe("resolveInlineEditTarget", () => {
     ).toEqual({ kind: "text", id: "staticText" });
   });
 
-  it("{key} トークンを含む text も編集対象になる", () => {
+  it("text containing a {key} token also becomes an edit target", () => {
     const layout = makeLayout();
     expect(
       resolveInlineEditTarget({
@@ -186,7 +186,7 @@ describe("resolveInlineEditTarget", () => {
   });
 
   it.each(["pn1", "rect1", "img1", "line1", "flex1"])(
-    "%s は対象にならない",
+    "%s does not become a target",
     (id) => {
       const layout = makeLayout();
       expect(
@@ -202,7 +202,7 @@ describe("resolveInlineEditTarget", () => {
     },
   );
 
-  it("flex 子 text は単独選択済みのときのみ対象になり、複数選択・未選択では対象にならない", () => {
+  it("a flex child text becomes a target only when it is the sole selection, and not when multiple or none are selected", () => {
     const layout = makeLayout();
     expect(
       resolveInlineEditTarget({
@@ -236,7 +236,7 @@ describe("resolveInlineEditTarget", () => {
     ).toBeNull();
   });
 
-  it("現在のページ文脈で非可視の要素は対象にならない", () => {
+  it("an element not visible in the current page context does not become a target", () => {
     const layout = makeLayout("first");
     expect(
       resolveInlineEditTarget({
@@ -250,7 +250,7 @@ describe("resolveInlineEditTarget", () => {
     ).toBeNull();
   });
 
-  it("table は有効な columnIndex を指せば列見出し対象になる", () => {
+  it("a table becomes a column-header target when a valid columnIndex is given", () => {
     const layout = makeLayout();
     expect(
       resolveInlineEditTarget({
@@ -264,7 +264,7 @@ describe("resolveInlineEditTarget", () => {
     ).toEqual({ kind: "tableHeader", id: "tbl1", columnIndex: 1 });
   });
 
-  it("table で columnIndex が null・範囲外なら対象にならない", () => {
+  it("a table does not become a target when columnIndex is null or out of range", () => {
     const layout = makeLayout();
     expect(
       resolveInlineEditTarget({
@@ -288,7 +288,7 @@ describe("resolveInlineEditTarget", () => {
     ).toBeNull();
   });
 
-  it("table で columnIndex・rowIndex がともに非 null かつ first 文脈ならデータ行セル対象になる", () => {
+  it("a table becomes a data-row cell target when both columnIndex and rowIndex are non-null and the context is first", () => {
     const layout = makeLayout("first");
     expect(
       resolveInlineEditTarget({
@@ -302,7 +302,7 @@ describe("resolveInlineEditTarget", () => {
     ).toEqual({ kind: "tableCell", id: "tbl1", columnIndex: 1, rowIndex: 2 });
   });
 
-  it("継続ページ文脈ではデータ行セルは対象にならない", () => {
+  it("a data-row cell does not become a target in a continuation-page context", () => {
     const layout = makeLayout("rest");
     expect(
       resolveInlineEditTarget({
@@ -316,7 +316,7 @@ describe("resolveInlineEditTarget", () => {
     ).toBeNull();
   });
 
-  it("rowIndex が負なら対象にならない", () => {
+  it("does not become a target when rowIndex is negative", () => {
     const layout = makeLayout();
     expect(
       resolveInlineEditTarget({
@@ -330,7 +330,7 @@ describe("resolveInlineEditTarget", () => {
     ).toBeNull();
   });
 
-  it("layout にない id は対象にならない", () => {
+  it("an id not present in the layout does not become a target", () => {
     const layout = makeLayout();
     expect(
       resolveInlineEditTarget({
@@ -344,7 +344,7 @@ describe("resolveInlineEditTarget", () => {
     ).toBeNull();
   });
 
-  it("elementId が null なら対象にならない", () => {
+  it("does not become a target when elementId is null", () => {
     const layout = makeLayout();
     expect(
       resolveInlineEditTarget({
@@ -362,7 +362,7 @@ describe("resolveInlineEditTarget", () => {
 describe("tableHeaderCellBox", () => {
   const tableBox = { x: 10, y: 150, w: 70, h: 26 };
 
-  it("先頭列は tableBox の x/y のまま、幅は列幅、高さは headerHeight になる", () => {
+  it("the first column keeps tableBox's x/y, with width as the column width and height as headerHeight", () => {
     expect(tableHeaderCellBox(TABLE, tableBox, 0)).toEqual({
       x: 10,
       y: 150,
@@ -371,7 +371,7 @@ describe("tableHeaderCellBox", () => {
     });
   });
 
-  it("中間列は先行列の幅の和だけ x がずれる", () => {
+  it("a middle column's x is offset by the sum of the widths of preceding columns", () => {
     expect(tableHeaderCellBox(TABLE, tableBox, 1)).toEqual({
       x: 40,
       y: 150,
@@ -380,7 +380,7 @@ describe("tableHeaderCellBox", () => {
     });
   });
 
-  it("tableBox のオフセットが加算される", () => {
+  it("tableBox's offset is added", () => {
     expect(
       tableHeaderCellBox(TABLE, { x: 100, y: 200, w: 70, h: 26 }, 1),
     ).toEqual({ x: 130, y: 200, w: 40, h: 8 });
@@ -390,7 +390,7 @@ describe("tableHeaderCellBox", () => {
 describe("tableCellBox", () => {
   const tableBox = { x: 10, y: 150, w: 70, h: 26 };
 
-  it("先頭行は y が tableBox.y + headerHeight、高さは rowHeight になる", () => {
+  it("the first row has y = tableBox.y + headerHeight, with height as rowHeight", () => {
     expect(tableCellBox(TABLE, tableBox, 0, 0)).toEqual({
       x: 10,
       y: 158,
@@ -399,7 +399,7 @@ describe("tableCellBox", () => {
     });
   });
 
-  it("後続行は rowIndex × rowHeight だけ y がずれる", () => {
+  it("a subsequent row's y is offset by rowIndex × rowHeight", () => {
     expect(tableCellBox(TABLE, tableBox, 0, 2)).toEqual({
       x: 10,
       y: 170,
@@ -408,7 +408,7 @@ describe("tableCellBox", () => {
     });
   });
 
-  it("列オフセットは tableHeaderCellBox と同じ式で加算される", () => {
+  it("the column offset is added using the same formula as tableHeaderCellBox", () => {
     expect(tableCellBox(TABLE, tableBox, 1, 1)).toEqual({
       x: 40,
       y: 164,
@@ -418,7 +418,7 @@ describe("tableCellBox", () => {
   });
 });
 
-describe("段階的選択（resolveClickTarget）とダブルクリックの整合", () => {
+describe("progressive selection (resolveClickTarget) consistency with double-click", () => {
   const IDLE: InteractionState = { kind: "idle" };
   const AT = { x: 22, y: 102 };
 
@@ -458,7 +458,7 @@ describe("段階的選択（resolveClickTarget）とダブルクリックの整�
 
   // A double-click fires after two clicks, so reaching a flex child requires
   // resolveClickTarget's progressive selection to advance across two clicks (1st = flex, 2nd = child)
-  it("flex 子 text は1クリック目では対象にならず、2クリック目で単独選択に達し対象になる", () => {
+  it("a flex child text does not become a target on the first click, and becomes one on the second click once it reaches sole selection", () => {
     const layout = layoutDocument(ctxFor([]).state.document, "first");
 
     const firstDown = reduceInteraction(

@@ -16,7 +16,7 @@ async function storedRectRotate(page: import("@playwright/test").Page) {
   return ir.elements.find((el) => el.type === "rect")?.rotate;
 }
 
-test("回転ハンドルのドラッグで IR に rotate が入り、キャンバスとプレビューに反映される", async ({
+test("dragging the rotation handle sets rotate in the IR and reflects it in the canvas and preview", async ({
   page,
 }) => {
   await page.goto("/");
@@ -60,7 +60,7 @@ test("回転ハンドルのドラッグで IR に rotate が入り、キャン�
   );
 });
 
-test("プロパティパネルの角度入力で rotate が設定・解除される", async ({
+test("the angle input in the properties panel sets and clears rotate", async ({
   page,
 }) => {
   await page.goto("/");
@@ -105,7 +105,9 @@ test("プロパティパネルの角度入力で rotate が設定・解除され
   expect(await storedRectRotate(page)).toBeUndefined();
 });
 
-test("回転した要素では選択枠とハンドルが回転に追従する", async ({ page }) => {
+test("the selection box and handles follow the rotation for a rotated element", async ({
+  page,
+}) => {
   await page.goto("/");
   await dragFromPalette(page, /^矩形/, { x: 100, y: 100 });
   const rect = page.locator('.dr-el[data-dr-id="rect1"]');
@@ -147,7 +149,7 @@ test("回転した要素では選択枠とハンドルが回転に追従する",
   await expect(selBox).not.toHaveAttribute("style", /--rot/);
 });
 
-test("回転した要素をリサイズ中、ドラッグゴーストが回転角に追従する", async ({
+test("while resizing a rotated element, the drag ghost follows the rotation angle", async ({
   page,
 }) => {
   await page.goto("/");
@@ -180,7 +182,7 @@ test("回転した要素をリサイズ中、ドラッグゴーストが回転�
   await page.mouse.up();
 });
 
-test("90° 回転した矩形のリサイズがドラッグ方向に追従し、反対側の辺が動かない", async ({
+test("resizing a 90°-rotated rectangle follows the drag direction and the opposite edge stays fixed", async ({
   page,
 }) => {
   await page.goto("/");

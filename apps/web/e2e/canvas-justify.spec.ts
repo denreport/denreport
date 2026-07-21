@@ -7,7 +7,7 @@ function letterSpacingPx(locator: Locator): Promise<number> {
   );
 }
 
-test("text 要素の整列を均等にすると、キャンバスの行に字間が付く", async ({
+test("justifying a text element's alignment adds letter spacing to the canvas line", async ({
   page,
 }) => {
   await page.goto("/");
@@ -33,7 +33,7 @@ test("text 要素の整列を均等にすると、キャンバスの行に字間
   await expect.poll(() => letterSpacingPx(line)).toBe(0);
 });
 
-test("表の列の整列を均等にすると、明細セルの字間に反映される", async ({
+test("justifying a table column's alignment reflects on the item cell's letter spacing", async ({
   page,
 }) => {
   await page.goto("/");

@@ -36,7 +36,7 @@ function makeDocument(ids: readonly string[]): IrDocument {
 }
 
 describe("createGroupFrom", () => {
-  it("group1 から採番し、既存グループの id を避ける", () => {
+  it("numbers from group1, avoiding ids of existing groups", () => {
     const first = createGroupFrom([], ["a", "b"]);
     expect(first).toEqual([{ id: "group1", memberIds: ["a", "b"] }]);
 
@@ -47,7 +47,7 @@ describe("createGroupFrom", () => {
     ]);
   });
 
-  it("既存グループに属すメンバーは旧グループから抜ける", () => {
+  it("members that belong to an existing group are removed from the old group", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "b", "c"] },
     ];
@@ -58,7 +58,7 @@ describe("createGroupFrom", () => {
     ]);
   });
 
-  it("引き抜きで旧グループの生存メンバーが2未満になると livingGroups から消える", () => {
+  it("when pulling a member drops the old group's living members below 2, it disappears from livingGroups", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "b"] },
     ];
@@ -69,7 +69,7 @@ describe("createGroupFrom", () => {
 });
 
 describe("dissolveGroupsOf", () => {
-  it("ids と交差するグループを取り除く", () => {
+  it("removes groups that intersect with ids", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "b"] },
       { id: "group2", memberIds: ["c", "d"] },
@@ -79,7 +79,7 @@ describe("dissolveGroupsOf", () => {
     ]);
   });
 
-  it("交差しなければ変化しない", () => {
+  it("leaves things unchanged when there's no intersection", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "b"] },
     ];
@@ -88,7 +88,7 @@ describe("dissolveGroupsOf", () => {
 });
 
 describe("livingGroups", () => {
-  it("宙に浮いた id（文書に実在しない）を除外する", () => {
+  it("excludes dangling ids (not present in the document)", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "b", "ghost"] },
     ];
@@ -98,7 +98,7 @@ describe("livingGroups", () => {
     ]);
   });
 
-  it("生存メンバーが2未満のグループを除く", () => {
+  it("excludes groups with fewer than 2 living members", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "ghost1", "ghost2"] },
     ];
@@ -106,7 +106,7 @@ describe("livingGroups", () => {
     expect(livingGroups(groups, doc)).toEqual([]);
   });
 
-  it("引数の生リストは書き換えない", () => {
+  it("does not mutate the raw argument list", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "ghost"] },
     ];
@@ -117,7 +117,7 @@ describe("livingGroups", () => {
 });
 
 describe("embedGroups", () => {
-  it("生存グループを document.groups へ書き込む", () => {
+  it("writes living groups to document.groups", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "b"] },
     ];
@@ -127,7 +127,7 @@ describe("embedGroups", () => {
     ]);
   });
 
-  it("生存メンバー2未満のグループは含めない", () => {
+  it("does not embed groups with fewer than 2 living members", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "ghost"] },
     ];
@@ -135,7 +135,7 @@ describe("embedGroups", () => {
     expect(embedGroups(doc, groups)).not.toHaveProperty("groups");
   });
 
-  it("生存グループが無ければ既存の document.groups キーごと外す", () => {
+  it("removes the document.groups key entirely when there are no living groups", () => {
     const groups: readonly ElementGroup[] = [];
     const doc: IrDocument = {
       ...makeDocument(["a"]),
@@ -144,14 +144,14 @@ describe("embedGroups", () => {
     expect(embedGroups(doc, groups)).not.toHaveProperty("groups");
   });
 
-  it("groups キーが元々無く生存グループも無ければ同じ参照を返す", () => {
+  it("returns the same reference when there's no groups key to begin with and no living groups", () => {
     const doc = makeDocument(["a"]);
     expect(embedGroups(doc, [])).toBe(doc);
   });
 });
 
 describe("groupContaining", () => {
-  it("id が属する生存グループを返す", () => {
+  it("returns the living group that id belongs to", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "b"] },
     ];
@@ -162,7 +162,7 @@ describe("groupContaining", () => {
     });
   });
 
-  it("非所属 id には null を返す", () => {
+  it("returns null for an id that doesn't belong to any group", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "b"] },
     ];
@@ -170,7 +170,7 @@ describe("groupContaining", () => {
     expect(groupContaining(groups, doc, "c")).toBeNull();
   });
 
-  it("生存メンバー2未満のグループには属さない扱いになる", () => {
+  it("treats a group with fewer than 2 living members as not containing the id", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "ghost"] },
     ];
@@ -180,12 +180,12 @@ describe("groupContaining", () => {
 });
 
 describe("expandIdsToGroups", () => {
-  it("非所属 id はそのまま素通しする", () => {
+  it("passes through an id that isn't in any group unchanged", () => {
     const doc = makeDocument(["a", "b"]);
     expect(expandIdsToGroups([], doc, ["a"])).toEqual(["a"]);
   });
 
-  it("グループ所属 id を全メンバーへ展開する", () => {
+  it("expands an id that belongs to a group into all its members", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "b"] },
     ];
@@ -193,7 +193,7 @@ describe("expandIdsToGroups", () => {
     expect(expandIdsToGroups(groups, doc, ["a"])).toEqual(["a", "b"]);
   });
 
-  it("重複を除去し、元の順序を優先して追加分は後置する", () => {
+  it("dedupes and appends additions after the original order", () => {
     const groups: readonly ElementGroup[] = [
       { id: "group1", memberIds: ["a", "b"] },
     ];

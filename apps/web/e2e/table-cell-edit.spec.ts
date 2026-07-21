@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { commitField, dragFromPalette } from "./helpers/designer-actions";
 
-test("minRows の空行セルに固定値を入力すると、キャンバスとプレビューの両方に反映される", async ({
+test("entering a fixed value into an empty minRows cell reflects in both the canvas and preview", async ({
   page,
 }) => {
   await page.goto("/");
@@ -32,7 +32,7 @@ test("minRows の空行セルに固定値を入力すると、キャンバスと
   await expect(preview.getByText("固定値")).toBeVisible();
 });
 
-test("bind データのあるセルを上書きすると、プレビューは固定値を優先し、Ctrl+Z で bind 値に戻る", async ({
+test("overriding a cell with bind data makes the preview prefer the fixed value, and Ctrl+Z reverts to the bind value", async ({
   page,
 }) => {
   await page.goto("/");
@@ -77,7 +77,7 @@ test("bind データのあるセルを上書きすると、プレビューは固
   await expect(cell).toHaveText("行A");
 });
 
-test("空文字列で確定すると上書きが消え、bind 値の表示に戻る", async ({
+test("committing an empty string clears the override and reverts to showing the bind value", async ({
   page,
 }) => {
   await page.goto("/");

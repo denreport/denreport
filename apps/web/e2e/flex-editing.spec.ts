@@ -55,13 +55,13 @@ async function dragOnCanvas(page: Page, from: Mm, to: Mm): Promise<void> {
   await page.mouse.up();
 }
 
-test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサイズ", async ({
+test("flex editing: staged selection, moving existing elements in/out, resizing children", async ({
   page,
 }) => {
   await page.goto("/");
   const props = page.getByRole("complementary", { name: "プロパティ" });
 
-  await test.step("配置: flex（子 text1 つき）と、別のトップレベル text2", async () => {
+  await test.step("placement: flex (with child text1) and a separate top-level text2", async () => {
     await dragFromPalette(page, FLEX_PALETTE, { x: 60, y: 60 });
     await expect(page.locator('.dr-el[data-dr-id="flex1"]')).toBeVisible();
     await commitField(props.getByLabel("x", { exact: true }), "60");
@@ -73,7 +73,7 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
     await commitField(props.getByLabel("y", { exact: true }), "150");
   });
 
-  await test.step("段階的選択: 同じ矩形への1クリック目で flex、2クリック目で子", async () => {
+  await test.step("staged selection: first click on the same rect selects flex, second click selects the child", async () => {
     // flex1 has only one child, text1, and no gap, so the two boxes fully overlap
     await clickCanvas(page, { x: 70, y: 63 });
     await expect(props.locator(".dr-props-id")).toHaveText("flex1");
@@ -82,7 +82,7 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
     await expect(props.locator(".dr-props-id")).toHaveText("text1");
   });
 
-  await test.step("既存要素のドラッグ挿入: text2 を flex1 へ", async () => {
+  await test.step("drag-insert existing element: text2 into flex1", async () => {
     // Drop it toward the bottom of flex1's current box (y60-68) to insert it after text1
     await dragOnCanvas(page, await elementCenterMm(page, "text2"), {
       x: 80,
@@ -129,7 +129,7 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
     expect(flex?.children.map((c) => c.id)).toEqual(["text1", "text2"]);
   });
 
-  await test.step("子のキャンバスリサイズ: text1 の se ハンドルで w/h を広げると text2 が再解決される", async () => {
+  await test.step("resize child on canvas: enlarging text1's w/h via the se handle re-resolves text2", async () => {
     // From the previous selection (sibling text2), clicking directly on text1's exclusive area selects text1 in one step
     await clickCanvas(page, { x: 70, y: 63 });
     await expect(props.locator(".dr-props-id")).toHaveText("text1");
@@ -198,7 +198,7 @@ test("flex 編集: 段階的選択・既存要素の出し入れ・子のリサ�
     expect(text1?.h).toBeGreaterThan(8);
   });
 
-  await test.step("flex からの取り出し: text2 をキャンバス外周へドラッグするとトップレベル化する", async () => {
+  await test.step("remove from flex: dragging text2 to the canvas edge promotes it to top-level", async () => {
     const from = await elementCenterMm(page, "text2");
     await dragOnCanvas(page, from, { x: 150, y: 200 });
 
