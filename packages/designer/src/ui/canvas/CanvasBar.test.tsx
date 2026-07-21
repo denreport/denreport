@@ -48,8 +48,8 @@ function select(): HTMLSelectElement {
   return el;
 }
 
-describe("CanvasBar の封筒窓ガイド", () => {
-  it("A4 縦では有効で、選択すると setEnvelopePreset が呼ばれる", () => {
+describe("CanvasBar envelope window guide", () => {
+  it("enabled for A4 portrait, and calls setEnvelopePreset on selection", () => {
     const store = makeStore({ width: 210, height: 297 });
     act(() => {
       root.render(<CanvasBar store={store} />);
@@ -67,7 +67,7 @@ describe("CanvasBar の封筒窓ガイド", () => {
     expect(store.getState().envelopePresetId).toBe("l3-w80h45");
   });
 
-  it("空文字を選ぶと null になる", () => {
+  it("becomes null when selecting an empty string", () => {
     const store = makeStore({ width: 210, height: 297 });
     store.setEnvelopePreset("l3-w80h45");
     act(() => {
@@ -85,7 +85,7 @@ describe("CanvasBar の封筒窓ガイド", () => {
     expect(store.getState().envelopePresetId).toBeNull();
   });
 
-  it("A4 縦以外の document では disabled になる", () => {
+  it("disabled for documents other than A4 portrait", () => {
     const store = makeStore({ width: 148, height: 210 });
     act(() => {
       root.render(<CanvasBar store={store} />);
@@ -94,8 +94,8 @@ describe("CanvasBar の封筒窓ガイド", () => {
   });
 });
 
-describe("en の MessagesContext", () => {
-  it("文言が英語で描画される", () => {
+describe("en MessagesContext", () => {
+  it("renders text in English", () => {
     const store = makeStore({ width: 210, height: 297 });
     act(() => {
       root.render(

@@ -5,7 +5,7 @@ import { readStoreZip } from "./helpers/zip";
 
 const NOTE_TEXT = "振込手数料はお客様のご負担です";
 
-test("脚注マークを自動採番し、プレビューと ReportLab 書き出しの両方に静的テキストとして反映する", async ({
+test("auto-numbers footnote marks and reflects them as static text in both the preview and the ReportLab export", async ({
   page,
 }) => {
   await page.goto("/");

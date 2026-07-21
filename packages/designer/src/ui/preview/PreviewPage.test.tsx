@@ -79,14 +79,14 @@ function attrOf(el: Element, name: string): number {
 }
 
 describe("PreviewPage", () => {
-  it("viewBox が用紙の mm 寸法になる", () => {
+  it("viewBox becomes the paper's mm dimensions", () => {
     render([]);
     expect(container.querySelector("svg")?.getAttribute("viewBox")).toBe(
       "0 0 210 297",
     );
   });
 
-  it("text は行ごとの <text> になり、y は規範ベースライン式と一致する", () => {
+  it("text becomes one <text> per line, and y matches the baseline formula", () => {
     const el = textEl({ content: "甲\n乙" });
     render([el]);
     const texts = [...container.querySelectorAll("text")];
@@ -108,7 +108,7 @@ describe("PreviewPage", () => {
     expect((texts[0] as Element).getAttribute("font-family")).toBe(FONT.family);
   });
 
-  it("bold 要素は bold スロットの family / 計量で描画し、未定義スロットは regular に劣化する", () => {
+  it("bold elements render with the bold slot's family/metrics, and fall back to regular when the slot is undefined", () => {
     const boldFont: PreviewFont = {
       family: "dr-embedded-notosansjp-bold",
       ascentPerEm: 0.9,
@@ -134,21 +134,21 @@ describe("PreviewPage", () => {
     );
   });
 
-  it("underline の text は text-decoration underline を持ち、非下線は持たない", () => {
+  it("underlined text has text-decoration underline, and non-underlined text does not", () => {
     render([textEl({ underline: true }), textEl({ underline: false })]);
     const texts = [...container.querySelectorAll("text")];
     expect(texts[0]?.getAttribute("text-decoration")).toBe("underline");
     expect(texts[1]?.getAttribute("text-decoration")).toBeNull();
   });
 
-  it("text の color が fill に写る", () => {
+  it("text color maps to fill", () => {
     const el = textEl({ color: "#ff0000" });
     render([el]);
     const text = container.querySelector("text");
     expect((text as Element).getAttribute("fill")).toBe("#ff0000");
   });
 
-  it("align 4値が x と text-anchor に写像される", () => {
+  it("the 4 align values map to x and text-anchor", () => {
     render([
       textEl({ align: "left" }),
       textEl({ align: "center" }),
@@ -165,7 +165,7 @@ describe("PreviewPage", () => {
     expect(texts.map((t) => attrOf(t, "x"))).toEqual([10, 60, 110, 10]);
   });
 
-  it("幅を超える content は layoutTextLines で折り返され、複数の <text> になる", () => {
+  it("content exceeding the width wraps via layoutTextLines into multiple <text> elements", () => {
     const el = textEl({ content: "abcdef", w: widthMmFor(3.2), fontSize: 10 });
     render([el]);
     const texts = [...container.querySelectorAll("text")];
@@ -175,7 +175,7 @@ describe("PreviewPage", () => {
     );
   });
 
-  it("justify の行は letter-spacing 属性（mm 換算）を持つ", () => {
+  it("justified lines have a letter-spacing attribute (converted to mm)", () => {
     const el = textEl({
       content: "abcdef",
       w: widthMmFor(3.5),
@@ -194,7 +194,7 @@ describe("PreviewPage", () => {
     }
   });
 
-  it("line は向きと長さが端点に、thickness が stroke-width に写る", () => {
+  it("line orientation and length map to the endpoints, and thickness maps to stroke-width", () => {
     render([
       {
         type: "line",
@@ -237,7 +237,7 @@ describe("PreviewPage", () => {
     expect(attrOf(v as Element, "stroke-width")).toBeCloseTo(0.5, 6);
   });
 
-  it("rect は塗りなしの枠線として写る", () => {
+  it("rect renders as an unfilled border", () => {
     render([
       {
         type: "rect",
@@ -264,7 +264,7 @@ describe("PreviewPage", () => {
     expect(attrOf(rect as Element, "stroke-width")).toBeCloseTo(0.4, 6);
   });
 
-  it("rect は塗り色・線色・角丸半径が反映される", () => {
+  it("rect reflects fill color, stroke color, and corner radius", () => {
     render([
       {
         type: "rect",
@@ -287,7 +287,7 @@ describe("PreviewPage", () => {
     expect(attrOf(rect as Element, "rx")).toBe(3);
   });
 
-  it("line・rect の非実線が strokeDasharray に写る", () => {
+  it("non-solid line/rect strokes map to strokeDasharray", () => {
     render([
       {
         type: "line",
@@ -306,7 +306,7 @@ describe("PreviewPage", () => {
     expect((line as Element).getAttribute("stroke-dasharray")).toBe("2 1");
   });
 
-  it("ellipse が cx/cy/rx/ry と塗り・線色に写る", () => {
+  it("ellipse maps to cx/cy/rx/ry and fill/stroke color", () => {
     render([
       {
         type: "ellipse",
@@ -331,7 +331,7 @@ describe("PreviewPage", () => {
     expect((ellipse as Element).getAttribute("stroke")).toBe("#123456");
   });
 
-  it("image は領域いっぱいに引き伸ばして写る", () => {
+  it("image stretches to fill its area", () => {
     const src = "data:image/png;base64,iVBORw0KGgo=";
     render([
       {
@@ -353,7 +353,7 @@ describe("PreviewPage", () => {
     expect((image as Element).getAttribute("preserveAspectRatio")).toBe("none");
   });
 
-  it("font が null でも描画され、font-family は付かない", () => {
+  it("renders even when font is null, without a font-family attribute", () => {
     render([textEl()], null);
     const text = container.querySelector("text");
     expect(text).not.toBeNull();
@@ -361,19 +361,19 @@ describe("PreviewPage", () => {
     expect(Number.isFinite(attrOf(text as Element, "y"))).toBe(true);
   });
 
-  it("rotate 0 では <g> に transform を付けない", () => {
+  it("does not add a transform to <g> when rotate is 0", () => {
     render([textEl()]);
     const g = container.querySelector("svg > g");
     expect((g as Element).getAttribute("transform")).toBeNull();
   });
 
-  it("rotate が外接箱中心周りの rotate(θ cx cy) として <g> に写る", () => {
+  it("rotate maps to <g> as rotate(θ cx cy) around the bounding box center", () => {
     render([textEl({ x: 10, y: 50, w: 100, h: 20, rotate: 45 })]);
     const g = container.querySelector("svg > g");
     expect((g as Element).getAttribute("transform")).toBe("rotate(45 60 60)");
   });
 
-  it("line の rotate は線分中点周りになる", () => {
+  it("line rotate is around the segment's midpoint", () => {
     render([
       {
         type: "line",
@@ -392,7 +392,7 @@ describe("PreviewPage", () => {
     expect((g as Element).getAttribute("transform")).toBe("rotate(90 35 20)");
   });
 
-  it("barcode（qrcode）は枠・ファインダーパターン・解決済み content の文字列を描画する", () => {
+  it("barcode (qrcode) renders the frame, finder pattern, and resolved content string", () => {
     render([
       {
         type: "barcode",
@@ -412,7 +412,7 @@ describe("PreviewPage", () => {
     expect(text?.textContent).toBe("ABC-123");
   });
 
-  it("barcode（1D 規格）は縦縞のバーを描画する", () => {
+  it("barcode (1D symbology) renders vertical bars", () => {
     render([
       {
         type: "barcode",

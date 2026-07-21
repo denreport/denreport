@@ -44,12 +44,12 @@ function centeredElement(document: IrDocument, type: IrElementType) {
 }
 
 describe("nextElementId", () => {
-  it("白紙文書では <type>1 を返す", () => {
+  it("returns <type>1 for a blank document", () => {
     expect(nextElementId(blankDocument(), "text")).toBe("text1");
     expect(nextElementId(blankDocument(), "pageNumber")).toBe("pageNumber1");
   });
 
-  it("flex 子孫の id とも衝突しない", () => {
+  it("does not collide with flex descendant ids", () => {
     let doc = blankDocument();
     doc = addElement(doc, defaultElement(doc, "flex", 10, 10));
     // flex1, and its text child text1, become used
@@ -57,7 +57,7 @@ describe("nextElementId", () => {
     expect(nextElementId(doc, "text")).toBe("text2");
   });
 
-  it("削除済み番号（最小の空き）を再利用する", () => {
+  it("reuses a deleted number (the smallest gap)", () => {
     let doc = blankDocument();
     doc = addElement(doc, defaultElement(doc, "text", 10, 10));
     doc = addElement(doc, defaultElement(doc, "text", 10, 30));
@@ -72,7 +72,7 @@ describe("nextElementId", () => {
 
 describe("createDefaultElement", () => {
   for (const type of ALL_TYPES) {
-    it(`${type}: S 群通過の正規化済み完全形で、白紙 A4 上で M 群違反を作らない`, () => {
+    it(`${type}: passes group S as a normalized complete form, and creates no group M violations on a blank A4 page`, () => {
       const doc = addElement(
         blankDocument(),
         defaultElement(blankDocument(), type, 20, 30),
@@ -87,7 +87,7 @@ describe("createDefaultElement", () => {
     });
   }
 
-  it("座標は 0.1mm に丸められる", () => {
+  it("coordinates are rounded to 0.1mm", () => {
     const el = defaultElement(blankDocument(), "rect", 10.04, 20.06);
     expect(el.type).toBe("rect");
     if (el.type === "rect") {
@@ -96,7 +96,7 @@ describe("createDefaultElement", () => {
     }
   });
 
-  it("table は文書依存デフォルト（maxY = page.height・continuationY = y）を具体値で持つ", () => {
+  it("table has concrete document-dependent defaults (maxY = page.height, continuationY = y)", () => {
     const el = defaultElement(blankDocument(), "table", 15, 90);
     expect(el.type).toBe("table");
     if (el.type === "table") {
@@ -106,7 +106,7 @@ describe("createDefaultElement", () => {
     }
   });
 
-  it("barcode は既定で qrcode・トークン値 {code} を持つ", () => {
+  it("barcode defaults to qrcode with token value {code}", () => {
     const el = defaultElement(blankDocument(), "barcode", 15, 90);
     expect(el.type).toBe("barcode");
     if (el.type === "barcode") {
@@ -117,7 +117,7 @@ describe("createDefaultElement", () => {
     }
   });
 
-  it("flex は text 子1個つきで生成され、子 id も文書から採番される", () => {
+  it("flex is created with one text child, and the child id is also numbered from the document", () => {
     let doc = blankDocument();
     doc = addElement(doc, defaultElement(doc, "text", 10, 10));
     const el = defaultElement(doc, "flex", 20, 20);
@@ -128,7 +128,7 @@ describe("createDefaultElement", () => {
     }
   });
 
-  it("既定テキスト・列名はロケールに依らず英語", () => {
+  it("default text and column names are English regardless of locale", () => {
     const el = defaultElement(blankDocument(), "text", 10, 10);
     expect(el.type).toBe("text");
     if (el.type === "text") {
@@ -145,7 +145,7 @@ describe("createDefaultElement", () => {
 
 describe("createCenteredElement", () => {
   for (const type of ALL_TYPES) {
-    it(`${type}: A4 白紙でページ中央に置かれ M 群違反を作らない`, () => {
+    it(`${type}: placed at the page center on a blank A4 page with no group M violations`, () => {
       const doc = blankDocument();
       const el = centeredElement(doc, type);
       const size = defaultSizeMm(type);
@@ -160,7 +160,7 @@ describe("createCenteredElement", () => {
     });
   }
 
-  it("table は列幅の合計を幅として中央寄せする", () => {
+  it("table centers using the sum of column widths as its width", () => {
     const doc = blankDocument();
     const el = centeredElement(doc, "table");
     expect(el.type).toBe("table");
@@ -173,7 +173,7 @@ describe("createCenteredElement", () => {
     }
   });
 
-  it("用紙が既定サイズより小さいとき x / y は 0 にクランプされる", () => {
+  it("x / y clamp to 0 when the paper is smaller than the default size", () => {
     const tiny: IrDocument = {
       ...blankDocument(),
       page: { width: 1, height: 1 },
@@ -185,7 +185,7 @@ describe("createCenteredElement", () => {
 });
 
 describe("defaultSizeMm", () => {
-  it("全型の初期寸法を返す（line は length×0 相当、table は Σ列幅×(ヘッダ+minRows 行)）", () => {
+  it("returns the initial dimensions for every type (line is length×0-equivalent, table is Σcolumn-width×(header+minRows rows))", () => {
     expect(defaultSizeMm("text")).toEqual({ w: 40, h: 8 });
     expect(defaultSizeMm("line")).toEqual({ w: 50, h: 0 });
     expect(defaultSizeMm("rect")).toEqual({ w: 40, h: 20 });

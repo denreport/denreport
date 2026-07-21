@@ -17,7 +17,7 @@ function ruleBody(selector: string): string {
 }
 
 // Don't let rules/borders that collapse to sub-pixel and vanish at low zoom fall below 1px on screen
-describe("app.css の低ズーム時の枠線最低太さクランプ", () => {
+describe("app.css clamps border minimum thickness at low zoom", () => {
   it.each([
     [
       ".dr-tbl-hline",
@@ -53,14 +53,17 @@ describe("app.css の低ズーム時の枠線最低太さクランプ", () => {
         String.raw`border:\s*max\(1px, calc\(var\(--frame-w, ${FRAME_W}\) \* var\(--mm\)\)\) var\(--frame-ls, solid\)\s+var\(--paper-text\)`,
       ),
     ],
-  ])("%s は max(1px, ...) で下限クランプされる", (selector, pattern) => {
-    expect(ruleBody(selector)).toMatch(pattern);
-  });
+  ])(
+    "%s is clamped to a lower bound with max(1px, ...)",
+    (selector, pattern) => {
+      expect(ruleBody(selector)).toMatch(pattern);
+    },
+  );
 });
 
 // The outer frame is drawn over a position covering all internal table elements, so let click/double-click operations pass through
-describe("app.css の表の外枠は選択・編集操作をブロックしない", () => {
-  it(".dr-tbl-frame は inset:0 かつ pointer-events:none", () => {
+describe("app.css table outer frame does not block select/edit operations", () => {
+  it(".dr-tbl-frame has inset:0 and pointer-events:none", () => {
     const body = ruleBody(".dr-tbl-frame");
     expect(body).toMatch(/inset:\s*0;/);
     expect(body).toMatch(/pointer-events:\s*none;/);
@@ -68,9 +71,9 @@ describe("app.css の表の外枠は選択・編集操作をブロックしな�
 });
 
 // borderWidth 0 (no border) is a legitimate state, and the lower-bound clamp must not grow a border for it
-describe("app.css の枠線幅 0（枠なし）はクランプしない", () => {
+describe("app.css does not clamp border-width 0 (no border)", () => {
   it.each([".dr-el-rect.is-borderless", ".dr-el-ellipse.is-borderless"])(
-    "%s は border-width: 0 を明示する",
+    "%s declares border-width: 0 explicitly",
     (selector) => {
       expect(ruleBody(selector)).toMatch(/border-width:\s*0;/);
     },
@@ -79,8 +82,8 @@ describe("app.css の枠線幅 0（枠なし）はクランプしない", () => 
 
 // Primary actions like "Export" are differentiated from secondary buttons
 // with the CTA-only color plus visual weight (bold, shadow)
-describe("app.css の primary ボタンは CTA 専用トークンで視覚的重みを持つ", () => {
-  it(".dr-btn-primary は --color-cta 系トークンを使う", () => {
+describe("app.css primary buttons carry visual weight via CTA-only tokens", () => {
+  it(".dr-btn-primary uses --color-cta tokens", () => {
     const body = ruleBody(".dr-btn-primary");
     expect(body).toMatch(/background:\s*var\(--color-cta\);/);
     expect(body).toMatch(/color:\s*var\(--color-on-cta\);/);
@@ -88,7 +91,7 @@ describe("app.css の primary ボタンは CTA 専用トークンで視覚的重
     expect(body).toMatch(/box-shadow:\s*var\(--shadow-raised\);/);
   });
 
-  it(".dr-btn-primary:hover / :active は CTA の hover / active トークンを使う", () => {
+  it(".dr-btn-primary:hover / :active use the CTA hover / active tokens", () => {
     expect(ruleBody(".dr-btn-primary:hover")).toMatch(
       /background:\s*var\(--color-cta-hover\);/,
     );
@@ -100,8 +103,8 @@ describe("app.css の primary ボタンは CTA 専用トークンで視覚的重
 
 // Resize handles have directional cursors (nwse-resize, etc.), whereas
 // the rotation handle alone would fail to convey a rotate operation if it used a hand/grab cursor
-describe("app.css の回転ハンドルは回転専用カーソルを持つ", () => {
-  it(".dr-h--rotate は grab を使わず SVG data URI のカスタムカーソルを持つ", () => {
+describe("app.css rotation handle has a rotate-specific cursor", () => {
+  it(".dr-h--rotate uses a custom SVG data URI cursor instead of grab", () => {
     const body = ruleBody(".dr-h--rotate");
     expect(body).not.toMatch(/cursor:\s*grab/);
     expect(body).toMatch(
@@ -109,7 +112,7 @@ describe("app.css の回転ハンドルは回転専用カーソルを持つ", ()
     );
   });
 
-  it("カーソル画像は 24x24 のホットスポット中心・フォールバック alias を持つ", () => {
+  it("the cursor image is 24x24 with a centered hotspot and alias fallback", () => {
     const body = ruleBody(".dr-h--rotate");
     const match = body.match(/cursor:\s*url\("(data:image\/svg\+xml,[^"]+)"\)/);
     const dataUri = match?.[1];

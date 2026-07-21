@@ -57,8 +57,8 @@ function el(): HTMLElement {
   return node as HTMLElement;
 }
 
-describe("PaperElement — rect の CSS 変数", () => {
-  it("スタイル属性なしでは色・塗り・角丸の CSS 変数を出さない", () => {
+describe("PaperElement — rect CSS variables", () => {
+  it("does not emit color/fill/corner-radius CSS variables without style attributes", () => {
     renderEl({
       type: "rect",
       id: "r1",
@@ -75,7 +75,7 @@ describe("PaperElement — rect の CSS 変数", () => {
     expect(el().style.getPropertyValue("--ls")).toBe("");
   });
 
-  it("枠線色・塗り色・角丸・線種が CSS 変数に写る", () => {
+  it("reflects border color, fill color, corner radius, and line style into CSS variables", () => {
     renderEl({
       type: "rect",
       id: "r1",
@@ -96,7 +96,7 @@ describe("PaperElement — rect の CSS 変数", () => {
     expect(el().style.getPropertyValue("--ls")).toBe("dotted");
   });
 
-  it("dashdot / dashdotdot は dashed に近似する", () => {
+  it("approximates dashdot / dashdotdot as dashed", () => {
     renderEl({
       type: "rect",
       id: "r1",
@@ -111,7 +111,7 @@ describe("PaperElement — rect の CSS 変数", () => {
     expect(el().style.getPropertyValue("--ls")).toBe("dashed");
   });
 
-  it("borderWidth 0（枠なし）では is-borderless クラスを付ける", () => {
+  it("adds the is-borderless class when borderWidth is 0 (no border)", () => {
     renderEl({
       type: "rect",
       id: "r1",
@@ -125,7 +125,7 @@ describe("PaperElement — rect の CSS 変数", () => {
     expect(el().classList.contains("is-borderless")).toBe(true);
   });
 
-  it("borderWidth 0 でなければ is-borderless クラスを付けない", () => {
+  it("does not add the is-borderless class when borderWidth is not 0", () => {
     renderEl({
       type: "rect",
       id: "r1",
@@ -141,7 +141,7 @@ describe("PaperElement — rect の CSS 変数", () => {
 });
 
 describe("PaperElement — ellipse", () => {
-  it("dr-el-ellipse クラスと枠線・塗りの CSS 変数を持つ", () => {
+  it("has the dr-el-ellipse class and border/fill CSS variables", () => {
     renderEl({
       type: "ellipse",
       id: "e1",
@@ -160,7 +160,7 @@ describe("PaperElement — ellipse", () => {
     expect(el().style.getPropertyValue("--fc")).toBe("#abcdef");
   });
 
-  it("borderWidth 0（枠なし）では is-borderless クラスを付ける", () => {
+  it("adds the is-borderless class when borderWidth is 0 (no border)", () => {
     renderEl({
       type: "ellipse",
       id: "e1",
@@ -175,8 +175,8 @@ describe("PaperElement — ellipse", () => {
   });
 });
 
-describe("PaperElement — line の色・線種", () => {
-  it("色・線種の指定なしでは --lc / --ls を出さない", () => {
+describe("PaperElement — line color and style", () => {
+  it("does not emit --lc / --ls without color/style specified", () => {
     renderEl({
       type: "line",
       id: "l1",
@@ -191,7 +191,7 @@ describe("PaperElement — line の色・線種", () => {
     expect(el().style.getPropertyValue("--ls")).toBe("");
   });
 
-  it("色・線種の指定が CSS 変数に写る", () => {
+  it("reflects color/style specification into CSS variables", () => {
     renderEl({
       type: "line",
       id: "l1",
@@ -209,8 +209,8 @@ describe("PaperElement — line の色・線種", () => {
   });
 });
 
-describe("PaperElement — text / pageNumber の文字色", () => {
-  it("color の指定なしでは --tc を出さない", () => {
+describe("PaperElement — text / pageNumber text color", () => {
+  it("does not emit --tc without color specified", () => {
     renderEl({
       type: "text",
       id: "t1",
@@ -227,7 +227,7 @@ describe("PaperElement — text / pageNumber の文字色", () => {
     expect(el().style.getPropertyValue("--tc")).toBe("");
   });
 
-  it("text の color が --tc に写る", () => {
+  it("reflects text's color into --tc", () => {
     renderEl({
       type: "text",
       id: "t1",
@@ -245,7 +245,7 @@ describe("PaperElement — text / pageNumber の文字色", () => {
     expect(el().style.getPropertyValue("--tc")).toBe("#ff0000");
   });
 
-  it("pageNumber の color が --tc に写る", () => {
+  it("reflects pageNumber's color into --tc", () => {
     renderEl({
       type: "pageNumber",
       id: "p1",
@@ -264,8 +264,8 @@ describe("PaperElement — text / pageNumber の文字色", () => {
   });
 });
 
-describe("PaperElement — rotate の CSS 変数", () => {
-  it("rotate 指定なしでは --rot を出さない", () => {
+describe("PaperElement — rotate CSS variable", () => {
+  it("does not emit --rot without rotate specified", () => {
     renderEl({
       type: "rect",
       id: "r1",
@@ -279,7 +279,7 @@ describe("PaperElement — rotate の CSS 変数", () => {
     expect(el().style.getPropertyValue("--rot")).toBe("");
   });
 
-  it("rotate が deg 付きで --rot に写る", () => {
+  it("reflects rotate into --rot with a deg suffix", () => {
     renderEl({
       type: "rect",
       id: "r1",
@@ -294,7 +294,7 @@ describe("PaperElement — rotate の CSS 変数", () => {
     expect(el().style.getPropertyValue("--rot")).toBe("-30.5deg");
   });
 
-  it("line の rotate も --rot に写る", () => {
+  it("reflects line's rotate into --rot too", () => {
     renderEl({
       type: "line",
       id: "l1",
@@ -310,7 +310,7 @@ describe("PaperElement — rotate の CSS 変数", () => {
   });
 });
 
-describe("PaperElement — table の CSS 変数", () => {
+describe("PaperElement — table CSS variables", () => {
   function tableEl(overrides: Partial<IrTableElement> = {}): IrTableElement {
     return {
       type: "table",
@@ -329,7 +329,7 @@ describe("PaperElement — table の CSS 変数", () => {
     };
   }
 
-  it("罫線属性の指定なしでは CSS 変数を出さない", () => {
+  it("does not emit CSS variables without border attributes specified", () => {
     renderEl(tableEl());
     expect(el().style.getPropertyValue("--frame-w")).toBe("");
     expect(el().style.getPropertyValue("--grid-w")).toBe("");
@@ -337,7 +337,7 @@ describe("PaperElement — table の CSS 変数", () => {
     expect(el().style.getPropertyValue("--grid-ls")).toBe("");
   });
 
-  it("frameWidth / gridWidth / frameStyle / gridStyle が CSS 変数に写る", () => {
+  it("reflects frameWidth / gridWidth / frameStyle / gridStyle into CSS variables", () => {
     renderEl(
       tableEl({
         frameWidth: 1,
@@ -352,16 +352,16 @@ describe("PaperElement — table の CSS 変数", () => {
     expect(el().style.getPropertyValue("--grid-ls")).toBe("dotted");
   });
 
-  it("frameStyle: dashdot は dashed に近似する", () => {
+  it("approximates frameStyle: dashdot as dashed", () => {
     renderEl(tableEl({ frameStyle: "dashdot" }));
     expect(el().style.getPropertyValue("--frame-ls")).toBe("dashed");
   });
 });
 
-describe("PaperElement — フォント計量の有無による text / pageNumber の描画", () => {
+describe("PaperElement — text / pageNumber rendering with and without font metrics", () => {
   const METRICS: FontMetricsSet = { regular: () => 0.5 };
 
-  it("metrics 未指定では従来どおり生テキストのまま描画する", () => {
+  it("renders as plain text as before when metrics is not specified", () => {
     renderEl({
       type: "text",
       id: "t1",
@@ -379,7 +379,7 @@ describe("PaperElement — フォント計量の有無による text / pageNumbe
     expect(el().textContent).toBe("本文");
   });
 
-  it("metrics 指定の text は .dr-text-line で行分割描画する", () => {
+  it("renders text split into lines via .dr-text-line when metrics is specified", () => {
     renderEl(
       {
         type: "text",
@@ -400,7 +400,7 @@ describe("PaperElement — フォント計量の有無による text / pageNumbe
     expect(el().textContent).toBe("本文");
   });
 
-  it("metrics 指定の pageNumber は .dr-text-line > .dr-bind になる", () => {
+  it("renders pageNumber as .dr-text-line > .dr-bind when metrics is specified", () => {
     renderEl(
       {
         type: "pageNumber",

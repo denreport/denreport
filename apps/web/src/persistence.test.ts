@@ -134,14 +134,14 @@ function createFakeDesigner() {
 }
 
 describe("restoreIr", () => {
-  it("保存値がなければ blank を返し loadIr を呼ばない", () => {
+  it("returns blank and doesn't call loadIr when there's no stored value", () => {
     const storage = createStubStorage();
     const loadIr = vi.fn(() => ({ ok: true }) as const);
     expect(restoreIr({ loadIr }, storage)).toBe("blank");
     expect(loadIr).not.toHaveBeenCalled();
   });
 
-  it("保存値があれば loadIr に渡し restored を返す", () => {
+  it("passes the stored value to loadIr and returns restored", () => {
     const storage = createStubStorage();
     storage.setItem(IR_STORAGE_KEY, '{"version":"1.0"}');
     const loadIr = vi.fn(() => ({ ok: true }) as const);
@@ -149,7 +149,7 @@ describe("restoreIr", () => {
     expect(loadIr).toHaveBeenCalledWith('{"version":"1.0"}');
   });
 
-  it("loadIr が失敗したら invalid を返し保存値は残す", () => {
+  it("returns invalid and keeps the stored value when loadIr fails", () => {
     const storage = createStubStorage();
     storage.setItem(IR_STORAGE_KEY, "{broken");
     const loadIr = vi.fn(() => ({ ok: false, errors: [] }) as const);
@@ -159,18 +159,18 @@ describe("restoreIr", () => {
 });
 
 describe("restoreExportTarget", () => {
-  it("保存値がなければ undefined を返す", () => {
+  it("returns undefined when there's no stored value", () => {
     const storage = createStubStorage();
     expect(restoreExportTarget(storage)).toBeUndefined();
   });
 
-  it("有効な保存値はそのまま返す", () => {
+  it("returns a valid stored value as-is", () => {
     const storage = createStubStorage();
     storage.setItem(EXPORT_TARGET_STORAGE_KEY, "reportlab");
     expect(restoreExportTarget(storage)).toBe("reportlab");
   });
 
-  it("不正な保存値は undefined を返す", () => {
+  it("returns undefined for an invalid stored value", () => {
     const storage = createStubStorage();
     storage.setItem(EXPORT_TARGET_STORAGE_KEY, "excel");
     expect(restoreExportTarget(storage)).toBeUndefined();
@@ -178,18 +178,18 @@ describe("restoreExportTarget", () => {
 });
 
 describe("restoreLocale", () => {
-  it("保存値がなければ undefined を返す", () => {
+  it("returns undefined when there's no stored value", () => {
     const storage = createStubStorage();
     expect(restoreLocale(storage)).toBeUndefined();
   });
 
-  it("有効な保存値はそのまま返す", () => {
+  it("returns a valid stored value as-is", () => {
     const storage = createStubStorage();
     storage.setItem(LOCALE_STORAGE_KEY, "en");
     expect(restoreLocale(storage)).toBe("en");
   });
 
-  it("不正な保存値は undefined を返す", () => {
+  it("returns undefined for an invalid stored value", () => {
     const storage = createStubStorage();
     storage.setItem(LOCALE_STORAGE_KEY, "fr");
     expect(restoreLocale(storage)).toBeUndefined();
@@ -204,7 +204,7 @@ describe("attachAutosave", () => {
     vi.useRealTimers();
   });
 
-  it("onChange の連発はデバウンス後に saveIr() の値を1回だけ書く", () => {
+  it("rapid-fire onChange writes saveIr()'s value once after the debounce", () => {
     const fake = createFakeDesigner();
     const storage = createStubStorage();
     const setItem = vi.spyOn(storage, "setItem");
@@ -223,7 +223,7 @@ describe("attachAutosave", () => {
     expect(storage.getItem(IR_STORAGE_KEY)).toBe('{"v":1}');
   });
 
-  it("IR とサンプルデータのタイマーは独立している", () => {
+  it("the IR and sample-data timers are independent", () => {
     const fake = createFakeDesigner();
     const storage = createStubStorage();
     attachAutosave(fake.designer, storage, window, () => {});
@@ -240,7 +240,7 @@ describe("attachAutosave", () => {
     expect(storage.getItem(SAMPLE_DATA_STORAGE_KEY)).toBe('{"b":2}');
   });
 
-  it("書き出しターゲットの変更もデバウンス後に getExportTarget() の値を書く", () => {
+  it("an export-target change also writes getExportTarget()'s value after the debounce", () => {
     const fake = createFakeDesigner();
     const storage = createStubStorage();
     attachAutosave(fake.designer, storage, window, () => {});
@@ -251,7 +251,7 @@ describe("attachAutosave", () => {
     expect(storage.getItem(EXPORT_TARGET_STORAGE_KEY)).toBe("reportlab");
   });
 
-  it("言語の変更もデバウンス後に getLocale() の値を書く", () => {
+  it("a locale change also writes getLocale()'s value after the debounce", () => {
     const fake = createFakeDesigner();
     const storage = createStubStorage();
     attachAutosave(fake.designer, storage, window, () => {});
@@ -262,7 +262,7 @@ describe("attachAutosave", () => {
     expect(storage.getItem(LOCALE_STORAGE_KEY)).toBe("en");
   });
 
-  it("setItem が throw したら onError に渡り、以後の変更でも保存し続ける", () => {
+  it("when setItem throws, it's passed to onError and subsequent changes keep saving", () => {
     const fake = createFakeDesigner();
     const storage = createStubStorage();
     const onError = vi.fn();
@@ -282,7 +282,7 @@ describe("attachAutosave", () => {
     expect(onError).toHaveBeenCalledTimes(1);
   });
 
-  it("pagehide で未書き込み分を即時書き、タイマーの再書き込みはしない", () => {
+  it("pagehide immediately writes any unwritten changes, without the timer writing again", () => {
     const fake = createFakeDesigner();
     const storage = createStubStorage();
     const setItem = vi.spyOn(storage, "setItem");
@@ -297,7 +297,7 @@ describe("attachAutosave", () => {
     expect(setItem).toHaveBeenCalledTimes(1);
   });
 
-  it("未書き込みがなければ pagehide では書かない", () => {
+  it("doesn't write on pagehide when there's nothing unwritten", () => {
     const fake = createFakeDesigner();
     const storage = createStubStorage();
     const setItem = vi.spyOn(storage, "setItem");
@@ -307,7 +307,7 @@ describe("attachAutosave", () => {
     expect(setItem).not.toHaveBeenCalled();
   });
 
-  it("解除関数でリスナー・タイマー・pagehide ハンドラが外れる", () => {
+  it("the detach function removes the listeners, timer, and pagehide handler", () => {
     const fake = createFakeDesigner();
     const storage = createStubStorage();
     const setItem = vi.spyOn(storage, "setItem");

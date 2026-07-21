@@ -128,8 +128,8 @@ function cssVar(el: HTMLElement, name: string): string {
   return el.style.getPropertyValue(name);
 }
 
-describe("SelectionOverlay — 回転に追従する選択枠・ハンドル", () => {
-  it("rotate: 90 のとき選択枠とハンドルが中心周りに回転した座標を持つ", () => {
+describe("SelectionOverlay — selection box and handles follow rotation", () => {
+  it("when rotate: 90, the selection box and handles have coordinates rotated around the center", () => {
     renderRect(90);
 
     expect(cssVar(selBox(), "--rot")).toBe("90deg");
@@ -145,7 +145,7 @@ describe("SelectionOverlay — 回転に追従する選択枠・ハンドル", (
     expect(cssVar(rotateHandle, "--rot")).toBe("90deg");
   });
 
-  it("rotate 未指定のときは非回転座標のまま（回帰ガード）", () => {
+  it("when rotate is unspecified, coordinates remain non-rotated (regression guard)", () => {
     renderRect(undefined);
 
     expect(cssVar(selBox(), "--rot")).toBe("");
@@ -161,7 +161,7 @@ describe("SelectionOverlay — 回転に追従する選択枠・ハンドル", (
     expect(cssVar(rotateHandle, "--rot")).toBe("");
   });
 
-  it("line（退化した箱）でも中心（線分中点）周りに正しく回転する", () => {
+  it("rotates correctly around the center (segment midpoint) even for a line (degenerate box)", () => {
     const document: IrDocument = {
       version: "1.0",
       page: { width: 210, height: 297 },
@@ -204,8 +204,8 @@ describe("SelectionOverlay — 回転に追従する選択枠・ハンドル", (
   });
 });
 
-describe("SelectionOverlay — ドラッグゴーストが回転に追従する", () => {
-  it("moving 中、回転ありの要素は dr-drag-ghost--rotated と --rot を持つ", () => {
+describe("SelectionOverlay — drag ghost follows rotation", () => {
+  it("while moving, a rotated element has dr-drag-ghost--rotated and --rot", () => {
     renderRectWithInteraction(45, {
       kind: "moving",
       ids: ["r1"],
@@ -221,7 +221,7 @@ describe("SelectionOverlay — ドラッグゴーストが回転に追従する"
     expect(cssVar(ghost, "--rot")).toBe("45deg");
   });
 
-  it("moving 中、回転なしの要素は dr-drag-ghost--rotated を持たない", () => {
+  it("while moving, a non-rotated element does not have dr-drag-ghost--rotated", () => {
     renderRectWithInteraction(undefined, {
       kind: "moving",
       ids: ["r1"],
@@ -237,7 +237,7 @@ describe("SelectionOverlay — ドラッグゴーストが回転に追従する"
     expect(cssVar(ghost, "--rot")).toBe("");
   });
 
-  it("resizing 中、回転ありの要素は dr-drag-ghost--rotated と --rot を持つ", () => {
+  it("while resizing, a rotated element has dr-drag-ghost--rotated and --rot", () => {
     renderRectWithInteraction(30, {
       kind: "resizing",
       id: "r1",
@@ -252,7 +252,7 @@ describe("SelectionOverlay — ドラッグゴーストが回転に追従する"
     expect(cssVar(ghost, "--rot")).toBe("30deg");
   });
 
-  it("resizing 中、回転なしの要素は dr-drag-ghost--rotated を持たない", () => {
+  it("while resizing, a non-rotated element does not have dr-drag-ghost--rotated", () => {
     renderRectWithInteraction(undefined, {
       kind: "resizing",
       id: "r1",
@@ -268,8 +268,8 @@ describe("SelectionOverlay — ドラッグゴーストが回転に追従する"
   });
 });
 
-describe("SelectionOverlay — 表選択時の移動バンド", () => {
-  it("表を単一選択すると4辺の移動バンドが data-dr-move-band 属性付きで描画される", () => {
+describe("SelectionOverlay — move bands when a table is selected", () => {
+  it("selecting a single table renders 4-sided move bands with the data-dr-move-band attribute", () => {
     const document: IrDocument = {
       version: "1.0",
       page: { width: 210, height: 297 },
@@ -309,7 +309,7 @@ describe("SelectionOverlay — 表選択時の移動バンド", () => {
     );
   });
 
-  it("非 table 要素を選択しても移動バンドは描画されない", () => {
+  it("move bands are not rendered when a non-table element is selected", () => {
     renderRect(undefined);
 
     expect(container.querySelectorAll("[data-dr-move-band]").length).toBe(0);

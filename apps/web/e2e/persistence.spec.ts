@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-test("編集は自動保存され、リロード後に復元される", async ({ page }) => {
+test("edits are auto-saved and restored after reload", async ({ page }) => {
   await page.goto("/");
   const props = page.getByRole("complementary", { name: "プロパティ" });
   const widthField = props.getByLabel("幅", { exact: true });
@@ -16,7 +16,9 @@ test("編集は自動保存され、リロード後に復元される", async ({
   await expect(props.getByLabel("幅", { exact: true })).toHaveValue("200.0");
 });
 
-test("破損した保存値は白紙+通知になり、保存値は消えない", async ({ page }) => {
+test("a corrupted saved value falls back to blank with a notice, and the saved value is not cleared", async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     localStorage.setItem("denreport-designer.ir", "{broken");
   });
@@ -33,7 +35,7 @@ test("破損した保存値は白紙+通知になり、保存値は消えない"
   ).toBe("{broken");
 });
 
-test("サンプルデータの編集はリロード後も保持される", async ({ page }) => {
+test("sample data edits persist after reload", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "プレビュー" }).click();
   const preview = page.getByRole("dialog", { name: "プレビュー" });

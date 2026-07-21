@@ -44,8 +44,8 @@ function lineTexts(): string[] {
   );
 }
 
-describe("TextSketch — charWidths が null（未到着・読込失敗）", () => {
-  it("行分割せず生テキストのまま描画する", () => {
+describe("TextSketch — charWidths is null (not yet loaded / load failed)", () => {
+  it("renders raw text without line-splitting", () => {
     render({
       content: "本文",
       widthMm: 40,
@@ -57,7 +57,7 @@ describe("TextSketch — charWidths が null（未到着・読込失敗）", () 
     expect(container.textContent).toBe("本文");
   });
 
-  it("bind 指定でも .dr-bind の生テキストのまま描画する", () => {
+  it("renders as raw text inside .dr-bind even when bind is specified", () => {
     render({
       content: "{n} / {N}",
       widthMm: 40,
@@ -71,8 +71,8 @@ describe("TextSketch — charWidths が null（未到着・読込失敗）", () 
   });
 });
 
-describe("TextSketch — 折り返し", () => {
-  it("実効幅を超える content を layoutTextLines で行分割する", () => {
+describe("TextSketch — wrapping", () => {
+  it("splits content exceeding the effective width into lines via layoutTextLines", () => {
     render({
       content: "abcdef",
       widthMm: widthMmFor(3.2),
@@ -88,7 +88,7 @@ describe("TextSketch — 折り返し", () => {
 });
 
 describe("TextSketch — justify", () => {
-  it("行の実測幅が実効幅未満なら --cs に charSpacePt を持つ", () => {
+  it("sets --cs to charSpacePt when a line's measured width is less than the effective width", () => {
     render({
       content: "abcdef",
       widthMm: widthMmFor(3.5),
@@ -105,7 +105,7 @@ describe("TextSketch — justify", () => {
     }
   });
 
-  it("非 justify の行は --cs を出さない", () => {
+  it("does not emit --cs for non-justify lines", () => {
     render({
       content: "abc",
       widthMm: widthMmFor(10),
@@ -118,8 +118,8 @@ describe("TextSketch — justify", () => {
   });
 });
 
-describe("TextSketch — 空行", () => {
-  it("空行は NBSP を入れて行ボックスの高さを保つ", () => {
+describe("TextSketch — empty lines", () => {
+  it("inserts NBSP for empty lines to preserve the line box height", () => {
     render({
       content: "a\n\nb",
       widthMm: widthMmFor(100),
@@ -134,7 +134,7 @@ describe("TextSketch — 空行", () => {
 });
 
 describe("TextSketch — bind", () => {
-  it("各行を span.dr-bind に包む", () => {
+  it("wraps each line in span.dr-bind", () => {
     render({
       content: "a\nb",
       widthMm: widthMmFor(100),

@@ -231,8 +231,8 @@ async function selectReportlab(): Promise<void> {
   });
 }
 
-describe("警告一覧", () => {
-  it("非対応・近似を含む文書で警告カードが level 色・重大度ラベル・平易文・件数バッジつきで表示される", async () => {
+describe("Warning list", () => {
+  it("warning cards show with level color, severity label, plain-language text, and a count badge for a document containing unsupported/approximated items", async () => {
     await mount(docOf(staticText("t1"), imageEl("img1")));
 
     const cards = [...container.querySelectorAll(".dr-warn-card")];
@@ -250,7 +250,7 @@ describe("警告一覧", () => {
     expect(container.querySelector(".dr-badge-warn")?.textContent).toBe("2");
   });
 
-  it("警告ゼロでは案内文言を表示する", async () => {
+  it("shows guidance text when there are zero warnings", async () => {
     await mount(docOf());
     expect(container.querySelector(".dr-warn-card")).toBeNull();
     expect(container.textContent).toContain(
@@ -258,7 +258,7 @@ describe("警告一覧", () => {
     );
   });
 
-  it("ターゲット切替で一覧が再計算される", async () => {
+  it("the list is recomputed on target switch", async () => {
     await mount(docOf(imageEl("img1")));
     expect(
       container.querySelector(".dr-warn-card.is-unsupported"),
@@ -275,7 +275,7 @@ describe("警告一覧", () => {
     expect(targetCard("ReportLab").getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("要素チップのクリックで 閉じる → 文脈切替 → 選択 → reveal の順にジャンプする", async () => {
+  it("clicking an element chip jumps in order: close, context switch, select, reveal", async () => {
     const { store, onClose, onReveal } = await mount(
       docOf(staticText("t1", { pages: "last" })),
     );
@@ -302,8 +302,8 @@ describe("警告一覧", () => {
   });
 });
 
-describe("実行可否", () => {
-  it("検証エラーがあると主ボタン disabled + フッタ注記", async () => {
+describe("Whether execution is allowed", () => {
+  it("the primary button is disabled with a footer note when there are validation errors", async () => {
     await mount(docOf(staticText("dup"), staticText("dup")));
     expect(buttonByText("書き出す").disabled).toBe(true);
     expect(container.querySelector(".dr-dialog-f")?.textContent).toContain(
@@ -311,7 +311,7 @@ describe("実行可否", () => {
     );
   });
 
-  it("検証エラーがなければ警告があっても実行できる", async () => {
+  it("can execute even with warnings when there are no validation errors", async () => {
     await mount(docOf(staticText("t1")));
     expect(container.querySelector(".dr-warn-card")).not.toBeNull();
     expect(buttonByText("書き出す").disabled).toBe(false);
@@ -320,17 +320,17 @@ describe("実行可否", () => {
     );
   });
 
-  it("Q01（適格請求書の記載事項欠落）警告があっても主ボタンは disabled にならない", async () => {
+  it("the primary button isn't disabled even with a Q01 (missing qualified-invoice items) warning", async () => {
     await mount({ ...docOf(staticText("t1")), docType: "qualifiedInvoice" });
     expect(buttonByText("書き出す").disabled).toBe(false);
   });
 });
 
-describe("サンプルデータの厳格パース", () => {
+describe("Strict parsing of sample data", () => {
   it.each([
     ['{"a":', "JSON として解釈できません"],
     ["[]", "オブジェクトではありません"],
-  ])("不正データ %j はダイアログ内エラーになる", async (json, phrase) => {
+  ])("invalid data %j becomes an in-dialog error", async (json, phrase) => {
     await mount(docOf(staticText("t1")), json);
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
@@ -344,8 +344,8 @@ describe("サンプルデータの厳格パース", () => {
   });
 });
 
-describe("実行エラーの表示", () => {
-  it("C 群エラーを 規則ID / path / message で列挙し、生成物なしを明記する", async () => {
+describe("Displaying execution errors", () => {
+  it("lists group-C errors by rule ID / path / message and states no artifact was produced", async () => {
     await mount(docOf(staticText("t1", { text: "{title}" })), '{"title": 123}');
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
@@ -358,7 +358,7 @@ describe("実行エラーの表示", () => {
     expect(vi.mocked(triggerDownload)).not.toHaveBeenCalled();
   });
 
-  it("フォント形式エラー（fontIssues）を format + message で表示する", async () => {
+  it("shows a font-format error (fontIssues) with format + message", async () => {
     vi.mocked(fetchEmbeddedFontData).mockResolvedValue(syntheticCff());
     await mount(docOf(staticText("t1")));
     await selectReportlab();
@@ -373,7 +373,7 @@ describe("実行エラーの表示", () => {
     expect(vi.mocked(triggerDownload)).not.toHaveBeenCalled();
   });
 
-  it("フォント取得の失敗はダイアログ内エラーになる", async () => {
+  it("a font-fetch failure becomes an in-dialog error", async () => {
     vi.mocked(fetchEmbeddedFontData).mockRejectedValue(new Error("不通"));
     await mount(docOf(staticText("t1")));
     await selectReportlab();
@@ -387,8 +387,8 @@ describe("実行エラーの表示", () => {
   });
 });
 
-describe("書き出しの実行", () => {
-  it("pdfme 成功時は triggerDownload が正しいファイル名で1回だけ呼ばれ、閉じる", async () => {
+describe("Running the export", () => {
+  it("on pdfme success, triggerDownload is called once with the correct filename, and it closes", async () => {
     const { onClose } = await mount(docOf(staticText("t1")));
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
@@ -400,7 +400,7 @@ describe("書き出しの実行", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("ReportLab 成功時は zip が1回だけダウンロードされ、閉じる", async () => {
+  it("on ReportLab success, the zip is downloaded once, and it closes", async () => {
     vi.mocked(fetchEmbeddedFontData).mockResolvedValue(syntheticTtf());
     const { onClose } = await mount(docOf(staticText("t1")));
     await selectReportlab();
@@ -414,7 +414,7 @@ describe("書き出しの実行", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("同梱フォントを実際に使う書き出しでは zip に OFL.txt が入る", async () => {
+  it("an export that actually uses the bundled font includes OFL.txt in the zip", async () => {
     // The license must come from EMBEDDED_FONT_LICENSE_URL, not the font URL, so the
     // mock returns URL-dependent bytes and the zip content is checked for the license side
     const licenseMarker = "SIL-OFL-LICENSE-MARKER";
@@ -441,7 +441,7 @@ describe("書き出しの実行", () => {
     expect(zipText).toContain(licenseMarker);
   });
 
-  it("同梱フォントと同名の登録フォントでは、同梱フォントは使われず OFL.txt も入らない", async () => {
+  it("a registered font sharing the bundled font's name isn't used, and OFL.txt isn't included", async () => {
     const { store } = await mount(docOf(staticText("t1")));
     store.registerFont({
       name: "NotoSansJP",
@@ -464,7 +464,7 @@ describe("書き出しの実行", () => {
     expect(zipText).not.toContain("OFL.txt");
   });
 
-  it("registered 解決では fetch なしに選択バイト列で書き出し、zip 内フォント名が <name>.ttf になる", async () => {
+  it("a registered resolution exports with the selected byte data without fetching, naming the font <name>.ttf in the zip", async () => {
     const { store } = await mount({
       ...docOf(staticText("t1")),
       font: { regular: "MyLocalFont" },
@@ -489,7 +489,7 @@ describe("書き出しの実行", () => {
     expect(zipText).toContain("MyLocalFont.ttf");
   });
 
-  it("bold スロットが registered なら zip に2つのフォントファイルが入る", async () => {
+  it("the zip includes two font files when the bold slot is registered", async () => {
     const { store } = await mount({
       ...docOf(staticText("t1")),
       font: { regular: "MyLocalFont", bold: "MyLocalBold" },
@@ -519,7 +519,7 @@ describe("書き出しの実行", () => {
     expect(zipText).toContain("MyLocalBold.ttf");
   });
 
-  it("bold スロットの missing はスロット名付きエラーになり、ダウンロードしない", async () => {
+  it("a missing bold slot becomes an error naming the slot, and no download happens", async () => {
     await mount({
       ...docOf(staticText("t1")),
       font: { regular: "NotoSansJP", bold: "GoneBold" },
@@ -536,7 +536,7 @@ describe("書き出しの実行", () => {
     expect(vi.mocked(triggerDownload)).not.toHaveBeenCalled();
   });
 
-  it("missing 解決ではダウンロードせず font-missing エラーを表示する", async () => {
+  it("a missing resolution shows a font-missing error without downloading", async () => {
     await mount({ ...docOf(staticText("t1")), font: { regular: "GoneFont" } });
     await selectReportlab();
     click(buttonByText("書き出す"));
@@ -552,7 +552,7 @@ describe("書き出しの実行", () => {
     expect(vi.mocked(fetchEmbeddedFontData)).not.toHaveBeenCalled();
   });
 
-  it("running 中は主ボタンが disabled になり二重実行しない", async () => {
+  it("the primary button is disabled while running, preventing a double run", async () => {
     // The bundled font's data and its license are two separate fetchEmbeddedFontData calls
     // (both pending until resolved), so each pending call needs its own resolver
     const resolvers: Array<(data: Uint8Array) => void> = [];
@@ -579,8 +579,8 @@ describe("書き出しの実行", () => {
   });
 });
 
-describe("雛形モード", () => {
-  it("サンプルデータ空でも pdfme を書き出せる（data-error にならない）", async () => {
+describe("Template mode", () => {
+  it("can export pdfme even with empty sample data (doesn't become a data-error)", async () => {
     const { onClose } = await mount(docOf(staticText("t1")), "");
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
@@ -592,7 +592,7 @@ describe("雛形モード", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("サンプルデータ空でも ReportLab を書き出せる（data-error にならない）", async () => {
+  it("can export ReportLab even with empty sample data (doesn't become a data-error)", async () => {
     vi.mocked(fetchEmbeddedFontData).mockResolvedValue(syntheticTtf());
     const { onClose } = await mount(docOf(staticText("t1")), "");
     await selectReportlab();
@@ -606,20 +606,20 @@ describe("雛形モード", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("サンプルデータが空のときは雛形モードの注記を表示する", async () => {
+  it("shows the template-mode note when sample data is empty", async () => {
     await mount(docOf(staticText("t1")), "");
     expect(container.textContent).toContain("雛形として書き出します");
     expect(container.textContent).toContain("build(出力パス, data)");
   });
 
-  it("サンプルデータが入力済みのときは雛形モードの注記を表示しない", async () => {
+  it("doesn't show the template-mode note when sample data is filled in", async () => {
     await mount(docOf(staticText("t1")), "{}");
     expect(container.textContent).not.toContain("雛形として書き出します");
   });
 });
 
-describe("フォント全体埋め込み切替", () => {
-  it("pdfme 選択時のみチェックボックスが表示される", async () => {
+describe("Full font embedding toggle", () => {
+  it("the checkbox shows only when pdfme is selected", async () => {
     await mount(docOf(staticText("t1")));
     expect(container.querySelector('input[type="checkbox"]')).not.toBeNull();
 
@@ -627,7 +627,7 @@ describe("フォント全体埋め込み切替", () => {
     expect(container.querySelector('input[type="checkbox"]')).toBeNull();
   });
 
-  it("チェックしていない既定では書き出した JSON に font ブロックを含まない", async () => {
+  it("unchecked by default, the exported JSON doesn't include a font block", async () => {
     await mount(docOf(staticText("t1")));
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
@@ -639,7 +639,7 @@ describe("フォント全体埋め込み切替", () => {
     expect(Object.keys(parsed).sort()).toEqual(["inputs", "template"]);
   });
 
-  it("チェックすると書き出した JSON に font: { names, subset: false } を含む", async () => {
+  it("checking it makes the exported JSON include font: { names, subset: false }", async () => {
     await mount(docOf(staticText("t1")));
     const checkbox = container.querySelector<HTMLInputElement>(
       'input[type="checkbox"]',
@@ -657,8 +657,8 @@ describe("フォント全体埋め込み切替", () => {
   });
 });
 
-describe("欠落キー警告", () => {
-  it("bind キー欠落でも pdfme はダウンロードを実行し、ダイアログを閉じずに警告一覧を表示する", async () => {
+describe("Missing-key warning", () => {
+  it("pdfme still downloads with a missing bind key, showing the warning list without closing the dialog", async () => {
     const { onClose } = await mount(docOf(boundText("t1", "title")), "{}");
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
@@ -672,7 +672,7 @@ describe("欠落キー警告", () => {
     expect(warning?.textContent).toContain("elements[0].text");
   });
 
-  it("bind キー欠落でも ReportLab はダウンロードを実行し、ダイアログを閉じずに警告一覧を表示する", async () => {
+  it("ReportLab still downloads with a missing bind key, showing the warning list without closing the dialog", async () => {
     vi.mocked(fetchEmbeddedFontData).mockResolvedValue(syntheticTtf());
     const { onClose } = await mount(docOf(boundText("t1", "title")), "{}");
     await selectReportlab();
@@ -686,7 +686,7 @@ describe("欠落キー警告", () => {
     );
   });
 
-  it("完全なデータでは警告が表示されず、従来どおり閉じる", async () => {
+  it("no warning shows with complete data, and it closes as before", async () => {
     const { onClose } = await mount(
       docOf(boundText("t1", "title")),
       '{"title": "請求書"}',
@@ -699,7 +699,7 @@ describe("欠落キー警告", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("ターゲット切替で警告状態がリセットされる", async () => {
+  it("warning state resets on target switch", async () => {
     await mount(docOf(boundText("t1", "title")), "{}");
     click(buttonByText("書き出す"));
     await vi.waitFor(() => {
@@ -712,8 +712,8 @@ describe("欠落キー警告", () => {
   });
 });
 
-describe("en の MessagesContext", () => {
-  it("文言が英語で描画される", async () => {
+describe("en MessagesContext", () => {
+  it("text renders in English", async () => {
     const store = new EditorStore(docOf());
     root.render(
       <MessagesContext.Provider value={en}>
@@ -732,7 +732,7 @@ describe("en の MessagesContext", () => {
     );
   });
 
-  it("フォント取得の失敗が英語で表示される", async () => {
+  it("a font-fetch failure displays in English", async () => {
     vi.mocked(fetchEmbeddedFontData).mockRejectedValue(new Error("不通"));
     const store = new EditorStore(docOf(staticText("t1")));
     root.render(

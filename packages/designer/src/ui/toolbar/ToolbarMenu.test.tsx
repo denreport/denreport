@@ -68,8 +68,8 @@ function pressKey(target: Element, key: string): void {
   );
 }
 
-describe("ToolbarMenu 描画", () => {
-  it("items のラベルを role=menuitem で描画する", async () => {
+describe("ToolbarMenu rendering", () => {
+  it("renders item labels with role=menuitem", async () => {
     const menu = await renderMenu(makeItems());
     expect(menu.getAttribute("role")).toBe("menu");
     const buttons = itemButtons(menu);
@@ -83,7 +83,7 @@ describe("ToolbarMenu 描画", () => {
     );
   });
 
-  it("マウント時に最初の項目へフォーカスする", async () => {
+  it("focuses the first item on mount", async () => {
     const menu = await renderMenu(makeItems());
     await vi.waitFor(() => {
       expect(document.activeElement).toBe(itemButtons(menu)[0]);
@@ -91,8 +91,8 @@ describe("ToolbarMenu 描画", () => {
   });
 });
 
-describe("キーボード操作", () => {
-  it("↓/↑ で項目を循環移動する", async () => {
+describe("keyboard operation", () => {
+  it("cycles through items with ↓/↑", async () => {
     const menu = await renderMenu(makeItems());
     const buttons = itemButtons(menu);
     await vi.waitFor(() => expect(document.activeElement).toBe(buttons[0]));
@@ -104,7 +104,7 @@ describe("キーボード操作", () => {
     expect(document.activeElement).toBe(buttons[0]);
   });
 
-  it("Home/End で先頭/末尾へ移動する", async () => {
+  it("moves to the first/last item with Home/End", async () => {
     const menu = await renderMenu(makeItems());
     const buttons = itemButtons(menu);
     buttons[1]?.focus();
@@ -116,7 +116,7 @@ describe("キーボード操作", () => {
     expect(document.activeElement).toBe(buttons[0]);
   });
 
-  it("Enter で選択した項目の onSelect が呼ばれ、onClose も呼ばれる", async () => {
+  it("calls the selected item's onSelect and also onClose on Enter", async () => {
     const onSelect = vi.fn();
     const onClose = vi.fn();
     const menu = await renderMenu(makeItems(onSelect), onClose);
@@ -129,14 +129,14 @@ describe("キーボード操作", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("クリックで項目の onSelect が呼ばれる", async () => {
+  it("calls the item's onSelect on click", async () => {
     const onSelect = vi.fn();
     const menu = await renderMenu(makeItems(onSelect));
     itemButtons(menu)[2]?.click();
     expect(onSelect).toHaveBeenCalledWith("shortcuts");
   });
 
-  it("Esc で onClose が呼ばれる", async () => {
+  it("calls onClose on Esc", async () => {
     const onClose = vi.fn();
     const menu = await renderMenu(makeItems(), onClose);
     pressKey(menu, "Escape");
@@ -144,8 +144,8 @@ describe("キーボード操作", () => {
   });
 });
 
-describe("外側での閉じる操作", () => {
-  it("メニュー外の pointerdown で onClose が呼ばれる", async () => {
+describe("closing via outside interaction", () => {
+  it("calls onClose on pointerdown outside the menu", async () => {
     const onClose = vi.fn();
     await renderMenu(makeItems(), onClose);
     document.body.dispatchEvent(
@@ -154,7 +154,7 @@ describe("外側での閉じる操作", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("メニュー内の pointerdown では onClose が呼ばれない", async () => {
+  it("does not call onClose on pointerdown inside the menu", async () => {
     const onClose = vi.fn();
     const menu = await renderMenu(makeItems(), onClose);
     itemButtons(menu)[0]?.dispatchEvent(
@@ -163,14 +163,14 @@ describe("外側での閉じる操作", () => {
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("スクロール発生で onClose が呼ばれる", async () => {
+  it("calls onClose when scrolling occurs", async () => {
     const onClose = vi.fn();
     await renderMenu(makeItems(), onClose);
     document.body.dispatchEvent(new Event("scroll", { bubbles: false }));
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("anchorEl 上の pointerdown では onClose が呼ばれない（トリガー再クリックでの閉じ直しはトリガー側の click に委ねる）", async () => {
+  it("does not call onClose on pointerdown on anchorEl (re-closing via a trigger re-click is left to the trigger's own click handler)", async () => {
     const anchor = document.createElement("button");
     document.body.append(anchor);
     const onClose = vi.fn();

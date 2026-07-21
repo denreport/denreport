@@ -38,7 +38,7 @@ function parseStorage(raw: string): SampleScenarioSet {
 }
 
 describe("defaultScenarioSet", () => {
-  it("既定は「シナリオ 1」1件で、指定した json を引き継ぐ", () => {
+  it("defaults to a single 「シナリオ 1」 item, carrying over the given json", () => {
     expect(scenarioSet()).toEqual({
       items: [{ id: "s1", name: "シナリオ 1", json: "" }],
       activeId: "s1",
@@ -51,7 +51,7 @@ describe("defaultScenarioSet", () => {
 });
 
 describe("activeSampleJson", () => {
-  it("activeId の json を返す", () => {
+  it("returns the json for activeId", () => {
     const set = setOf(
       [
         { id: "s1", name: "シナリオ 1", json: "a" },
@@ -72,18 +72,18 @@ describe("selectScenario", () => {
     "s1",
   );
 
-  it("存在する id へ切り替える", () => {
+  it("switches to an existing id", () => {
     expect(selectScenario(set, "s2")).toEqual({ ...set, activeId: "s2" });
   });
 
-  it("同一 id・存在しない id は同一参照を返す（no-op）", () => {
+  it("returns the same reference for the same id or a nonexistent id (no-op)", () => {
     expect(selectScenario(set, "s1")).toBe(set);
     expect(selectScenario(set, "s9")).toBe(set);
   });
 });
 
 describe("addScenario", () => {
-  it("空 json の新規シナリオを作りアクティブにする", () => {
+  it("creates and activates a new scenario with empty json", () => {
     const set = scenarioSet('{"a": 1}');
     const next = add(set);
     expect(next.items).toHaveLength(2);
@@ -93,7 +93,7 @@ describe("addScenario", () => {
     expect(next.items[0]).toEqual(set.items[0]);
   });
 
-  it("既存名と衝突しない最小の正整数で「シナリオ N」を採番する", () => {
+  it("numbers new scenarios 「シナリオ N」 using the smallest positive integer that avoids a name collision", () => {
     const set = setOf(
       [
         { id: "s1", name: "シナリオ 3", json: "" },
@@ -105,7 +105,7 @@ describe("addScenario", () => {
     expect(next.items[2]?.name).toBe("シナリオ 2");
   });
 
-  it("id は未使用の最小の正整数から採番する（欠番を埋める）", () => {
+  it("numbers ids from the smallest unused positive integer (filling gaps)", () => {
     const set = setOf(
       [
         { id: "s1", name: "A", json: "" },
@@ -119,7 +119,7 @@ describe("addScenario", () => {
 });
 
 describe("duplicateActiveScenario", () => {
-  it("アクティブシナリオの json を引き継ぎ「〜 のコピー」名でアクティブにする", () => {
+  it("carries over the active scenario's json and activates it with a 「〜 のコピー」name", () => {
     const set = setOf(
       [
         { id: "s1", name: "シナリオ 1", json: "a" },
@@ -139,12 +139,12 @@ describe("duplicateActiveScenario", () => {
 });
 
 describe("removeScenario", () => {
-  it("最後の1件は no-op（同一参照）", () => {
+  it("no-ops (returns the same reference) for the last remaining item", () => {
     const set = scenarioSet();
     expect(removeScenario(set, "s1")).toBe(set);
   });
 
-  it("存在しない id は no-op（同一参照）", () => {
+  it("no-ops (returns the same reference) for a nonexistent id", () => {
     const set = setOf(
       [
         { id: "s1", name: "A", json: "" },
@@ -155,7 +155,7 @@ describe("removeScenario", () => {
     expect(removeScenario(set, "s9")).toBe(set);
   });
 
-  it("非アクティブの削除は activeId をそのまま維持する", () => {
+  it("keeps activeId unchanged when removing a non-active item", () => {
     const set = setOf(
       [
         { id: "s1", name: "A", json: "" },
@@ -170,7 +170,7 @@ describe("removeScenario", () => {
     });
   });
 
-  it("アクティブ削除時、末尾以外なら直後がアクティブになる", () => {
+  it("activates the following item when removing the active item, if it isn't last", () => {
     const set = setOf(
       [
         { id: "s1", name: "A", json: "" },
@@ -184,7 +184,7 @@ describe("removeScenario", () => {
     expect(next.activeId).toBe("s3");
   });
 
-  it("アクティブ削除時、末尾なら直前がアクティブになる", () => {
+  it("activates the preceding item when removing the active item, if it's last", () => {
     const set = setOf(
       [
         { id: "s1", name: "A", json: "" },
@@ -202,14 +202,14 @@ describe("removeScenario", () => {
 describe("renameScenario", () => {
   const set = setOf([{ id: "s1", name: "シナリオ 1", json: "" }], "s1");
 
-  it("対象シナリオの name を書き換える", () => {
+  it("rewrites the target scenario's name", () => {
     expect(renameScenario(set, "s1", "行数多")).toEqual({
       items: [{ id: "s1", name: "行数多", json: "" }],
       activeId: "s1",
     });
   });
 
-  it("同じ名前・存在しない id は同一参照を返す（no-op）", () => {
+  it("returns the same reference for the same name or a nonexistent id (no-op)", () => {
     expect(renameScenario(set, "s1", "シナリオ 1")).toBe(set);
     expect(renameScenario(set, "s9", "行数多")).toBe(set);
   });
@@ -224,19 +224,19 @@ describe("updateActiveJson", () => {
     "s2",
   );
 
-  it("アクティブシナリオの json のみを書き換える", () => {
+  it("rewrites only the active scenario's json", () => {
     const next = updateActiveJson(set, "b2");
     expect(next.items[0]).toEqual(set.items[0]);
     expect(next.items[1]).toEqual({ id: "s2", name: "B", json: "b2" });
   });
 
-  it("同一 json は同一参照を返す（no-op）", () => {
+  it("returns the same reference for the same json (no-op)", () => {
     expect(updateActiveJson(set, "b")).toBe(set);
   });
 });
 
 describe("parseSampleDataStorage / serializeSampleDataStorage", () => {
-  it("往復で同値になる", () => {
+  it("round-trips to an equal value", () => {
     const set = setOf(
       [
         { id: "s1", name: "シナリオ 1", json: '{"a": 1}' },
@@ -247,17 +247,17 @@ describe("parseSampleDataStorage / serializeSampleDataStorage", () => {
     expect(parseStorage(serializeSampleDataStorage(set))).toEqual(set);
   });
 
-  it("レガシー生 JSON をシナリオ1件へ移行する", () => {
+  it("migrates legacy raw JSON into a single scenario", () => {
     const raw = '{"customerName": "甲"}';
     expect(parseStorage(raw)).toEqual(scenarioSet(raw));
   });
 
-  it("不正 JSON・空文字列もシナリオ1件へ移行する", () => {
+  it("migrates invalid JSON or an empty string into a single scenario too", () => {
     expect(parseStorage("{oops")).toEqual(scenarioSet("{oops"));
     expect(parseStorage("")).toEqual(scenarioSet(""));
   });
 
-  it("format・version が一致しない JSON はレガシー扱いで移行する", () => {
+  it("treats JSON with mismatched format/version as legacy and migrates it", () => {
     const raw = JSON.stringify({
       format: "denreport-sample-scenarios",
       version: 2,
@@ -265,7 +265,7 @@ describe("parseSampleDataStorage / serializeSampleDataStorage", () => {
     expect(parseStorage(raw)).toEqual(scenarioSet(raw));
   });
 
-  it("形状不正な封筒（scenarios 空・activeId 不在等）は既定セットに落ちる", () => {
+  it("falls back to the default set for a malformed envelope (e.g. empty scenarios, missing activeId)", () => {
     const emptyScenarios = JSON.stringify({
       format: "denreport-sample-scenarios",
       version: 1,

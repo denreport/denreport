@@ -19,7 +19,7 @@ function box(x: number, y: number, w: number, h: number): MmBox {
 }
 
 describe("snapForMove", () => {
-  it("軸ごとに独立して最近傍の候補へ吸着する", () => {
+  it("snaps to the nearest candidate independently per axis", () => {
     // x snaps to another element's left edge 30 (distance 1); y snaps to grid 20 (distance 0.5)
     const result = snapForMove(box(29, 20.5, 10, 10), {
       ...ctx(),
@@ -30,7 +30,7 @@ describe("snapForMove", () => {
     expect(result.guides).toEqual([{ axis: "x", positionMm: 30 }]);
   });
 
-  it("ちょうど許容距離で吸着し、超えると吸着しない", () => {
+  it("snaps exactly at the tolerance distance and not beyond it", () => {
     const within = snapForMove(
       box(28, 100.3, 10, 10),
       ctx({ otherBoxes: [box(30, 200, 10, 10)], gridEnabled: false }),
@@ -45,7 +45,7 @@ describe("snapForMove", () => {
     expect(beyond.guides).toEqual([]);
   });
 
-  it("同距離なら要素端がグリッドより優先され、ガイドが返る", () => {
+  it("prefers an element edge over the grid at equal distance, and returns a guide", () => {
     // Candidate: another element's left edge 30 (same position and distance as grid line 30)
     const result = snapForMove(
       box(29, 150.3, 10, 10),
@@ -55,13 +55,13 @@ describe("snapForMove", () => {
     expect(result.guides).toContainEqual({ axis: "x", positionMm: 30 });
   });
 
-  it("グリッド吸着はガイドを返さない", () => {
+  it("grid snapping does not return a guide", () => {
     const result = snapForMove(box(24.4, 150.3, 10, 10), ctx());
     expect(result.box.x).toBeCloseTo(25, 10);
     expect(result.guides.filter((g) => g.axis === "x")).toEqual([]);
   });
 
-  it("gridEnabled=false ではグリッドに吸着しない", () => {
+  it("does not snap to the grid when gridEnabled=false", () => {
     const result = snapForMove(
       box(24.4, 152.3, 10, 10),
       ctx({ gridEnabled: false }),
@@ -70,7 +70,7 @@ describe("snapForMove", () => {
     expect(result.box.y).toBeCloseTo(152.3, 10);
   });
 
-  it("紙端（0 と page.width/height）に吸着しガイドが返る", () => {
+  it("snaps to the paper edges (0 and page.width/height) and returns a guide", () => {
     const result = snapForMove(
       box(-0.8, 296.5, 10, 0),
       ctx({ gridEnabled: false }),
@@ -81,7 +81,7 @@ describe("snapForMove", () => {
     expect(result.guides).toContainEqual({ axis: "y", positionMm: 297 });
   });
 
-  it("中心も吸着点になる", () => {
+  it("the center is also a snap point", () => {
     // The moving box's center x=50.6 snaps to another element's center 50 (distance 0.6)
     const result = snapForMove(
       box(45.6, 100.3, 10, 10),
@@ -90,7 +90,7 @@ describe("snapForMove", () => {
     expect(result.box.x).toBeCloseTo(45, 10);
   });
 
-  it("ページ中心線（page.width/2, page.height/2）に吸着しガイドが返る", () => {
+  it("snaps to the page center lines (page.width/2, page.height/2) and returns a guide", () => {
     const xResult = snapForMove(
       box(99.4, 100, 10, 10),
       ctx({ gridEnabled: false }),
@@ -106,7 +106,7 @@ describe("snapForMove", () => {
     expect(yResult.guides).toContainEqual({ axis: "y", positionMm: 148.5 });
   });
 
-  it("グリッド有効時もページ中心線への吸着が優先されガイドが出る", () => {
+  it("prefers snapping to the page center line over the grid even when the grid is enabled, and shows a guide", () => {
     // A4's x=105 is at the same position as a 5mm grid line, but paper takes priority over the grid
     const result = snapForMove(
       box(99.4, 100, 10, 10),
@@ -116,7 +116,7 @@ describe("snapForMove", () => {
     expect(result.guides).toContainEqual({ axis: "x", positionMm: 105 });
   });
 
-  it("許容距離外ではページ中心線に吸着しない", () => {
+  it("does not snap to the page center line outside the tolerance distance", () => {
     const result = snapForMove(
       box(108, 100, 10, 10),
       ctx({ gridEnabled: false }),
@@ -126,8 +126,8 @@ describe("snapForMove", () => {
   });
 });
 
-describe("snapForMove のカスタムガイド", () => {
-  it("guideLines への近傍吸着でガイド付き SnapAdjustment が返る", () => {
+describe("snapForMove custom guides", () => {
+  it("returns a SnapAdjustment with a guide when snapping near guideLines", () => {
     const result = snapForMove(
       box(49, 100, 10, 10),
       ctx({
@@ -139,7 +139,7 @@ describe("snapForMove のカスタムガイド", () => {
     expect(result.guides).toEqual([{ axis: "x", positionMm: 50 }]);
   });
 
-  it("同距離ならカスタムガイドが要素端より優先される", () => {
+  it("prefers a custom guide over an element edge at equal distance", () => {
     const result = snapForMove(
       box(29, 150.3, 10, 10),
       ctx({
@@ -152,7 +152,7 @@ describe("snapForMove のカスタムガイド", () => {
     expect(result.guides).toEqual([{ axis: "x", positionMm: 30 }]);
   });
 
-  it("guideLines が空なら従来と同一結果になる", () => {
+  it("produces the same result as before when guideLines is empty", () => {
     const withoutGuides = snapForMove(
       box(29, 20.5, 10, 10),
       ctx({ otherBoxes: [box(30, 100, 20, 10)] }),
@@ -166,7 +166,7 @@ describe("snapForMove のカスタムガイド", () => {
 });
 
 describe("snapForResize", () => {
-  it("動いている辺だけが吸着し、反対側の辺は固定される", () => {
+  it("only the moving edge snaps, and the opposite edge stays fixed", () => {
     const result = snapForResize(
       box(10, 10, 19.4, 20),
       { right: true },
@@ -178,7 +178,7 @@ describe("snapForResize", () => {
     expect(result.guides).toEqual([{ axis: "x", positionMm: 30 }]);
   });
 
-  it("左端の吸着は x と w を同時に変える", () => {
+  it("snapping the left edge changes x and w together", () => {
     const result = snapForResize(
       box(10.6, 10, 20, 20),
       { left: true },
@@ -188,7 +188,7 @@ describe("snapForResize", () => {
     expect(result.box.w).toBeCloseTo(20.6, 10);
   });
 
-  it("動いていない軸は吸着しない", () => {
+  it("an axis that isn't moving does not snap", () => {
     const result = snapForResize(
       box(10.6, 10.6, 20, 20),
       { bottom: true },
@@ -198,7 +198,7 @@ describe("snapForResize", () => {
     expect(result.box.y).toBeCloseTo(10.6, 10);
   });
 
-  it("動いている辺がページ中心線に吸着する", () => {
+  it("the moving edge snaps to the page center line", () => {
     const result = snapForResize(
       box(10, 10, 94.4, 20),
       { right: true },
@@ -210,12 +210,12 @@ describe("snapForResize", () => {
 });
 
 describe("gridArrowTarget", () => {
-  it("移動方向の次の 5mm グリッド線を返す", () => {
+  it("returns the next 5mm grid line in the direction of movement", () => {
     expect(gridArrowTarget(7.3, 1)).toBe(10);
     expect(gridArrowTarget(7.3, -1)).toBe(5);
   });
 
-  it("グリッド線上からは丸ごと1段進む", () => {
+  it("advances a full step when starting exactly on a grid line", () => {
     expect(gridArrowTarget(5, 1)).toBe(10);
     expect(gridArrowTarget(5, -1)).toBe(0);
     expect(gridArrowTarget(0, -1)).toBe(-5);

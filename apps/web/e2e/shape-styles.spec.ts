@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { commitField, dragFromPalette } from "./helpers/designer-actions";
 
-test("楕円をパレットから配置し、塗り色と枠線色がキャンバスとプレビューに反映される", async ({
+test("placing an ellipse from the palette reflects fill and border color in the canvas and preview", async ({
   page,
 }) => {
   await page.goto("/");
@@ -25,7 +25,7 @@ test("楕円をパレットから配置し、塗り色と枠線色がキャン�
   await expect(ellipseSvg).toHaveAttribute("stroke", "#112233");
 });
 
-test("矩形の角丸・破線・塗りがプレビューの SVG 属性と IR の両方に反映される", async ({
+test("a rectangle's corner radius, dashed border, and fill are reflected in both the preview's SVG attributes and the IR", async ({
   page,
 }) => {
   await page.goto("/");
@@ -84,7 +84,7 @@ test("矩形の角丸・破線・塗りがプレビューの SVG 属性と IR �
   expect(rectEl?.borderStyle).toBe("dashed");
 });
 
-test("表の網掛けトグルがキャンバスの縞とプレビューの塗り矩形に反映され、Ctrl+Z で戻る", async ({
+test("the table's shading toggle reflects in the canvas stripes and the preview's filled rect, and Ctrl+Z reverts it", async ({
   page,
 }) => {
   await page.goto("/");
@@ -115,7 +115,9 @@ test("表の網掛けトグルがキャンバスの縞とプレビューの塗�
   ).toHaveCount(0);
 });
 
-test("表の内部罫線が外枠の内側にぴったり収まる", async ({ page }) => {
+test("the table's internal gridlines fit exactly inside the outer frame", async ({
+  page,
+}) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 100, y: 100 });
   const table = page.locator('.dr-el[data-dr-id="table1"]');
@@ -132,7 +134,9 @@ test("表の内部罫線が外枠の内側にぴったり収まる", async ({ pa
   ).toBeLessThan(0.5);
 });
 
-test("表の罫線の太さ・線種がキャンバスに反映される", async ({ page }) => {
+test("the table's border thickness and style are reflected in the canvas", async ({
+  page,
+}) => {
   await page.goto("/");
   await dragFromPalette(page, /^表/, { x: 100, y: 100 });
   const table = page.locator('.dr-el[data-dr-id="table1"]');

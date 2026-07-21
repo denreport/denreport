@@ -20,7 +20,7 @@ function entry(
 }
 
 describe("History", () => {
-  it("undo → redo の往復で文書と選択が復元される", () => {
+  it("a round trip of undo → redo restores the document and selection", () => {
     const history = new History();
     const before = entry("before", ["a"]);
     const after = entry("after", ["b"]);
@@ -34,7 +34,7 @@ describe("History", () => {
     expect(redone).toEqual(after);
   });
 
-  it("新規 push で redo 側が破棄される", () => {
+  it("a new push discards the redo side", () => {
     const history = new History();
     history.push(entry("v1"));
     history.undo(entry("v2"));
@@ -45,7 +45,7 @@ describe("History", () => {
     expect(history.canUndo()).toBe(true);
   });
 
-  it("上限到達で最古が捨てられる", () => {
+  it("reaching the limit discards the oldest entry", () => {
     const history = new History();
     for (let i = 0; i <= HISTORY_LIMIT; i += 1) {
       history.push(entry(`v${i}`));
@@ -62,7 +62,7 @@ describe("History", () => {
     expect(last?.document.font.regular).toBe("v1");
   });
 
-  it("空スタックの undo / redo は undefined を返し状態を壊さない", () => {
+  it("undo / redo on an empty stack returns undefined without corrupting state", () => {
     const history = new History();
     const current = entry("current");
     expect(history.undo(current)).toBeUndefined();
@@ -71,7 +71,7 @@ describe("History", () => {
     expect(history.canRedo()).toBe(false);
   });
 
-  it("clear で両側のスタックが空になる", () => {
+  it("clear empties both stacks", () => {
     const history = new History();
     history.push(entry("v1"));
     history.undo(entry("v2"));

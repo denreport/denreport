@@ -44,14 +44,14 @@ function buttonByText(label: string): HTMLButtonElement {
 }
 
 describe("ShortcutsDialog", () => {
-  it("タイトルと代表的な行を描画する", async () => {
+  it("renders the title and representative rows", async () => {
     const dialog = await renderDialog(() => {});
     expect(dialog.getAttribute("aria-label")).toBe("キーボードショートカット");
     expect(dialog.textContent).toContain("Ctrl/⌘+D");
     expect(dialog.textContent).toContain("複製");
   });
 
-  it("閉じるボタンで onClose が呼ばれる", async () => {
+  it("calls onClose when the close button is clicked", async () => {
     const onClose = vi.fn();
     await renderDialog(onClose);
     buttonByText("閉じる").dispatchEvent(
@@ -60,7 +60,7 @@ describe("ShortcutsDialog", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("Escape で onClose が呼ばれる", async () => {
+  it("calls onClose on Escape", async () => {
     const onClose = vi.fn();
     const dialog = await renderDialog(onClose);
     dialog.dispatchEvent(
@@ -73,7 +73,7 @@ describe("ShortcutsDialog", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("en の MessagesContext では文言が英語で描画される", async () => {
+  it("renders text in English under the en MessagesContext", async () => {
     root.render(
       <MessagesContext.Provider value={en}>
         <ShortcutsDialog onClose={() => {}} />

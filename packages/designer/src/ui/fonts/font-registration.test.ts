@@ -31,7 +31,7 @@ function ttfMissingMetrics(): Uint8Array {
 }
 
 describe("buildRegisteredFont", () => {
-  it("同梱 TTF は ok になり ascentPerEm と sanitizeFontName の名前を持つ", () => {
+  it("the bundled TTF is ok and has ascentPerEm and the sanitizeFontName name", () => {
     const result = buildRegisteredFont(
       EMBEDDED_FONT,
       { fullName: "Noto Sans JP" },
@@ -46,7 +46,7 @@ describe("buildRegisteredFont", () => {
     expect(result.font.data).toBe(EMBEDDED_FONT);
   });
 
-  it("CFF は validate.ts と同じ文言の FontIssue で拒否する", () => {
+  it("rejects CFF with the same FontIssue wording as validate.ts", () => {
     const result = buildRegisteredFont(
       syntheticCff(),
       { fullName: "Test CFF" },
@@ -64,7 +64,7 @@ describe("buildRegisteredFont", () => {
     ]);
   });
 
-  it("計量を読み取れない TTF は FontIssue になる", () => {
+  it("a TTF whose metrics can't be read becomes a FontIssue", () => {
     const result = buildRegisteredFont(
       ttfMissingMetrics(),
       { fullName: "Broken" },

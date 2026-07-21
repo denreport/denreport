@@ -121,14 +121,14 @@ function checkboxByLabel(text: string): HTMLInputElement {
   return el;
 }
 
-describe("一覧表示", () => {
-  it("スタイルが無ければ空である旨を表示する", () => {
+describe("list display", () => {
+  it("shows an empty-state message when there are no styles", () => {
     const store = makeStore();
     render(store);
     expect(container.textContent).toContain("スタイルはまだありません");
   });
 
-  it("定義済みスタイルの name と属性要約を表示する", () => {
+  it("shows the name and attribute summary of defined styles", () => {
     const store = makeStore({
       styles: [{ name: "見出し", attrs: { fontSize: 14, align: "center" } }],
     });
@@ -139,8 +139,8 @@ describe("一覧表示", () => {
   });
 });
 
-describe("新規作成", () => {
-  it("「新しいスタイル」で未使用名・fontSize のみのスタイルを追加する", () => {
+describe("creating new", () => {
+  it("adds a style with an unused name and only fontSize via 「＋ 新しいスタイル」", () => {
     const store = makeStore();
     render(store);
     click(buttonByText("＋ 新しいスタイル"));
@@ -149,13 +149,13 @@ describe("新規作成", () => {
     ]);
   });
 
-  it("選択が無いときは「選択要素から作成」が無効", () => {
+  it("「選択要素から作成」 is disabled when there is no selection", () => {
     const store = makeStore();
     render(store);
     expect(buttonByText("選択要素から作成").disabled).toBe(true);
   });
 
-  it("単一選択時に「選択要素から作成」で要素の属性を引き継いだスタイルを追加する", () => {
+  it("adds a style inheriting the element's attributes via 「選択要素から作成」 when a single element is selected", () => {
     const store = makeStore();
     act(() => {
       store.setSelection(["t1"]);
@@ -172,8 +172,8 @@ describe("新規作成", () => {
   });
 });
 
-describe("属性編集", () => {
-  it("属性編集が1 commit で参照要素へ反映される", () => {
+describe("attribute editing", () => {
+  it("an attribute edit is reflected to referencing elements in a single commit", () => {
     const store = makeStore({
       styles: [{ name: "見出し", attrs: { fontSize: 14 } }],
       elements: [textElement({ style: "見出し", fontSize: 14 })],
@@ -201,7 +201,7 @@ describe("属性編集", () => {
     });
   });
 
-  it("属性チェックを外すと attrs からキーを除去する", () => {
+  it("unchecking an attribute removes the key from attrs", () => {
     const store = makeStore({
       styles: [{ name: "見出し", attrs: { fontSize: 14, align: "center" } }],
     });
@@ -213,7 +213,7 @@ describe("属性編集", () => {
     ]);
   });
 
-  it("属性チェックを入れると既定値付きでキーを追加する", () => {
+  it("checking an attribute adds the key with a default value", () => {
     const store = makeStore({
       styles: [{ name: "見出し", attrs: { fontSize: 14 } }],
     });
@@ -225,7 +225,7 @@ describe("属性編集", () => {
     ]);
   });
 
-  it("整列に「均等」を選べ、要約にも反映される", () => {
+  it("「均等」 can be selected for alignment and is reflected in the summary", () => {
     const store = makeStore({
       styles: [{ name: "見出し", attrs: { fontSize: 14, align: "left" } }],
     });
@@ -238,8 +238,8 @@ describe("属性編集", () => {
   });
 });
 
-describe("名称変更・削除", () => {
-  it("名称変更は参照要素の style も追随させる", () => {
+describe("rename/delete", () => {
+  it("renaming also updates the style of referencing elements", () => {
     const store = makeStore({
       styles: [{ name: "見出し", attrs: { fontSize: 14 } }],
       elements: [textElement({ style: "見出し", fontSize: 14 })],
@@ -256,7 +256,7 @@ describe("名称変更・削除", () => {
     });
   });
 
-  it("空名は確定させない", () => {
+  it("does not commit an empty name", () => {
     const store = makeStore({
       styles: [{ name: "見出し", attrs: { fontSize: 14 } }],
     });
@@ -269,7 +269,7 @@ describe("名称変更・削除", () => {
     ]);
   });
 
-  it("重複名は確定させない", () => {
+  it("does not commit a duplicate name", () => {
     const store = makeStore({
       styles: [
         { name: "見出し", attrs: { fontSize: 14 } },
@@ -290,7 +290,7 @@ describe("名称変更・削除", () => {
     ]);
   });
 
-  it("削除は定義と参照の両方を除去し、要素の具体値は保持する", () => {
+  it("deleting removes both the definition and the reference, keeping the element's concrete values", () => {
     const store = makeStore({
       styles: [{ name: "見出し", attrs: { fontSize: 14 } }],
       elements: [textElement({ style: "見出し", fontSize: 14 })],
@@ -304,8 +304,8 @@ describe("名称変更・削除", () => {
   });
 });
 
-describe("en の MessagesContext", () => {
-  it("文言が英語で描画され、生成名も英語になる", () => {
+describe("en MessagesContext", () => {
+  it("renders text in English, and generated names are also in English", () => {
     const store = makeStore();
     act(() => {
       root.render(
@@ -321,7 +321,7 @@ describe("en の MessagesContext", () => {
     ]);
   });
 
-  it("整列の選択肢と属性要約も英語になる", () => {
+  it("alignment options and attribute summary are also in English", () => {
     const store = makeStore({
       styles: [{ name: "Heading", attrs: { fontSize: 14, align: "center" } }],
     });

@@ -257,7 +257,7 @@ function commitName(value: string): void {
 }
 
 describe("PreviewDialog", () => {
-  it("検証エラーがあるとページを描画せずエラー状態を表示する", async () => {
+  it("shows an error state without rendering pages when there's a validation error", async () => {
     // x=500 exceeds the paper width of 210mm, so this becomes M02
     const store = new EditorStore(
       makeDocument([{ ...boundText("t1", "customerName"), x: 500 }]),
@@ -267,7 +267,7 @@ describe("PreviewDialog", () => {
     expect(container.textContent).toContain("検証エラー");
   });
 
-  it("サンプル編集の blur 確定でページ数と表示が変わる", async () => {
+  it("changes the page count and display when sample editing is committed on blur", async () => {
     const store = new EditorStore(
       makeDocument([itemsTable()]),
       sampleWithRows(2),
@@ -286,7 +286,7 @@ describe("PreviewDialog", () => {
     expect(container.textContent).toContain("2 / 2");
   });
 
-  it("補完が起きると警告バナーに core のメッセージが列挙される", async () => {
+  it("lists core's messages in the warning banner when completion occurs", async () => {
     const store = new EditorStore(
       makeDocument([boundText("t1", "customerName"), itemsTable()]),
       "{}",
@@ -300,7 +300,7 @@ describe("PreviewDialog", () => {
     expect(svgPages()).toHaveLength(1);
   });
 
-  it("完全なデータではフォント警告以外の警告が出ない", async () => {
+  it("shows no warnings other than the font warning when the data is complete", async () => {
     const store = new EditorStore(
       makeDocument([itemsTable()]),
       sampleWithRows(2),
@@ -312,7 +312,7 @@ describe("PreviewDialog", () => {
     expect(banner?.textContent).not.toContain("items");
   });
 
-  it("C03（複数表の同時改ページ）は規則 ID 付きのエラー表示になる", async () => {
+  it("shows an error with the rule ID for C03 (simultaneous page breaks across multiple tables)", async () => {
     const store = new EditorStore(
       makeDocument([
         itemsTable(),
@@ -334,7 +334,7 @@ describe("PreviewDialog", () => {
     expect(container.querySelector(".dr-verr-rule")?.textContent).toBe("C03");
   });
 
-  it("サンプルが空なら生成ボタンで即座に generateSampleData の結果になる", async () => {
+  it("immediately applies generateSampleData's result via the generate button when the sample is empty", async () => {
     const document_ = makeDocument([itemsTable()]);
     const store = new EditorStore(document_);
     await renderDialog(store);
@@ -347,7 +347,7 @@ describe("PreviewDialog", () => {
     expect(container.querySelector(".dr-dialog")).toBeNull();
   });
 
-  it("既存サンプルがあるときは確認を挟み、キャンセルなら変更しない", async () => {
+  it("prompts for confirmation when a sample already exists, and makes no change on cancel", async () => {
     const document_ = makeDocument([itemsTable()]);
     const store = new EditorStore(document_, sampleWithRows(1));
     await renderDialog(store);
@@ -371,7 +371,7 @@ describe("PreviewDialog", () => {
     );
   });
 
-  it("不正 JSON はパースエラーを表示しつつ確定は妨げない", async () => {
+  it("shows a parse error for invalid JSON without blocking the commit", async () => {
     const store = new EditorStore(makeDocument([itemsTable()]));
     await renderDialog(store);
 
@@ -382,7 +382,7 @@ describe("PreviewDialog", () => {
     expect(svgPages()).toHaveLength(1);
   });
 
-  it("閉じるボタンで onClose が呼ばれる", async () => {
+  it("calls onClose when the close button is clicked", async () => {
     const onClose = vi.fn();
     const store = new EditorStore(makeDocument([]));
     await renderDialog(store, onClose);
@@ -391,8 +391,8 @@ describe("PreviewDialog", () => {
   });
 });
 
-describe("シナリオ操作", () => {
-  it("追加すると空 json の新規シナリオがアクティブになる", async () => {
+describe("scenario operations", () => {
+  it("activates a new scenario with empty json when added", async () => {
     const store = new EditorStore(
       makeDocument([itemsTable()]),
       sampleWithRows(1),
@@ -406,7 +406,7 @@ describe("シナリオ操作", () => {
     expect(textarea().value).toBe("");
   });
 
-  it("複製すると現在の json を引き継いだ新規シナリオがアクティブになる", async () => {
+  it("activates a new scenario carrying over the current json when duplicated", async () => {
     const store = new EditorStore(
       makeDocument([itemsTable()]),
       sampleWithRows(1),
@@ -419,7 +419,7 @@ describe("シナリオ操作", () => {
     expect(activeSampleJson(scenarios)).toBe(sampleWithRows(1));
   });
 
-  it("シナリオ名を変更すると select の表示ラベルが変わる", async () => {
+  it("changes the select's display label when the scenario name is changed", async () => {
     const store = new EditorStore(makeDocument([itemsTable()]));
     await renderDialog(store);
 
@@ -428,7 +428,7 @@ describe("シナリオ操作", () => {
     expect(scenarioSelect().selectedOptions[0]?.textContent).toBe("行数多");
   });
 
-  it("select でシナリオを切り替えるとプレビューが切り替わる", async () => {
+  it("switches the preview when the scenario is switched via select", async () => {
     const store = new EditorStore(
       makeDocument([itemsTable()]),
       sampleWithRows(2),
@@ -447,13 +447,13 @@ describe("シナリオ操作", () => {
     expect(svgPages()).toHaveLength(1);
   });
 
-  it("シナリオが1件のときは削除ボタンが無効", async () => {
+  it("disables the delete button when there is only 1 scenario", async () => {
     const store = new EditorStore(makeDocument([itemsTable()]));
     await renderDialog(store);
     expect(buttonByText("削除").disabled).toBe(true);
   });
 
-  it("削除は確認を挟み、確定すると隣接シナリオがアクティブになる", async () => {
+  it("prompts for confirmation on delete, and activates the adjacent scenario when confirmed", async () => {
     const store = new EditorStore(
       makeDocument([itemsTable()]),
       sampleWithRows(1),
@@ -473,7 +473,7 @@ describe("シナリオ操作", () => {
     );
   });
 
-  it("「bind キーから生成」はアクティブシナリオのみを上書きする", async () => {
+  it("「bind キーから生成」 overwrites only the active scenario", async () => {
     const document_ = makeDocument([itemsTable()]);
     const store = new EditorStore(document_, sampleWithRows(1));
     await renderDialog(store);
@@ -488,8 +488,8 @@ describe("シナリオ操作", () => {
   });
 });
 
-describe("フォント解決の反映", () => {
-  it("registered 解決では選択フォントの family が描画に使われ、fetch は呼ばれない", async () => {
+describe("reflecting font resolution", () => {
+  it("uses the selected font's family for rendering under a registered resolution, without calling fetch", async () => {
     vi.mocked(registerPreviewFace).mockResolvedValueOnce(
       "dr-local-MyLocalFont",
     );
@@ -518,7 +518,7 @@ describe("フォント解決の反映", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("missing 解決では同梱フォールバックで描画し、再選択を促す警告バナーが出る", async () => {
+  it("renders with the bundled fallback under a missing resolution, showing a warning banner that prompts reselection", async () => {
     const store = new EditorStore(
       makeDocument([itemsTable()], "GoneFont"),
       sampleWithRows(1),
@@ -533,7 +533,7 @@ describe("フォント解決の反映", () => {
   });
 });
 
-describe("en の MessagesContext", () => {
+describe("en MessagesContext", () => {
   async function renderEn(): Promise<void> {
     const store = new EditorStore(
       makeDocument([itemsTable()]),
@@ -549,7 +549,7 @@ describe("en の MessagesContext", () => {
     await act(async () => {});
   }
 
-  it("文言が英語で描画される", async () => {
+  it("renders text in English", async () => {
     await renderEn();
     expect(container.querySelector(".dr-preview-title")?.textContent).toBe(
       "Preview",
@@ -557,7 +557,7 @@ describe("en の MessagesContext", () => {
     expect(buttonByText("Close")).not.toBeNull();
   });
 
-  it("シナリオ操作・サンプルデータ欄・ページも英語で描画される", async () => {
+  it("renders scenario operations, the sample data field, and pages in English too", async () => {
     await renderEn();
     expect(buttonByText("Add")).not.toBeNull();
     expect(buttonByText("Duplicate")).not.toBeNull();

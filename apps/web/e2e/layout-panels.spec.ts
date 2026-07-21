@@ -5,7 +5,7 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
 });
 
-test("960px でも既定では両パネルが可視である", async ({ page }) => {
+test("both panels are visible by default even at 960px", async ({ page }) => {
   await expect(
     page.getByRole("navigation", { name: "要素パレット" }),
   ).toBeVisible();
@@ -17,7 +17,7 @@ test("960px でも既定では両パネルが可視である", async ({ page }) 
   ).toBeVisible();
 });
 
-test("左右パネルのトグルで開閉できる", async ({ page }) => {
+test("the left/right panel toggles open and close", async ({ page }) => {
   const palette = page.getByRole("navigation", { name: "要素パレット" });
   const properties = page.getByRole("complementary", { name: "プロパティ" });
   const toggleLeft = page.getByRole("button", { name: "左パネルを開閉" });
@@ -34,7 +34,7 @@ test("左右パネルのトグルで開閉できる", async ({ page }) => {
   await expect(properties).toBeVisible();
 });
 
-test("両パネルを閉じてもキャンバスバーの操作は可視かつクリック可能", async ({
+test("canvas bar controls remain visible and clickable even with both panels closed", async ({
   page,
 }) => {
   await page.getByRole("button", { name: "左パネルを開閉" }).click();
@@ -45,7 +45,9 @@ test("両パネルを閉じてもキャンバスバーの操作は可視かつ�
   await zoomIn.click();
 });
 
-test("左パネルを閉じてもキャンバスは幅を保って表示される", async ({ page }) => {
+test("the canvas keeps its width when the left panel is closed", async ({
+  page,
+}) => {
   const canvasArea = page.locator(".dr-canvas-area");
   const before = await canvasArea.boundingBox();
   if (before === null) {
@@ -66,7 +68,9 @@ test("左パネルを閉じてもキャンバスは幅を保って表示され�
   ).toBeVisible();
 });
 
-test("右パネルを閉じてもキャンバスは幅を保って表示される", async ({ page }) => {
+test("the canvas keeps its width when the right panel is closed", async ({
+  page,
+}) => {
   const canvasArea = page.locator(".dr-canvas-area");
   const before = await canvasArea.boundingBox();
   if (before === null) {
@@ -86,7 +90,7 @@ test("右パネルを閉じてもキャンバスは幅を保って表示され�
   ).toBeVisible();
 });
 
-test("960px で上部ツールバーに横スクロールが出ず、右パネルトグルがクリックできる", async ({
+test("at 960px the top toolbar has no horizontal scroll and the right panel toggle is clickable", async ({
   page,
 }) => {
   const overflowing = await page.evaluate(() => {
@@ -103,7 +107,7 @@ test("960px で上部ツールバーに横スクロールが出ず、右パネ�
   ).toBeHidden();
 });
 
-test("960px でキャンバスバーの封筒窓ガイド select が潰れず表示テキストを保つ", async ({
+test("at 960px the canvas bar's envelope window guide select doesn't collapse and keeps its label text", async ({
   page,
 }) => {
   const envelopeSelect = page.getByRole("combobox", { name: "封筒窓ガイド" });
@@ -115,7 +119,7 @@ test("960px でキャンバスバーの封筒窓ガイド select が潰れず表
   expect(box.width).toBeGreaterThan(60);
 });
 
-test("その他の操作メニューが開閉できる", async ({ page }) => {
+test("the more actions menu opens and closes", async ({ page }) => {
   const trigger = page.getByRole("button", { name: "その他の操作" });
   await trigger.click();
   const menu = page.getByRole("menu");
@@ -127,7 +131,7 @@ test("その他の操作メニューが開閉できる", async ({ page }) => {
   await expect(trigger).toBeFocused();
 });
 
-test("その他の操作メニューはトリガーの再クリックで閉じる（開き直らない）", async ({
+test("the more actions menu closes when the trigger is clicked again (does not reopen)", async ({
   page,
 }) => {
   const trigger = page.getByRole("button", { name: "その他の操作" });
@@ -141,7 +145,7 @@ test("その他の操作メニューはトリガーの再クリックで閉じ�
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
 });
 
-test("スプリッターをキーボードで操作するとパレット領域の高さが減る", async ({
+test("operating the splitter with the keyboard reduces the palette area's height", async ({
   page,
 }) => {
   const splitter = page.getByRole("separator", {

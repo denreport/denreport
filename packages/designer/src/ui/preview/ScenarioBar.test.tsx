@@ -39,7 +39,7 @@ function buttonByText(text: string): HTMLButtonElement {
 }
 
 describe("ScenarioBar", () => {
-  it("追加・複製・削除ボタンと aria-label を日本語で描画する", () => {
+  it("renders the add/duplicate/delete buttons and aria-labels in Japanese", () => {
     act(() => {
       root.render(
         <ScenarioBar
@@ -63,7 +63,7 @@ describe("ScenarioBar", () => {
     expect(buttonByText("削除")).not.toBeUndefined();
   });
 
-  it("en の MessagesContext では文言が英語で描画される", () => {
+  it("renders text in English under the en MessagesContext", () => {
     act(() => {
       root.render(
         <MessagesContext.Provider value={en}>

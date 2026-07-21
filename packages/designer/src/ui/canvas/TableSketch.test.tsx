@@ -66,12 +66,12 @@ function renderSketch(
 }
 
 describe("TableSketch — stripeColor", () => {
-  it("stripeColor がなければ縞を描画しない", () => {
+  it("doesn't draw stripes when stripeColor is absent", () => {
     renderSketch(table(), { x: 0, y: 0, w: 40, h: 10 + 4 * 10 });
     expect(container.querySelectorAll(".dr-tbl-stripe")).toHaveLength(0);
   });
 
-  it("奇数行インデックス（表示上の2, 4行目）にのみ縞を描画する", () => {
+  it("draws stripes only on odd row indices (rows 2 and 4 as displayed)", () => {
     renderSketch(table({ stripeColor: "#f0f0f0" }), {
       x: 0,
       y: 0,
@@ -91,7 +91,7 @@ describe("TableSketch — stripeColor", () => {
     ).toEqual(["#f0f0f0", "#f0f0f0"]);
   });
 
-  it("縞は罫線より先（背後）に描画される", () => {
+  it("stripes are drawn before (behind) the rules", () => {
     renderSketch(table({ stripeColor: "#f0f0f0" }), {
       x: 0,
       y: 0,
@@ -104,7 +104,7 @@ describe("TableSketch — stripeColor", () => {
     expect(nodes[0]?.classList.contains("dr-tbl-stripe")).toBe(true);
   });
 
-  it("行数0（ヘッダのみ）では縞を描画しない", () => {
+  it("doesn't draw stripes when there are 0 rows (header only)", () => {
     renderSketch(table({ stripeColor: "#f0f0f0" }), {
       x: 0,
       y: 0,
@@ -115,7 +115,7 @@ describe("TableSketch — stripeColor", () => {
   });
 });
 
-describe("TableSketch — セル結合", () => {
+describe("TableSketch — cell merging", () => {
   const TWO_COLUMNS: IrTableElement["columns"] = [
     { key: "a", label: "A", width: 40, align: "left" },
     { key: "b", label: "B", width: 30, align: "right" },
@@ -127,7 +127,7 @@ describe("TableSketch — セル結合", () => {
     return { rows, overrides: new Map() };
   }
 
-  it("mergeSameValue の連続同一値で被覆セルを描画せず、起点セルだけが残る", () => {
+  it("mergeSameValue doesn't draw covered cells for consecutive identical values, leaving only the origin cell", () => {
     const el = table({
       columns: [
         {
@@ -162,7 +162,7 @@ describe("TableSketch — セル結合", () => {
     expect(innerLine?.style.width).toBe("calc(30 * var(--mm))");
   });
 
-  it("ヘッダの colSpan で被覆ヘッダを描画せず、起点ヘッダが結合幅になる", () => {
+  it("header colSpan doesn't draw covered headers, and the origin header becomes the merged width", () => {
     const el = table({
       columns: TWO_COLUMNS,
       cellSpans: [{ row: "header", key: "a", colSpan: 2 }],
@@ -177,7 +177,7 @@ describe("TableSketch — セル結合", () => {
     expect(vline.style.height).toBe("calc(20 * var(--mm))");
   });
 
-  it("静的 colSpan の起点セルは結合幅で描画される", () => {
+  it("a static colSpan's origin cell is drawn at the merged width", () => {
     const el = table({
       columns: TWO_COLUMNS,
       cellSpans: [{ row: 0, key: "a", colSpan: 2 }],
@@ -202,7 +202,7 @@ describe("TableSketch — セル結合", () => {
     ).not.toBeNull();
   });
 
-  it("被覆セルを指す上書きは表示されない（不活性）", () => {
+  it("an override pointing at a covered cell isn't shown (inactive)", () => {
     const el = table({
       columns: TWO_COLUMNS,
       cellSpans: [{ row: 0, key: "a", colSpan: 2 }],
@@ -220,13 +220,13 @@ describe("TableSketch — セル結合", () => {
   });
 });
 
-describe("TableSketch — 外枠", () => {
-  it(".dr-tbl-frame をちょうど1個描画する", () => {
+describe("TableSketch — outer frame", () => {
+  it("draws exactly one .dr-tbl-frame", () => {
     renderSketch(table(), { x: 0, y: 0, w: 40, h: 10 + 2 * 10 });
     expect(container.querySelectorAll(".dr-tbl-frame")).toHaveLength(1);
   });
 
-  it("描画順は 縞 → 外枠 → 内部罫線", () => {
+  it("draw order is stripe → frame → internal rules", () => {
     renderSketch(table({ stripeColor: "#f0f0f0" }), {
       x: 0,
       y: 0,
@@ -248,7 +248,7 @@ describe("TableSketch — 外枠", () => {
   });
 });
 
-describe("TableSketch — 明細セルの均等割付", () => {
+describe("TableSketch — justified spacing for detail cells", () => {
   const CONST_WIDTHS: CharWidthEm = () => 0.1;
   const PT_TO_MM = 25.4 / 72;
 
@@ -256,7 +256,7 @@ describe("TableSketch — 明細セルの均等割付", () => {
     return widthPt * PT_TO_MM;
   }
 
-  it("1行に収まる justify セルは --cs に charSpacePt を持つ", () => {
+  it("a justify cell that fits on one line has charSpacePt in --cs", () => {
     const cellW = widthMmFor(4);
     const el = table({
       columns: [{ key: "a", label: "A", width: cellW + 3, align: "justify" }],
@@ -276,7 +276,7 @@ describe("TableSketch — 明細セルの均等割付", () => {
     );
   });
 
-  it("折り返しが必要な長さの justify セルは --cs を出さない（字間0）", () => {
+  it("a justify cell long enough to need wrapping doesn't emit --cs (zero letter-spacing)", () => {
     const cellW = widthMmFor(3.2);
     const el = table({
       columns: [{ key: "a", label: "A", width: cellW + 3, align: "justify" }],
@@ -292,7 +292,7 @@ describe("TableSketch — 明細セルの均等割付", () => {
     expect(cell.style.getPropertyValue("--cs")).toBe("");
   });
 
-  it("align: left の列は charWidths があっても --cs を出さない", () => {
+  it("an align: left column doesn't emit --cs even when charWidths is provided", () => {
     const cellW = widthMmFor(4);
     const el = table({
       columns: [{ key: "a", label: "A", width: cellW + 3, align: "left" }],
@@ -308,7 +308,7 @@ describe("TableSketch — 明細セルの均等割付", () => {
     expect(cell.style.getPropertyValue("--cs")).toBe("");
   });
 
-  it("charWidths 未指定の justify 列は従来どおり --cs を出さない", () => {
+  it("a justify column without charWidths doesn't emit --cs, same as before", () => {
     const cellW = widthMmFor(4);
     const el = table({
       columns: [{ key: "a", label: "A", width: cellW + 3, align: "justify" }],

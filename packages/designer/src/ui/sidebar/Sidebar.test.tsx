@@ -64,8 +64,8 @@ function splitterEl(): HTMLElement {
   return el;
 }
 
-describe("Sidebar 初期描画", () => {
-  it("has-split なしでパレット・レイヤー・スプリッターが存在する", async () => {
+describe("Sidebar initial render", () => {
+  it("the palette, layers, and splitter exist without has-split", async () => {
     await renderSidebar();
     expect(sidebarEl().classList.contains("has-split")).toBe(false);
     expect(container.querySelector(".dr-palette")).not.toBeNull();
@@ -79,8 +79,8 @@ describe("Sidebar 初期描画", () => {
   });
 });
 
-describe("キーボード操作", () => {
-  it("ArrowUp/ArrowDown で has-split と --dr-palette-h が設定される", async () => {
+describe("keyboard operations", () => {
+  it("ArrowUp/ArrowDown set has-split and --dr-palette-h", async () => {
     await renderSidebar();
     const splitter = splitterEl();
     splitter.dispatchEvent(
@@ -98,8 +98,8 @@ describe("キーボード操作", () => {
   });
 });
 
-describe("ポインタ操作", () => {
-  it("pointerdown → pointermove → pointerup の一連で高さが更新される", async () => {
+describe("pointer operations", () => {
+  it("a pointerdown → pointermove → pointerup sequence updates the height", async () => {
     await renderSidebar();
     const splitter = splitterEl();
     splitter.dispatchEvent(

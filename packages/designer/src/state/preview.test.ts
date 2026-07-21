@@ -136,10 +136,10 @@ function rowLines(
   );
 }
 
-describe("buildPreview: 行数とページ展開", () => {
+describe("buildPreview: row count and page expansion", () => {
   const doc = makeDocument([itemsTable(), PAGE_NO]);
 
-  it("0行では minRows 分の空行枠で1ページになる", () => {
+  it("becomes a single page with minRows worth of empty row slots when there are 0 rows", () => {
     const result = buildPreview(doc, sampleWithRows(0), "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -151,13 +151,13 @@ describe("buildPreview: 行数とページ展開", () => {
     expect(textsBySource(page, "items")).toHaveLength(2);
   });
 
-  it("minRows 未満の行数では枠は minRows のまま、内容はデータ行数分", () => {
+  it("keeps the frame at minRows while the content matches the data row count, when rows are fewer than minRows", () => {
     const page = pagesOf(doc, sampleWithRows(2))[0] ?? [];
     expect(rowLines(page)).toHaveLength(3);
     expect(textsBySource(page, "items")).toHaveLength(2 + 2 * 2);
   });
 
-  it("先頭ページ容量ちょうど（9行）は1ページに収まる", () => {
+  it("fits on 1 page when the row count exactly matches the first-page capacity (9 rows)", () => {
     const result = buildPreview(doc, sampleWithRows(9), "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -169,7 +169,7 @@ describe("buildPreview: 行数とページ展開", () => {
     ]);
   });
 
-  it("容量を溢れる（10行）と2ページに分かれ、ページ番号も追従する", () => {
+  it("splits into 2 pages when capacity overflows (10 rows), and page numbers follow along", () => {
     const result = buildPreview(doc, sampleWithRows(10), "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) return;
@@ -188,8 +188,8 @@ describe("buildPreview: 行数とページ展開", () => {
   });
 });
 
-describe("buildPreview: C01/C02 の補完と警告", () => {
-  it("text の {key} トークンの欠損はプレースホルダ {キー名} に補完され、警告が積まれる", () => {
+describe("buildPreview: C01/C02 completion and warnings", () => {
+  it("fills a missing {key} token in text with the {keyName} placeholder, and adds a warning", () => {
     const doc = makeDocument([boundText("t1", "customerName")]);
     const result = buildPreview(doc, "{}", "ja");
     expect(result.ok).toBe(true);
@@ -201,7 +201,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
     expect(result.warnings[0]?.message).toContain("customerName");
   });
 
-  it("text の {key} トークンの型不一致もプレースホルダに補完される", () => {
+  it("also fills a type-mismatched {key} token in text with a placeholder", () => {
     const doc = makeDocument([boundText("t1", "customerName")]);
     const result = buildPreview(doc, '{"customerName": 5}', "ja");
     expect(result.ok).toBe(true);
@@ -211,7 +211,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
     expect(result.warnings.map((w) => w.source)).toEqual(["data"]);
   });
 
-  it("text 内の {key} トークン欠損はトークン表記のまま見え、警告が積まれる", () => {
+  it("leaves a missing {key} token inside text shown in token form, and adds a warning", () => {
     const doc = makeDocument([tokenText("t1", "合計: {total} 円")]);
     const result = buildPreview(doc, "{}", "ja");
     expect(result.ok).toBe(true);
@@ -223,7 +223,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
     expect(result.warnings[0]?.message).toContain("total");
   });
 
-  it("同一テキスト内の複数トークンがそれぞれ独立に補完され、警告件数もキー数分になる", () => {
+  it("fills each of multiple tokens in the same text independently, with one warning per key", () => {
     const doc = makeDocument([tokenText("t1", "{a} / {b}")]);
     const result = buildPreview(doc, "{}", "ja");
     expect(result.ok).toBe(true);
@@ -233,7 +233,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
     expect(result.warnings).toHaveLength(2);
   });
 
-  it("table bind の欠損は空配列に補完され、minRows 分の空行枠になる", () => {
+  it("fills a missing table bind with an empty array, producing minRows worth of empty row slots", () => {
     const doc = makeDocument([itemsTable()]);
     const result = buildPreview(doc, "{}", "ja");
     expect(result.ok).toBe(true);
@@ -245,7 +245,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
     expect(result.warnings[0]?.message).toContain("items");
   });
 
-  it("不正 JSON は空データ扱いで全キーが補完され、source: json の警告が先頭に付く", () => {
+  it("treats invalid JSON as empty data, fills all keys, and prepends a source: json warning", () => {
     const doc = makeDocument([boundText("t1", "customerName"), itemsTable()]);
     const result = buildPreview(doc, "{oops", "ja");
     expect(result.ok).toBe(true);
@@ -262,7 +262,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
     expect(rowLines(page)).toHaveLength(3);
   });
 
-  it("JSON 警告は locale に追随する", () => {
+  it("the JSON warning follows the locale", () => {
     const doc = makeDocument([boundText("t1", "customerName")]);
     const ja = buildPreview(doc, "{oops", "ja");
     const en = buildPreview(doc, "{oops", "en");
@@ -277,7 +277,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
     );
   });
 
-  it("トップレベルが非オブジェクトの JSON 警告も locale に追随する", () => {
+  it("the non-top-level-object JSON warning also follows the locale", () => {
     const doc = makeDocument([boundText("t1", "customerName")]);
     const en = buildPreview(doc, "[1, 2]", "en");
     expect(en.ok).toBe(true);
@@ -287,7 +287,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
     );
   });
 
-  it("空文字列は未入力扱いで、JSON 警告は付かない（補完の警告のみ）", () => {
+  it("treats an empty string as no input, with no JSON warning (only completion warnings)", () => {
     const doc = makeDocument([boundText("t1", "customerName")]);
     const result = buildPreview(doc, "", "ja");
     expect(result.ok).toBe(true);
@@ -296,7 +296,7 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
     expect(result.warnings.map((w) => w.source)).toEqual(["data"]);
   });
 
-  it("完全なデータでは警告が空になる", () => {
+  it("produces no warnings when the data is complete", () => {
     const doc = makeDocument([boundText("t1", "customerName"), itemsTable()]);
     const result = buildPreview(
       doc,
@@ -309,8 +309,8 @@ describe("buildPreview: C01/C02 の補完と警告", () => {
   });
 });
 
-describe("buildPreview: 補完で解消できないエラー", () => {
-  it("2ページ以上に展開される表が複数あると C03 で ok: false", () => {
+describe("buildPreview: errors that completion cannot resolve", () => {
+  it("returns ok: false with C03 when multiple tables expand to 2+ pages", () => {
     const doc = makeDocument([
       itemsTable(),
       itemsTable({ id: "items2", bind: "items2" }),
@@ -326,7 +326,7 @@ describe("buildPreview: 補完で解消できないエラー", () => {
     expect(result.errors[0]?.message).not.toBe("");
   });
 
-  it("展開後の総ページ数が上限を超えると C04 で ok: false", () => {
+  it("returns ok: false with C04 when the total expanded page count exceeds the limit", () => {
     // continuationY 83 -> continuation-page capacity is 1 row. 9 + 1001 rows becomes 1002 pages
     const doc = makeDocument([itemsTable({ continuationY: 83 })]);
     const result = buildPreview(doc, sampleWithRows(1010), "ja");
@@ -336,8 +336,8 @@ describe("buildPreview: 補完で解消できないエラー", () => {
   });
 });
 
-describe("buildPreview: 純粋性", () => {
-  it("補完が起きても入力 document を変更しない", () => {
+describe("buildPreview: purity", () => {
+  it("does not mutate the input document even when completion occurs", () => {
     const doc = makeDocument([boundText("t1", "customerName"), itemsTable()]);
     const before = JSON.stringify(doc);
     buildPreview(doc, "{oops", "ja");
@@ -365,11 +365,11 @@ describe("textBaselinesMm", () => {
     rotate: 0,
   };
 
-  it("PT_TO_MM は 1pt = 0.352778mm の換算値", () => {
+  it("PT_TO_MM is the conversion factor 1pt = 0.352778mm", () => {
     expect(PT_TO_MM).toBeCloseTo(0.352778, 5);
   });
 
-  it("規範式どおりのベースライン（ascent/em 1.16・10pt・lineHeight 1.25）を返す", () => {
+  it("returns the baseline per the canonical formula (ascent/em 1.16, 10pt, lineHeight 1.25)", () => {
     const lines = textBaselinesMm(el, 1.16, ["甲", "乙"]);
     expect(lines).toHaveLength(2);
     expect(lines[0]?.text).toBe("甲");
@@ -379,7 +379,7 @@ describe("textBaselinesMm", () => {
     expect(lines[1]?.baselineY).toBeCloseTo(50 + 25.35 * (25.4 / 72), 4);
   });
 
-  it("与えられた行配列をそのまま行として数える（空行を含む）", () => {
+  it("counts the given line array as-is, including empty lines", () => {
     const lines = textBaselinesMm(el, 1.16, ["甲", "", "乙"]);
     expect(lines.map((l) => l.text)).toEqual(["甲", "", "乙"]);
     expect(lines[2]?.baselineY).toBeCloseTo(
@@ -414,7 +414,7 @@ describe("generateSampleData", () => {
     ],
   };
 
-  it("text / flex 子孫 / table の bind を出現順に集め、2スペースインデントで出力する", () => {
+  it("collects binds from text / flex descendants / table in appearance order and outputs with 2-space indentation", () => {
     const doc = makeDocument([
       boundText("t1", "customerName"),
       flexWithBind,
@@ -438,7 +438,7 @@ describe("generateSampleData", () => {
     );
   });
 
-  it("text と table が同一キーを共有する場合は table を優先する", () => {
+  it("prefers the table when text and table share the same key", () => {
     const before = makeDocument([boundText("t1", "items"), itemsTable()]);
     const after = makeDocument([itemsTable(), boundText("t1", "items")]);
     for (const doc of [before, after]) {
@@ -451,7 +451,7 @@ describe("generateSampleData", () => {
     }
   });
 
-  it("生成結果を buildPreview に渡すと警告が空になる", () => {
+  it("produces no warnings when the generated result is passed to buildPreview", () => {
     const doc = makeDocument([
       boundText("t1", "customerName"),
       flexWithBind,
@@ -464,16 +464,16 @@ describe("generateSampleData", () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it("bind のない文書では空オブジェクトになる", () => {
+  it("becomes an empty object for a document with no binds", () => {
     expect(generateSampleData(makeDocument([]))).toBe("{}");
   });
 
-  it("text 内の {key} トークンキーにもキー名そのものを値として含める", () => {
+  it("includes the key name itself as the value for a {key} token inside text", () => {
     const doc = makeDocument([tokenText("t1", "合計: {total} 円")]);
     expect(JSON.parse(generateSampleData(doc))).toEqual({ total: "total" });
   });
 
-  it("生成結果を buildPreview に渡すとトークンの警告も空になる", () => {
+  it("produces no token warnings either when the generated result is passed to buildPreview", () => {
     const doc = makeDocument([tokenText("t1", "合計: {total} 円")]);
     const result = buildPreview(doc, generateSampleData(doc), "ja");
     expect(result.ok).toBe(true);
@@ -481,7 +481,7 @@ describe("generateSampleData", () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it("barcode.value 内の {key} トークンキーにもキー名そのものを値として含める", () => {
+  it("includes the key name itself as the value for a {key} token inside barcode.value", () => {
     const doc = makeDocument([
       {
         type: "barcode",

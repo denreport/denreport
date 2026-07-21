@@ -64,14 +64,14 @@ function err(path: string): IrError {
 }
 
 describe("errorElementIds", () => {
-  it("elements[i] と属性つき path をトップレベル要素の id に解決する", () => {
+  it("resolves elements[i] and attribute-qualified paths to a top-level element's id", () => {
     expect(errorElementIds(DOC, [err("elements[0]")])).toEqual(new Set(["t1"]));
     expect(errorElementIds(DOC, [err("elements[0].fontSize")])).toEqual(
       new Set(["t1"]),
     );
   });
 
-  it("children の入れ子 path を子要素の id に解決する", () => {
+  it("resolves nested children paths to a child element's id", () => {
     expect(errorElementIds(DOC, [err("elements[1].children[0]")])).toEqual(
       new Set(["f2"]),
     );
@@ -80,7 +80,7 @@ describe("errorElementIds", () => {
     ).toEqual(new Set(["r1"]));
   });
 
-  it("要素に対応しない path（ルート・page・範囲外）は無視する", () => {
+  it("ignores paths that don't correspond to an element (root, page, out of range)", () => {
     const errors = [
       err(""),
       err("page.width"),
@@ -91,7 +91,7 @@ describe("errorElementIds", () => {
     expect(errorElementIds(DOC, errors)).toEqual(new Set());
   });
 
-  it("複数エラーは id の集合にまとまる", () => {
+  it("collects multiple errors into a set of ids", () => {
     const ids = errorElementIds(DOC, [
       err("elements[0].w"),
       err("elements[0].h"),
@@ -102,7 +102,7 @@ describe("errorElementIds", () => {
 });
 
 describe("errorsByElement", () => {
-  it("要素 id ごとにグループ化し、要素に対応しない path を除外する", () => {
+  it("groups by element id and excludes paths that don't correspond to an element", () => {
     const errors = [
       err("elements[0].w"),
       err("elements[0].h"),
@@ -122,12 +122,12 @@ describe("errorMessageFor", () => {
     { rule: "M06", path: "elements[2].columns[1].key", message: "key が重複" },
   ];
 
-  it("path の suffix 一致で最初の message を返す", () => {
+  it("returns the first message on a path suffix match", () => {
     expect(errorMessageFor(errors, "fontSize")).toBe("fontSize が範囲外");
     expect(errorMessageFor(errors, "columns[1].key")).toBe("key が重複");
   });
 
-  it("一致しない attrPath は undefined", () => {
+  it("returns undefined for an attrPath that doesn't match", () => {
     expect(errorMessageFor(errors, "w")).toBeUndefined();
     expect(errorMessageFor(errors, "Size")).toBeUndefined();
   });

@@ -77,7 +77,7 @@ function elementAt(store: EditorStore, id: string): IrElement | undefined {
 }
 
 describe("copySelection", () => {
-  it("選択ありで true・クリップボード格納・文書/履歴不変", () => {
+  it("returns true with a selection: stores the clipboard and leaves the document/history unchanged", () => {
     const store = makeStore();
     const before = store.getState().document;
 
@@ -88,7 +88,7 @@ describe("copySelection", () => {
     expect(store.canUndo()).toBe(false);
   });
 
-  it("選択が空なら false", () => {
+  it("returns false when the selection is empty", () => {
     const store = makeStore([textElement("a")], []);
     expect(copySelection(store)).toBe(false);
     expect(store.getClipboard()).toBeNull();
@@ -96,7 +96,7 @@ describe("copySelection", () => {
 });
 
 describe("cutSelection", () => {
-  it("1回の undo で復元される（1 commit）", () => {
+  it("is restored by a single undo (1 commit)", () => {
     const store = makeStore();
     expect(cutSelection(store)).toBe(true);
     expect(store.getState().document.elements).toEqual([]);
@@ -106,7 +106,7 @@ describe("cutSelection", () => {
     expect(store.canUndo()).toBe(false);
   });
 
-  it("undo 後もクリップボードが残る", () => {
+  it("keeps the clipboard after undo", () => {
     const store = makeStore();
     cutSelection(store);
     store.undo();
@@ -115,12 +115,12 @@ describe("cutSelection", () => {
 });
 
 describe("pasteClipboard", () => {
-  it("クリップボードが空なら false", () => {
+  it("returns false when the clipboard is empty", () => {
     const store = makeStore();
     expect(pasteClipboard(store)).toBe(false);
   });
 
-  it("貼り付け後の選択が新 id になり、連続実行でオフセットが累積する", () => {
+  it("selects the new id after pasting, and the offset accumulates on repeated paste", () => {
     const store = makeStore();
     copySelection(store);
 
@@ -141,7 +141,7 @@ describe("pasteClipboard", () => {
 });
 
 describe("duplicateSelection", () => {
-  it("複製後も getClipboard() が実行前と同一参照のまま（不変）", () => {
+  it("leaves getClipboard() referentially unchanged after duplicating", () => {
     const store = makeStore();
     expect(store.getClipboard()).toBeNull();
 
@@ -149,7 +149,7 @@ describe("duplicateSelection", () => {
     expect(store.getClipboard()).toBeNull();
   });
 
-  it("保存済みクリップボードを汚さない", () => {
+  it("does not mutate the saved clipboard", () => {
     const store = makeStore([textElement("a"), textElement("b", 60, 60)]);
     store.setSelection(["b"]);
     copySelection(store);
@@ -161,7 +161,7 @@ describe("duplicateSelection", () => {
     expect(store.getClipboard()).toBe(clipboardBefore);
   });
 
-  it("選択が複製結果に移り、5mm オフセットが付き、1 undo で戻る", () => {
+  it("moves the selection to the duplicated result with a 5mm offset, and reverts with 1 undo", () => {
     const store = makeStore();
     expect(duplicateSelection(store)).toBe(true);
 
@@ -175,7 +175,7 @@ describe("duplicateSelection", () => {
     expect(store.canUndo()).toBe(false);
   });
 
-  it("flex 子のみの選択では false", () => {
+  it("returns false when only flex children are selected", () => {
     const store = makeStore([flexWithChild("f", "c1")], ["c1"]);
     expect(duplicateSelection(store)).toBe(false);
     expect(store.getState().document.elements).toHaveLength(1);
@@ -183,7 +183,7 @@ describe("duplicateSelection", () => {
 });
 
 describe("deleteSelection", () => {
-  it("flex 子 id を含む選択が削除できる", () => {
+  it("can delete a selection that includes flex child ids", () => {
     const store = makeStore([flexWithChild("f", "c1")], ["c1"]);
     expect(deleteSelection(store)).toBe(true);
     const remaining = elementAt(store, "f");
@@ -191,14 +191,14 @@ describe("deleteSelection", () => {
     expect(store.getState().selection).toEqual([]);
   });
 
-  it("選択が空なら false", () => {
+  it("returns false when the selection is empty", () => {
     const store = makeStore([textElement("a")], []);
     expect(deleteSelection(store)).toBe(false);
   });
 });
 
 describe("alignSelection", () => {
-  it("トップレベル2未満（flex 子のみの選択を含む）で false・履歴が積まれない", () => {
+  it("returns false with fewer than 2 top-level elements (including a selection of only flex children), and adds no history entry", () => {
     const store = makeStore([textElement("a")], ["a"]);
     expect(alignSelection(store, "left")).toBe(false);
     expect(store.canUndo()).toBe(false);
@@ -207,7 +207,7 @@ describe("alignSelection", () => {
     expect(alignSelection(flexStore, "left")).toBe(false);
   });
 
-  it("成功時に履歴が1エントリで、undo 1回で全要素が元に戻る", () => {
+  it("adds a single history entry on success, and 1 undo reverts all elements", () => {
     const store = makeStore(
       [textElement("a", 10, 10), textElement("b", 60, 40)],
       ["a", "b"],
@@ -223,7 +223,7 @@ describe("alignSelection", () => {
 });
 
 describe("distributeSelection", () => {
-  it("トップレベル3未満で false", () => {
+  it("returns false with fewer than 3 top-level elements", () => {
     const store = makeStore(
       [textElement("a", 0, 0), textElement("b", 20, 0)],
       ["a", "b"],
@@ -232,7 +232,7 @@ describe("distributeSelection", () => {
     expect(store.canUndo()).toBe(false);
   });
 
-  it("成功時 1 commit で undo 1回で戻る", () => {
+  it("commits once on success and reverts with 1 undo", () => {
     const store = makeStore(
       [
         textElement("a", 0, 0),
@@ -255,7 +255,7 @@ describe("groupSelection / ungroupSelection", () => {
     return makeStore([textElement("a"), textElement("b", 60, 60)], ["a", "b"]);
   }
 
-  it("選択が2以上のトップレベル要素なら成立し、グループが追加される", () => {
+  it("succeeds and adds a group when 2 or more top-level elements are selected", () => {
     const store = twoTextStore();
     expect(groupSelection(store)).toBe(true);
     expect(store.getState().groups).toEqual([
@@ -263,13 +263,13 @@ describe("groupSelection / ungroupSelection", () => {
     ]);
   });
 
-  it("選択が1件以下なら false", () => {
+  it("returns false when 1 or fewer elements are selected", () => {
     const store = makeStore([textElement("a")], ["a"]);
     expect(groupSelection(store)).toBe(false);
     expect(store.getState().groups).toEqual([]);
   });
 
-  it("flex 子 id は対象外で成立しない", () => {
+  it("does not succeed when the selection is only flex child ids (they don't count as top-level)", () => {
     const store = makeStore(
       [flexWithChild("f", "c1"), textElement("a")],
       ["c1", "a"],
@@ -277,28 +277,28 @@ describe("groupSelection / ungroupSelection", () => {
     expect(groupSelection(store)).toBe(false);
   });
 
-  it("履歴・dirty に影響しない", () => {
+  it("does not affect history or dirty state", () => {
     const store = twoTextStore();
     groupSelection(store);
     expect(store.canUndo()).toBe(false);
     expect(store.getState().dirty).toBe(false);
   });
 
-  it("交差する生存グループがあれば解除できる", () => {
+  it("can ungroup when the selection intersects a live group", () => {
     const store = twoTextStore();
     groupSelection(store);
     expect(ungroupSelection(store)).toBe(true);
     expect(store.getState().groups).toEqual([]);
   });
 
-  it("交差するグループがなければ false", () => {
+  it("returns false when no group intersects the selection", () => {
     const store = twoTextStore();
     expect(ungroupSelection(store)).toBe(false);
   });
 });
 
 describe("canGroupSelection / canUngroupSelection", () => {
-  it("トップレベル選択が2以上なら canGroupSelection は true", () => {
+  it("canGroupSelection is true when 2 or more top-level elements are selected", () => {
     const store = makeStore(
       [textElement("a"), textElement("b", 60, 60)],
       ["a", "b"],
@@ -306,12 +306,12 @@ describe("canGroupSelection / canUngroupSelection", () => {
     expect(canGroupSelection(store.getState())).toBe(true);
   });
 
-  it("選択が1件なら canGroupSelection は false", () => {
+  it("canGroupSelection is false when only 1 element is selected", () => {
     const store = makeStore([textElement("a")], ["a"]);
     expect(canGroupSelection(store.getState())).toBe(false);
   });
 
-  it("選択が生存グループと交差すれば canUngroupSelection は true", () => {
+  it("canUngroupSelection is true when the selection intersects a live group", () => {
     const store = makeStore(
       [textElement("a"), textElement("b", 60, 60)],
       ["a", "b"],
@@ -320,14 +320,14 @@ describe("canGroupSelection / canUngroupSelection", () => {
     expect(canUngroupSelection(store.getState())).toBe(true);
   });
 
-  it("生存グループと交差しなければ false", () => {
+  it("returns false when the selection does not intersect a live group", () => {
     const store = makeStore([textElement("a")], ["a"]);
     expect(canUngroupSelection(store.getState())).toBe(false);
   });
 });
 
-describe("複製・貼り付けとグループの再形成", () => {
-  it("グループを複製すると新 id で束なる", () => {
+describe("duplicating/pasting and group reformation", () => {
+  it("re-bundles a duplicated group under new ids", () => {
     const store = makeStore(
       [textElement("a"), textElement("b", 60, 60)],
       ["a", "b"],
@@ -342,7 +342,7 @@ describe("複製・貼り付けとグループの再形成", () => {
     });
   });
 
-  it("複製で1 undo すると要素だけ戻り、グループ（履歴外）はそのまま残る", () => {
+  it("reverts only the elements on 1 undo after duplicating, leaving the group (outside history) unchanged", () => {
     const store = makeStore(
       [textElement("a"), textElement("b", 60, 60)],
       ["a", "b"],
@@ -356,7 +356,7 @@ describe("複製・貼り付けとグループの再形成", () => {
     expect(store.getState().groups).toEqual(groupsAfterDuplicate);
   });
 
-  it("cut → paste でグループが再形成される", () => {
+  it("reforms the group on cut -> paste", () => {
     const store = makeStore(
       [textElement("a"), textElement("b", 60, 60)],
       ["a", "b"],
@@ -372,7 +372,7 @@ describe("複製・貼り付けとグループの再形成", () => {
     });
   });
 
-  it("グループでない選択の複製ではグループを追加しない", () => {
+  it("does not add a group when duplicating a non-group selection", () => {
     const store = makeStore([textElement("a")], ["a"]);
     duplicateSelection(store);
     expect(store.getState().groups).toEqual([]);

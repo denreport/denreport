@@ -31,7 +31,7 @@ function entryOf(entries: readonly ZipEntryData[], name: string): ZipEntryData {
   return entry;
 }
 
-test("UC-1: 請求書レイアウトを作りプレビューして ReportLab コードに書き出す", async ({
+test("UC-1: build an invoice layout, preview it, and export to ReportLab code", async ({
   page,
 }) => {
   // vite preview serves with Cache-Control: no-cache + ETag, so fetches from the second one on

@@ -22,22 +22,22 @@ function fakeWindow(handler: () => Promise<readonly FakeFontData[]>): Window {
 }
 
 describe("isLocalFontAccessSupported", () => {
-  it("queryLocalFonts があれば true", () => {
+  it("returns true when queryLocalFonts exists", () => {
     expect(isLocalFontAccessSupported(fakeWindow(async () => []))).toBe(true);
   });
 
-  it("なければ false", () => {
+  it("returns false when absent", () => {
     expect(isLocalFontAccessSupported({} as unknown as Window)).toBe(false);
   });
 });
 
 describe("listLocalFonts", () => {
-  it("非対応 window では unsupported を返す", async () => {
+  it("returns unsupported for an unsupported window", async () => {
     const result = await listLocalFonts({} as unknown as Window);
     expect(result).toEqual({ ok: false, reason: "unsupported" });
   });
 
-  it("候補列を fullName 昇順で返し、loadData が blob を Uint8Array にする", async () => {
+  it("returns the candidate list sorted by fullName ascending, and loadData converts the blob to a Uint8Array", async () => {
     const bBytes = new Uint8Array([1, 2, 3]);
     const win = fakeWindow(async () => [
       {
@@ -66,7 +66,7 @@ describe("listLocalFonts", () => {
     await expect(secondFont.loadData()).resolves.toEqual(bBytes);
   });
 
-  it("NotAllowedError で denied を返す", async () => {
+  it("returns denied on NotAllowedError", async () => {
     const win = {
       queryLocalFonts: () =>
         Promise.reject(
@@ -76,7 +76,7 @@ describe("listLocalFonts", () => {
     expect(await listLocalFonts(win)).toEqual({ ok: false, reason: "denied" });
   });
 
-  it("その他の例外で error を返す", async () => {
+  it("returns error on other exceptions", async () => {
     const win = {
       queryLocalFonts: () => Promise.reject(new Error("boom")),
     } as unknown as Window;

@@ -104,14 +104,14 @@ function listZipEntries(bytes: Uint8Array): ZipListing[] {
 }
 
 describe("parseExportData", () => {
-  it("空文字列（空白のみ含む）は雛形モードになる", () => {
+  it("becomes template mode for an empty string (including whitespace-only)", () => {
     for (const json of ["", "  \n"]) {
       const result = parseExportData(json, ja.export);
       expect(result).toEqual({ ok: true, mode: "template" });
     }
   });
 
-  it("JSON.parse 不能はパースエラーになり、プレビューへ誘導する", () => {
+  it("becomes a parse error when JSON.parse fails, and directs the user to the preview", () => {
     const result = parseExportData('{"a":', ja.export);
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error("失敗を期待");
@@ -119,7 +119,7 @@ describe("parseExportData", () => {
     expect(result.message).toContain("プレビューのサンプルデータ欄");
   });
 
-  it("トップレベルが非オブジェクト（配列・null・数値）はエラーになる", () => {
+  it("errors when the top level is not an object (array, null, number)", () => {
     for (const json of ["[]", "null", "1", '"a"']) {
       const result = parseExportData(json, ja.export);
       expect(result.ok).toBe(false);
@@ -129,7 +129,7 @@ describe("parseExportData", () => {
     }
   });
 
-  it("トップレベルがオブジェクトならデータモードで返す", () => {
+  it("returns data mode when the top level is an object", () => {
     const result = parseExportData('{"title": "請求書"}', ja.export);
     expect(result).toEqual({
       ok: true,
@@ -140,7 +140,7 @@ describe("parseExportData", () => {
 });
 
 describe("buildPdfmeArtifact", () => {
-  it("生成 JSON は exportPdfme の template / inputs と同値の単一ファイルになる", async () => {
+  it("produces a single JSON file whose template / inputs equal exportPdfme's", async () => {
     const doc = docOf(textBound("title", "title"));
     const data = { title: "請求書" };
     const result = buildPdfmeArtifact(doc, data, FONT_SET, "ja");
@@ -157,7 +157,7 @@ describe("buildPdfmeArtifact", () => {
     });
   });
 
-  it("C01 型不一致データでは IrError を透過して生成物を返さない", () => {
+  it("propagates the IrError and returns no artifact for C01 type-mismatched data", () => {
     const result = buildPdfmeArtifact(
       docOf(textBound("title", "title")),
       { title: 123 },
@@ -169,7 +169,7 @@ describe("buildPdfmeArtifact", () => {
     expect(result.errors.some((e) => e.rule === "C01")).toBe(true);
   });
 
-  it("bind キー欠落では生成物を返し、warnings を透過する", () => {
+  it("returns an artifact and propagates warnings when a bind key is missing", () => {
     const result = buildPdfmeArtifact(
       docOf(textBound("title", "title")),
       {},
@@ -181,7 +181,7 @@ describe("buildPdfmeArtifact", () => {
     expect(result.warnings.some((w) => w.rule === "C01")).toBe(true);
   });
 
-  it("CFF フォントでは fontIssues を透過して生成物を返さない", () => {
+  it("propagates fontIssues and returns no artifact for a CFF font", () => {
     const result = buildPdfmeArtifact(
       docOf(),
       {},
@@ -195,7 +195,7 @@ describe("buildPdfmeArtifact", () => {
     expect(result.errors).toEqual([]);
   });
 
-  it("fontSubset 省略時は JSON のトップレベルキーが template / inputs のみになる", async () => {
+  it("keeps the top-level JSON keys to only template / inputs when fontSubset is omitted", async () => {
     const result = buildPdfmeArtifact(
       docOf(textBound("title", "title")),
       { title: "請求書" },
@@ -208,7 +208,7 @@ describe("buildPdfmeArtifact", () => {
     expect(Object.keys(parsed).sort()).toEqual(["inputs", "template"]);
   });
 
-  it("fontSubset: false では font ブロックが加わる", async () => {
+  it("adds a font block when fontSubset: false", async () => {
     const result = buildPdfmeArtifact(
       docOf(textBound("title", "title")),
       { title: "請求書" },
@@ -225,7 +225,7 @@ describe("buildPdfmeArtifact", () => {
 });
 
 describe("buildPdfmeTemplateArtifact", () => {
-  it("bind 由来キーは空文字列、静的 text は従来どおりの値になる", async () => {
+  it("empties bind-derived keys while static text keeps its original value", async () => {
     const doc = docOf(textBound("title", "title"), staticText("note", "備考"));
     const result = buildPdfmeTemplateArtifact(doc, FONT_SET, "ja");
     expect(result.ok).toBe(true);
@@ -241,7 +241,7 @@ describe("buildPdfmeTemplateArtifact", () => {
     expect(parsed.inputs[0][noteName as string]).toBe("備考");
   });
 
-  it("exportPdfme(document, emptyDataFor(document)) と同値の生成物になる", async () => {
+  it("produces an artifact equal to exportPdfme(document, emptyDataFor(document))", async () => {
     const doc = docOf(textBound("title", "title"));
     const result = buildPdfmeTemplateArtifact(doc, FONT_SET, "ja");
     expect(result.ok).toBe(true);
@@ -255,7 +255,7 @@ describe("buildPdfmeTemplateArtifact", () => {
     });
   });
 
-  it("fontSubset: false では font ブロックが加わる", async () => {
+  it("adds a font block when fontSubset: false", async () => {
     const doc = docOf(textBound("title", "title"));
     const result = buildPdfmeTemplateArtifact(doc, FONT_SET, "ja", false);
     expect(result.ok).toBe(true);
@@ -267,7 +267,7 @@ describe("buildPdfmeTemplateArtifact", () => {
 });
 
 describe("buildReportlabArtifact", () => {
-  it("zip 内に report.py と fontFile.filename の2エントリを持つ", async () => {
+  it("has 2 entries in the zip: report.py and fontFile.filename", async () => {
     const result = buildReportlabArtifact(docOf(), {}, FONT_SET, "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
@@ -286,7 +286,7 @@ describe("buildReportlabArtifact", () => {
     );
   });
 
-  it("locale が生成スクリプトの文言に伝わる", async () => {
+  it("propagates locale into the generated script's wording", async () => {
     const scriptOf = async (locale: "ja" | "en"): Promise<string> => {
       const result = buildReportlabArtifact(docOf(), {}, FONT_SET, locale);
       if (!result.ok) throw new Error("成功を期待");
@@ -301,7 +301,7 @@ describe("buildReportlabArtifact", () => {
     );
   });
 
-  it("CFF フォントでは fontIssues を透過して生成物を返さない", () => {
+  it("propagates fontIssues and returns no artifact for a CFF font", () => {
     const result = buildReportlabArtifact(
       docOf(),
       {},
@@ -317,7 +317,7 @@ describe("buildReportlabArtifact", () => {
     expect(result.errors).toEqual([]);
   });
 
-  it("C 群違反とフォント違反は同時に報告される", () => {
+  it("reports C-group violations and font violations together", () => {
     const result = buildReportlabArtifact(
       docOf(textBound("title", "title")),
       { title: 123 },
@@ -330,7 +330,7 @@ describe("buildReportlabArtifact", () => {
     expect(result.fontIssues.length).toBeGreaterThan(0);
   });
 
-  it("bind キー欠落では生成物を返し、warnings を透過する", () => {
+  it("returns an artifact and propagates warnings when a bind key is missing", () => {
     const result = buildReportlabArtifact(
       docOf(textBound("title", "title")),
       {},
@@ -342,7 +342,7 @@ describe("buildReportlabArtifact", () => {
     expect(result.warnings.some((w) => w.rule === "C01")).toBe(true);
   });
 
-  it("embeddedFontLicense を渡すと zip ルートに OFL.txt が追加され、資材と同一内容になる", async () => {
+  it("adds OFL.txt at the zip root with content identical to the asset when embeddedFontLicense is passed", async () => {
     const result = buildReportlabArtifact(
       docOf(),
       {},
@@ -365,7 +365,7 @@ describe("buildReportlabArtifact", () => {
     ).toBe(true);
   });
 
-  it("embeddedFontLicense を省略すると OFL.txt を含まない（同梱フォント不使用のケース）", async () => {
+  it("excludes OFL.txt when embeddedFontLicense is omitted (the case of not using the bundled font)", async () => {
     const result = buildReportlabArtifact(docOf(), {}, FONT_SET, "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");
@@ -377,7 +377,7 @@ describe("buildReportlabArtifact", () => {
 });
 
 describe("buildReportlabTemplateArtifact", () => {
-  it("zip 内に report.py と fontFile.filename の2エントリを持ち、雛形の build シグネチャを含む", async () => {
+  it("has 2 entries in the zip (report.py, fontFile.filename) and includes the template's build signature", async () => {
     const result = buildReportlabTemplateArtifact(
       docOf(textBound("title", "title")),
       FONT_SET,
@@ -395,7 +395,7 @@ describe("buildReportlabTemplateArtifact", () => {
     );
   });
 
-  it("CFF フォントでは fontIssues を透過して生成物を返さない（errors は常に空）", () => {
+  it("propagates fontIssues and returns no artifact for a CFF font (errors is always empty)", () => {
     const result = buildReportlabTemplateArtifact(
       docOf(),
       { regular: syntheticCff() },
@@ -407,7 +407,7 @@ describe("buildReportlabTemplateArtifact", () => {
     expect(result.errors).toEqual([]);
   });
 
-  it("embeddedFontLicense を渡すと zip ルートに OFL.txt が追加される", async () => {
+  it("adds OFL.txt at the zip root when embeddedFontLicense is passed", async () => {
     const result = buildReportlabTemplateArtifact(
       docOf(),
       FONT_SET,
@@ -426,7 +426,7 @@ describe("buildReportlabTemplateArtifact", () => {
     ]);
   });
 
-  it("embeddedFontLicense を省略すると OFL.txt を含まない", async () => {
+  it("excludes OFL.txt when embeddedFontLicense is omitted", async () => {
     const result = buildReportlabTemplateArtifact(docOf(), FONT_SET, "ja");
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error("成功を期待");

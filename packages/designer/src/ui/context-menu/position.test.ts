@@ -9,35 +9,35 @@ const BASE = {
 };
 
 describe("clampMenuPosition", () => {
-  it("余裕がある位置ではそのまま", () => {
+  it("leaves the position unchanged when there's enough room", () => {
     expect(clampMenuPosition({ ...BASE, x: 100, y: 100 })).toEqual({
       x: 100,
       y: 100,
     });
   });
 
-  it("右端をはみ出す場合は左へクランプする", () => {
+  it("clamps to the left when overflowing the right edge", () => {
     expect(clampMenuPosition({ ...BASE, x: 950, y: 100 })).toEqual({
       x: BASE.viewportWidth - BASE.menuWidth - 4,
       y: 100,
     });
   });
 
-  it("下端をはみ出す場合は上へクランプする", () => {
+  it("clamps upward when overflowing the bottom edge", () => {
     expect(clampMenuPosition({ ...BASE, x: 100, y: 780 })).toEqual({
       x: 100,
       y: BASE.viewportHeight - BASE.menuHeight - 4,
     });
   });
 
-  it("右下両方をはみ出す場合は両軸をクランプする", () => {
+  it("clamps both axes when overflowing both the right and bottom edges", () => {
     expect(clampMenuPosition({ ...BASE, x: 990, y: 790 })).toEqual({
       x: BASE.viewportWidth - BASE.menuWidth - 4,
       y: BASE.viewportHeight - BASE.menuHeight - 4,
     });
   });
 
-  it("メニューが viewport より大きい場合は最小 4px に落ちる", () => {
+  it("falls back to the minimum 4px when the menu is larger than the viewport", () => {
     expect(
       clampMenuPosition({
         x: 10,
