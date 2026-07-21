@@ -14,7 +14,7 @@ export interface ZipEntryData {
 export function readStoreZip(buffer: Buffer): readonly ZipEntryData[] {
   const eocdOffset = buffer.length - EOCD_SIZE;
   if (eocdOffset < 0 || buffer.readUInt32LE(eocdOffset) !== EOCD_SIGNATURE) {
-    throw new Error("EOCD レコードが見つかりません");
+    throw new Error("EOCD record not found");
   }
   const entryCount = buffer.readUInt16LE(eocdOffset + 10);
   let offset = buffer.readUInt32LE(eocdOffset + 16);
@@ -22,7 +22,7 @@ export function readStoreZip(buffer: Buffer): readonly ZipEntryData[] {
   const entries: ZipEntryData[] = [];
   for (let i = 0; i < entryCount; i++) {
     if (buffer.readUInt32LE(offset) !== CENTRAL_SIGNATURE) {
-      throw new Error("central directory ヘッダが不正です");
+      throw new Error("central directory header is invalid");
     }
     const method = buffer.readUInt16LE(offset + 10);
     const size = buffer.readUInt32LE(offset + 24);
@@ -37,7 +37,9 @@ export function readStoreZip(buffer: Buffer): readonly ZipEntryData[] {
       )
       .toString("utf8");
     if (method !== 0) {
-      throw new Error(`STORE 以外の圧縮方式のエントリがあります: ${name}`);
+      throw new Error(
+        `Entry uses a compression method other than STORE: ${name}`,
+      );
     }
     const localNameLength = buffer.readUInt16LE(localOffset + 26);
     const localExtraLength = buffer.readUInt16LE(localOffset + 28);

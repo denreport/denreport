@@ -64,7 +64,7 @@ async function loadSlotPreviewFont(
     const font = resolution.font;
     const charWidths = readCharWidths(font.data);
     if (charWidths === null) {
-      throw new Error("フォントの字幅を読み取れません");
+      throw new Error("Cannot read the font's char widths");
     }
     const family = await registerPreviewFace(doc, font.name, font.data);
     return { family, ascentPerEm: font.ascentPerEm, charWidths };

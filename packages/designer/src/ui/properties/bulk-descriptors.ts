@@ -82,7 +82,7 @@ export function buildBulkDescriptors(
       topLevelOnly: true,
       read: (el) => {
         if (!("pages" in el)) {
-          throw new Error(`pages 未対応の要素: ${el.type}`);
+          throw new Error(`element does not support pages: ${el.type}`);
         }
         return el.pages;
       },
@@ -110,7 +110,7 @@ export function buildBulkDescriptors(
       topLevelOnly: true,
       read: (el) => {
         if (!("x" in el)) {
-          throw new Error(`x 未対応の要素: ${el.type}`);
+          throw new Error(`element does not support x: ${el.type}`);
         }
         return el.x;
       },
@@ -136,7 +136,7 @@ export function buildBulkDescriptors(
       topLevelOnly: true,
       read: (el) => {
         if (!("y" in el)) {
-          throw new Error(`y 未対応の要素: ${el.type}`);
+          throw new Error(`element does not support y: ${el.type}`);
         }
         return el.y;
       },
@@ -160,7 +160,7 @@ export function buildBulkDescriptors(
           case "pageNumber":
             return el.w;
           default:
-            throw new Error(`w 未対応の要素: ${el.type}`);
+            throw new Error(`element does not support w: ${el.type}`);
         }
       },
       apply: (el, value) => {
@@ -192,7 +192,7 @@ export function buildBulkDescriptors(
           case "pageNumber":
             return el.h;
           default:
-            throw new Error(`h 未対応の要素: ${el.type}`);
+            throw new Error(`element does not support h: ${el.type}`);
         }
       },
       apply: (el, value) => {
@@ -220,7 +220,7 @@ export function buildBulkDescriptors(
       topLevelOnly: false,
       read: (el) => {
         if (el.type !== "line") {
-          throw new Error(`orientation 未対応の要素: ${el.type}`);
+          throw new Error(`element does not support orientation: ${el.type}`);
         }
         return el.orientation;
       },
@@ -240,7 +240,7 @@ export function buildBulkDescriptors(
       topLevelOnly: false,
       read: (el) => {
         if (el.type !== "line") {
-          throw new Error(`length 未対応の要素: ${el.type}`);
+          throw new Error(`element does not support length: ${el.type}`);
         }
         return el.length;
       },
@@ -260,7 +260,7 @@ export function buildBulkDescriptors(
       topLevelOnly: false,
       read: (el) => {
         if (el.type !== "line") {
-          throw new Error(`thickness 未対応の要素: ${el.type}`);
+          throw new Error(`element does not support thickness: ${el.type}`);
         }
         return el.thickness;
       },
@@ -280,7 +280,7 @@ export function buildBulkDescriptors(
       topLevelOnly: false,
       read: (el) => {
         if (el.type !== "rect") {
-          throw new Error(`borderWidth 未対応の要素: ${el.type}`);
+          throw new Error(`element does not support borderWidth: ${el.type}`);
         }
         return el.borderWidth;
       },
@@ -305,7 +305,7 @@ export function buildBulkDescriptors(
           case "pageNumber":
             return el.fontSize;
           default:
-            throw new Error(`fontSize 未対応の要素: ${el.type}`);
+            throw new Error(`element does not support fontSize: ${el.type}`);
         }
       },
       apply: (el, value) => {
@@ -333,7 +333,7 @@ export function buildBulkDescriptors(
           case "pageNumber":
             return el.align;
           default:
-            throw new Error(`align 未対応の要素: ${el.type}`);
+            throw new Error(`element does not support align: ${el.type}`);
         }
       },
       apply: (el, value) => {
@@ -360,7 +360,7 @@ export function buildBulkDescriptors(
           case "pageNumber":
             return el.lineHeight;
           default:
-            throw new Error(`lineHeight 未対応の要素: ${el.type}`);
+            throw new Error(`element does not support lineHeight: ${el.type}`);
         }
       },
       apply: (el, value) => {

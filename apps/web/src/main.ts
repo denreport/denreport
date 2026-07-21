@@ -13,7 +13,7 @@ import {
 
 const container = document.getElementById("app");
 if (container === null) {
-  throw new Error("#app 要素が見つかりません");
+  throw new Error("#app element not found");
 }
 
 const storedSampleData = localStorage.getItem(SAMPLE_DATA_STORAGE_KEY);

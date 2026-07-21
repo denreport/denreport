@@ -75,7 +75,7 @@ async function fontDataFor(resolution: FontResolution): Promise<Uint8Array> {
       return fetchEmbeddedFontData(url);
     }
   }
-  throw new Error("フォントの実データを解決できません");
+  throw new Error("Cannot resolve the font's actual data");
 }
 
 const RUN_IDLE: RunState = { kind: "idle" };

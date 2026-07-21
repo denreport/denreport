@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# ワークスペース内の各パッケージの package.json の version が一致していることを検証する
-# 引数でバージョンを与えた場合は、全 version がそれと一致することも検証する（v プレフィックスは剥がす）
+# Verifies that the version in package.json matches across the workspace's packages.
+# If a version is given as an argument, also verifies that all versions match it
+# (the "v" prefix, if present, is stripped).
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
 mapfile -t files < <(git ls-files 'packages/*/package.json' 'apps/*/package.json')
 if [ "${#files[@]}" -eq 0 ]; then
-  echo "NG: 対象の package.json が見つかりません（ワークスペース構成を確認してください）。" >&2
+  echo "NG: no target package.json found (check the workspace configuration)." >&2
   exit 1
 fi
 
@@ -22,7 +23,7 @@ for f in "${files[@]}"; do
     if (typeof pkg.version !== "string" || pkg.version === "") process.exit(1);
     console.log(pkg.version);
   ' "$f"); then
-    echo "NG: ${f} に version フィールドがありません。" >&2
+    echo "NG: ${f} has no version field." >&2
     exit 1
   fi
 done
@@ -41,12 +42,12 @@ for f in "${files[@]}"; do
 done
 
 if [ "$mismatch" -eq 1 ]; then
-  echo "NG: package.json 間で version が一致していません。" >&2
+  echo "NG: version mismatch across package.json files." >&2
   exit 1
 fi
 
 if [ -n "$expected" ] && [ "$first" != "$expected" ]; then
-  echo "NG: version (${first}) が指定値 (${expected}) と一致しません。" >&2
+  echo "NG: version (${first}) does not match the specified value (${expected})." >&2
   exit 1
 fi
 

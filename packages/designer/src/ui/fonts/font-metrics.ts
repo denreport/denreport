@@ -58,11 +58,11 @@ function loadEmbeddedWidths(url: URL): Promise<CharWidthEm> {
   }
   const promise = fetch(url).then(async (res) => {
     if (!res.ok) {
-      throw new Error(`フォント取得失敗 (HTTP ${res.status})`);
+      throw new Error(`Font fetch failed (HTTP ${res.status})`);
     }
     const widths = readCharWidths(new Uint8Array(await res.arrayBuffer()));
     if (widths === null) {
-      throw new Error("字幅を読み取れません");
+      throw new Error("Cannot read char widths");
     }
     return widths;
   });

@@ -4,7 +4,7 @@
 export async function fetchEmbeddedFontData(url: URL): Promise<Uint8Array> {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(`同梱フォントを取得できません (HTTP ${response.status})`);
+    throw new Error(`Cannot fetch the bundled font (HTTP ${response.status})`);
   }
   return new Uint8Array(await response.arrayBuffer());
 }

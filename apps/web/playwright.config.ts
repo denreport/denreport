@@ -9,7 +9,7 @@ export default defineConfig({
     locale: "ja-JP",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
-  // 実バンドルに対して検証する（dev サーバでは資材解決の確認にならない）
+  // Verify against the real bundle (a dev server wouldn't confirm asset resolution)
   webServer: {
     command: "pnpm build && pnpm preview --port 4173 --strictPort",
     url: "http://localhost:4173",

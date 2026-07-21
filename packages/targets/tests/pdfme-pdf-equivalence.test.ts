@@ -55,8 +55,8 @@ function parseInline(document: unknown): IrDocument {
   return parsed.document;
 }
 
-describe("extractPdf — pt→mm・左上原点への正規化", () => {
-  it("単一テキスト要素の PDF から寸法と位置を mm で取り出す", async () => {
+describe("extractPdf — normalizing pt→mm and top-left origin", () => {
+  it("extracts dimensions and position in mm from a PDF with a single text element", async () => {
     const document = parseInline({
       version: "1.0",
       page: { width: 210, height: 297 },
@@ -94,7 +94,7 @@ describe("extractPdf — pt→mm・左上原点への正規化", () => {
     expect(first.width).toBeGreaterThan(0);
   });
 
-  it("楕円要素を含む PDF を生成できる", async () => {
+  it("can generate a PDF containing an ellipse element", async () => {
     const document = parseInline({
       version: "1.0",
       page: { width: 210, height: 297 },
@@ -120,8 +120,8 @@ describe("extractPdf — pt→mm・左上原点への正規化", () => {
   });
 });
 
-describe("buildReferenceExpectation — 参照意味論からの期待行導出", () => {
-  it("複数行 text を規範ベースラインの行に分割し、空文字列の行を除外する", () => {
+describe("buildReferenceExpectation — deriving expected lines from reference semantics", () => {
+  it("splits multi-line text into reference-baseline lines and excludes empty-string lines", () => {
     const document = parseInline({
       version: "1.0",
       page: { width: 210, height: 297 },
@@ -149,7 +149,7 @@ describe("buildReferenceExpectation — 参照意味論からの期待行導出"
     expect(b?.baselineY).toBeCloseTo(normativeBaselineY(20, 12, 1.25, 2), 5);
   });
 
-  it("invoice: 空行（t ≥ n）のセルは期待行に含めない", () => {
+  it("invoice: excludes empty cells (t ≥ n) from expected lines", () => {
     const { document, data } = loadFixture("invoice.json", "invoice-data.json");
     const expectation = buildReferenceExpectation(document, data, fontData);
 
@@ -163,7 +163,7 @@ describe("buildReferenceExpectation — 参照意味論からの期待行導出"
     expect(expectation.imageCountByPage).toEqual([1]);
   });
 
-  it("invoice-multipage: pageNumber がページ毎に異なる期待文字列になる", () => {
+  it("invoice-multipage: pageNumber produces a different expected string per page", () => {
     const { document, data } = loadFixture(
       "invoice-multipage.json",
       "invoice-multipage-data.json",
@@ -191,7 +191,7 @@ describe("buildReferenceExpectation — 参照意味論からの期待行導出"
   });
 });
 
-describe("checkAgainstReference / checkCrossTarget — 照合器の境界", () => {
+describe("checkAgainstReference / checkCrossTarget — matcher boundaries", () => {
   const expectation: ReferenceExpectation = {
     pageCount: 1,
     pageWidth: 210,
@@ -217,7 +217,7 @@ describe("checkAgainstReference / checkCrossTarget — 照合器の境界", () =
     };
   }
 
-  it("許容誤差内の分割項目を連結してマッチする", () => {
+  it("concatenates split items within tolerance and matches", () => {
     const pdf = pdfWith([
       { str: "a", x: 10.3, baselineY: 24.05, width: 3 },
       { str: "bc", x: 13.3, baselineY: 24.15, width: 6 },
@@ -225,7 +225,7 @@ describe("checkAgainstReference / checkCrossTarget — 照合器の境界", () =
     expect(checkAgainstReference(pdf, expectation)).toEqual([]);
   });
 
-  it("規範ベースライン外・水平範囲超過・期待行の欠落を検出する", () => {
+  it("detects off-baseline, horizontal-range overflow, and missing expected lines", () => {
     const offBaseline = pdfWith([
       { str: "abc", x: 10, baselineY: 24.5, width: 9 },
     ]);
@@ -235,13 +235,13 @@ describe("checkAgainstReference / checkCrossTarget — 照合器の境界", () =
       const mismatches = checkAgainstReference(pdf, expectation);
       expect(
         mismatches.some((m) =>
-          m.message.includes("期待行「abc」が見つかりません"),
+          m.message.includes('Expected line "abc" not found'),
         ),
       ).toBe(true);
     }
   });
 
-  it("どの期待行にもマッチしない項目と画像件数不一致をすべて列挙する", () => {
+  it("lists all items that match no expected line and image-count mismatches", () => {
     const pdf = pdfWith(
       [
         { str: "abc", x: 10, baselineY: 24, width: 9 },
@@ -251,13 +251,13 @@ describe("checkAgainstReference / checkCrossTarget — 照合器の境界", () =
     );
     const mismatches = checkAgainstReference(pdf, expectation);
     expect(mismatches).toHaveLength(2);
-    expect(mismatches.some((m) => m.message.includes("「xyz」"))).toBe(true);
-    expect(mismatches.some((m) => m.message.includes("画像描画件数"))).toBe(
+    expect(mismatches.some((m) => m.message.includes('"xyz"'))).toBe(true);
+    expect(mismatches.some((m) => m.message.includes("Image draw count"))).toBe(
       true,
     );
   });
 
-  it("checkCrossTarget: 許容内は空配列・許容超過は差の実測値つきで報告する", () => {
+  it("checkCrossTarget: returns an empty array within tolerance, and reports the measured difference when exceeded", () => {
     const a = pdfWith([{ str: "abc", x: 10, baselineY: 24, width: 9 }]);
     const withinTol = pdfWith([
       { str: "abc", x: 10.8, baselineY: 24.15, width: 9.5 },
@@ -269,16 +269,16 @@ describe("checkAgainstReference / checkCrossTarget — 照合器の境界", () =
     ]);
     const mismatches = checkCrossTarget(a, beyondTol, expectation);
     expect(mismatches).toHaveLength(2);
-    expect(mismatches.some((m) => m.message.includes("左端差 2.00mm"))).toBe(
-      true,
-    );
-    expect(mismatches.some((m) => m.message.includes("全幅差 2.00mm"))).toBe(
-      true,
-    );
+    expect(
+      mismatches.some((m) => m.message.includes("left-edge difference 2.00mm")),
+    ).toBe(true);
+    expect(
+      mismatches.some((m) => m.message.includes("width difference 2.00mm")),
+    ).toBe(true);
   });
 });
 
-// Where the normative baseline origin maps to for text rotated by the IR's rotate (clockwise, about the bounding box center)
+// Where the reference baseline origin maps to for text rotated by the IR's rotate (clockwise, about the bounding box center)
 function rotatedBaselineOrigin(
   el: { x: number; y: number; w: number; h: number },
   fontSize: number,
@@ -308,8 +308,8 @@ function findItem(
   return item;
 }
 
-describe("pdfme 実 PDF — 回転の向きと中心", () => {
-  it("rotation: 回転テキストの原点が要素中心周りの時計回り写像に一致する", async () => {
+describe("pdfme real PDF — rotation direction and center", () => {
+  it("rotation: the rotated text's origin matches clockwise mapping around the element center", async () => {
     const { document, data } = loadFixture(
       "rotation.json",
       "rotation-data.json",
@@ -339,7 +339,7 @@ describe("pdfme 実 PDF — 回転の向きと中心", () => {
   });
 });
 
-describe("pdfme 実 PDF — 参照適合", () => {
+describe("pdfme real PDF — reference conformance", () => {
   it.each([
     {
       name: "invoice",

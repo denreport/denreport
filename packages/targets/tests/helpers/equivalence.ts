@@ -91,7 +91,7 @@ function checkPageGeometry(
   if (pdf.pageCount !== expectation.pageCount) {
     mismatches.push({
       page: 0,
-      message: `ページ数不一致: 期待 ${expectation.pageCount}, 実測 ${pdf.pageCount}`,
+      message: `Page count mismatch: expected ${expectation.pageCount}, actual ${pdf.pageCount}`,
     });
   }
   if (
@@ -101,8 +101,8 @@ function checkPageGeometry(
     mismatches.push({
       page: 0,
       message:
-        `ページ寸法不一致: 期待 ${fmt(expectation.pageWidth)}x${fmt(expectation.pageHeight)}mm, ` +
-        `実測 ${fmt(pdf.pageWidth)}x${fmt(pdf.pageHeight)}mm`,
+        `Page size mismatch: expected ${fmt(expectation.pageWidth)}x${fmt(expectation.pageHeight)}mm, ` +
+        `actual ${fmt(pdf.pageWidth)}x${fmt(pdf.pageHeight)}mm`,
     });
   }
   return mismatches;
@@ -123,7 +123,7 @@ export function checkAgainstReference(
     if (page === undefined || consumed === undefined) {
       mismatches.push({
         page: line.page,
-        message: `期待行「${line.text}」のページ ${line.page} が PDF に存在しません`,
+        message: `Expected line "${line.text}": page ${line.page} does not exist in the PDF`,
       });
       continue;
     }
@@ -133,16 +133,16 @@ export function checkAgainstReference(
       mismatches.push({
         page: line.page,
         message:
-          `期待行「${line.text}」が見つかりません ` +
+          `Expected line "${line.text}" not found ` +
           `(x=[${fmt(line.x)}, ${fmt(line.x + line.w)}], ` +
-          `規範ベースライン y=${fmt(line.baselineY)}±${fmt(REF_BASELINE_TOL_MM)})`,
+          `reference baseline y=${fmt(line.baselineY)}±${fmt(REF_BASELINE_TOL_MM)})`,
       });
       continue;
     }
     if (matches.length > 1) {
       mismatches.push({
         page: line.page,
-        message: `期待行「${line.text}」に ${matches.length} 個の候補がマッチしました（一意に定まりません）`,
+        message: `Expected line "${line.text}" matched ${matches.length} candidates (not unique)`,
       });
       continue;
     }
@@ -155,14 +155,14 @@ export function checkAgainstReference(
       if (consumed?.has(index) || item.str.trim() === "") return;
       mismatches.push({
         page: pageIndex + 1,
-        message: `どの期待行にもマッチしないテキスト「${item.str}」(x=${fmt(item.x)}, baselineY=${fmt(item.baselineY)})`,
+        message: `Text "${item.str}" did not match any expected line (x=${fmt(item.x)}, baselineY=${fmt(item.baselineY)})`,
       });
     });
     const expectedImages = expectation.imageCountByPage[pageIndex] ?? 0;
     if (page.imageDrawCount !== expectedImages) {
       mismatches.push({
         page: pageIndex + 1,
-        message: `画像描画件数不一致: 期待 ${expectedImages}, 実測 ${page.imageDrawCount}`,
+        message: `Image draw count mismatch: expected ${expectedImages}, actual ${page.imageDrawCount}`,
       });
     }
   });
@@ -179,7 +179,7 @@ export function checkCrossTarget(
   if (a.pageCount !== b.pageCount) {
     mismatches.push({
       page: 0,
-      message: `ページ数不一致: a=${a.pageCount}, b=${b.pageCount}`,
+      message: `Page count mismatch: a=${a.pageCount}, b=${b.pageCount}`,
     });
   }
   const consumedA = a.pages.map(() => new Set<number>());
@@ -205,8 +205,8 @@ export function checkCrossTarget(
       mismatches.push({
         page: line.page,
         message:
-          `期待行「${line.text}」が一意にマッチしません ` +
-          `(a=${matchA === undefined ? "不成立" : "成立"}, b=${matchB === undefined ? "不成立" : "成立"})`,
+          `Expected line "${line.text}" did not match uniquely ` +
+          `(a=${matchA === undefined ? "no match" : "matched"}, b=${matchB === undefined ? "no match" : "matched"})`,
       });
       continue;
     }
@@ -216,19 +216,19 @@ export function checkCrossTarget(
     if (dx > CROSS_X_TOL_MM) {
       mismatches.push({
         page: line.page,
-        message: `行「${line.text}」の左端差 ${fmt(dx)}mm が許容 ${fmt(CROSS_X_TOL_MM)}mm を超過 (a=${fmt(matchA.minX)}, b=${fmt(matchB.minX)})`,
+        message: `Line "${line.text}": left-edge difference ${fmt(dx)}mm exceeds tolerance ${fmt(CROSS_X_TOL_MM)}mm (a=${fmt(matchA.minX)}, b=${fmt(matchB.minX)})`,
       });
     }
     if (dBaseline > CROSS_BASELINE_TOL_MM) {
       mismatches.push({
         page: line.page,
-        message: `行「${line.text}」のベースライン差 ${fmt(dBaseline)}mm が許容 ${fmt(CROSS_BASELINE_TOL_MM)}mm を超過 (a=${fmt(matchA.baselineY)}, b=${fmt(matchB.baselineY)})`,
+        message: `Line "${line.text}": baseline difference ${fmt(dBaseline)}mm exceeds tolerance ${fmt(CROSS_BASELINE_TOL_MM)}mm (a=${fmt(matchA.baselineY)}, b=${fmt(matchB.baselineY)})`,
       });
     }
     if (dWidth > CROSS_WIDTH_TOL_MM) {
       mismatches.push({
         page: line.page,
-        message: `行「${line.text}」の全幅差 ${fmt(dWidth)}mm が許容 ${fmt(CROSS_WIDTH_TOL_MM)}mm を超過 (a=${fmt(matchA.extentWidth)}, b=${fmt(matchB.extentWidth)})`,
+        message: `Line "${line.text}": width difference ${fmt(dWidth)}mm exceeds tolerance ${fmt(CROSS_WIDTH_TOL_MM)}mm (a=${fmt(matchA.extentWidth)}, b=${fmt(matchB.extentWidth)})`,
       });
     }
   }
