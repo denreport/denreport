@@ -1,33 +1,33 @@
-name: 機能要望
-description: 新しい機能・能力の追加要望
+name: Feature Request
+description: Request a new feature or capability
 labels: ["enhancement"]
 body:
   - type: textarea
     id: problem
     attributes:
-      label: 解決したい課題
-      description: 何ができなくて困るか。ユースケースがあれば書く
+      label: Problem to solve
+      description: What you can't do today, and why it matters. Include a use case if you have one
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: 提案する機能
-      description: どう動いてほしいか。UI 案・操作フローがあれば書く
+      label: Proposed feature
+      description: How it should behave. Include a UI sketch or operation flow if you have one
     validations:
       required: true
   - type: textarea
     id: scope
     attributes:
-      label: スコープ外（任意）
-      description: この issue でやらないことを明示して肥大化を防ぐ
+      label: Out of scope (optional)
+      description: State explicitly what this issue will NOT do, to keep it from growing unbounded
   - type: textarea
     id: investigation
     attributes:
-      label: 実装の手がかり（任意）
-      description: 関連ファイル（パス:行）・既存実装との接点・技術候補。推測には「推測:」と付ける
+      label: Implementation hints (optional)
+      description: Related files (path:line), touchpoints with existing code, candidate approaches. Prefix guesses with "Guess:"
   - type: textarea
     id: dependencies
     attributes:
-      label: 依存・関連 issue（任意）
-      placeholder: "例: #12 が先に必要"
+      label: Dependencies / related issues (optional)
+      placeholder: "e.g. requires #12 first"

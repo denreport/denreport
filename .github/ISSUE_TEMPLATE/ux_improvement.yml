@@ -1,27 +1,27 @@
-name: UX 改善
-description: 既存機能の使い勝手・操作感の改善
+name: UX Improvement
+description: Improve usability or feel of an existing feature
 labels: ["enhancement", "ux"]
 body:
   - type: textarea
     id: current
     attributes:
-      label: 現状の挙動
-      description: いま何がどう不便か
+      label: Current behavior
+      description: What's inconvenient right now, and how
     validations:
       required: true
   - type: textarea
     id: desired
     attributes:
-      label: 望ましい挙動
-      description: どうなれば使いやすいか。参考にする他ツールの挙動があれば書く
+      label: Desired behavior
+      description: What would make it easier to use. Mention other tools' behavior for reference if relevant
     validations:
       required: true
   - type: textarea
     id: investigation
     attributes:
-      label: 実装の手がかり（任意）
-      description: 関連ファイル（パス:行）・原因候補。推測には「推測:」と付ける
+      label: Implementation hints (optional)
+      description: Related files (path:line), suspected cause. Prefix guesses with "Guess:"
   - type: textarea
     id: dependencies
     attributes:
-      label: 依存・関連 issue（任意）
+      label: Dependencies / related issues (optional)
