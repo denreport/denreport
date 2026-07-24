@@ -1,8 +1,30 @@
 {
   "name": "@denreport/targets",
   "version": "0.1.0",
-  "private": true,
+  "description": "Exporters from the denreport IR to pdfme templates and self-contained ReportLab Python scripts. Bundles Noto Sans JP for Japanese typesetting.",
   "license": "MIT",
+  "homepage": "https://www.den.report/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/denreport/denreport.git",
+    "directory": "packages/targets"
+  },
+  "bugs": {
+    "url": "https://github.com/denreport/denreport/issues"
+  },
+  "keywords": [
+    "report",
+    "invoice",
+    "pdf",
+    "pdfme",
+    "reportlab",
+    "ir",
+    "exporter",
+    "denreport"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

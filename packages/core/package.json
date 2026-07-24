@@ -1,8 +1,31 @@
 {
   "name": "@denreport/core",
   "version": "0.1.0",
-  "private": true,
+  "description": "Open, versioned JSON intermediate representation (IR) for business documents (invoices, delivery notes, receipts), with a parser, a validator, and per-target compatibility matrices. No UI, no rendering.",
   "license": "MIT",
+  "homepage": "https://www.den.report/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/denreport/denreport.git",
+    "directory": "packages/core"
+  },
+  "bugs": {
+    "url": "https://github.com/denreport/denreport/issues"
+  },
+  "keywords": [
+    "report",
+    "invoice",
+    "pdf",
+    "ir",
+    "intermediate-representation",
+    "json-schema",
+    "parser",
+    "validator",
+    "denreport"
+  ],
+  "engines": {
+    "node": ">=24"
+  },
   "type": "module",
   "exports": {
     ".": "./src/index.ts"
