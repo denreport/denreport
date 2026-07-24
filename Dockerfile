@@ -10,6 +10,10 @@ RUN pnpm --filter @denreport/web run build
 
 FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:af85d11ce7ef10172855a6e3649e3e8125b1b9e3ca41849ec2918036f05cb212
 
+LABEL org.opencontainers.image.source="https://github.com/denreport/denreport" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.description="denreport — a web-based designer for business documents (invoices, delivery notes, receipts, and similar reports) (static self-host image)"
+
 WORKDIR /app
 COPY --from=builder /build/apps/web/dist ./dist
 COPY apps/web/server/serve.mjs ./server/serve.mjs

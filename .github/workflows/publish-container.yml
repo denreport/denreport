@@ -56,7 +56,11 @@ jobs:
       - if: always()
         run: docker rm -f denreport-web-publish
 
-      - run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: log in to ghcr.io
+        env:
+          GH_TOKEN_FOR_LOGIN: ${{ secrets.GITHUB_TOKEN }}
+          GH_ACTOR: ${{ github.actor }}
+        run: echo "$GH_TOKEN_FOR_LOGIN" | docker login ghcr.io -u "$GH_ACTOR" --password-stdin
 
       - name: tag and push edge
         if: github.ref == 'refs/heads/main'
