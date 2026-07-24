@@ -251,7 +251,7 @@ export function TableSketch(props: {
           className="dr-tbl-note"
           style={{ "--ny": noteY } as CSSProperties}
         >
-          bind: {table.bind} ・ minRows {table.minRows} ・ maxY {table.maxY}
+          bind: {table.bind} · minRows {table.minRows} · maxY {table.maxY}
         </span>
       )}
     </>
