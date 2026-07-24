@@ -4,7 +4,7 @@ import { act } from "react";
 import type { Root } from "react-dom/client";
 import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { MessagesContext } from "../../i18n/context";
+import { LocaleContext, MessagesContext } from "../../i18n/context";
 import { en } from "../../i18n/messages/en";
 import { ja } from "../../i18n/messages/ja";
 import { IMAGE_PLACEHOLDER_SRC } from "../../state/constants";
@@ -373,22 +373,15 @@ describe("PropertiesPanel routing", () => {
 });
 
 describe("Paper size presets", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  function stubLanguage(language: string): void {
-    vi.spyOn(window.navigator, "language", "get").mockReturnValue(language);
-  }
-
   it("shows A3/A4/A5/B5(ISO)/Letter/Legal as options in the English UI, with the blank A4 default preselected", () => {
-    stubLanguage("en-US");
     const store = makeStore();
-    // The preset candidate set follows navigator.language; the labels follow the UI locale (here, en)
+    // The preset candidate set and the labels both follow the UI locale (here, en)
     render(
-      <MessagesContext.Provider value={en}>
-        <PropertiesPanel store={store} interaction={IDLE} />
-      </MessagesContext.Provider>,
+      <LocaleContext.Provider value="en">
+        <MessagesContext.Provider value={en}>
+          <PropertiesPanel store={store} interaction={IDLE} />
+        </MessagesContext.Provider>
+      </LocaleContext.Provider>,
     );
     const select = requireSelectByLabel(en.propertiesBulk.document.size);
     expect(
@@ -398,9 +391,12 @@ describe("Paper size presets", () => {
   });
 
   it("shows A3/A4/A5/B4/B5/はがき/レター/カスタム as options in the Japanese UI", () => {
-    stubLanguage("ja-JP");
     const store = makeStore();
-    render(<PropertiesPanel store={store} interaction={IDLE} />);
+    render(
+      <LocaleContext.Provider value="ja">
+        <PropertiesPanel store={store} interaction={IDLE} />
+      </LocaleContext.Provider>,
+    );
     const select = requireSelectByLabel("サイズ");
     expect(
       [...select.querySelectorAll("option")].map((o) => o.textContent),
@@ -408,7 +404,6 @@ describe("Paper size presets", () => {
   });
 
   it("selecting a preset commits width and height together", () => {
-    stubLanguage("ja-JP");
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     setSelectValue(requireSelectByLabel("サイズ"), "b5jis");
@@ -418,7 +413,6 @@ describe("Paper size presets", () => {
   });
 
   it("selecting Letter commits the standard dimensions (215.9x279.4mm) as-is", () => {
-    stubLanguage("ja-JP");
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     setSelectValue(requireSelectByLabel("サイズ"), "letter");
@@ -431,7 +425,6 @@ describe("Paper size presets", () => {
   });
 
   it("preselects Custom for dimensions that don't match any preset", () => {
-    stubLanguage("ja-JP");
     const store = makeStore();
     act(() => {
       store.commit({
@@ -444,7 +437,6 @@ describe("Paper size presets", () => {
   });
 
   it("the select display follows when manually editing width/height to match a preset", () => {
-    stubLanguage("ja-JP");
     const store = makeStore();
     render(<PropertiesPanel store={store} interaction={IDLE} />);
     setValue(inputByLabel("幅"), "148");
@@ -452,6 +444,40 @@ describe("Paper size presets", () => {
     setValue(inputByLabel("高さ"), "210");
     blur(inputByLabel("高さ"));
     expect(requireSelectByLabel("サイズ").value).toBe("a5");
+  });
+
+  it("switching locale at runtime updates the candidate set, falling back the select to Custom without altering the page size when the current preset isn't offered", () => {
+    const store = makeStore();
+    act(() => {
+      store.commit({
+        ...store.getState().document,
+        page: { width: 100, height: 148 }, // postcard: only in the ja preset set
+      });
+    });
+    // Both renders keep an identical provider tree shape (only the values change) so this
+    // rerender exercises reactivity rather than an unmount/remount of PropertiesPanel
+    render(
+      <LocaleContext.Provider value="ja">
+        <MessagesContext.Provider value={ja}>
+          <PropertiesPanel store={store} interaction={IDLE} />
+        </MessagesContext.Provider>
+      </LocaleContext.Provider>,
+    );
+    expect(requireSelectByLabel("サイズ").value).toBe("postcard");
+
+    render(
+      <LocaleContext.Provider value="en">
+        <MessagesContext.Provider value={en}>
+          <PropertiesPanel store={store} interaction={IDLE} />
+        </MessagesContext.Provider>
+      </LocaleContext.Provider>,
+    );
+    const enSelect = requireSelectByLabel(en.propertiesBulk.document.size);
+    expect(
+      [...enSelect.querySelectorAll("option")].map((o) => o.textContent),
+    ).toEqual(["A3", "A4", "A5", "B5", "Letter", "Legal", "Custom"]);
+    expect(enSelect.value).toBe("custom");
+    expect(store.getState().document.page).toEqual({ width: 100, height: 148 });
   });
 });
 

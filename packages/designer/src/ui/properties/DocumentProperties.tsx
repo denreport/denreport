@@ -1,7 +1,7 @@
 import type { IrDocument, IrFontSlot } from "@denreport/core";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
-import { useMessages } from "../../i18n/context.js";
+import { useLocale, useMessages } from "../../i18n/context.js";
 import type { Messages } from "../../i18n/messages/index.js";
 import { errorMessageFor } from "../../state/error-index.js";
 import type { FontResolution } from "../../state/fonts.js";
@@ -65,6 +65,7 @@ export function DocumentProperties(props: {
 }): ReactNode {
   const { store } = props;
   const m = useMessages();
+  const locale = useLocale();
   const state = useEditorState(store);
   const d = m.propertiesBulk.document;
   const [fontDialogSlot, setFontDialogSlot] = useState<IrFontSlot | null>(null);
@@ -83,7 +84,7 @@ export function DocumentProperties(props: {
     state.fontRegistry,
     EMBEDDED_NAMES,
   );
-  const paperPresets = paperPresetsForLanguage(navigator.language);
+  const paperPresets = paperPresetsForLanguage(locale);
   const paperPresetId =
     paperPresetIdForSize(
       paperPresets,
