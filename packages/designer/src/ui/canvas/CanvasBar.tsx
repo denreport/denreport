@@ -101,7 +101,7 @@ export function CanvasBar(props: { readonly store: EditorStore }): ReactNode {
         disabled={higher === null}
         onClick={() => higher !== null && store.setView({ zoom: higher })}
       >
-        ＋
+        +
       </button>
     </div>
   );
