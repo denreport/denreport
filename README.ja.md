@@ -28,7 +28,7 @@ denreport はまだ 1.0 未満で、開発中です。現時点で実装済み�
   [`examples/qualified-invoice.json`](examples/qualified-invoice.json) に同梱して
   おり、デザイナーの「開く」ボタンから読み込めます。
 - **オープンな IR**: バージョン管理されたJSON文書形式
-  （[仕様](packages/core/docs/ir-v1.md)）に、パーサと検証機能が付属します。
+  （[仕様](packages/core/docs/ir-v1.ja.md)）に、パーサと検証機能が付属します。
   レイアウトが denreport 自体にロックインされません。
 - **2つの書き出し先**: pdfme 用のテンプレート＋入力データ（JSON）と、
   フォント同梱・単体で動く ReportLab の Python コードの両方を、同じ IR 文書から
