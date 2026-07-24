@@ -1,5 +1,7 @@
 # IR v1 Specification
 
+日本語版: [ir-v1.ja.md](ir-v1.ja.md)
+
 IR (Intermediate Representation) is a single JSON document that represents a form/report layout.
 The designer writes it out as the save format, and exporters take it as input. IR itself
 contains no data (values to merge in) — data is combined as a separate JSON document at export
