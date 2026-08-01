@@ -53,7 +53,7 @@
     "@pdfme/common": "6.1.11",
     "@pdfme/generator": "6.1.11",
     "@pdfme/schemas": "6.1.11",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "pdfjs-dist": "6.1.200"
   }
 }
